@@ -1,0 +1,36 @@
+//------------------------------------------------------------------------------
+// Standard setup for module imports/exports 
+//------------------------------------------------------------------------------
+
+#ifndef __H5FDdsmConfig_h
+#define __H5FDdsmConfig_h
+
+#if defined(_WIN32) || defined (__CYGWIN__)
+  # define H5FDdsm_ABI_IMPORT __declspec(dllimport)
+  # define H5FDdsm_ABI_EXPORT __declspec(dllexport)
+  # define H5FDdsm_ABI_HIDDEN
+#elif __GNUC__ >= 4
+  # define H5FDdsm_ABI_IMPORT __attribute__ ((visibility("default")))
+  # define H5FDdsm_ABI_EXPORT __attribute__ ((visibility("default")))
+  # define H5FDdsm_ABI_HIDDEN __attribute__ ((visibility("hidden")))
+#else
+  # define H5FDdsm_ABI_IMPORT
+  # define H5FDdsm_ABI_EXPORT
+  # define H5FDdsm_ABI_HIDDEN
+#endif
+
+#cmakedefine H5FDdsm_CONFIG_PATH "${H5FDdsm_CONFIG_PATH}"
+
+#cmakedefine H5FDdsm_BUILD_SHARED_LIBS
+
+#if defined (H5FDdsm_BUILD_SHARED_LIBS)
+  #if defined(H5FDdsm_EXPORTS) 
+    #define H5FDdsm_EXPORT H5FDdsm_ABI_EXPORT 
+  #else
+    #define H5FDdsm_EXPORT H5FDdsm_ABI_IMPORT 
+  #endif
+#else
+  # define H5FDdsm_EXPORT
+#endif
+
+#endif /* __H5FDConfig_h */
