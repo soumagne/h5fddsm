@@ -135,11 +135,11 @@ public:
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
 //------------------------------------------------------------------------------
-#define DebugIsOn ( this->Debug || H5FDdsmObject::GetGlobalDebug() )
-#define DebugIsAbove(a)  ( ( this->Debug >= (a) ) || ( H5FDdsmObject::GetGlobalDebug() >= (a))) 
+#define H5FDDebugIsOn ( this->Debug || H5FDdsmObject::GetGlobalDebug() )
+#define H5FDDebugIsAbove(a)  ( ( this->Debug >= (a) ) || ( H5FDdsmObject::GetGlobalDebug() >= (a))) 
 
 #define H5FDdsmDebug(x) \
-{ if (DebugIsOn) { \
+{ if (H5FDDebugIsOn) { \
   SimpleMutexLock::GlobalLock.Lock();   \
   std::cout << "XDMF Debug : " << /*__FILE__ << " line " << __LINE__ << */ x << std::endl; \
   SimpleMutexLock::GlobalLock.Unlock(); \
