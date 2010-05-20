@@ -46,7 +46,6 @@
 #include <string.h>
 
 static H5FDdsmInt32 GlobalDebugFlag = 0;
-static Int64 NameCntr = 0;
 
 //------------------------------------------------------------------------------
 // Base H5FDdsm class definition from H5FDdsm originally

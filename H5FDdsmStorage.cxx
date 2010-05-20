@@ -18,6 +18,7 @@
 
 #include "H5FDdsmStorage.h"
 
+#include <cstdio>
 #include <cstdlib>
 
 //----------------------------------------------------------------------------
