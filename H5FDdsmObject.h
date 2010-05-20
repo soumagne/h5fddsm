@@ -49,6 +49,7 @@
 // we can use the same int32/64 bit types etc
 #include "H5FDdsmConfig.h"
 #include "H5pubconf.h" 
+#include <string.h>
 #include <iostream>
 
 //------------------------------------------------------------------------------
@@ -58,8 +59,8 @@
   #include <stdint.h>
     typedef int64_t Int64;
     typedef int32_t H5FDdsmInt32;
-    typedef uint8_t H5FDdsmByte;
-    typedef int8_t  H5FDdsmInt8
+    typedef char    H5FDdsmByte;
+    typedef int8_t  H5FDdsmInt8;
 #else
   #ifdef _MSC_VER
     typedef signed   __int64 Int64;
@@ -98,7 +99,7 @@ typedef unsigned char H5FDdsmChar;
 
 #if defined(H5FD_DSM_USE_PTHREADS) || defined(H5FD_DSM_HP_PTHREADS)
 #include <pthread.h> // Needed for PTHREAD implementation of mutex
-typedef pthread_mutex_t vtkMutexType;
+typedef pthread_mutex_t H5FDdsmMutexType;
 #endif
  
 #ifdef H5FD_DSM_USE_WIN32_THREADS
