@@ -91,4 +91,4 @@ ENDIF(BUILD_TESTING)
 #-----------------------------------------------------------------------------
 # Debugging below here
 #-----------------------------------------------------------------------------
-MESSAGE("MPI_LIBRARY is ${MPI_LIBRARY}, MPI dir is ${MPI_INCLUDE_PATH}, HDF5 dir is ${HDF5_INCLUDE_DIR}")
+#MESSAGE("MPI_LIBRARY is ${MPI_LIBRARY}, MPI dir is ${MPI_INCLUDE_PATH}, HDF5 dir is ${HDF5_INCLUDE_DIR}")
