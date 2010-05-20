@@ -45,7 +45,10 @@
 #ifndef __H5FDdsmObject_h
 #define __H5FDdsmObject_h
 
+// use system checks from the HDF5 configure so that
+// we can use the same int32/64 bit types etc
 #include "H5FDdsmConfig.h"
+#include "H5pubconf.h" 
 #include <iostream>
 
 //------------------------------------------------------------------------------
@@ -61,7 +64,7 @@
   #ifdef _MSC_VER
     typedef signed   __int64 Int64;
     typedef signed   __int32 H5FDdsmInt32;
-    typedef  char            H5FDdsmByte;
+    typedef char             H5FDdsmByte;
     typedef signed   __int8  H5FDdsmInt8;
   #endif
 #endif
