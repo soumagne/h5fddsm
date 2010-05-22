@@ -3,6 +3,10 @@
   Project                 : H5FDdsm
   Module                  : H5FDdsm.h
 
+  Authors:
+     John Biddiscombe     Jerome Soumagne
+     biddisco@cscs.ch     soumagne@cscs.ch
+
   Copyright (C) CSCS - Swiss National Supercomputing Centre.
   You may use modify and and distribute this code freely providing
   1) This copyright notice appears on all copies of source code
@@ -13,6 +17,9 @@
 
   This software is distributed WITHOUT ANY WARRANTY; without even the
   implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+  This work has received funding from the European Community's Seventh
+  Framework Programme (FP7/2007-2013) under grant agreement 225967 “NextMuSE”
 
 =========================================================================*/
 
