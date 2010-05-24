@@ -43,7 +43,7 @@ INCLUDE_DIRECTORIES(${H5FDdsm_BINARY_DIR})
 #-----------------------------------------------------------------------------
 # Define a user config path for the dsm ini file
 #-----------------------------------------------------------------------------
-SET(H5FDdsm_CONFIG_PATH "" CACHE PATH "Place to store stuff")
+SET(H5FDdsm_CONFIG_PATH $ENV{HOME} CACHE PATH "Path to the DSM configuration file")
 
 #-----------------------------------------------------------------------------
 # Specify project source files
