@@ -222,10 +222,4 @@ class H5FDdsm_EXPORT H5FDdsmObject {
   private:
 };
 
-H5FDdsm_EXPORT void SetGlobalDebugOn();
-H5FDdsm_EXPORT void SetGlobalDebugOff();
-
-H5FDdsm_EXPORT H5FDdsmInt32 GetGlobalDebug( void );
-H5FDdsm_EXPORT void SetGlobalDebug( H5FDdsmInt32 DebugLevel );
-
 #endif /* __H5FDdsmObject_h */
