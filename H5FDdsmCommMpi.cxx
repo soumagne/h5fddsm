@@ -238,7 +238,7 @@ H5FDdsmInt32
 H5FDdsmCommMpi::RemoteCommConnect() {
 
   if(H5FDdsmComm::RemoteCommConnect() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
-  MPI_Comm_connect(this->DsmMasterHostName, MPI_INFO_NULL, 0, MPI_COMM_WORLD, &this->InterComm);
+  MPI_Comm_connect(this->DsmMasterHostName, MPI_INFO_NULL, 0, this->Comm, &this->InterComm);
   this->CommChannel = H5FD_DSM_COMM_CHANNEL_REMOTE;
 
   if (this->Id == 0) {

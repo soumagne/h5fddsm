@@ -460,16 +460,15 @@ H5Pset_fapl_dsm(hid_t fapl_id, size_t increment, void *xdmfDsmBuffer)
 
       if (mode == "socket") {
         dsmComm = new H5FDdsmCommSocket();
-        dsmComm->Init();
         dynamic_cast<H5FDdsmCommSocket*>(dsmComm)->DupComm(MPI_COMM_WORLD);
         dynamic_cast<H5FDdsmCommSocket*>(dsmComm)->SetDsmMasterHostName(host.c_str());
         dynamic_cast<H5FDdsmCommSocket*>(dsmComm)->SetDsmMasterPort(atoi(port.c_str()));
       } else if (mode == "mpi") {
         dsmComm = new H5FDdsmCommMpi();
-        dsmComm->Init();
         dynamic_cast<H5FDdsmCommMpi*>(dsmComm)->DupComm(MPI_COMM_WORLD);
         dynamic_cast<H5FDdsmCommMpi*>(dsmComm)->SetDsmMasterHostName(host.c_str());
       }
+      dsmComm->Init();
 
       // Create DSM buffer object
       dsmBuffer = new H5FDdsmBuffer();
