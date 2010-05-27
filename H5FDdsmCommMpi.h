@@ -113,8 +113,8 @@ public:
     H5FDdsmInt32   HasStillData();
 
 protected:
-    MPI_Comm    Comm;
-    MPI_Comm    InterComm;
+    MPI_Comm       Comm;
+    MPI_Comm       InterComm;
     H5FDdsmInt32   InterSize;
     H5FDdsmByte    DsmMasterHostName[MPI_MAX_PORT_NAME];
     //
