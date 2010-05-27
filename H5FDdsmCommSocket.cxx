@@ -353,10 +353,10 @@ H5FDdsmCommSocket::RemoteCommRecvInfo(int *length, Int64 *totalLength,
   if (H5FDdsmComm::RemoteCommRecvInfo(length, totalLength, startServerId, endServerId) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
   if (this->Id == 0) {
-    this->InterComm[0]->Receive(length, sizeof(Int64));
+    this->InterComm[0]->Receive(length, sizeof(int));
     H5FDdsmDebug("Recv DSM length: " << *length);
   }
-  if (MPI_Bcast(length, sizeof(Int64), MPI_UNSIGNED_CHAR, 0, this->Comm) != MPI_SUCCESS) {
+  if (MPI_Bcast(length, sizeof(int), MPI_UNSIGNED_CHAR, 0, this->Comm) != MPI_SUCCESS) {
     H5FDdsmErrorMessage("Id = " << this->Id << " MPI_Bcast of length failed");
     return(H5FD_DSM_FAIL);
   }
@@ -401,7 +401,7 @@ H5FDdsmCommSocket::RemoteCommSendInfo(int *length, Int64 *totalLength,
   if (this->Id == 0) {
     // Length
     H5FDdsmDebug("Send DSM length: " << *length);
-    this->InterComm[0]->Send(length, sizeof(Int64));
+    this->InterComm[0]->Send(length, sizeof(int));
 
     // TotalLength
     H5FDdsmDebug("Send DSM totalLength: " << *totalLength);
