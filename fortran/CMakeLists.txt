@@ -58,6 +58,21 @@ TARGET_LINK_LIBRARIES(H5FDdsm_fortran
   H5FDdsm_f90CStub 
 )
 
+IF (WIN32)
+  IF (MSVC)
+    SET_TARGET_PROPERTIES (H5FDdsm_fortran
+	    PROPERTIES
+		    LINKER_LANGUAGE Fortran
+			LINK_FLAGS "/SUBSYSTEM:CONSOLE"
+	)
+  ELSE (MSVC)
+    SET_TARGET_PROPERTIES (H5FDdsm_fortran
+	    PROPERTIES
+		    LINKER_LANGUAGE Fortran
+	)
+  ENDIF (MSVC)
+ENDIF (WIN32)
+
 #-----------------------------------------------------------------------------
 # Build the Fortran Tests
 #-----------------------------------------------------------------------------
@@ -70,16 +85,20 @@ IF (BUILD_TESTING)
     ${H5FDdsm_FORTRAN_TEST_SRC}
   )
     
-  IF (WIN32 AND MSVC)
-    set_target_properties(H5FDdsmFortranTest 
-      PROPERTIES LINK_FLAGS 
-#        "/NODEFAULTLIB:\"MSVCRTD.lib\" /NODEFAULTLIB:\"LIBCMTD.lib\"  /SUBSYSTEM:CONSOLE"
-""
-    )
-#    SET_TARGET_PROPERTIES (H5FDdsmFortranTest PROPERTIES OUTPUT_NAME "H5FDdsmFortranTest")
-#    SET_TARGET_PROPERTIES (H5FDdsmFortranTest PROPERTIES PREFIX "dll")
-#    TARGET_LINK_LIBRARIES (H5FDdsmFortranTest "ws2_32.lib")    
-  ENDIF (WIN32 AND MSVC)
+  IF (WIN32)
+    IF (MSVC)
+      SET_TARGET_PROPERTIES (H5FDdsm_fortran
+	      PROPERTIES
+		      LINKER_LANGUAGE Fortran
+			  LINK_FLAGS "/SUBSYSTEM:CONSOLE"
+	  )
+    ELSE (MSVC)
+      SET_TARGET_PROPERTIES (H5FDdsm_fortran
+	      PROPERTIES
+		      LINKER_LANGUAGE Fortran
+	  )
+    ENDIF (MSVC)
+  ENDIF (WIN32)
   
   TARGET_LINK_LIBRARIES(H5FDdsmFortranTest
     H5FDdsm_fortran 
