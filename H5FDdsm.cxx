@@ -121,8 +121,6 @@ extern "C" {
 #undef MIN
 #define MIN(X,Y)  ((X)<(Y)?(X):(Y))
 
-#define assert(a) 
-
 //--------------------------------------------------------------------------
 
 // The driver identification number, initialized at runtime
