@@ -69,29 +69,41 @@
 // H5FDdsm
 #include "H5FDdsmConfig.h"
 
-#ifdef H5_HAVE_PARALLEL
+//---------------------------------------------------------------------------
+// Disallow any non parallel build
+//---------------------------------------------------------------------------
+#ifndef H5_HAVE_PARALLEL
+  #pragma Error : The H5FDdsm virtual File Driver for HDF5 can only be compiled against an HDF5 library with parallel IO support
+#endif
 
-  #define H5FD_DSM  (H5FD_dsm_init())
+//---------------------------------------------------------------------------
+// Default init function macro using style of other HDF5 VFDs
+//---------------------------------------------------------------------------
+#define H5FD_DSM (H5FD_dsm_init())
 
-  /* Allocate memory in multiples of this size by default */
-  #define H5FD_DSM_INCREMENT 1000000
+//---------------------------------------------------------------------------
+// Default memory allocation block size
+//---------------------------------------------------------------------------
+#define H5FD_DSM_INCREMENT 1000000
 
-  #ifdef __cplusplus
-    extern "C" {
-  #endif
+#ifdef __cplusplus
+  extern "C" {
+#endif
 
-  H5FDdsm_EXPORT hid_t  H5FD_dsm_init(void);
-  H5FDdsm_EXPORT void   H5FD_dsm_term(void);
-  H5FDdsm_EXPORT herr_t H5FD_dsm_query(const H5FD_t *_file, unsigned long *flags);
+//---------------------------------------------------------------------------
+// Primary interface functions for H5FD dsm driver
+//---------------------------------------------------------------------------
+H5FDdsm_EXPORT hid_t  H5FD_dsm_init(void);
+H5FDdsm_EXPORT void   H5FD_dsm_term(void);
+H5FDdsm_EXPORT herr_t H5FD_dsm_query(const H5FD_t *_file, unsigned long *flags);
 
-  // buffer must be H5FDdsmBuffer object pointer
-  H5FDdsm_EXPORT herr_t H5Pset_fapl_dsm(hid_t fapl_id, size_t increment, void *xdmfDsmBuffer);
-  H5FDdsm_EXPORT herr_t H5Pget_fapl_dsm(hid_t fapl_id, size_t *increment/*out*/, void **xdmfDsmBuffer/*out*/);
+// dsmBuffer must be NULL or a pointer to an H5FDdsmBuffer object
+H5FDdsm_EXPORT herr_t H5Pset_fapl_dsm(hid_t fapl_id, size_t  increment, void  *dsmBuffer);
+H5FDdsm_EXPORT herr_t H5Pget_fapl_dsm(hid_t fapl_id, size_t *increment, void **dsmBuffer);
 
-  #ifdef __cplusplus
+//---------------------------------------------------------------------------
+#ifdef __cplusplus
   }
-  #endif
-
-#endif // H5_HAVE_PARALLEL
+#endif
 
 #endif // H5FD_DSM_H

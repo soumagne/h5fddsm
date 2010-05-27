@@ -107,8 +107,8 @@ extern "C" {
 //
 #ifdef H5_HAVE_PARALLEL
 
-//#define HDF_IO_DEBUG 1
-#ifdef HDF_IO_DEBUG
+//#define H5FD_DSM_DEBUG 1
+#ifdef H5FD_DSM_DEBUG
 #  define PRINT_INFO(x) std::cout << "(" << file->DsmBuffer->GetComm()->GetId() << ") " << x << std::endl;
 #  define PRINT_DSM_INFO(a,x) std::cout << "(" << a << ") " << x << std::endl;
 #else
@@ -121,15 +121,19 @@ extern "C" {
 #undef MIN
 #define MIN(X,Y)  ((X)<(Y)?(X):(Y))
 
+#define assert(a) 
+
 //--------------------------------------------------------------------------
 
 // The driver identification number, initialized at runtime
 static hid_t H5FD_DSM_g = 0;
 
+// @TODO Warning, the use of static objects here is very dangerous!
+//
 // This H5FDdsmComm and this H5FDdsmBuffer are used only when no DsmBuffer
 // is passed to set_fapl_dsm function
-static H5FDdsmComm *dsmComm = NULL;
-static H5FDdsmBuffer *dsmBuffer = NULL;
+static H5FDdsmComm     *dsmCommSingleton = NULL;
+static H5FDdsmBuffer *dsmBufferSingleton = NULL;
 
 //--------------------------------------------------------------------------
 /*
@@ -349,6 +353,7 @@ H5FD_dsm_init_interface(void)
 
   FUNC_LEAVE_NOAPI(H5FD_dsm_init());
 } // H5FD_dsm_init_interface()
+
 /*-------------------------------------------------------------------------
  * Function:  H5FD_dsm_init
  *
@@ -360,8 +365,6 @@ H5FD_dsm_init_interface(void)
  *    Failure:  Negative.
  *
  * Programmer:  Jerry Clarke
- *
- * Modifications:
  *
  *-------------------------------------------------------------------------
  */
@@ -381,6 +384,7 @@ H5FD_dsm_init(void)
 
   FUNC_LEAVE_NOAPI(ret_value);
 }
+
 /*-------------------------------------------------------------------------
  * Function:  H5FD_dsm_term
  *
@@ -390,8 +394,6 @@ H5FD_dsm_init(void)
  *
  * Programmer:  Jerry Clarke
  *
- * Modifications:
- *
  *-------------------------------------------------------------------------
  */
 void
@@ -399,13 +401,13 @@ H5FD_dsm_term(void)
 {
   FUNC_ENTER_NOAPI_NOINIT_NOFUNC(H5FD_dsm_term)
 
-  if (dsmBuffer) {
-    if (dsmBuffer->GetIsConnected()) {
-      dsmBuffer->GetComm()->RemoteCommRecvReady();
-      dsmBuffer->RequestDisconnection();
+  if (dsmBufferSingleton) {
+    if (dsmBufferSingleton->GetIsConnected()) {
+      dsmBufferSingleton->GetComm()->RemoteCommRecvReady();
+      dsmBufferSingleton->RequestDisconnection();
     }
-    delete dsmBuffer;
-    delete dsmComm;
+    delete dsmBufferSingleton;
+    delete dsmCommSingleton;
   }
 
   // Reset VFL ID
@@ -417,7 +419,7 @@ H5FD_dsm_term(void)
 /*-------------------------------------------------------------------------
  * Function:  H5Pset_fapl_dsm
  *
- * Purpose:  Modify the file access property list to use the H5FD_DSM
+ * Purpose:  Modify the file access property list to use the H5FDdsm
  *    driver defined in this source file.  The INCREMENT specifies
  *    how much to grow the memory each time we need more.
  *
@@ -425,12 +427,10 @@ H5FD_dsm_term(void)
  *
  * Programmer:  Jerry Clarke
  *
- * Modifications:
- *
  *-------------------------------------------------------------------------
  */
 herr_t
-H5Pset_fapl_dsm(hid_t fapl_id, size_t increment, void *xdmfDsmBuffer)
+H5Pset_fapl_dsm(hid_t fapl_id, size_t increment, void *dsmBuffer)
 {
   H5FD_dsm_fapl_t fa;
   herr_t ret_value = SUCCEED;
@@ -444,39 +444,46 @@ H5Pset_fapl_dsm(hid_t fapl_id, size_t increment, void *xdmfDsmBuffer)
 
   fa.increment = increment;
 
-  if (xdmfDsmBuffer) {
-    fa.buffer = static_cast <H5FDdsmBuffer*> (xdmfDsmBuffer);
+  if (dsmBuffer) {
+    fa.buffer = static_cast <H5FDdsmBuffer*> (dsmBuffer);
   }
   else {
-    if (dsmBuffer == NULL) {
+    if (dsmBufferSingleton == NULL) {
       H5FDdsmIniFile config;
+      std::string configPath;
 
-      // Parse DSM configuration file
-      std::string configPath = std::string(H5FDdsm_CONFIG_PATH) + std::string("/.dsm_config");
+      const char *dsm_env = getenv("DSM_CONFIG_PATH");
+      if (dsm_env) {
+        configPath = std::string(dsm_env) + std::string("/.dsm_config");
+      }
+      else {
+        // Parse DSM configuration file
+        configPath = std::string(H5FDdsm_CONFIG_PATH) + std::string("/.dsm_config");
+      }
 
       std::string mode = config.GetValue("DSM_COMM_SYSTEM", "Comm", configPath);
       std::string host = config.GetValue("DSM_BASE_HOST", "Comm", configPath);
       std::string port = config.GetValue("DSM_BASE_PORT", "Comm", configPath);
 
       if (mode == "socket") {
-        dsmComm = new H5FDdsmCommSocket();
-        dynamic_cast<H5FDdsmCommSocket*>(dsmComm)->DupComm(MPI_COMM_WORLD);
-        dynamic_cast<H5FDdsmCommSocket*>(dsmComm)->SetDsmMasterHostName(host.c_str());
-        dynamic_cast<H5FDdsmCommSocket*>(dsmComm)->SetDsmMasterPort(atoi(port.c_str()));
+        dsmCommSingleton = new H5FDdsmCommSocket();
+        dynamic_cast<H5FDdsmCommSocket*>(dsmCommSingleton)->DupComm(MPI_COMM_WORLD);
+        dynamic_cast<H5FDdsmCommSocket*>(dsmCommSingleton)->SetDsmMasterHostName(host.c_str());
+        dynamic_cast<H5FDdsmCommSocket*>(dsmCommSingleton)->SetDsmMasterPort(atoi(port.c_str()));
       } else if (mode == "mpi") {
-        dsmComm = new H5FDdsmCommMpi();
-        dynamic_cast<H5FDdsmCommMpi*>(dsmComm)->DupComm(MPI_COMM_WORLD);
-        dynamic_cast<H5FDdsmCommMpi*>(dsmComm)->SetDsmMasterHostName(host.c_str());
+        dsmCommSingleton = new H5FDdsmCommMpi();
+        dynamic_cast<H5FDdsmCommMpi*>(dsmCommSingleton)->DupComm(MPI_COMM_WORLD);
+        dynamic_cast<H5FDdsmCommMpi*>(dsmCommSingleton)->SetDsmMasterHostName(host.c_str());
       }
-      dsmComm->Init();
+      dsmCommSingleton->Init();
 
       // Create DSM buffer object
-      dsmBuffer = new H5FDdsmBuffer();
-      dsmBuffer->SetComm(dsmComm);
-      dsmBuffer->SetServiceThreadUseCopy(0);
-      dsmBuffer->SetIsServer(0);
+      dsmBufferSingleton = new H5FDdsmBuffer();
+      dsmBufferSingleton->SetComm(dsmCommSingleton);
+      dsmBufferSingleton->SetServiceThreadUseCopy(0);
+      dsmBufferSingleton->SetIsServer(0);
     }
-    fa.buffer = dsmBuffer;
+    fa.buffer = dsmBufferSingleton;
     //    HGOTO_ERROR(H5E_VFL, H5E_BADVALUE, FAIL, "No DSM buffer set");
   }
 
@@ -484,6 +491,7 @@ H5Pset_fapl_dsm(hid_t fapl_id, size_t increment, void *xdmfDsmBuffer)
 
   done: FUNC_LEAVE_API(ret_value)
 }
+
 /*-------------------------------------------------------------------------
  * Function:  H5Pget_fapl_dsm
  *
@@ -495,12 +503,10 @@ H5Pset_fapl_dsm(hid_t fapl_id, size_t increment, void *xdmfDsmBuffer)
  *
  * Programmer:  Jerry Clarke
  *
- * Modifications:
- *
  *-------------------------------------------------------------------------
  */
 herr_t
-H5Pget_fapl_dsm(hid_t fapl_id, size_t *increment/*out*/, void **xdmfDsmBuffer /* out */)
+H5Pget_fapl_dsm(hid_t fapl_id, size_t *increment/*out*/, void **dsmBuffer /* out */)
 {
   H5FD_dsm_fapl_t *fa;
   H5P_genplist_t *plist; // Property list pointer
@@ -517,10 +523,11 @@ H5Pget_fapl_dsm(hid_t fapl_id, size_t *increment/*out*/, void **xdmfDsmBuffer /*
     HGOTO_ERROR(H5E_PLIST, H5E_BADVALUE, FAIL, "bad VFL driver info");
 
   if (increment) *increment = fa->increment;
-  if (xdmfDsmBuffer) *xdmfDsmBuffer = fa->buffer;
+  if (dsmBuffer) *dsmBuffer = fa->buffer;
 
   done: FUNC_LEAVE_API(ret_value)
 }
+
 /*-------------------------------------------------------------------------
  * Function:  H5FD_dsm_fapl_get
  *
@@ -531,8 +538,6 @@ H5Pget_fapl_dsm(hid_t fapl_id, size_t *increment/*out*/, void **xdmfDsmBuffer /*
  *    Failure:  NULL
  *
  * Programmer:  Jerry Clarke
- *
- * Modifications:
  *
  *-------------------------------------------------------------------------
  */
@@ -558,6 +563,7 @@ H5FD_dsm_fapl_get(H5FD_t *_file)
 
   done: FUNC_LEAVE_NOAPI(ret_value)
 }
+
 /*-------------------------------------------------------------------------
  * Function:  H5FD_dsm_open
  *
@@ -570,8 +576,6 @@ H5FD_dsm_fapl_get(H5FD_t *_file)
  *    Failure:  NULL
  *
  * Programmer:  Jerry Clarke
- *
- * Modifications:
  *
  *-------------------------------------------------------------------------
  */
@@ -655,7 +659,7 @@ H5FD_dsm_open(const char *name, unsigned UNUSED flags, hid_t fapl_id, haddr_t ma
     } else { // try to connect to see if the DSM is handled by someone else
 
       if (!file->DsmBuffer->GetIsConnected()) {
-#ifdef HDF_IO_DEBUG
+#ifdef H5FD_DSM_DEBUG
         file->DsmBuffer->DebugOn();
         file->DsmBuffer->GetComm()->DebugOn();
         if (file->DsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_SOCKET) {
@@ -734,6 +738,7 @@ H5FD_dsm_open(const char *name, unsigned UNUSED flags, hid_t fapl_id, haddr_t ma
 
   done: FUNC_LEAVE_NOAPI(ret_value)
 }
+
 /*-------------------------------------------------------------------------
  * Function:  H5FD_dsm_close
  *
@@ -744,8 +749,6 @@ H5FD_dsm_open(const char *name, unsigned UNUSED flags, hid_t fapl_id, haddr_t ma
  *    Failure:  -1
  *
  * Programmer:  Jerry Clarke
- *
- * Modifications:
  *
  *-------------------------------------------------------------------------
  */
@@ -796,6 +799,7 @@ H5FD_dsm_close(H5FD_t *_file)
   PRINT_DSM_INFO("Undef", "File closed");
   done: FUNC_LEAVE_NOAPI(ret_value)
 }
+
 /*-------------------------------------------------------------------------
  * Function:  H5FD_dsm_cmp
  *
@@ -810,8 +814,6 @@ H5FD_dsm_close(H5FD_t *_file)
  *        caller).
  *
  * Programmer:  Jerry Clarke
- *
- * Modifications:
  *
  *-------------------------------------------------------------------------
  */
@@ -841,6 +843,7 @@ H5FD_dsm_cmp(const H5FD_t *_f1, const H5FD_t *_f2)
 
   done: FUNC_LEAVE_NOAPI(ret_value)
 }
+
 /*-------------------------------------------------------------------------
  * Function:  H5FD_dsm_get_eoa
  *
@@ -853,8 +856,6 @@ H5FD_dsm_cmp(const H5FD_t *_f1, const H5FD_t *_f2)
  *    Failure:  HADDR_UNDEF
  *
  * Programmer:  Jerry Clarke
- *
- * Modifications:
  *
  *-------------------------------------------------------------------------
  */
@@ -871,6 +872,7 @@ H5FD_dsm_get_eoa(const H5FD_t *_file, H5FD_mem_t type)
 
   FUNC_LEAVE_NOAPI(ret_value)
 }
+
 /*-------------------------------------------------------------------------
  * Function:  H5FD_dsm_set_eoa
  *
@@ -883,8 +885,6 @@ H5FD_dsm_get_eoa(const H5FD_t *_file, H5FD_mem_t type)
  *    Failure:  -1
  *
  * Programmer:  Jerry Clarke
- *
- * Modifications:
  *
  *-------------------------------------------------------------------------
  */
@@ -909,6 +909,7 @@ H5FD_dsm_set_eoa(H5FD_t *_file, H5FD_mem_t type, haddr_t addr)
 
   done: FUNC_LEAVE_NOAPI(ret_value)
 }
+
 /*-------------------------------------------------------------------------
  * Function:  H5FD_dsm_get_eof
  *
@@ -923,8 +924,6 @@ H5FD_dsm_set_eoa(H5FD_t *_file, H5FD_mem_t type, haddr_t addr)
  *    Failure:  HADDR_UNDEF
  *
  * Programmer:  Jerry Clarke
- *
- * Modifications:
  *
  *-------------------------------------------------------------------------
  */
@@ -944,6 +943,7 @@ H5FD_dsm_get_eof(const H5FD_t *_file)
 
   FUNC_LEAVE_NOAPI(ret_value)
 }
+
 /*-------------------------------------------------------------------------
  * Function:  H5FD_dsm_read
  *
@@ -957,8 +957,6 @@ H5FD_dsm_get_eof(const H5FD_t *_file)
  *    Failure:  -1, Contents of buffer BUF are undefined.
  *
  * Programmer:  Jerry Clarke
- *
- * Modifications:
  *
  *-------------------------------------------------------------------------
  */
@@ -1014,6 +1012,7 @@ H5FD_dsm_read(H5FD_t *_file, H5FD_mem_t UNUSED type, hid_t UNUSED dxpl_id,
 
   done: FUNC_LEAVE_NOAPI(ret_value)
 }
+
 /*-------------------------------------------------------------------------
  * Function:  H5FD_dsm_write
  *
@@ -1026,8 +1025,6 @@ H5FD_dsm_read(H5FD_t *_file, H5FD_mem_t UNUSED type, hid_t UNUSED dxpl_id,
  *    Failure:  -1
  *
  * Programmer:  Jerry Clarke
- *
- * Modifications:
  *
  *-------------------------------------------------------------------------
  */
@@ -1085,6 +1082,7 @@ H5FD_dsm_write(H5FD_t *_file, H5FD_mem_t UNUSED type, hid_t UNUSED dxpl_id,
 
   done: FUNC_LEAVE_NOAPI(ret_value)
 }
+
 /*-------------------------------------------------------------------------
  * Function:  H5FD_dsm_flush
  *
@@ -1095,14 +1093,10 @@ H5FD_dsm_write(H5FD_t *_file, H5FD_mem_t UNUSED type, hid_t UNUSED dxpl_id,
  *
  *    Failure:  -1
  *
- * Programmer:
- *
- *
- * Modifications:
+ * Programmer: JB : Unfinished (potentially used to signal 'finished')
  *
  *-------------------------------------------------------------------------
  */
-/* ARGSUSED */
 static herr_t
 H5FD_dsm_flush(H5FD_t *_file, hid_t UNUSED dxpl_id, unsigned UNUSED closing)
 {
@@ -1138,6 +1132,7 @@ H5FD_dsm_flush(H5FD_t *_file, hid_t UNUSED dxpl_id, unsigned UNUSED closing)
 
   /*done: */FUNC_LEAVE_NOAPI(ret_value)
 }
+
 /*-------------------------------------------------------------------------
  * Function:  H5FD_dsm_mpi_rank
  *
@@ -1146,10 +1141,7 @@ H5FD_dsm_flush(H5FD_t *_file, hid_t UNUSED dxpl_id, unsigned UNUSED closing)
  * Return:  Success: non-negative
  *    Failure: negative
  *
- * Programmer:  Quincey Koziol
- *              Thursday, July 11, 2002
- *
- * Modifications:
+ * Programmer:	JB : After H5FDmpio : By Quincey Koziol
  *
  *-------------------------------------------------------------------------
  */
@@ -1169,6 +1161,7 @@ H5FD_dsm_mpi_rank(const H5FD_t *_file)
 
   FUNC_LEAVE_NOAPI(ret_value)
 } // end H5FD_dsm_mpi_rank()
+
 /*-------------------------------------------------------------------------
  * Function:  H5FD_dsm_mpi_size
  *
@@ -1177,10 +1170,7 @@ H5FD_dsm_mpi_rank(const H5FD_t *_file)
  * Return:  Success: non-negative
  *    Failure: negative
  *
- * Programmer:  Quincey Koziol
- *              Thursday, July 11, 2002
- *
- * Modifications:
+ * Programmer:	JB : After H5FDmpio : By Quincey Koziol
  *
  *-------------------------------------------------------------------------
  */
@@ -1200,6 +1190,7 @@ H5FD_dsm_mpi_size(const H5FD_t *_file)
 
   FUNC_LEAVE_NOAPI(ret_value)
 } // end H5FD_dsm_mpi_size()
+
 /*-------------------------------------------------------------------------
  * Function:  H5FD_dsm_communicator
  *
@@ -1209,10 +1200,7 @@ H5FD_dsm_mpi_size(const H5FD_t *_file)
  *
  *    Failure:  NULL
  *
- * Programmer:  Quincey Koziol
- *              Thursday, July 11, 2002
- *
- * Modifications:
+ * Programmer:	JB : After H5FDmpio : By Quincey Koziol
  *
  *-------------------------------------------------------------------------
  */
@@ -1239,6 +1227,7 @@ H5FD_dsm_communicator(const H5FD_t *_file)
 
   FUNC_LEAVE_NOAPI(ret_value)
 } // end H5FD_mpi_posix_communicator()
+
 /*-------------------------------------------------------------------------
  * Function:	H5FD_dsm_query
  *
@@ -1250,9 +1239,6 @@ H5FD_dsm_communicator(const H5FD_t *_file)
  *		Failure:	negative
  *
  * Programmer:	JB : After H5FDmpio : By Quincey Koziol
- *              Friday, August 25, 2000
- *
- * Modifications:
  *
  *-------------------------------------------------------------------------
  */
