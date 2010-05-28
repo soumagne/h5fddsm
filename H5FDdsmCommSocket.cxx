@@ -80,7 +80,7 @@ H5FDdsmCommSocket::Init()
   if (this->Id == 0) {
     this->DsmMasterSocket = new H5FDdsmSocket();
     if (this->DsmMasterSocket->Create() == H5FD_DSM_FAIL) {
-      H5FDdsmErrorMessage("Create DsmMasterSocket failed");
+      H5FDdsmError("Create DsmMasterSocket failed");
       return(H5FD_DSM_FAIL);
     }
   }
@@ -119,7 +119,7 @@ H5FDdsmCommSocket::Receive(H5FDdsmMsg *Msg)
   if (Msg->Source >= 0) source = Msg->Source;
 
   if (this->CommChannel == H5FD_DSM_COMM_CHANNEL_REMOTE) {
-    H5FDdsmDebug("(" << this->Id << ") Receiving from remote DSM " << Msg->Length << " bytes from " << source << " Tag = " << Msg->Tag);
+    H5FDdsmDebug("(" << this->Id << ") Receiving from remote DSM " << Msg->Length << " bytes from " << source << " Tag = " << H5FDdsmTagToString(Msg->Tag));
     if (source >= 0) {
       this->InterComm[source]->Receive(Msg->Data, Msg->Length);
     } else {
@@ -137,12 +137,12 @@ H5FDdsmCommSocket::Receive(H5FDdsmMsg *Msg)
     }
   }
   else {
-    H5FDdsmDebug("(" << this->Id << ") Receiving " << Msg->Length << " bytes from " << source << " Tag = " << Msg->Tag);
+    H5FDdsmDebug("(" << this->Id << ") Receiving " << Msg->Length << " bytes from " << source << " Tag = " << H5FDdsmTagToString(Msg->Tag));
     status = MPI_Recv(Msg->Data, Msg->Length, MPI_UNSIGNED_CHAR, source, Msg->Tag, this->Comm, &SendRecvStatus);
 
     if (status != MPI_SUCCESS) {
-      H5FDdsmErrorMessage("Id = " << this->Id << " MPI_Recv failed to receive " << Msg->Length << " Bytes from " << Msg->Source);
-      H5FDdsmErrorMessage("MPI Error Code = " << SendRecvStatus.MPI_ERROR);
+      H5FDdsmError("Id = " << this->Id << " MPI_Recv failed to receive " << Msg->Length << " Bytes from " << Msg->Source);
+      H5FDdsmError("MPI Error Code = " << SendRecvStatus.MPI_ERROR);
       return(H5FD_DSM_FAIL);
     }
     status = MPI_Get_count(&SendRecvStatus, MPI_UNSIGNED_CHAR, &MessageLength);
@@ -151,7 +151,7 @@ H5FDdsmCommSocket::Receive(H5FDdsmMsg *Msg)
     Msg->SetSource(SendRecvStatus.MPI_SOURCE);
     Msg->SetLength(MessageLength);
     if (status != MPI_SUCCESS) {
-      H5FDdsmErrorMessage("MPI_Get_count failed ");
+      H5FDdsmError("MPI_Get_count failed ");
       return(H5FD_DSM_FAIL);
     }
   }
@@ -168,14 +168,14 @@ H5FDdsmCommSocket::Send(H5FDdsmMsg *Msg)
   H5FDdsmFloat64 startTime = MPI_Wtime();
 
   if (this->CommChannel == H5FD_DSM_COMM_CHANNEL_REMOTE) {
-    H5FDdsmDebug("(" << this->Id << ") Sending to remote DSM " << Msg->Length << " bytes to " << Msg->Dest << " Tag = " << Msg->Tag);
+    H5FDdsmDebug("(" << this->Id << ") Sending to remote DSM " << Msg->Length << " bytes to " << Msg->Dest << " Tag = " << H5FDdsmTagToString(Msg->Tag));
     this->InterComm[Msg->Dest]->Send(Msg->Data, Msg->Length);
   }
   else {
-    H5FDdsmDebug("(" << this->Id << ") Sending " << Msg->Length << " bytes to " << Msg->Dest << " Tag = " << Msg->Tag);
+    H5FDdsmDebug("(" << this->Id << ") Sending " << Msg->Length << " bytes to " << Msg->Dest << " Tag = " << H5FDdsmTagToString(Msg->Tag));
     status = MPI_Send(Msg->Data, Msg->Length, MPI_UNSIGNED_CHAR, Msg->Dest, Msg->Tag, this->Comm);
     if (status != MPI_SUCCESS) {
-      H5FDdsmErrorMessage("Id = " << this->Id << " MPI_Send failed to send " << Msg->Length << " Bytes to " << Msg->Dest);
+      H5FDdsmError("Id = " << this->Id << " MPI_Send failed to send " << Msg->Length << " Bytes to " << Msg->Dest);
       return(H5FD_DSM_FAIL);
     }
   }
@@ -214,7 +214,7 @@ H5FDdsmCommSocket::OpenPort()
     if (this->DsmMasterPort) port = this->DsmMasterPort;
     // Take this port as default for now and let Bind decide about hostname
     if (this->DsmMasterSocket->Bind(port, this->DsmMasterHostName) == H5FD_DSM_FAIL) {
-      H5FDdsmErrorMessage("Bind DsmMasterSocket failed");
+      H5FDdsmError("Bind DsmMasterSocket failed");
       return(H5FD_DSM_FAIL);
     }
     this->DsmMasterPort = this->DsmMasterSocket->GetPort();
@@ -234,7 +234,7 @@ H5FDdsmCommSocket::ClosePort()
     // close MasterSocket
     this->DsmMasterSocket->Close();
     if (this->DsmMasterSocket->Create() == H5FD_DSM_FAIL) {
-      H5FDdsmErrorMessage("Create DsmMasterSocket failed");
+      H5FDdsmError("Create DsmMasterSocket failed");
       return(H5FD_DSM_FAIL);
     }
   }
@@ -253,19 +253,19 @@ H5FDdsmCommSocket::RemoteCommAccept()
 
   if (this->Id == 0) {
     if (this->DsmMasterSocket->Accept() == H5FD_DSM_FAIL) {
-      H5FDdsmErrorMessage("Accept socket failed");
+      H5FDdsmError("Accept socket failed");
       return(H5FD_DSM_FAIL);
     }
     this->DsmMasterSocket->Receive(&this->InterSize, sizeof(H5FDdsmInt32));
     this->DsmMasterSocket->Send(&this->TotalSize, sizeof(H5FDdsmInt32));
   }
   if (MPI_Bcast(&this->InterSize, sizeof(H5FDdsmInt32), MPI_UNSIGNED_CHAR, 0, this->Comm) != MPI_SUCCESS) {
-    H5FDdsmErrorMessage("Id = " << this->Id << " MPI_Bcast of InterSize failed");
+    H5FDdsmError("Id = " << this->Id << " MPI_Bcast of InterSize failed");
     return(H5FD_DSM_FAIL);
   }
 
   if (this->InterCommServerConnect() != H5FD_DSM_SUCCESS) {
-    H5FDdsmErrorMessage("Id = " << this->Id << " Error in InterCommServerConnect");
+    H5FDdsmError("Id = " << this->Id << " Error in InterCommServerConnect");
     return(H5FD_DSM_FAIL);
   }
 
@@ -281,19 +281,19 @@ H5FDdsmCommSocket::RemoteCommConnect()
 
   if (this->Id == 0) {
     if (this->DsmMasterSocket->Connect(this->DsmMasterHostName, this->DsmMasterPort) == H5FD_DSM_FAIL) {
-      H5FDdsmErrorMessage("Socket connection failed");
+      H5FDdsmError("Socket connection failed");
       return(H5FD_DSM_FAIL);
     }
     this->DsmMasterSocket->Send(&this->TotalSize, sizeof(H5FDdsmInt32));
     this->DsmMasterSocket->Receive(&this->InterSize, sizeof(H5FDdsmInt32));
   }
   if (MPI_Bcast(&this->InterSize, sizeof(H5FDdsmInt32), MPI_UNSIGNED_CHAR, 0, this->Comm) != MPI_SUCCESS){
-    H5FDdsmErrorMessage("Id = " << this->Id << " MPI_Bcast of InterSize failed");
+    H5FDdsmError("Id = " << this->Id << " MPI_Bcast of InterSize failed");
     return(H5FD_DSM_FAIL);
   }
 
   if (this->InterCommClientConnect() != H5FD_DSM_SUCCESS) {
-    H5FDdsmErrorMessage("Id = " << this->Id << " Error in InterCommClientConnect");
+    H5FDdsmError("Id = " << this->Id << " Error in InterCommClientConnect");
     return(H5FD_DSM_FAIL);
   }
 
@@ -357,7 +357,7 @@ H5FDdsmCommSocket::RemoteCommRecvInfo(int *length, Int64 *totalLength,
     H5FDdsmDebug("Recv DSM length: " << *length);
   }
   if (MPI_Bcast(length, sizeof(int), MPI_UNSIGNED_CHAR, 0, this->Comm) != MPI_SUCCESS) {
-    H5FDdsmErrorMessage("Id = " << this->Id << " MPI_Bcast of length failed");
+    H5FDdsmError("Id = " << this->Id << " MPI_Bcast of length failed");
     return(H5FD_DSM_FAIL);
   }
 
@@ -366,7 +366,7 @@ H5FDdsmCommSocket::RemoteCommRecvInfo(int *length, Int64 *totalLength,
     H5FDdsmDebug("Recv DSM totalLength: " << *totalLength);
   }
   if (MPI_Bcast(totalLength, sizeof(Int64), MPI_UNSIGNED_CHAR, 0, this->Comm) != MPI_SUCCESS) {
-    H5FDdsmErrorMessage("Id = " << this->Id << " MPI_Bcast of totalLength failed");
+    H5FDdsmError("Id = " << this->Id << " MPI_Bcast of totalLength failed");
     return(H5FD_DSM_FAIL);
   }
 
@@ -375,7 +375,7 @@ H5FDdsmCommSocket::RemoteCommRecvInfo(int *length, Int64 *totalLength,
     H5FDdsmDebug("Recv DSM startServerId: " << *startServerId);
   }
   if (MPI_Bcast(startServerId, sizeof(H5FDdsmInt32), MPI_UNSIGNED_CHAR, 0, this->Comm) != MPI_SUCCESS) {
-    H5FDdsmErrorMessage("Id = " << this->Id << " MPI_Bcast of startServerId failed");
+    H5FDdsmError("Id = " << this->Id << " MPI_Bcast of startServerId failed");
     return(H5FD_DSM_FAIL);
   }
 
@@ -384,7 +384,7 @@ H5FDdsmCommSocket::RemoteCommRecvInfo(int *length, Int64 *totalLength,
     H5FDdsmDebug("Recv DSM endServerId: " << *endServerId);
   }
   if (MPI_Bcast(endServerId, sizeof(H5FDdsmInt32), MPI_UNSIGNED_CHAR, 0, this->Comm) != MPI_SUCCESS) {
-    H5FDdsmErrorMessage("Id = " << this->Id << " MPI_Bcast of endServerId failed");
+    H5FDdsmError("Id = " << this->Id << " MPI_Bcast of endServerId failed");
     return(H5FD_DSM_FAIL);
   }
   H5FDdsmDebug("Recv DSM Info Completed");
@@ -435,7 +435,7 @@ H5FDdsmCommSocket::RemoteCommSendXML(H5FDdsmString file, H5FDdsmInt32 dest)
     }
     else {
       if (MPI_Send(file, length, MPI_CHAR, dest, H5FD_DSM_XML_TAG, this->Comm) != MPI_SUCCESS){
-        H5FDdsmErrorMessage("Id = " << this->Id << " MPI_Send of XML file failed");
+        H5FDdsmError("Id = " << this->Id << " MPI_Send of XML file failed");
         return(H5FD_DSM_FAIL);
       }
     }
@@ -462,7 +462,7 @@ H5FDdsmCommSocket::RemoteCommRecvXML(H5FDdsmString *file)
     MPI_Get_count(&status, MPI_CHAR, &length);
     *file = new char[length];
     if (MPI_Recv(*file, length, MPI_CHAR, 0, H5FD_DSM_XML_TAG, this->Comm, &status) != MPI_SUCCESS){
-      H5FDdsmErrorMessage("Id = " << this->Id << " MPI_Recv of XML file failed");
+      H5FDdsmError("Id = " << this->Id << " MPI_Recv of XML file failed");
       return(H5FD_DSM_FAIL);
     }
   }

@@ -74,11 +74,11 @@ H5FDdsmInt32
 H5FDdsmComm::Receive(H5FDdsmMsg *Msg){
     if(Msg->Tag <= 0) Msg->Tag = H5FD_DSM_DEFAULT_TAG;
     if(Msg->Length <= 0 ){
-        H5FDdsmErrorMessage("Cannot Receive Message of Length = " << Msg->Length);
+        H5FDdsmError("Cannot Receive Message of Length = " << Msg->Length);
         return(H5FD_DSM_FAIL);
     }
     if(Msg->Data <= 0 ){
-        H5FDdsmErrorMessage("Cannot Receive Message into Data Buffer = " << Msg->Length);
+        H5FDdsmError("Cannot Receive Message into Data Buffer = " << Msg->Length);
         return(H5FD_DSM_FAIL);
     }
     return(H5FD_DSM_SUCCESS);
@@ -88,11 +88,11 @@ H5FDdsmInt32
 H5FDdsmComm::Send(H5FDdsmMsg *Msg){
     if(Msg->Tag <= 0) Msg->Tag = H5FD_DSM_DEFAULT_TAG;
     if(Msg->Length <= 0 ){
-        H5FDdsmErrorMessage("Cannot Send Message of Length = " << Msg->Length);
+        H5FDdsmError("Cannot Send Message of Length = " << Msg->Length);
         return(H5FD_DSM_FAIL);
     }
     if(Msg->Data <= 0 ){
-        H5FDdsmErrorMessage("Cannot Send Message from Data Buffer = " << Msg->Length);
+        H5FDdsmError("Cannot Send Message from Data Buffer = " << Msg->Length);
         return(H5FD_DSM_FAIL);
     }
     return(H5FD_DSM_SUCCESS);

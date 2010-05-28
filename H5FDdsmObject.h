@@ -105,8 +105,8 @@ typedef unsigned char H5FDdsmChar;
 #endif
 
 #if defined(H5FD_DSM_USE_PTHREADS) || defined(H5FD_DSM_HP_PTHREADS)
-#include <pthread.h> // Needed for PTHREAD implementation of mutex
-typedef pthread_mutex_t H5FDdsmMutexType;
+  #include <pthread.h> // Needed for PTHREAD implementation of mutex
+  typedef pthread_mutex_t H5FDdsmMutexType;
 #endif
  
 #ifdef H5FD_DSM_USE_WIN32_THREADS
@@ -140,22 +140,67 @@ public:
 };
 
 //------------------------------------------------------------------------------
-//------------------------------------------------------------------------------
+// Error and Debug message Macros
 //------------------------------------------------------------------------------
 #define H5FDDebugIsOn ( this->Debug || H5FDdsmObject::GetGlobalDebug() )
 #define H5FDDebugIsAbove(a)  ( ( this->Debug >= (a) ) || ( H5FDdsmObject::GetGlobalDebug() >= (a))) 
 
+#if 0
 #define H5FDdsmDebug(x) \
 { if (H5FDDebugIsOn) { \
-  SimpleMutexLock::GlobalLock.Lock();   \
-  std::cout << "XDMF Debug : " << /*__FILE__ << " line " << __LINE__ << */ x << std::endl; \
-  SimpleMutexLock::GlobalLock.Unlock(); \
+    SimpleMutexLock::GlobalLock.Lock();   \
+    std::cout << "H5FD_DSM Debug : " /*__FILE__ << " line " << __LINE__ << */ x << std::endl; \
+    SimpleMutexLock::GlobalLock.Unlock(); \
   } \
 }
 
-#define H5FDdsmErrorMessage(x) \
-  std::cout << "XDMF Error in " << __FILE__ << " line " << __LINE__ << " ("<< x << ")" << "\n";
+#define H5FDdsmExternalDebug(x) \
+{ if (H5FDdsmObject::GetGlobalDebug()) { \
+    SimpleMutexLock::GlobalLock.Lock();   \
+    std::cout << "H5FD_ext Debug : " /*__FILE__ << " line " << __LINE__ << */ x << std::endl; \
+    SimpleMutexLock::GlobalLock.Unlock(); \
+  } \
+}
 
+#define H5FDdsmError(x) \
+{ SimpleMutexLock::GlobalLock.Lock();   \
+  std::cout << "H5FD_DSM Error : " /*__FILE__ << " line " << __LINE__ << */ x << std::endl; \
+  SimpleMutexLock::GlobalLock.Unlock(); \
+} \
+
+#define H5FDdsmExternalError(x) \
+{ SimpleMutexLock::GlobalLock.Lock();   \
+  std::cout << "H5FD_DSM Error : " /*__FILE__ << " line " << __LINE__ << */ x << std::endl; \
+  SimpleMutexLock::GlobalLock.Unlock(); \
+}
+
+#else
+
+#define H5FDdsmDebug(x) \
+{ if (H5FDDebugIsOn) { \
+    std::cout << "H5FD_DSM Debug : " /*__FILE__ << " line " << __LINE__ << */ x << std::endl; \
+  } \
+}
+
+#define H5FDdsmExternalDebug(x) \
+{ \
+  if (H5FDdsmObject::GetGlobalDebug()) { \
+    std::cout << "H5FD_ext Debug : " /*__FILE__ << " line " << __LINE__ << */ x << std::endl; \
+  } \
+}
+
+#define H5FDdsmError(x) \
+{ \
+  std::cout << "H5FD_DSM Error : " /*__FILE__ << " line " << __LINE__ << */ x << std::endl; \
+} \
+
+#define H5FDdsmExternalError(x) \
+{ std::cout << "H5FD_DSM Error : " /*__FILE__ << " line " << __LINE__ << */ x << std::endl; \
+}
+#endif
+//------------------------------------------------------------------------------
+// Set/Get Macros
+//------------------------------------------------------------------------------
 #define H5FDdsmSetValueMacro(var,type) \
 H5FDdsmInt32 Set##var (type _arg) \
   { \
@@ -186,7 +231,6 @@ H5FDdsmInt32 Set##var ( Int64 Index, type _arg) \
   return ( H5FD_DSM_SUCCESS ); \
   }
 
-
 #define H5FDdsmGetValueMacro(var,type) \
 type Get##var () \
   { \
@@ -199,7 +243,9 @@ type Get##var (Int64 Index) \
   return ( this->var[ Index ]  ); \
   }
 
-//! Base Class for Objects provides debug flags
+//------------------------------------------------------------------------------
+// Base Class for H5FDdsm Objects : provides debug flags
+//------------------------------------------------------------------------------
 class H5FDdsm_EXPORT H5FDdsmObject {
   public:
      H5FDdsmObject();
@@ -208,8 +254,8 @@ class H5FDdsm_EXPORT H5FDdsmObject {
     H5FDdsmSetValueMacro(Debug, H5FDdsmBoolean);
     H5FDdsmGetValueMacro(Debug, H5FDdsmBoolean);
 
-    H5FDdsmBoolean GetGlobalDebug();
-    void SetGlobalDebug( H5FDdsmBoolean Value );
+    static H5FDdsmBoolean GetGlobalDebug();
+    static void SetGlobalDebug( H5FDdsmBoolean Value );
 
     void DebugOn()  { H5FDdsmObject::SetDebug( 1 ) ; };
     void DebugOff() { H5FDdsmObject::SetDebug( 0 ) ; };

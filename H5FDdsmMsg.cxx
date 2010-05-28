@@ -51,10 +51,27 @@
 /*******************************************************************/
 #include "H5FDdsmMsg.h"
 
-
 H5FDdsmMsg::H5FDdsmMsg() {
     this->Tag = H5FD_DSM_DEFAULT_TAG;
 }
 
 H5FDdsmMsg::~H5FDdsmMsg() {
 }
+
+//------------------------------------------------------------------------------
+// Utility function to return a string for a given tag
+//------------------------------------------------------------------------------
+#define H5FD_DSM_TAG_MACRO(def, value) \
+  if (value==def) return #def;
+
+const char *H5FDdsmTagToString(int tag) {
+  H5FD_DSM_TAG_MACRO(H5FD_DSM_DEFAULT_TAG, tag)
+  H5FD_DSM_TAG_MACRO(H5FD_DSM_COMMAND_TAG, tag)
+  H5FD_DSM_TAG_MACRO(H5FD_DSM_RESPONSE_TAG, tag)
+  H5FD_DSM_TAG_MACRO(H5FD_DSM_PUT_DATA_TAG, tag)
+  H5FD_DSM_TAG_MACRO(H5FD_DSM_GET_DATA_TAG, tag)
+  H5FD_DSM_TAG_MACRO(H5FD_DSM_EXCHANGE_TAG, tag)
+  H5FD_DSM_TAG_MACRO(H5FD_DSM_XML_TAG, tag)
+  return "TAG UNDEFINED/UNRECOGNIZED";
+};
+

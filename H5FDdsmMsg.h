@@ -59,6 +59,9 @@
 /*!
 */
 
+// If you add a new Tag here, it must also be added to H5FDdsmMsg.cxx
+// So that debug Tag->String conversion functions correctly
+
 #define H5FD_DSM_DEFAULT_TAG    0x80 // 128
 #define H5FD_DSM_COMMAND_TAG    0x81 // 129
 #define H5FD_DSM_RESPONSE_TAG   0x82 // 130
@@ -69,26 +72,28 @@
 
 #define H5FD_DSM_ANY_SOURCE     -1
 
+H5FDdsm_EXPORT const char *H5FDdsmTagToString(int tag);
+
 class H5FDdsm_EXPORT H5FDdsmMsg : public H5FDdsmObject {
 
-    public :
-        H5FDdsmMsg();
-        ~H5FDdsmMsg();
+  public :
+     H5FDdsmMsg();
+    ~H5FDdsmMsg();
 
-        H5FDdsmSetValueMacro(Source, H5FDdsmInt32);
-        H5FDdsmGetValueMacro(Source, H5FDdsmInt32);
+    H5FDdsmSetValueMacro(Source, H5FDdsmInt32);
+    H5FDdsmGetValueMacro(Source, H5FDdsmInt32);
 
-        H5FDdsmSetValueMacro(Dest, H5FDdsmInt32);
-        H5FDdsmGetValueMacro(Dest, H5FDdsmInt32);
+    H5FDdsmSetValueMacro(Dest, H5FDdsmInt32);
+    H5FDdsmGetValueMacro(Dest, H5FDdsmInt32);
 
-        H5FDdsmSetValueMacro(Tag, H5FDdsmInt32);
-        H5FDdsmGetValueMacro(Tag, H5FDdsmInt32);
+    H5FDdsmSetValueMacro(Tag, H5FDdsmInt32);
+    H5FDdsmGetValueMacro(Tag, H5FDdsmInt32);
 
-        H5FDdsmSetValueMacro(Length, int);
-        H5FDdsmGetValueMacro(Length, int);
+    H5FDdsmSetValueMacro(Length, int);
+    H5FDdsmGetValueMacro(Length, int);
 
-        H5FDdsmSetValueMacro(Data, void *);
-        H5FDdsmGetValueMacro(Data, void *);
+    H5FDdsmSetValueMacro(Data, void *);
+    H5FDdsmGetValueMacro(Data, void *);
 
     H5FDdsmInt32   Source;
     H5FDdsmInt32   Dest;

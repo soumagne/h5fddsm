@@ -190,7 +190,7 @@ int H5FDdsmSocket::Bind(int port, const char *hostName)
       }
 
       if (getifaddrs(&ifa_list) < 0) {
-        H5FDdsmErrorMessage("getifaddrs() failed, "
+        H5FDdsmError("getifaddrs() failed, "
             "Unable to obtain the list of all interface addresses.");
         return -1;
       }
@@ -463,7 +463,7 @@ int H5FDdsmSocket::Send(const void* data, int length)
       n = send(this->ClientSocketDescriptor, buffer+total, length-total, flags);
     }
     if (n < 0) {
-      H5FDdsmErrorMessage("Socket Error: Send failed.");
+      H5FDdsmError("Socket Error: Send failed.");
       return -1;
     }
     total += n;
@@ -505,7 +505,7 @@ int H5FDdsmSocket::Receive(void* data, int length, int readFully/*=1*/)
       int errorNumber = errno;
       if (errorNumber == EINTR) continue;
 #endif
-      H5FDdsmErrorMessage("Socket Error: Receive failed.");
+      H5FDdsmError("Socket Error: Receive failed.");
       return -1;
     }
     total += n;

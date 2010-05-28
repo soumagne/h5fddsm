@@ -175,7 +175,7 @@ H5FDdsmBuffer::ServiceUntilIdle(H5FDdsmInt32 *ReturnOpcode){
         // Service One Call
         status = this->Service(ReturnOpcode);
         if (status != H5FD_DSM_SUCCESS){
-            H5FDdsmErrorMessage("ServiceUntilIdle detected error in Service() Method");
+            H5FDdsmError("ServiceUntilIdle detected error in Service() Method");
             return(H5FD_DSM_FAIL);
         }
     }
@@ -205,21 +205,21 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
 
     status = this->ReceiveCommandHeader(&Opcode, &who, &Address, &aLength);
     if (status == H5FD_DSM_FAIL){
-        H5FDdsmErrorMessage("Error Receiving Command Header");
+        H5FDdsmError("Error Receiving Command Header");
         return(H5FD_DSM_FAIL);
     }
     switch(Opcode){
         case H5FD_DSM_OPCODE_PUT :
             H5FDdsmDebug("PUT request from " << who << " for " << aLength << " bytes @ " << Address);
             if (aLength > (this->EndAddress - Address + 1)){
-                H5FDdsmErrorMessage("Length too long");
+                H5FDdsmError("Length too long");
                 return(H5FD_DSM_FAIL);
             }
             datap = this->DataPointer;
             datap += Address - this->StartAddress;
             status = this->ReceiveData(who, datap, aLength, H5FD_DSM_PUT_DATA_TAG, IsService);
             if (status == H5FD_DSM_FAIL){
-                H5FDdsmErrorMessage("ReceiveData() failed");
+                H5FDdsmError("ReceiveData() failed");
                 return(H5FD_DSM_FAIL);
             }
             H5FDdsmDebug("Serviced PUT request from " << who << " for " << aLength << " bytes @ " << Address);
@@ -227,16 +227,16 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
         case H5FD_DSM_OPCODE_GET :
             H5FDdsmDebug("(Server " << this->Comm->GetId() << ") Get request from " << who << " for " << aLength << " bytes @ " << Address);
             if (aLength > (this->EndAddress - Address + 1)){
-                H5FDdsmErrorMessage("Length " << aLength << " too long for address of len " << this->EndAddress - Address);
-                H5FDdsmErrorMessage("Server Start = " << this->StartAddress << " End = " << this->EndAddress);
+                H5FDdsmError("Length " << aLength << " too long for address of len " << this->EndAddress - Address);
+                H5FDdsmError("Server Start = " << this->StartAddress << " End = " << this->EndAddress);
                 return(H5FD_DSM_FAIL);
             }
             if ((datap = this->DataPointer) == NULL)
-              H5FDdsmErrorMessage("Null Data Pointer when trying to get data");
+              H5FDdsmError("Null Data Pointer when trying to get data");
             datap += Address - this->StartAddress;
             status = this->SendData(who, datap, aLength, H5FD_DSM_GET_DATA_TAG, IsService);
             if (status == H5FD_DSM_FAIL){
-                H5FDdsmErrorMessage("SendData() failed");
+                H5FDdsmError("SendData() failed");
                 return(H5FD_DSM_FAIL);
             }
             H5FDdsmDebug("(Server " << this->Comm->GetId() << ") Serviced GET request from " << who << " for " << aLength << " bytes @ " << Address);
@@ -244,7 +244,7 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
         case H5FD_DSM_SEMA_AQUIRE :
             H5FDdsmDebug("Sema " << Address << " Aquire");
             if ((Address < 0) || (Address >= H5FD_DSM_MAX_LOCKS)){
-                H5FDdsmErrorMessage("Invalid Sema Request " << Address);
+                H5FDdsmError("Invalid Sema Request " << Address);
                 value = H5FD_DSM_FAIL;
             }else{
                 H5FDdsmDebug("Server Locks[" << Address << "] = " << this->Locks[Address]);
@@ -259,34 +259,35 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
             }
             status = this->SendData(who, (H5FDdsmByte *)&value, sizeof(H5FDdsmInt32), H5FD_DSM_RESPONSE_TAG, IsService);
             if (status == H5FD_DSM_FAIL){
-                H5FDdsmErrorMessage("SemaAquire Response Failed");
+                H5FDdsmError("SemaAquire Response Failed");
                 return(H5FD_DSM_FAIL);
             }
             break;
         case H5FD_DSM_SEMA_RELEASE :
             H5FDdsmDebug("Sema " << Address << " Release");
             if ((Address < 0) || (Address >= H5FD_DSM_MAX_LOCKS)){
-                H5FDdsmErrorMessage("Invalid Sema Request " << Address);
+                H5FDdsmError("Invalid Sema Request " << Address);
                 value = H5FD_DSM_FAIL;
             }else{
                 if (this->Locks[Address] == who){
-                    H5FDdsmDebug(who << " Released Lock " << Address);
+                    H5FDdsmDebug("P(" << who << ")" << " Released Lock " << Address);
                     this->Locks[Address] = -1;
                     value = H5FD_DSM_SUCCESS;
                 }else{
-                    H5FDdsmDebug(who << " did not Release Lock " << Address << " already locked by " << this->Locks[Address]);
+                    H5FDdsmDebug("P(" << who << ")" << " did not Release Lock " << Address << " already locked by " << this->Locks[Address]);
                     value = H5FD_DSM_FAIL;
                 }
             }
             status = this->SendData(who, (H5FDdsmByte *)&value, sizeof(H5FDdsmInt32), H5FD_DSM_RESPONSE_TAG, IsService);
             if (status == H5FD_DSM_FAIL){
-                H5FDdsmErrorMessage("SemaAquire Response Failed");
+                H5FDdsmError("SemaAquire Response Failed");
                 return(H5FD_DSM_FAIL);
             }
             break;
         case H5FD_DSM_OPCODE_DONE :
             break;
         case H5FD_DSM_REMOTE_CHANNEL:
+          H5FDdsmDebug("Switching to Remote channel");
           if (!this->IsConnected) {
             this->Comm->RemoteCommAccept();
             // send DSM information
@@ -295,17 +296,18 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
           }
           this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_REMOTE);
           this->Comm->RemoteCommSendReady();
-          H5FDdsmDebug("Using now remote channel");
+          H5FDdsmDebug("Switched to Remote channel");
           break;
         case H5FD_DSM_LOCAL_CHANNEL: // Should be used only when going back to remote after that
+          H5FDdsmDebug("Switching to Local channel");
           this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_LOCAL);
-          H5FDdsmDebug("Using now local channel");
+          H5FDdsmDebug("Switched to Local channel");
           break;
         case H5FD_DSM_DISCONNECT:
           H5FDdsmDebug("( " << this->Comm->GetId() << " ) Freeing now remote channel");
           this->Comm->RemoteCommDisconnect();
           this->SetIsConnected(false);
-          H5FDdsmDebug("DSM disconnected on " << this->Comm->GetId() << ", using now local channel");
+          H5FDdsmDebug("DSM disconnected on " << this->Comm->GetId() << ", Switched to Local channel");
           break;
         case H5FD_DSM_XML_EXCHANGE:
           // Receive XML File and put it in a DSM buffer field for further reading
@@ -321,11 +323,11 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
             this->Comm->Barrier();
             this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_LOCAL);
             this->SetIsUpdateReady(true);
-            H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "IsUpdateReady, using now local channel");
+            H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "IsUpdateReady, Switched to Local channel");
           }
           break;
         default :
-            H5FDdsmErrorMessage("Unknown Opcode " << Opcode);
+            H5FDdsmError("Unknown Opcode " << Opcode);
             return(H5FD_DSM_FAIL);
     }
     if (ReturnOpcode) *ReturnOpcode = Opcode;
@@ -340,21 +342,21 @@ H5FDdsmBuffer::Aquire(Int64 Index){
     who = this->AddressToId(0);
     H5FDdsmDebug("Aquire :: MyId = " << MyId << " who = " << who);
     if (who == H5FD_DSM_FAIL){
-        H5FDdsmErrorMessage("Address Error");
+        H5FDdsmError("Address Error");
         return(H5FD_DSM_FAIL);
     }
     if ((Index < 0) || (Index >= H5FD_DSM_MAX_LOCKS)){
-        H5FDdsmErrorMessage("Invalid Sema Request " << Index);
+        H5FDdsmError("Invalid Sema Request " << Index);
         return(H5FD_DSM_FAIL);
     }
     if (who == MyId){
         H5FDdsmDebug("Local Locks[" << Index << "] = " << this->Locks[Index]);
         if ((this->Locks[Index] == -1) || (this->Locks[Index] == MyId)){
             this->Locks[Index] = MyId;
-            H5FDdsmDebug(who << " Aquired own lock " << Index);
+            H5FDdsmDebug("P(" << who << ")" << " Aquired own lock " << Index);
             return(H5FD_DSM_SUCCESS);
         }else{
-            H5FDdsmDebug(who << " did not Aquired own lock " << Index);
+            H5FDdsmDebug("P(" << who << ")" << " did not Aquired own lock " << Index);
             return(H5FD_DSM_FAIL);
         }
     }else{
@@ -363,13 +365,13 @@ H5FDdsmBuffer::Aquire(Int64 Index){
         H5FDdsmDebug("Sending Header");
         status = this->SendCommandHeader(H5FD_DSM_SEMA_AQUIRE, who, Index, sizeof(Int64));
         if (status == H5FD_DSM_FAIL){
-            H5FDdsmErrorMessage("Failed to send Aquire Header to " << who);
+            H5FDdsmError("Failed to send Aquire Header to " << who);
             return(H5FD_DSM_FAIL);
         }
         H5FDdsmDebug("Getting Response");
         status = this->ReceiveData(who, &RemoteStatus, sizeof(H5FDdsmInt32), H5FD_DSM_RESPONSE_TAG);
         if (status == H5FD_DSM_FAIL){
-            H5FDdsmErrorMessage("Failed to Aquire " << Index << " Response From " << who);
+            H5FDdsmError("Failed to Aquire " << Index << " Response From " << who);
             return(H5FD_DSM_FAIL);
         }
         H5FDdsmDebug("RemoteStatus = " << RemoteStatus);
@@ -385,20 +387,20 @@ H5FDdsmBuffer::Release(Int64 Index){
 
     who = this->AddressToId(0);
     if (who == H5FD_DSM_FAIL){
-        H5FDdsmErrorMessage("Address Error");
+        H5FDdsmError("Address Error");
         return(H5FD_DSM_FAIL);
     }
     if ((Index < 0) || (Index >= H5FD_DSM_MAX_LOCKS)){
-        H5FDdsmErrorMessage("Invalid Sema Request " << Index);
+        H5FDdsmError("Invalid Sema Request " << Index);
         return(H5FD_DSM_FAIL);
     }
     if (who == MyId){
         if ((this->Locks[Index] == -1) || (this->Locks[Index] == MyId)){
             this->Locks[Index] = -1;
-            H5FDdsmDebug(who << " Released own lock " << Index);
+            H5FDdsmDebug("P(" << who << ")" << " Released own lock " << Index);
             return(H5FD_DSM_SUCCESS);
         }else{
-            H5FDdsmDebug(who << " did not Released own lock " << Index);
+            H5FDdsmDebug("P(" << who << ")" << " did not Released own lock " << Index);
             return(H5FD_DSM_FAIL);
         }
     }else{
@@ -407,13 +409,13 @@ H5FDdsmBuffer::Release(Int64 Index){
         H5FDdsmDebug("Sending Release Header");
         status = this->SendCommandHeader(H5FD_DSM_SEMA_RELEASE, who, Index, sizeof(Int64));
         if (status == H5FD_DSM_FAIL){
-            H5FDdsmErrorMessage("Failed to send Release Header to " << who);
+            H5FDdsmError("Failed to send Release Header to " << who);
             return(H5FD_DSM_FAIL);
         }
         H5FDdsmDebug("Receiving Release Response ");
         status = this->ReceiveData(who, &RemoteStatus, sizeof(H5FDdsmInt32), H5FD_DSM_RESPONSE_TAG);
         if (status == H5FD_DSM_FAIL){
-            H5FDdsmErrorMessage("Failed to Release " << Index << " Response From " << who);
+            H5FDdsmError("Failed to Release " << Index << " Response From " << who);
             return(H5FD_DSM_FAIL);
         }
         H5FDdsmDebug("Release Response = " << RemoteStatus);
@@ -433,7 +435,7 @@ H5FDdsmBuffer::Put(Int64 Address, Int64 aLength, void *Data){
 
     who = this->AddressToId(Address);
     if (who == H5FD_DSM_FAIL){
-      H5FDdsmErrorMessage("Address Error");
+      H5FDdsmError("Address Error");
       return(H5FD_DSM_FAIL);
     }
     this->GetAddressRangeForId(who, &astart, &aend);
@@ -450,12 +452,12 @@ H5FDdsmBuffer::Put(Int64 Address, Int64 aLength, void *Data){
 
       status = this->SendCommandHeader(H5FD_DSM_OPCODE_PUT, who, Address, len);
       if (status == H5FD_DSM_FAIL){
-        H5FDdsmErrorMessage("Failed to send PUT Header to " << who);
+        H5FDdsmError("Failed to send PUT Header to " << who);
         return(H5FD_DSM_FAIL);
       }
       status = this->SendData(who, datap, len, H5FD_DSM_PUT_DATA_TAG);
       if (status == H5FD_DSM_FAIL){
-        H5FDdsmErrorMessage("Failed to send " << len << " bytes of data to " << who);
+        H5FDdsmError("Failed to send " << len << " bytes of data to " << who);
         return(H5FD_DSM_FAIL);
       }
 
@@ -477,7 +479,7 @@ H5FDdsmBuffer::Get(Int64 Address, Int64 aLength, void *Data){
     while(aLength){
         who = this->AddressToId(Address);
         if (who == H5FD_DSM_FAIL){
-            H5FDdsmErrorMessage("Address Error");
+            H5FDdsmError("Address Error");
             return(H5FD_DSM_FAIL);
         }
         this->GetAddressRangeForId(who, &astart, &aend);
@@ -494,12 +496,12 @@ H5FDdsmBuffer::Get(Int64 Address, Int64 aLength, void *Data){
 
             status = this->SendCommandHeader(H5FD_DSM_OPCODE_GET, who, Address, len);
             if (status == H5FD_DSM_FAIL){
-                H5FDdsmErrorMessage("Failed to send GET Header to " << who);
+                H5FDdsmError("Failed to send GET Header to " << who);
                 return(H5FD_DSM_FAIL);
             }
             status = this->ReceiveData(who, datap, len, H5FD_DSM_GET_DATA_TAG);
             if (status == H5FD_DSM_FAIL){
-                H5FDdsmErrorMessage("Failed to receive " << len << " bytes of data from " << who);
+                H5FDdsmError("Failed to receive " << len << " bytes of data from " << who);
                 return(H5FD_DSM_FAIL);
             }
 

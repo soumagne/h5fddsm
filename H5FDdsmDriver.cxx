@@ -168,7 +168,7 @@ H5FDdsmDriver::GetAddressRangeForId(H5FDdsmInt32 Id, Int64 *Start, Int64 *End){
             break;
         default :
             // Not Implemented
-            H5FDdsmErrorMessage("DsmType " << this->DsmType << " not yet implemented");
+            H5FDdsmError("DsmType " << this->DsmType << " not yet implemented");
             return(H5FD_DSM_FAIL);
             break;
     }
@@ -185,12 +185,12 @@ H5FDdsmDriver::AddressToId(Int64 Address){
             // All Servers have same length
             ServerId = this->StartServerId + (H5FDdsmInt32)(Address / this->Length);
             if(ServerId > this->EndServerId ){
-                H5FDdsmErrorMessage("ServerId " << ServerId << " for Address " << Address << " is larger than EndServerId " << this->EndServerId);
+                H5FDdsmError("ServerId " << ServerId << " for Address " << Address << " is larger than EndServerId " << this->EndServerId);
             }
             break;
         default :
             // Not Implemented
-            H5FDdsmErrorMessage("DsmType " << this->DsmType << " not yet implemented");
+            H5FDdsmError("DsmType " << this->DsmType << " not yet implemented");
             break;
     }
     return(ServerId);
@@ -209,7 +209,7 @@ H5FDdsmDriver::SendDone(){
             break;
         default :
             // Not Implemented
-            H5FDdsmErrorMessage("DsmType " << this->DsmType << " not yet implemented");
+            H5FDdsmError("DsmType " << this->DsmType << " not yet implemented");
             break;
     }
     return(status);
@@ -220,7 +220,7 @@ H5FDdsmDriver::SetLength(int aLength, H5FDdsmBoolean AllowAllocate){
     // Make it longer than actually needed for round off.
     //if(this->Storage->SetNumberOfElements((aLength / sizeof(Int64)) + 1, AllowAllocate) != H5FD_DSM_SUCCESS){
     if(this->Storage->SetNumberOfElements(aLength, AllowAllocate) != H5FD_DSM_SUCCESS) {
-        H5FDdsmErrorMessage("Cannot set Dsm Length to " << Length);
+        H5FDdsmError("Cannot set Dsm Length to " << Length);
         return(H5FD_DSM_FAIL);
     }
     this->Length = aLength;
@@ -271,7 +271,7 @@ H5FDdsmDriver::ReceiveCommandHeader(H5FDdsmInt32 *Opcode, H5FDdsmInt32 *Source, 
     if ((status != H5FD_DSM_FAIL) || Block){
         status  = this->Comm->Receive(Msg);
         if (status == H5FD_DSM_FAIL){
-            H5FDdsmErrorMessage("Communicator Receive Failed");
+            H5FDdsmError("Communicator Receive Failed");
             return(H5FD_DSM_FAIL);
         }
         else {
