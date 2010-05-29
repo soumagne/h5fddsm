@@ -100,11 +100,11 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     H5FDdsmGetStringMacro(XMLDescription);
     H5FDdsmSetStringMacro(XMLDescription);
 
-    H5FDdsmInt32   Put(Int64 Address, Int64 Length, void *Data);
-    H5FDdsmInt32   Get(Int64 Address, Int64 Length, void *Data);
+    H5FDdsmInt32   Put(H5FDdsmInt64 Address, H5FDdsmInt64 Length, void *Data);
+    H5FDdsmInt32   Get(H5FDdsmInt64 Address, H5FDdsmInt64 Length, void *Data);
 
-    H5FDdsmInt32   Aquire(Int64 Index);
-    H5FDdsmInt32   Release(Int64 Index);
+    H5FDdsmInt32   Aquire(H5FDdsmInt64 Index);
+    H5FDdsmInt32   Release(H5FDdsmInt64 Index);
 
     H5FDdsmInt32   RequestRemoteChannel();
     H5FDdsmInt32   RequestLocalChannel();

@@ -42,15 +42,15 @@ H5FDdsmStorage::~H5FDdsmStorage()
   }
 }
 //----------------------------------------------------------------------------
-H5FDdsmPointer H5FDdsmStorage::GetDataPointer(Int64 Index)
+H5FDdsmPointer H5FDdsmStorage::GetDataPointer(H5FDdsmInt64 Index)
 {
   H5FDdsmByte  *pointer;
   pointer = (H5FDdsmByte*) this->DataPointer;
-  pointer += sizeof(Int64) * Index;
+  pointer += sizeof(H5FDdsmInt64) * Index;
   return((H5FDdsmPointer)pointer);
 }
 //----------------------------------------------------------------------------
-H5FDdsmInt32  H5FDdsmStorage::SetNumberOfElements(int Length, H5FDdsmBoolean AllowAllocate)
+H5FDdsmInt32  H5FDdsmStorage::SetNumberOfElements(H5FDdsmInt64 Length, H5FDdsmBoolean AllowAllocate)
 {
   this->NumberOfElements = Length;
   if (AllowAllocate) {

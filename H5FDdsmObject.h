@@ -64,13 +64,13 @@
 //------------------------------------------------------------------------------
 #ifdef H5_HAVE_STDINT_H
   #include <stdint.h>
-    typedef int64_t Int64;
+    typedef int64_t H5FDdsmInt64;
     typedef int32_t H5FDdsmInt32;
     typedef char    H5FDdsmByte;
     typedef int8_t  H5FDdsmInt8;
 #else
   #ifdef _MSC_VER
-    typedef signed   __int64 Int64;
+    typedef signed   __int64 H5FDdsmInt64;
     typedef signed   __int32 H5FDdsmInt32;
     typedef char             H5FDdsmByte;
     typedef signed   __int8  H5FDdsmInt8;

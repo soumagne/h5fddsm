@@ -67,9 +67,9 @@ public:
   H5FDdsmInt32   RemoteCommRecvReady();
   H5FDdsmInt32   RemoteCommSendReady();
 
-  H5FDdsmInt32   RemoteCommRecvInfo(int *length, Int64 *totalLength,
+  H5FDdsmInt32   RemoteCommRecvInfo(H5FDdsmInt64 *length, H5FDdsmInt64 *totalLength,
       H5FDdsmInt32 *startServerId, H5FDdsmInt32 *endServerId);
-  H5FDdsmInt32   RemoteCommSendInfo(int *length, Int64 *totalLength,
+  H5FDdsmInt32   RemoteCommSendInfo(H5FDdsmInt64 *length, H5FDdsmInt64 *totalLength,
       H5FDdsmInt32 *startServerId, H5FDdsmInt32 *endServerId);
 
   H5FDdsmInt32   RemoteCommSendXML(H5FDdsmString file, H5FDdsmInt32 dest);

@@ -76,14 +76,14 @@ H5FDdsmBufferServiceThread(void *DsmObj){
 }
 
 H5FDdsmBuffer::H5FDdsmBuffer() {
-    Int64 i;
+    H5FDdsmInt64 i;
     this->ThreadDsmReady = 0;
     this->DataPointer = 0;
     this->IsServer = true;
     this->IsConnected = false;
     this->IsUpdateReady = false;
     this->IsReadOnly = false;
-    this->Locks = new Int64[H5FD_DSM_MAX_LOCKS];
+    this->Locks = new H5FDdsmInt64[H5FD_DSM_MAX_LOCKS];
     for(i=0;i < H5FD_DSM_MAX_LOCKS;i++) this->Locks[i] = -1;
 
     this->ServiceThreadUseCopy = 1;
@@ -198,8 +198,8 @@ H5FDdsmBuffer::ServiceLoop(H5FDdsmInt32 *ReturnOpcode){
 H5FDdsmInt32
 H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
     H5FDdsmInt32   Opcode, who, value, status = H5FD_DSM_FAIL;
-    int         aLength;
-    Int64       Address;
+    H5FDdsmInt64         aLength;
+    H5FDdsmInt64       Address;
     H5FDdsmByte   *datap;
     H5FDdsmInt32   IsService = 1;
 
@@ -335,7 +335,7 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
 }
 
 H5FDdsmInt32
-H5FDdsmBuffer::Aquire(Int64 Index){
+H5FDdsmBuffer::Aquire(H5FDdsmInt64 Index){
     H5FDdsmInt32   who, MyId = this->Comm->GetId();
     H5FDdsmInt32   RemoteStatus;
 
@@ -363,7 +363,7 @@ H5FDdsmBuffer::Aquire(Int64 Index){
         H5FDdsmInt32   status;
 
         H5FDdsmDebug("Sending Header");
-        status = this->SendCommandHeader(H5FD_DSM_SEMA_AQUIRE, who, Index, sizeof(Int64));
+        status = this->SendCommandHeader(H5FD_DSM_SEMA_AQUIRE, who, Index, sizeof(H5FDdsmInt64));
         if (status == H5FD_DSM_FAIL){
             H5FDdsmError("Failed to send Aquire Header to " << who);
             return(H5FD_DSM_FAIL);
@@ -381,7 +381,7 @@ H5FDdsmBuffer::Aquire(Int64 Index){
 }
 
 H5FDdsmInt32
-H5FDdsmBuffer::Release(Int64 Index){
+H5FDdsmBuffer::Release(H5FDdsmInt64 Index){
     H5FDdsmInt32   who, MyId = this->Comm->GetId();
     H5FDdsmInt32   RemoteStatus;
 
@@ -407,7 +407,7 @@ H5FDdsmBuffer::Release(Int64 Index){
         H5FDdsmInt32   status;
 
         H5FDdsmDebug("Sending Release Header");
-        status = this->SendCommandHeader(H5FD_DSM_SEMA_RELEASE, who, Index, sizeof(Int64));
+        status = this->SendCommandHeader(H5FD_DSM_SEMA_RELEASE, who, Index, sizeof(H5FDdsmInt64));
         if (status == H5FD_DSM_FAIL){
             H5FDdsmError("Failed to send Release Header to " << who);
             return(H5FD_DSM_FAIL);
@@ -425,10 +425,10 @@ H5FDdsmBuffer::Release(Int64 Index){
 }
 
 H5FDdsmInt32
-H5FDdsmBuffer::Put(Int64 Address, Int64 aLength, void *Data){
+H5FDdsmBuffer::Put(H5FDdsmInt64 Address, H5FDdsmInt64 aLength, void *Data){
   H5FDdsmInt32   who, MyId = this->Comm->GetId();
-  Int64       astart, aend;
-  int         len;
+  H5FDdsmInt64       astart, aend;
+  H5FDdsmInt64         len;
   H5FDdsmByte    *datap = (H5FDdsmByte *)Data;
 
   while(aLength){
@@ -470,10 +470,10 @@ H5FDdsmBuffer::Put(Int64 Address, Int64 aLength, void *Data){
 }
 
 H5FDdsmInt32
-H5FDdsmBuffer::Get(Int64 Address, Int64 aLength, void *Data){
+H5FDdsmBuffer::Get(H5FDdsmInt64 Address, H5FDdsmInt64 aLength, void *Data){
     H5FDdsmInt32   who, MyId = this->Comm->GetId();
-    Int64       astart, aend;
-    int         len;
+    H5FDdsmInt64       astart, aend;
+    H5FDdsmInt64        len;
     H5FDdsmByte    *datap = (H5FDdsmByte *)Data;
 
     while(aLength){

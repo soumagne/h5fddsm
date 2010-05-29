@@ -82,12 +82,12 @@ class H5FDdsm_EXPORT H5FDdsmDriver : public H5FDdsmObject {
     H5FDdsmSetValueMacro(DsmType, H5FDdsmInt32);
 
   //! End Address
-    H5FDdsmGetValueMacro(EndAddress, Int64);
-    H5FDdsmSetValueMacro(EndAddress, Int64);
+    H5FDdsmGetValueMacro(EndAddress, H5FDdsmInt64);
+    H5FDdsmSetValueMacro(EndAddress, H5FDdsmInt64);
 
   //! Start Address
-    H5FDdsmGetValueMacro(StartAddress, Int64);
-    H5FDdsmSetValueMacro(StartAddress, Int64);
+    H5FDdsmGetValueMacro(StartAddress, H5FDdsmInt64);
+    H5FDdsmSetValueMacro(StartAddress, H5FDdsmInt64);
 
   //! Start Id
     H5FDdsmGetValueMacro(StartServerId, H5FDdsmInt32);
@@ -98,12 +98,12 @@ class H5FDdsm_EXPORT H5FDdsmDriver : public H5FDdsmObject {
     H5FDdsmSetValueMacro(EndServerId, H5FDdsmInt32);
 
   //! Length
-    H5FDdsmGetValueMacro(Length, int);
-    H5FDdsmInt32 SetLength(int Length, H5FDdsmBoolean AllowAllocate=1);
+    H5FDdsmGetValueMacro(Length, H5FDdsmInt64);
+    H5FDdsmInt32 SetLength(H5FDdsmInt64 Length, H5FDdsmBoolean AllowAllocate=1);
 
   //! totalLength
-    H5FDdsmGetValueMacro(TotalLength, Int64);
-    H5FDdsmSetValueMacro(TotalLength, Int64);
+    H5FDdsmGetValueMacro(TotalLength, H5FDdsmInt64);
+    H5FDdsmSetValueMacro(TotalLength, H5FDdsmInt64);
 
   //! Storage
     H5FDdsmGetValueMacro(Storage, H5FDdsmStorage *);
@@ -120,18 +120,18 @@ class H5FDdsm_EXPORT H5FDdsmDriver : public H5FDdsmObject {
 
 
     //! Address Range
-    H5FDdsmInt32 GetAddressRangeForId(H5FDdsmInt32 Id, Int64 *Start, Int64 *End);
+    H5FDdsmInt32 GetAddressRangeForId(H5FDdsmInt32 Id, H5FDdsmInt64 *Start, H5FDdsmInt64 *End);
 
     //! Configure the system. Set the Comm and ServerIds
-    H5FDdsmInt32   ConfigureUniform(H5FDdsmComm *Comm, int Length, H5FDdsmInt32 StartId=-1, H5FDdsmInt32 EndId=-1);
+    H5FDdsmInt32   ConfigureUniform(H5FDdsmComm *Comm, H5FDdsmInt64 Length, H5FDdsmInt32 StartId=-1, H5FDdsmInt32 EndId=-1);
     
-    H5FDdsmInt32   AddressToId(Int64 Address);
+    H5FDdsmInt32   AddressToId(H5FDdsmInt64 Address);
 
-    H5FDdsmInt32   SendCommandHeader(H5FDdsmInt32 Opcode, H5FDdsmInt32 Dest, Int64 Address, int Length);
-    H5FDdsmInt32   ReceiveCommandHeader(H5FDdsmInt32 *Opcode, H5FDdsmInt32 *Source, Int64 *Address, int *Length, H5FDdsmInt32 Block=1);
+    H5FDdsmInt32   SendCommandHeader(H5FDdsmInt32 Opcode, H5FDdsmInt32 Dest, H5FDdsmInt64 Address, H5FDdsmInt64 Length);
+    H5FDdsmInt32   ReceiveCommandHeader(H5FDdsmInt32 *Opcode, H5FDdsmInt32 *Source, H5FDdsmInt64 *Address, H5FDdsmInt64 *Length, H5FDdsmInt32 Block=1);
 
-    H5FDdsmInt32   SendData(H5FDdsmInt32 Dest, void *Data, int Length, H5FDdsmInt32 Tag, H5FDdsmInt32 IsService=0);
-    H5FDdsmInt32   ReceiveData(H5FDdsmInt32 Source, void *Data, int Length, H5FDdsmInt32 Tag, H5FDdsmInt32 IsService=0, H5FDdsmInt32 Block=1);
+    H5FDdsmInt32   SendData(H5FDdsmInt32 Dest, void *Data, H5FDdsmInt64 Length, H5FDdsmInt32 Tag, H5FDdsmInt32 IsService=0);
+    H5FDdsmInt32   ReceiveData(H5FDdsmInt32 Source, void *Data, H5FDdsmInt64 Length, H5FDdsmInt32 Tag, H5FDdsmInt32 IsService=0, H5FDdsmInt32 Block=1);
 
     virtual H5FDdsmInt32 Copy(H5FDdsmDriver *Source);
 
@@ -142,11 +142,11 @@ class H5FDdsm_EXPORT H5FDdsmDriver : public H5FDdsmObject {
     H5FDdsmInt32   StartServerId;
     H5FDdsmInt32   EndServerId;
     H5FDdsmInt32   StorageIsMine;
-    Int64   StartAddress;
-    Int64   EndAddress;
-    int     Length;
-    Int64   TotalLength;
-    Int64   *Locks;
+    H5FDdsmInt64   StartAddress;
+    H5FDdsmInt64   EndAddress;
+    H5FDdsmInt64   Length;
+    H5FDdsmInt64   TotalLength;
+    H5FDdsmInt64   *Locks;
     H5FDdsmStorage   *Storage;
     H5FDdsmComm *Comm;
     H5FDdsmMsg  *Msg;

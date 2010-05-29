@@ -89,8 +89,8 @@ class H5FDdsm_EXPORT H5FDdsmMsg : public H5FDdsmObject {
     H5FDdsmSetValueMacro(Tag, H5FDdsmInt32);
     H5FDdsmGetValueMacro(Tag, H5FDdsmInt32);
 
-    H5FDdsmSetValueMacro(Length, int);
-    H5FDdsmGetValueMacro(Length, int);
+    H5FDdsmSetValueMacro(Length, H5FDdsmInt64);
+    H5FDdsmGetValueMacro(Length, H5FDdsmInt64);
 
     H5FDdsmSetValueMacro(Data, void *);
     H5FDdsmGetValueMacro(Data, void *);
@@ -98,7 +98,7 @@ class H5FDdsm_EXPORT H5FDdsmMsg : public H5FDdsmObject {
     H5FDdsmInt32   Source;
     H5FDdsmInt32   Dest;
     H5FDdsmInt32   Tag;
-    int         Length;
+    H5FDdsmInt64   Length;
     void       *Data;
 };
 

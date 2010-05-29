@@ -56,12 +56,12 @@
 
 // Align
 typedef struct {
-    int     Opcode;
-    int     Source;
-    int     Target;
-    Int64   Address;
-    int     Length;
-    Int64   Parameters[10];
+    H5FDdsmInt32   Opcode;
+    H5FDdsmInt32   Source;
+    H5FDdsmInt32   Target;
+    H5FDdsmInt64   Address;
+    H5FDdsmInt64   Length;
+    H5FDdsmInt64   Parameters[10];
 } H5FDdsmCommand;
 
 H5FDdsmDriver::H5FDdsmDriver() {
@@ -70,7 +70,6 @@ H5FDdsmDriver::H5FDdsmDriver() {
     this->StorageIsMine = 1;
     this->Locks = 0;
     // For Alignment
-    // this->Storage->SetNumberType(XDMF_INT64_TYPE);
     this->SetLength(H5FD_DSM_DEFAULT_LENGTH);
     this->DataPointer = (H5FDdsmByte *)this->Storage->GetDataPointer();
     this->StartAddress = 0;
@@ -135,7 +134,7 @@ H5FDdsmDriver::ClearStorage() {
 }
 
 H5FDdsmInt32
-H5FDdsmDriver::ConfigureUniform(H5FDdsmComm *aComm, int aLength, H5FDdsmInt32 StartId, H5FDdsmInt32 EndId){
+H5FDdsmDriver::ConfigureUniform(H5FDdsmComm *aComm, H5FDdsmInt64 aLength, H5FDdsmInt32 StartId, H5FDdsmInt32 EndId){
     if(StartId < 0) StartId = 0;
     if(EndId < 0) EndId = aComm->GetTotalSize() - 1;
     this->SetDsmType(H5FD_DSM_TYPE_UNIFORM_RANGE);
@@ -158,7 +157,7 @@ H5FDdsmDriver::ConfigureUniform(H5FDdsmComm *aComm, int aLength, H5FDdsmInt32 St
 }
 
 H5FDdsmInt32
-H5FDdsmDriver::GetAddressRangeForId(H5FDdsmInt32 Id, Int64 *Start, Int64 *End){
+H5FDdsmDriver::GetAddressRangeForId(H5FDdsmInt32 Id, H5FDdsmInt64 *Start, H5FDdsmInt64 *End){
     switch(this->DsmType) {
         case H5FD_DSM_TYPE_UNIFORM :
         case H5FD_DSM_TYPE_UNIFORM_RANGE :
@@ -176,7 +175,7 @@ H5FDdsmDriver::GetAddressRangeForId(H5FDdsmInt32 Id, Int64 *Start, Int64 *End){
 }
 
 H5FDdsmInt32
-H5FDdsmDriver::AddressToId(Int64 Address){
+H5FDdsmDriver::AddressToId(H5FDdsmInt64 Address){
     H5FDdsmInt32 ServerId = H5FD_DSM_FAIL;
 
     switch(this->DsmType) {
@@ -216,9 +215,9 @@ H5FDdsmDriver::SendDone(){
 }
 
 H5FDdsmInt32
-H5FDdsmDriver::SetLength(int aLength, H5FDdsmBoolean AllowAllocate){
+H5FDdsmDriver::SetLength(H5FDdsmInt64 aLength, H5FDdsmBoolean AllowAllocate){
     // Make it longer than actually needed for round off.
-    //if(this->Storage->SetNumberOfElements((aLength / sizeof(Int64)) + 1, AllowAllocate) != H5FD_DSM_SUCCESS){
+    //if(this->Storage->SetNumberOfElements((aLength / sizeof(H5FDdsmInt64)) + 1, AllowAllocate) != H5FD_DSM_SUCCESS){
     if(this->Storage->SetNumberOfElements(aLength, AllowAllocate) != H5FD_DSM_SUCCESS) {
         H5FDdsmError("Cannot set Dsm Length to " << Length);
         return(H5FD_DSM_FAIL);
@@ -229,7 +228,7 @@ H5FDdsmDriver::SetLength(int aLength, H5FDdsmBoolean AllowAllocate){
 }
 
 H5FDdsmInt32
-H5FDdsmDriver::SendCommandHeader(H5FDdsmInt32 Opcode, H5FDdsmInt32 Dest, Int64 Address, int aLength){
+H5FDdsmDriver::SendCommandHeader(H5FDdsmInt32 Opcode, H5FDdsmInt32 Dest, H5FDdsmInt64 Address, H5FDdsmInt64 aLength){
     H5FDdsmCommand  Cmd;
     H5FDdsmInt32 Status;
 
@@ -254,7 +253,7 @@ H5FDdsmDriver::SendCommandHeader(H5FDdsmInt32 Opcode, H5FDdsmInt32 Dest, Int64 A
 }
 
 H5FDdsmInt32
-H5FDdsmDriver::ReceiveCommandHeader(H5FDdsmInt32 *Opcode, H5FDdsmInt32 *Source, Int64 *Address, int *aLength, H5FDdsmInt32 Block){
+H5FDdsmDriver::ReceiveCommandHeader(H5FDdsmInt32 *Opcode, H5FDdsmInt32 *Source, H5FDdsmInt64 *Address, H5FDdsmInt64 *aLength, H5FDdsmInt32 Block){
     H5FDdsmCommand  Cmd;
     H5FDdsmInt32       status = H5FD_DSM_FAIL;
 
@@ -287,7 +286,7 @@ H5FDdsmDriver::ReceiveCommandHeader(H5FDdsmInt32 *Opcode, H5FDdsmInt32 *Source, 
 }
 
 H5FDdsmInt32
-H5FDdsmDriver::SendData(H5FDdsmInt32 Dest, void *Data, int aLength, H5FDdsmInt32 Tag, H5FDdsmInt32 IsService){
+H5FDdsmDriver::SendData(H5FDdsmInt32 Dest, void *Data, H5FDdsmInt64 aLength, H5FDdsmInt32 Tag, H5FDdsmInt32 IsService){
 
     H5FDdsmMsg *Msg = NULL;
     Msg = (IsService)? this->ServiceMsg: this->Msg;
@@ -301,7 +300,7 @@ H5FDdsmDriver::SendData(H5FDdsmInt32 Dest, void *Data, int aLength, H5FDdsmInt32
 }
 
 H5FDdsmInt32
-H5FDdsmDriver::ReceiveData(H5FDdsmInt32 Source, void *Data, int aLength, H5FDdsmInt32 Tag, H5FDdsmInt32 IsService, H5FDdsmInt32 Block){
+H5FDdsmDriver::ReceiveData(H5FDdsmInt32 Source, void *Data, H5FDdsmInt64 aLength, H5FDdsmInt32 Tag, H5FDdsmInt32 IsService, H5FDdsmInt32 Block){
     H5FDdsmInt32   Status = H5FD_DSM_FAIL;
 
     H5FDdsmMsg *Msg = NULL;

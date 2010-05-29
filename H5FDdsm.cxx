@@ -677,8 +677,8 @@ H5FD_dsm_open(const char *name, unsigned UNUSED flags, hid_t fapl_id, haddr_t ma
         file->DsmBuffer->SetIsConnected(true);
 
         // Receive DSM info
-        int   length;
-        Int64 totalLength;
+        H5FDdsmInt64 length;
+        H5FDdsmInt64 totalLength;
         H5FDdsmInt32 startServerId, endServerId;
 
         file->DsmBuffer->GetComm()->RemoteCommRecvInfo(&length, &totalLength, &startServerId, &endServerId);

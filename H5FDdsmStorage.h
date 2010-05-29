@@ -34,16 +34,16 @@ public:
   H5FDdsmStorage();
   ~H5FDdsmStorage();
 
-  H5FDdsmPointer  GetDataPointer(Int64 Index = 0);
+  H5FDdsmPointer  GetDataPointer(H5FDdsmInt64 Index = 0);
 
-  H5FDdsmGetValueMacro(NumberOfElements, int);
-  H5FDdsmInt32 SetNumberOfElements(int Length, H5FDdsmBoolean AllowAllocate=1);
+  H5FDdsmGetValueMacro(NumberOfElements, H5FDdsmInt64);
+  H5FDdsmInt32 SetNumberOfElements(H5FDdsmInt64 Length, H5FDdsmBoolean AllowAllocate=1);
 
 protected:
   H5FDdsmInt32    Allocate();
 
   H5FDdsmPointer  DataPointer;
-  size_t       NumberOfElements;
+  H5FDdsmInt64    NumberOfElements;
 };
 
 #endif /* XDMFDSMSTORAGE_H */
