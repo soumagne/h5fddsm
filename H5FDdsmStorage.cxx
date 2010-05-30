@@ -36,7 +36,7 @@ H5FDdsmStorage::H5FDdsmStorage()
 //----------------------------------------------------------------------------
 H5FDdsmStorage::~H5FDdsmStorage()
 {
-  if (this->DataPointer != NULL) {
+  if (this->DataPointer) {
     free(this->DataPointer);
     this->DataPointer = NULL;
   }
@@ -64,10 +64,16 @@ H5FDdsmInt32  H5FDdsmStorage::SetNumberOfElements(H5FDdsmInt64 Length, H5FDdsmBo
 H5FDdsmInt32 H5FDdsmStorage::Allocate()
 {
   if (this->DataPointer) {
-    free(this->DataPointer);
-    this->DataPointer = NULL;
+    // try to reallocate
+    this->DataPointer = realloc(this->DataPointer,
+        this->NumberOfElements*sizeof(H5FDdsmInt8));
+    // init to 0
+    for (int i = 0; i < this->NumberOfElements ; i++) {
+      ((H5FDdsmInt8*)this->DataPointer)[i] = 0;
+    }
+  } else {
+    this->DataPointer = calloc(this->NumberOfElements, sizeof(H5FDdsmInt8));
   }
-  this->DataPointer = calloc(this->NumberOfElements, sizeof(H5FDdsmInt8));
   if (this->DataPointer == NULL) {
     H5FDdsmDebug("Allocation Failed");
     perror("Alloc :" );
