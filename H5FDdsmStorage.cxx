@@ -75,7 +75,8 @@ H5FDdsmInt32 H5FDdsmStorage::Allocate()
     this->DataPointer = calloc(this->NumberOfElements, sizeof(H5FDdsmInt8));
   }
   if (this->DataPointer == NULL) {
-    H5FDdsmDebug("Allocation Failed");
+    H5FDdsmError("Allocation Failed, unable to allocate " 
+		    << this->NumberOfElements);
     perror("Alloc :" );
     return(H5FD_DSM_FAIL);
   }
