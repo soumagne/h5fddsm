@@ -80,6 +80,7 @@ INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
 FIND_PACKAGE(MPI)
 
 INCLUDE_DIRECTORIES(${MPI_INCLUDE_PATH})
+ADD_DEFINITIONS(-DMPICH_SKIP_MPICXX)
 
 #-----------------------------------------------------------------------------
 # Configure our module header file
