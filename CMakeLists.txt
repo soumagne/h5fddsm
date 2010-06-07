@@ -72,13 +72,13 @@ IF(NOT HDF5_FOUND)
   MESSAGE(FATAL_ERROR "This project requires HDF5")
 ENDIF(NOT HDF5_FOUND)
   
+INCLUDE( ${HDF5_CONFIG_FILE} )
 INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
 
 #-----------------------------------------------------------------------------
 # Find MPI
 #-----------------------------------------------------------------------------
-FIND_PACKAGE(MPI)
-
+INCLUDE( ${CMAKE_CURRENT_SOURCE_DIR}/CMake/FindMPI.cmake)
 INCLUDE_DIRECTORIES(${MPI_INCLUDE_PATH})
 ADD_DEFINITIONS(-DMPICH_SKIP_MPICXX)
 
@@ -120,7 +120,7 @@ SET(H5FDdsmSources
 ADD_LIBRARY(H5FDdsm ${H5FDdsmSources})
 
 TARGET_LINK_LIBRARIES(H5FDdsm
-  ${HDF5_LIBRARY} 
+  hdf5
   ${MPI_LIBRARY}
 ) 
 

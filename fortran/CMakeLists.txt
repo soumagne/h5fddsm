@@ -37,9 +37,8 @@ ADD_LIBRARY(H5FDdsm_f90CStub STATIC
 
 TARGET_LINK_LIBRARIES(H5FDdsm_f90CStub
   H5FDdsm 
-  "C:/Program Files/HDF5/lib/libhdf5_fortran_D.lib"
-  "C:/Program Files/HDF5/lib/libhdf5_f90CStub_D.lib"
-  ${HDF5_LIBRARY} 
+  hdf5_fortran
+  hdf5_f90cstub
   ${MPI_LIBRARY}
 )
 
@@ -84,25 +83,26 @@ IF (BUILD_TESTING)
   ADD_EXECUTABLE(H5FDdsmFortranTest
     ${H5FDdsm_FORTRAN_TEST_SRC}
   )
-    
+
   IF (WIN32)
     IF (MSVC)
-      SET_TARGET_PROPERTIES (H5FDdsm_fortran
-	      PROPERTIES
-		      LINKER_LANGUAGE Fortran
-			  LINK_FLAGS "/SUBSYSTEM:CONSOLE"
-	  )
-    ELSE (MSVC)
-      SET_TARGET_PROPERTIES (H5FDdsm_fortran
-	      PROPERTIES
-		      LINKER_LANGUAGE Fortran
-	  )
+      IF (BUILD_SHARED_LIBS)
+        SET_TARGET_PROPERTIES (H5FDdsmFortranTest
+            PROPERTIES
+                COMPILE_FLAGS "/MT"
+        )
+      ENDIF (BUILD_SHARED_LIBS)
+      SET_TARGET_PROPERTIES (H5FDdsmFortranTest
+          PROPERTIES
+              LINK_FLAGS "/SUBSYSTEM:CONSOLE"
+      )
     ENDIF (MSVC)
   ENDIF (WIN32)
-  
+  SET_TARGET_PROPERTIES (H5FDdsmFortranTest PROPERTIES LINKER_LANGUAGE Fortran)
+ 
   TARGET_LINK_LIBRARIES(H5FDdsmFortranTest
-    H5FDdsm_fortran 
-    "C:/Program Files/MPICH2/lib/fmpich2.lib" 
+    H5FDdsm_fortran
+    ${MPI_FORTRAN_LIBRARY}
  )
     
 ENDIF (BUILD_TESTING)
