@@ -50,7 +50,6 @@ ELSE (BUILD_SHARED_LIBS)
     # should this be a user setting : Everyone uses it anyway ?
     ADD_DEFINITIONS(-DPIC)
   ENDIF (NOT WIN32)
-  SET (LIBPOSTFIX "")
   IF (MSVC)
     FOREACH (flag_var
         CMAKE_C_FLAGS CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELEASE
@@ -72,7 +71,9 @@ IF(NOT HDF5_FOUND)
   MESSAGE(FATAL_ERROR "This project requires HDF5")
 ENDIF(NOT HDF5_FOUND)
   
-INCLUDE( ${HDF5_CONFIG_FILE} )
+IF (NOT HDF5_SOURCE_DIR)
+  INCLUDE( ${HDF5_CONFIG_FILE} )
+ENDIF  (NOT HDF5_SOURCE_DIR)
 INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
 
 #-----------------------------------------------------------------------------
