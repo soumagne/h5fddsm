@@ -72,22 +72,6 @@ void H5FDdsmObject::SetGlobalDebug( H5FDdsmInt32 Value ) {
   GlobalDebugFlag = Value;
 }
 
-H5FDdsmInt32 GetGlobalDebug() {
-  return GlobalDebugFlag;
-}
-
-void SetGlobalDebug( H5FDdsmInt32 Value ) {
-  GlobalDebugFlag = Value;
-}
-
-void SetGlobalDebugOn() {
-  GlobalDebugFlag = 1;
-}
-
-void SetGlobalDebugOff() {
-  GlobalDebugFlag = 0;
-}
-
 #ifdef H5FD_DEBUG_WITH_THREADS
 
 //------------------------------------------------------------------------------
