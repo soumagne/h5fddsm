@@ -148,9 +148,9 @@ int main (int argc, char* argv[])
   //
   // Pause for debugging
   //
-  std::cout << "Attach debugger if necessary, then press <enter>" << std::endl;
-  char c;
-  std::cin >> c;
+//  std::cout << "Attach debugger if necessary, then press <enter>" << std::endl;
+//  char c;
+//  std::cin >> c;
 
   //
   // Create a DSM manager
@@ -158,7 +158,7 @@ int main (int argc, char* argv[])
   H5FDdsmManager *dsmManager = H5FDdsmManager::New();
   dsmManager->SetCommunicator(dcomm);
   dsmManager->SetLocalBufferSizeMBytes(512);
-  dsmManager->SetDsmCommType(H5FD_DSM_COMM_MPI);
+  dsmManager->SetDsmCommType(H5FD_DSM_COMM_SOCKET);
   dsmManager->SetDsmIsServer(1);
   dsmManager->SetServerHostName(server_name.c_str());
   dsmManager->SetServerPort(default_port_number);
@@ -191,7 +191,11 @@ int main (int argc, char* argv[])
       }
     }
     else {
-      ::Sleep(1000);
+     #ifdef _WIN32       
+      ::Sleep(1);
+     #else
+      sleep(1);
+     #endif
     }
   }
 

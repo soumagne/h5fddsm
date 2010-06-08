@@ -202,9 +202,9 @@ int main(int argc, char **argv)
   //
   // Pause for debugging
   //
-  std::cout << "Attach debugger if necessary, then press <enter>" << std::endl;
-  char c;
-  std::cin >> c;
+//  std::cout << "Attach debugger if necessary, then press <enter>" << std::endl;
+//  char c;
+//  std::cin >> c;
 
   //
   // Create a DSM manager
