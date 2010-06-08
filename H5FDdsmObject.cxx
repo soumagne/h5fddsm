@@ -88,6 +88,8 @@ void SetGlobalDebugOff() {
   GlobalDebugFlag = 0;
 }
 
+#ifdef H5FD_DEBUG_WITH_THREADS
+
 //------------------------------------------------------------------------------
 // Simple Mutex code taken from VTK
 //------------------------------------------------------------------------------
@@ -153,3 +155,5 @@ void SimpleMutexLock::Unlock()
   pthread_mutex_unlock( &this->MutexLock);
 #endif
 }
+
+#endif // H5FD_DEBUG_WITH_THREADS

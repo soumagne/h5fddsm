@@ -90,6 +90,11 @@ typedef unsigned char H5FDdsmChar;
 #define H5FD_DSM_FALSE    0
 
 //------------------------------------------------------------------------------
+// Below is all missing in non debug build
+//------------------------------------------------------------------------------
+#ifdef H5FD_DEBUG_WITH_THREADS
+
+//------------------------------------------------------------------------------
 // Thread stuff used for mutex control with debug messages, to ensure that
 // messages arrive in a readable manner, not overlapped and munged as two
 // processes simultaneously write debug statements
@@ -138,6 +143,9 @@ protected:
 public:
   static SimpleMutexLock GlobalLock;
 };
+
+//------------------------------------------------------------------------------
+#endif // H5FD_DEBUG_WITH_THREADS
 
 //------------------------------------------------------------------------------
 // Error and Debug message Macros
