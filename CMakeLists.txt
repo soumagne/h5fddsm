@@ -68,7 +68,7 @@ ENDIF (BUILD_SHARED_LIBS)
 #-----------------------------------------------------------------------------
 INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/CMake/FindHDF5.cmake)
 IF(NOT HDF5_FOUND)
-  MESSAGE(FATAL_ERROR "This project requires HDF5")
+  MESSAGE(FATAL_ERROR "This project requires HDF5 1.8.5-VFD configured with CMake")
 ENDIF(NOT HDF5_FOUND)
   
 IF (NOT HDF5_SOURCE_DIR)
@@ -84,6 +84,25 @@ INCLUDE_DIRECTORIES(${MPI_INCLUDE_PATH})
 ADD_DEFINITIONS(-DMPICH_SKIP_MPICXX)
 
 #-----------------------------------------------------------------------------
+# Find and Use Boost for threads used in test send/receive on win32
+#-----------------------------------------------------------------------------
+IF (WIN32)
+  SET(Boost_DEBUG ON)
+  SET(Boost_ADDITIONAL_VERSIONS "1.39" "1.39.0" "1.40" "1.40.0")
+  SET(BOOST_ROOT "C:/Program Files/Boost")
+  SET(Boost_USE_STATIC_LIBS   ON)
+  SET(Boost_USE_MULTITHREADED ON)
+  FIND_PACKAGE(Boost 1.38.0 COMPONENTS thread) 
+
+  IF(Boost_FOUND)
+    INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
+    #MESSAGE(${Boost_INCLUDE_DIRS})
+    ADD_DEFINITIONS(-DHAVE_BOOST_THREADS)
+    LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
+  ENDIF(Boost_FOUND)
+ENDIF (WIN32)
+
+#-----------------------------------------------------------------------------
 # Configure our module header file
 #-----------------------------------------------------------------------------
 CONFIGURE_FILE(
@@ -91,12 +110,26 @@ CONFIGURE_FILE(
   ${H5FDdsm_BINARY_DIR}/H5FDdsmConfig.h
 )
 
+#-----------------------------------------------------------------------------
+# Include all directories used by this source
+#-----------------------------------------------------------------------------
+INCLUDE_DIRECTORIES(${H5FDdsm_SOURCE_DIR})
+INCLUDE_DIRECTORIES(${H5FDdsm_SOURCE_DIR}/h5dump)
 INCLUDE_DIRECTORIES(${H5FDdsm_BINARY_DIR})
 
 #-----------------------------------------------------------------------------
 # Define a user config path for the dsm ini file
 #-----------------------------------------------------------------------------
 SET(H5FDdsm_CONFIG_PATH $ENV{HOME} CACHE PATH "Path to the DSM configuration file")
+
+#-----------------------------------------------
+# Setup some convenience flags depending on machine
+#-----------------------------------------------
+SET(COMPUTERNAME $ENV{COMPUTERNAME})
+IF(COMPUTERNAME)
+  MESSAGE("Setting computername #DEFINE to MACHINE_$ENV{COMPUTERNAME}")
+  ADD_DEFINITIONS(-DMACHINE_$ENV{COMPUTERNAME})
+ENDIF(COMPUTERNAME)
 
 #-----------------------------------------------------------------------------
 # Specify project source files
@@ -113,6 +146,18 @@ SET(H5FDdsmSources
   H5FDdsmMsg.cxx
   H5FDdsmSocket.cxx
   H5FDdsmStorage.cxx
+  #
+  # Utility classes which make life easier (especially testing etc)
+  #
+  H5FDdsmManager.cxx
+  H5FDdsmDump
+  h5dump/h5dump.cxx
+  h5dump/h5tools.cxx
+  h5dump/h5tools_ref.cxx
+  h5dump/h5tools_str.cxx
+  h5dump/h5tools_type.cxx
+  h5dump/h5tools_utils.cxx
+  h5dump/h5trav.cxx
 )
 
 #-----------------------------------------------------------------------------
@@ -146,9 +191,9 @@ ENDIF (BUILD_FORTRAN)
 #-----------------------------------------------------------------------------
 OPTION(BUILD_TESTING "Build Testing code" OFF)
 
-IF(BUILD_TESTING)
+#IF(BUILD_TESTING)
  ADD_SUBDIRECTORY(Testing)
-ENDIF(BUILD_TESTING)
+#ENDIF(BUILD_TESTING)
  
 #-----------------------------------------------------------------------------
 # Debugging below here

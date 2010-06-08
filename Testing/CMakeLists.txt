@@ -1,6 +1,21 @@
-# Test DSM
-INCLUDE_DIRECTORIES(${H5FDdsm_SOURCE_DIR})
+#-----------------------------------------------------------------------------
+# H5FDdsmSenderTest : Send data as fast as possible across the network
+#-----------------------------------------------------------------------------
+ADD_EXECUTABLE(H5FDdsmSenderTest 
+  H5FDdsmSenderTest.cxx
+)
+TARGET_LINK_LIBRARIES(H5FDdsmSenderTest 
+  H5FDdsm
+)
 
-ADD_EXECUTABLE(test test.cxx)
-TARGET_LINK_LIBRARIES(test H5FDdsm)
+#-----------------------------------------------------------------------------
+# H5FDdsmReceiverTest : Receive data from Sender and do a light H5Dump
+#-----------------------------------------------------------------------------
+ADD_EXECUTABLE(H5FDdsmReceiverTest 
+  H5FDdsmReceiverTest.cxx
+)
+TARGET_LINK_LIBRARIES(H5FDdsmReceiverTest
+  H5FDdsm
+)
+
 

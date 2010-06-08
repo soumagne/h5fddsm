@@ -81,17 +81,17 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     H5FDdsmGetValueMacro(ServiceThreadUseCopy, H5FDdsmInt32);
     H5FDdsmSetValueMacro(ServiceThreadUseCopy, H5FDdsmInt32);
 
+    // Is the DSMBuffer connected
+    H5FDdsmGetValueMacro(IsConnected, H5FDdsmBoolean);
+    H5FDdsmSetValueMacro(IsConnected, H5FDdsmBoolean);
+
+    // Is the DSMBuffer ready to update
+    H5FDdsmGetValueMacro(IsUpdateReady, H5FDdsmBoolean);
+    H5FDdsmSetValueMacro(IsUpdateReady, H5FDdsmBoolean);
+
     // Is the DSMBuffer in server or client mode
     H5FDdsmGetValueMacro(IsServer, bool);
     H5FDdsmSetValueMacro(IsServer, bool);
-
-    // Is the DSMBuffer connected
-    H5FDdsmGetValueMacro(IsConnected, bool);
-    H5FDdsmSetValueMacro(IsConnected, bool);
-
-    // Is the DSMBuffer ready to update
-    H5FDdsmGetValueMacro(IsUpdateReady, bool);
-    H5FDdsmSetValueMacro(IsUpdateReady, bool);
 
     // Is the DSMBuffer open for Read Only operations
     H5FDdsmGetValueMacro(IsReadOnly, bool);
@@ -124,13 +124,13 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     void *      ServiceThread();
 
   protected:
-    volatile H5FDdsmInt32 ThreadDsmReady;
-    H5FDdsmInt32 ServiceThreadUseCopy;
-    bool IsServer;
-    volatile bool IsConnected;
-    volatile bool IsUpdateReady;
-    bool IsReadOnly;
-    H5FDdsmString  XMLDescription;
+    volatile H5FDdsmInt32   ThreadDsmReady;
+    volatile H5FDdsmBoolean IsConnected;
+    volatile H5FDdsmBoolean IsUpdateReady;
+    bool                    IsServer;
+    bool                    IsReadOnly;
+    H5FDdsmInt32            ServiceThreadUseCopy;
+    H5FDdsmString           XMLDescription;
 };
 
 #endif // __H5FDdsmBuffer_h
