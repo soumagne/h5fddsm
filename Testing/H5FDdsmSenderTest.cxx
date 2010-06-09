@@ -191,7 +191,6 @@ int main(int argc, char **argv)
   double         MBytes, GBytes, Bytes, totalbytes, bandwidth;
   double         totaltime, timetaken[AVERAGE];
   char           fullname[256] = "dsm";
-  int            use_dsm = 1;
 
   //
   // Sender does not use any special threads so MPI_Init is ok

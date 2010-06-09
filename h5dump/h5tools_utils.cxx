@@ -50,6 +50,7 @@
 extern "C" {
 #include "H5private.h"
 }
+#undef __attribute__
 
 #include "h5trav.h"
 
