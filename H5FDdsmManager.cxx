@@ -27,9 +27,11 @@
 //
 #include "H5FDdsmDump.h"
 
-#include  <io.h>
 #include  <stdio.h>
 #include  <stdlib.h>
+#ifdef _WIN32
+  #define access _access
+#endif
 
 //----------------------------------------------------------------------------
 #undef  vtkDebugMacro
@@ -446,7 +448,7 @@ void H5FDdsmManager::ClearXMLStringReceive()
 //----------------------------------------------------------------------------
 bool FileExists(const char *fname) 
 {
-  if( _access( fname, 0 ) != -1 ) {
+  if( access( fname, 0 ) != -1 ) {
       return true;
   } else {
       return false;
