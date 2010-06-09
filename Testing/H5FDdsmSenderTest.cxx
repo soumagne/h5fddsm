@@ -185,10 +185,10 @@ void TestParticleClose()
 
 int main(int argc, char **argv)
 {
-  int            nlocalprocs, remoteMB, rank, loop, length;
-  int            Lengths[MAX_LENGTH] = { 1000, 5000, 10000, 50000, 100000, 500000, 1000000, 5000000, 10000000, 50000000 };
+  int            nlocalprocs, rank, loop;
+//  int            Lengths[MAX_LENGTH] = { 1000, 5000, 10000, 50000, 100000, 500000, 1000000, 5000000, 10000000, 50000000 };
   MPI_Comm       dcomm = MPI_COMM_WORLD;
-  double         MBytes, GBytes, Bytes, SendBytes, bandwidth;
+  double         remoteMB, MBytes, GBytes, Bytes, SendBytes, bandwidth;
   double         totaltime, timetaken[AVERAGE];
   char           fullname[256] = "dsm";
 
@@ -235,15 +235,18 @@ int main(int argc, char **argv)
   //
   // Get info from remote server
   //
-  remoteMB = static_cast<int>(dsmBuffer->GetTotalLength()/(1024*1024));
-  int serversize = dsmBuffer->GetEndServerId();
+  remoteMB = dsmBuffer->GetTotalLength()/(1024.0*1024.0);
+  double numServers = dsmBuffer->GetEndServerId()+1;
   if (rank == 0) {
-    std::cout << "DSM server memory size is : " << remoteMB << " MB" << std::endl;
-    std::cout << "DSM server process count  : " <<  (serversize+1) << std::endl;
+    std::cout << "DSM server memory size is : " << (int)remoteMB << " MB" << std::endl;
+    std::cout << "DSM server process count  : " <<  (int)numServers << std::endl;
   }
 
-  for (length=0; length<MAX_LENGTH; length++) {
+//  for (length=0; length<MAX_LENGTH; length++) {
+    double numParticles = 1024*1024*(remoteMB-1)/(sizeof(double)*3.0*nlocalprocs);
+/*
     double numParticles = Lengths[length];
+*/
     Bytes       = numParticles*sizeof(double)*3.0; // 3 = {x,y,z}
     SendBytes   = Bytes*(double)nlocalprocs;
     MBytes      = SendBytes/(1024.0*1024.0);
@@ -267,7 +270,7 @@ int main(int argc, char **argv)
                   << "Bandwidth (MB/s), " << bandwidth    << std::endl;
       }
     }
-  }
+//  }
   dsmManager->DisconnectDSM();
 
   TestParticleClose();

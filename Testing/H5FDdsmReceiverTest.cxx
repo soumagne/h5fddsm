@@ -172,7 +172,7 @@ int main (int argc, char* argv[])
   //
   H5FDdsmManager *dsmManager = new H5FDdsmManager();
   dsmManager->SetCommunicator(dcomm);
-  dsmManager->SetLocalBufferSizeMBytes(512);
+  dsmManager->SetLocalBufferSizeMBytes(256);
   dsmManager->SetDsmCommType(H5FD_DSM_COMM_SOCKET);
   dsmManager->SetDsmIsServer(1);
   dsmManager->SetServerHostName(server_name.c_str());
@@ -190,7 +190,7 @@ int main (int argc, char* argv[])
   }
 
   while (!dsmManager->GetDSMHandle()->GetIsConnected()) {
-    sleep(0.1);
+    sleep(1000);
   }
 
   H5FDdsmInt64   Counter = 0;
