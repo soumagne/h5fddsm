@@ -466,10 +466,10 @@ bool H5FDdsmManager::ReadDSMConfigFile()
     // Parse DSM configuration file
     configPath = std::string(H5FDdsm_CONFIG_PATH) + std::string("/.dsm_config");
   }
-  std::cout << "Attempting to read from " << configPath.c_str() << std::endl;
-
-
   if (FileExists(configPath.c_str())) {
+    if (this->UpdatePiece == 0) {
+      std::cout << "Reading from " << configPath.c_str() << std::endl;
+    }
     std::string mode = config.GetValue("DSM_COMM_SYSTEM", "Comm", configPath);
     std::string host = config.GetValue("DSM_BASE_HOST",   "Comm", configPath);
     std::string port = config.GetValue("DSM_BASE_PORT",   "Comm", configPath);
