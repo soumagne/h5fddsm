@@ -27,6 +27,10 @@
 //
 #include "H5FDdsmDump.h"
 
+#include  <io.h>
+#include  <stdio.h>
+#include  <stdlib.h>
+
 //----------------------------------------------------------------------------
 #undef  vtkDebugMacro
 #define vtkDebugMacro(a) H5FDdsmExternalDebug(a)
@@ -317,6 +321,9 @@ void H5FDdsmManager::PublishDSM()
   }
   this->DSMBuffer->GetComm()->OpenPort();
 
+  //
+  // Only write config file if process 0
+  //
   if (this->UpdatePiece == 0) {
     H5FDdsmIniFile dsmConfigFile;
     std::string fullDsmConfigFilePath;
@@ -437,6 +444,15 @@ void H5FDdsmManager::ClearXMLStringReceive()
   this->DSMBuffer->SetXMLDescription(NULL);
 }
 //----------------------------------------------------------------------------
+bool FileExists(const char *fname) 
+{
+  if( _access( fname, 0 ) != -1 ) {
+      return true;
+  } else {
+      return false;
+  }
+}
+//----------------------------------------------------------------------------
 bool H5FDdsmManager::ReadDSMConfigFile()
 {
   H5FDdsmIniFile config;
@@ -450,7 +466,9 @@ bool H5FDdsmManager::ReadDSMConfigFile()
     configPath = std::string(H5FDdsm_CONFIG_PATH) + std::string("/.dsm_config");
   }
   std::cout << "Attempting to read from " << configPath.c_str() << std::endl;
-//  if (vtksys::SystemTools::FileExists(configPath.c_str())) {
+
+
+  if (FileExists(configPath.c_str())) {
     std::string mode = config.GetValue("DSM_COMM_SYSTEM", "Comm", configPath);
     std::string host = config.GetValue("DSM_BASE_HOST",   "Comm", configPath);
     std::string port = config.GetValue("DSM_BASE_PORT",   "Comm", configPath);
@@ -462,7 +480,7 @@ bool H5FDdsmManager::ReadDSMConfigFile()
     }
     this->SetServerHostName(host.c_str());
     return true;
-//  }
+  }
   return false;
 }
 //----------------------------------------------------------------------------
