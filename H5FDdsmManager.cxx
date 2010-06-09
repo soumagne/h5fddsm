@@ -26,10 +26,9 @@
 #include "H5FDdsmMsg.h"
 //
 #include "H5FDdsmDump.h"
-
-#include  <stdio.h>
-#include  <stdlib.h>
+//
 #ifdef _WIN32
+#include <io.h>
   #define access _access
 #endif
 
