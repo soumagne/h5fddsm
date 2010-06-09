@@ -180,15 +180,15 @@ void TestParticleClose()
 //----------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------
-#define MAX_LENGTH  9
-#define AVERAGE     5
+#define MAX_LENGTH  10
+#define AVERAGE     10
 
 int main(int argc, char **argv)
 {
   int            nlocalprocs, remoteMB, rank, loop, length;
-  int            Lengths[MAX_LENGTH] = { 1000, 5000, 10000, 50000, 100000, 500000, 1000000, 5000000, 10000000 };
+  int            Lengths[MAX_LENGTH] = { 1000, 5000, 10000, 50000, 100000, 500000, 1000000, 5000000, 10000000, 50000000 };
   MPI_Comm       dcomm = MPI_COMM_WORLD;
-  double         MBytes, GBytes, Bytes, totalbytes, bandwidth;
+  double         MBytes, GBytes, Bytes, SendBytes, bandwidth;
   double         totaltime, timetaken[AVERAGE];
   char           fullname[256] = "dsm";
 
@@ -245,8 +245,8 @@ int main(int argc, char **argv)
   for (length=0; length<MAX_LENGTH; length++) {
     double numParticles = Lengths[length];
     Bytes       = numParticles*sizeof(double)*3.0; // 3 = {x,y,z}
-    totalbytes  = Bytes*(double)nlocalprocs;
-    MBytes      = totalbytes/(1024.0*1024.0);
+    SendBytes   = Bytes*(double)nlocalprocs;
+    MBytes      = SendBytes/(1024.0*1024.0);
     GBytes      = MBytes/(1024.0);
     if (MBytes<remoteMB) {
       for (loop=0; loop<AVERAGE; loop++) {
