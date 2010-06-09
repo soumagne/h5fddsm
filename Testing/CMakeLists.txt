@@ -21,4 +21,16 @@ TARGET_LINK_LIBRARIES(H5FDdsmReceiverTest
   H5FDdsm
 )
 
-
+#-----------------------------------------------------------------------------
+# Add Target(s) to CMake Install 
+#-----------------------------------------------------------------------------
+INSTALL (
+    TARGETS
+        H5FDdsmSenderTest
+        H5FDdsmReceiverTest
+    EXPORT
+        H5FDdsm_Exports
+    LIBRARY DESTINATION lib 
+    ARCHIVE DESTINATION lib 
+    RUNTIME DESTINATION bin 
+)
