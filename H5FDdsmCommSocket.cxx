@@ -28,6 +28,18 @@
 #include <cstring>
 #include <cstdlib>
 
+// Sleep  in milliseconds
+#ifdef _WIN32
+  #include <windows.h> 
+  #define sleep(a) ::Sleep(a)
+#else
+  void Sleep(int ms) {
+    usleep(ms*1000); //convert to microseconds
+    return;
+  }
+  #define sleep(a) Sleep(a)
+#endif
+
 #define DSM_COMM_SOCKET_PORT_INIT 22000
 #define DSM_COMM_SOCKET_PORT_DATA 23000
 //----------------------------------------------------------------------------
@@ -280,7 +292,16 @@ H5FDdsmCommSocket::RemoteCommConnect()
   if (H5FDdsmComm::RemoteCommConnect() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
   if (this->Id == 0) {
-    if (this->DsmMasterSocket->Connect(this->DsmMasterHostName, this->DsmMasterPort) == H5FD_DSM_FAIL) {
+    int retry = 100;
+    while (retry>0) {
+      if (this->DsmMasterSocket->Connect(this->DsmMasterHostName, this->DsmMasterPort) == H5FD_DSM_FAIL) {
+        retry -= 1;
+        H5FDdsmError("Socket connection failed : " << "Retrying " << retry);
+        sleep(1000);
+      }
+      else retry = -1;
+    }
+    if (retry!=-1) {
       H5FDdsmError("Socket connection failed");
       return(H5FD_DSM_FAIL);
     }
