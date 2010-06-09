@@ -40,7 +40,8 @@
 class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
 {
   public:
-    static H5FDdsmManager *New() { return new H5FDdsmManager(); }
+     H5FDdsmManager();
+    ~H5FDdsmManager();
 
     // Description:
     // Set/Get the MPI Communicator used by this DSM manager
@@ -127,9 +128,6 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     H5FDdsmBuffer *GetDSMHandle();
 
   protected:
-     H5FDdsmManager();
-    ~H5FDdsmManager();
-
     //
     // Internal Variables
     //

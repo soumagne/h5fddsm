@@ -17,6 +17,7 @@
 
 #ifdef _WIN32
   #include <windows.h> // sleep
+  #define sleep ::Sleep
 #endif
 
 #ifdef HAVE_PTHREADS
@@ -123,6 +124,10 @@ int main (int argc, char* argv[])
 {
   int provided, rank, size;
   MPI_Comm dcomm = MPI_COMM_WORLD;
+
+  //
+  // Receiver will spawn a thread to handle incoming data Put/Get requests
+  // we must therefore have MPI_THREAD_MULTIPLE 
   //
   MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
   MPI_Comm_rank(dcomm, &rank);
@@ -137,8 +142,18 @@ int main (int argc, char* argv[])
       std::cout << "MPI_THREAD_MULTIPLE is OK" << std::endl;
     }
   }
-
   std::cout << "Process number " << rank << " of " << size << std::endl;
+
+  //
+  // Pause for debugging
+  //
+#ifdef H5FD_TEST_WAIT
+  if (rank == 0) {
+    std::cout << "Attach debugger if necessary, then press <enter>" << std::endl;
+    char c;
+    std::cin >> c;
+  }
+#endif
 
   //
   // Sync here
@@ -146,37 +161,40 @@ int main (int argc, char* argv[])
   MPI_Barrier(dcomm);
 
   //
-  // Pause for debugging
-  //
-//  std::cout << "Attach debugger if necessary, then press <enter>" << std::endl;
-//  char c;
-//  std::cin >> c;
-
-  //
   // Create a DSM manager
   //
-  H5FDdsmManager *dsmManager = H5FDdsmManager::New();
+  H5FDdsmManager *dsmManager = new H5FDdsmManager();
   dsmManager->SetCommunicator(dcomm);
-  dsmManager->SetLocalBufferSizeMBytes(512);
-  dsmManager->SetDsmCommType(H5FD_DSM_COMM_SOCKET);
+  dsmManager->SetLocalBufferSizeMBytes(16);
+  dsmManager->SetDsmCommType(H5FD_DSM_COMM_MPI);
   dsmManager->SetDsmIsServer(1);
   dsmManager->SetServerHostName(server_name.c_str());
   dsmManager->SetServerPort(default_port_number);
   dsmManager->CreateDSM();
-  // Will write .dsm_config file with server name/port/mode in
+  // Publish writes .dsm_config file with server name/port/mode in
+  // then spawns thread which waits for incoming connections
   dsmManager->PublishDSM();
+  //
+  int totalMB = static_cast<int>(dsmManager->GetDSMHandle()->GetTotalLength()/(1024*1024));
+  int serversize = dsmManager->GetDSMHandle()->GetEndServerId();
+  if (rank == 0) {
+    std::cout << "DSM server memory size is : " << totalMB << " MB" << std::endl;
+    std::cout << "DSM server process count  : " <<  (serversize+1) << std::endl;
+  }
+
+  while (!dsmManager->GetDSMHandle()->GetIsConnected()) {
+    sleep(10);
+  }
 
   H5FDdsmInt64   Counter = 0;
-  H5FDdsmInt64   UpdatesCounter = 0;
-
-  bool good = true;  
-  while(good) {
+  bool connected = true;  
+  while(connected) {
     if (dsmManager->GetDsmUpdateReady()) {
-      std::cout << " : " << ++Counter << std::endl;
+      std::cout << "File count : " << ++Counter << std::endl;
       //
       // H5Dump
       //
-//      dsmManager->H5DumpLight();
+      dsmManager->H5DumpLight();
       //
       // Sync here
       //
@@ -186,27 +204,30 @@ int main (int argc, char* argv[])
       //
       dsmManager->ClearDsmUpdateReady();
       dsmManager->RequestRemoteChannel();
-      if (Counter>=100) {
-        good = false;
-      }
     }
     else {
-     #ifdef _WIN32       
-      ::Sleep(1);
-     #else
       sleep(1);
-     #endif
     }
+    connected = (dsmManager->GetDSMHandle()->GetIsConnected()!=0);
   }
 
-  std::cout.flush();
-  std::cout << "\n\n\nClosing down DSM server \n\n\n"<< std::endl;
-  std::cout.flush();
+  std::cout << "Process number " << rank << " Closing down DSM server" << std::endl;
 
   //
   // Sync here
   //
   MPI_Barrier(dcomm);
 
+  //
+  // Closes ports or MPI communicators
+  //
   dsmManager->UnpublishDSM();
+
+  //
+  // Clean up everything
+  // 
+  delete dsmManager;
+
+  MPI_Finalize();
+  return(EXIT_SUCCESS);
 }

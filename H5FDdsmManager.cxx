@@ -92,10 +92,15 @@ void H5FDdsmManager::ClearDsmUpdateReady()
 //----------------------------------------------------------------------------
 bool H5FDdsmManager::DestroyDSM()
 {
-  if (this->DSMBuffer && this->UpdatePiece == 0) {
+  if (this->DSMBuffer && this->DSMBuffer->GetIsServer() && this->UpdatePiece == 0) {
+    this->DSMBuffer->SendDone();
+  }
+/* @TODO, client doesn't need to call SendDone, but can if it wants to 
+  if (this->DSMBuffer && this->DSMBuffer->GetIsConnected() && this->UpdatePiece == 0) {
     // @TODO watch out that all processes have empty message queues
     this->DSMBuffer->SendDone();
   }
+*/
 #ifdef HAVE_PTHREADS
   if (this->ServiceThread) {
     pthread_join(this->ServiceThread, NULL);
@@ -249,6 +254,49 @@ void H5FDdsmManager::ConnectDSM()
   }
   else {
     if (this->UpdatePiece == 0) vtkErrorMacro(<< "NULL port");
+  }
+
+
+  if (!this->DSMBuffer->GetIsConnected()) {
+#ifdef H5FD_DSM_DEBUG
+    this->DSMBuffer->DebugOn();
+    this->DSMBuffer->GetComm()->DebugOn();
+    if (this->DSMBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_SOCKET) {
+      H5FDdsmConstString hostName = dynamic_cast<H5FDdsmCommSocket*> (this->DSMBuffer->GetComm())->GetDsmMasterHostName();
+      H5FDdsmInt32 port = dynamic_cast<H5FDdsmCommSocket*> (this->DSMBuffer->GetComm())->GetDsmMasterPort();
+      vtkDebugMacro(<<"DSM driver connecting on: " << hostName << ":" << port);
+    }
+    else if (this->DSMBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI) {
+      H5FDdsmConstString hostName = dynamic_cast<H5FDdsmCommMpi*> (this->DSMBuffer->GetComm())->GetDsmMasterHostName();
+      vtkDebugMacro(<<"DSM driver connecting on: " << hostName);
+    }
+#endif
+    if (this->DSMBuffer->GetComm()->RemoteCommConnect() == H5FD_DSM_SUCCESS) {
+      vtkDebugMacro(<< "Connected!");
+      this->DSMBuffer->SetIsConnected(true);
+
+      // Receive DSM info
+      H5FDdsmInt64 length;
+      H5FDdsmInt64 totalLength;
+      H5FDdsmInt32 startServerId, endServerId;
+
+      this->DSMBuffer->GetComm()->RemoteCommRecvInfo(&length, &totalLength, &startServerId, &endServerId);
+
+      this->DSMBuffer->SetLength(length, 0);
+      vtkDebugMacro(<<"Length received: " << this->DSMBuffer->GetLength());
+
+      this->DSMBuffer->SetTotalLength(totalLength);
+      vtkDebugMacro(<<"totalLength received: " << this->DSMBuffer->GetTotalLength());
+
+      this->DSMBuffer->SetStartServerId(startServerId);
+      vtkDebugMacro(<<"startServerId received: " << this->DSMBuffer->GetStartServerId());
+
+      this->DSMBuffer->SetEndServerId(endServerId);
+      vtkDebugMacro(<<"endServerId received: " << this->DSMBuffer->GetEndServerId());
+    }
+    else {
+      vtkErrorMacro(<< "DSMBuffer Comm_connect error");
+    }
   }
 }
 //----------------------------------------------------------------------------

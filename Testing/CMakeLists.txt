@@ -1,3 +1,6 @@
+IF (WIN32)
+  ADD_DEFINITIONS(-DH5FD_TEST_WAIT)
+ENDIF(WIN32)
 #-----------------------------------------------------------------------------
 # H5FDdsmSenderTest : Send data as fast as possible across the network
 #-----------------------------------------------------------------------------

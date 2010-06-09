@@ -66,7 +66,7 @@ const char ArrayNames[] = "Position";
 /*******************************************************************/
 void write_ecrit_particule(
     EcritParticuleHDFTesting *buf, const char *filename,
-    int len,  int start, int total, int use_dsm)
+    int len,  int start, int total, H5FDdsmBuffer *dsmBuffer)
 {
   hid_t      file_id, group_id, dataset_id;
   hid_t      file_space_id, mem_space_id;
@@ -79,9 +79,9 @@ void write_ecrit_particule(
   /* Set up file access property list with parallel I/O */
   acc_plist_id = H5Pcreate(H5P_FILE_ACCESS);
   H5CHECK_ERROR(acc_plist_id, "H5Pcreate access");
-  if (use_dsm) {
+  if (dsmBuffer) {
     H5FD_dsm_init();
-    H5Pset_fapl_dsm(acc_plist_id, H5FD_DSM_INCREMENT, NULL);
+    H5Pset_fapl_dsm(acc_plist_id, H5FD_DSM_INCREMENT, dsmBuffer);
     H5CHECK_ERROR(status, "H5Pset_fapl_dsm");
   } else {
     H5Pset_fapl_mpio(acc_plist_id, MPI_COMM_WORLD, MPI_INFO_NULL);
@@ -140,7 +140,7 @@ void freeBuffer(EcritParticuleHDFTesting *buffer) {
 }
 //----------------------------------------------------------------------------
 double TestParticleWrite(const char *filename, int N, int mpiId, int mpiNum,
-    MPI_Comm dcomm, int use_dsm)
+    MPI_Comm dcomm, H5FDdsmBuffer *dsmBuffer)
 {
   EcritParticuleHDFTesting WriteBuffer;
   int       i, start, total, memsize;
@@ -164,7 +164,7 @@ double TestParticleWrite(const char *filename, int N, int mpiId, int mpiNum,
   // call the write routine with our dummy buffer
   MPI_Barrier(dcomm);
   double t1 = MPI_Wtime();
-  write_ecrit_particule(&WriteBuffer, filename, N, start, total, use_dsm);
+  write_ecrit_particule(&WriteBuffer, filename, N, start, total, dsmBuffer);
   MPI_Barrier(dcomm);
   double t2 = MPI_Wtime();
 
@@ -180,77 +180,99 @@ void TestParticleClose()
 //----------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------
-#define MAX_LENGTH  8
+#define MAX_LENGTH  9
 #define AVERAGE     5
 
 int main(int argc, char **argv)
 {
-  int            nprocs,rank, loop, length;
-  int            size;
-  int            Lengths[MAX_LENGTH] = { 1000, 5000, 10000, 50000, 100000, 500000, 1000000, 5000000 };
+  int            nlocalprocs, remoteMB, rank, loop, length;
+  int            Lengths[MAX_LENGTH] = { 1000, 5000, 10000, 50000, 100000, 500000, 1000000, 5000000, 10000000 };
   MPI_Comm       dcomm = MPI_COMM_WORLD;
-  double         Mbytes, Gbytes, bytes, totalbytes;
-  double         threshold;
-  double         th, t_h5part[AVERAGE];
-  char           fullname[256] = "stdin";
+  double         MBytes, GBytes, Bytes, totalbytes, bandwidth;
+  double         totaltime, timetaken[AVERAGE];
+  char           fullname[256] = "dsm";
   int            use_dsm = 1;
 
+  //
+  // Sender does not use any special threads so MPI_Init is ok
+  //
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(dcomm,&rank);
-  MPI_Comm_size(dcomm,&nprocs);
+  MPI_Comm_size(dcomm,&nlocalprocs);
 
   //
   // Pause for debugging
   //
-//  std::cout << "Attach debugger if necessary, then press <enter>" << std::endl;
-//  char c;
-//  std::cin >> c;
+#ifdef H5FD_TEST_WAIT
+  if (rank == 0) {
+    std::cout << "Attach debugger if necessary, then press <enter>" << std::endl;
+    char c;
+    std::cin >> c;
+  }
+  MPI_Barrier(dcomm);
+#endif
 
   //
   // Create a DSM manager
   //
-  H5FDdsmManager *dsmManager = H5FDdsmManager::New();
+  H5FDdsmManager *dsmManager = new H5FDdsmManager();
   dsmManager->SetCommunicator(dcomm);
   dsmManager->SetDsmIsServer(0);
-  dsmManager->SetDsmCommType(H5FD_DSM_COMM_MPI);
-  dsmManager->SetServerHostName(server_name.c_str());
-  dsmManager->SetServerPort(default_port_number);
   dsmManager->ReadDSMConfigFile();
   dsmManager->CreateDSM();
-
-  //
-  // Sync here
-  //
-  MPI_Barrier(dcomm);
 
   //
   // Connect to receiver
   //
   dsmManager->ConnectDSM();
 
-  threshold = 1.25*(log((nprocs+1.0))/std::log(2.0));
-  threshold = 1024.0*threshold;
-  if (rank==0) printf("Threshold IO MBytes = %10.5f\n", threshold);
+  //
+  // We have configured everything manually using the DSM manager, so pass the buffer
+  // into the read/write code so that we can use the dsm that we have setup
+  // otherwise it creates a new DSM server object
+  //
+  H5FDdsmBuffer *dsmBuffer = dsmManager->GetDSMHandle();
 
-  for (length=0; length<MAX_LENGTH; length++) {
-    for (loop=0; loop<AVERAGE; loop++) {
-      size       = Lengths[length];
-      bytes      = (double)size*sizeof(double)*3;
-      totalbytes = bytes*(double)nprocs;
-      Mbytes     = totalbytes/(1024.0*1024.0);
-      Gbytes     = Mbytes/(1024.0);
-      //          if (Mbytes>threshold) continue;
-      t_h5part[loop]   = TestParticleWrite(fullname, size, rank, nprocs, dcomm, use_dsm);
-    }
-    th = 0;
-    for (loop=0; loop<AVERAGE; loop++) {
-      th = th + t_h5part[loop];
-    }
-    th = th/AVERAGE;
-    if (rank==0) printf("method, custom, collective, 0, particles, %09i, NumArrays, 3, NProcs, %05i, MBytes, %10.5f, time, %9.4f\n", size, nprocs, Mbytes, th);
+  //
+  // Get info from remote server
+  //
+  remoteMB = static_cast<int>(dsmBuffer->GetTotalLength()/(1024*1024));
+  int serversize = dsmBuffer->GetEndServerId();
+  if (rank == 0) {
+    std::cout << "DSM server memory size is : " << remoteMB << " MB" << std::endl;
+    std::cout << "DSM server process count  : " <<  (serversize+1) << std::endl;
   }
 
+  for (length=0; length<MAX_LENGTH; length++) {
+    double numParticles = Lengths[length];
+    Bytes       = numParticles*sizeof(double)*3.0; // 3 = {x,y,z}
+    totalbytes  = Bytes*(double)nlocalprocs;
+    MBytes      = totalbytes/(1024.0*1024.0);
+    GBytes      = MBytes/(1024.0);
+    if (MBytes<remoteMB) {
+      for (loop=0; loop<AVERAGE; loop++) {
+        timetaken[loop] = TestParticleWrite(fullname, (int)numParticles, rank, nlocalprocs, dcomm, dsmBuffer);
+      }
+      totaltime = 0;
+      for (loop=0; loop<AVERAGE; loop++) {
+        totaltime += timetaken[loop];
+      }
+      totaltime = totaltime/AVERAGE;
+      bandwidth = (MBytes/totaltime);
+      if (rank==0) {
+        std::cout << "Particles, "        << numParticles << ", "
+                  << "NumArrays, "        << 3            << ", "
+                  << "NProcs, "           << nlocalprocs  << ", "
+                  << "Mbytes, "           << MBytes       << ", "
+                  << "TotalTime, "        << totaltime    << ", "
+                  << "Bandwidth (MB/s), " << bandwidth    << std::endl;
+      }
+    }
+  }
+  dsmManager->DisconnectDSM();
+
   TestParticleClose();
+  delete dsmManager;
 
   MPI_Finalize();
 

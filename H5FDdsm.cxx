@@ -112,7 +112,7 @@ extern "C" {
 //
 #ifdef H5_HAVE_PARALLEL
 
-//#define H5FD_DSM_DEBUG 1
+// #define H5FD_DSM_DEBUG
 #ifdef H5FD_DSM_DEBUG
 #  define PRINT_INFO(x) std::cout << "(" << file->DsmBuffer->GetComm()->GetId() << ") " << x << std::endl;
 #  define PRINT_DSM_INFO(a,x) std::cout << "(" << a << ") " << x << std::endl;

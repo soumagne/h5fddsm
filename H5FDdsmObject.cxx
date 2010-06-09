@@ -52,7 +52,11 @@
 #include "H5FDdsmObject.h"
 #include <string.h>
 
-static H5FDdsmInt32 GlobalDebugFlag = 0;
+#ifdef H5FD_DEBUG_WITH_THREADS
+ static H5FDdsmInt32 GlobalDebugFlag = 0;
+#else
+ static H5FDdsmInt32 GlobalDebugFlag = 0;
+#endif
 
 //------------------------------------------------------------------------------
 // Base H5FDdsm class definition from H5FDdsm originally

@@ -68,9 +68,9 @@ H5FDdsmInt32 H5FDdsmStorage::Allocate()
     this->DataPointer = realloc(this->DataPointer,
         this->NumberOfElements*sizeof(H5FDdsmInt8));
     // init to 0
-    for (int i = 0; i < this->NumberOfElements ; i++) {
-      ((H5FDdsmInt8*)this->DataPointer)[i] = 0;
-    }
+    //for (int i = 0; i < this->NumberOfElements ; i++) {
+    //  ((H5FDdsmInt8*)this->DataPointer)[i] = 0;
+    //}
   } else {
     this->DataPointer = calloc(this->NumberOfElements, sizeof(H5FDdsmInt8));
   }
