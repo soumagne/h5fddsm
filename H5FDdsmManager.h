@@ -45,7 +45,7 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
 
     // Description:
     // Set/Get the MPI Communicator used by this DSM manager
-    H5FDdsmSetValueMacro(Communicator,MPI_Comm);
+    void SetCommunicator(MPI_Comm comm);
     H5FDdsmGetValueMacro(Communicator,MPI_Comm);
 
     // Description:

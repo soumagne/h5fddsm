@@ -70,6 +70,17 @@ H5FDdsmManager::~H5FDdsmManager()
   this->SetXMLStringSend(NULL);
 }
 //----------------------------------------------------------------------------
+void H5FDdsmManager::SetCommunicator(MPI_Comm comm)
+{
+  if (comm!=this->Communicator) {
+    this->Communicator = comm;
+    if (this->Communicator!=MPI_COMM_NULL) {
+      MPI_Comm_size(this->Communicator, &this->UpdateNumPieces);
+      MPI_Comm_rank(this->Communicator, &this->UpdatePiece);
+    }
+  }
+}
+//----------------------------------------------------------------------------
 int H5FDdsmManager::GetAcceptedConnection()
 {
   int ret = 0;
@@ -187,18 +198,19 @@ bool H5FDdsmManager::CreateDSM()
   this->DSMBuffer = new H5FDdsmBuffer();
   // this->DSMBuffer->DebugOn();
   this->DSMBuffer->SetServiceThreadUseCopy(0);
-  // Uniform Dsm : every node has a buffer the same size. (Addresses are sequential)
-  this->DSMBuffer->ConfigureUniform(this->DSMComm, ((long long) this->GetLocalBufferSizeMBytes())*1024*1024);
-  if (this->UpdatePiece == 0) {
-    vtkDebugMacro(<< "Length set: " << this->DSMBuffer->GetLength() <<
-       ", totalLength set: " << this->DSMBuffer->GetTotalLength() <<
-       ", startServerId set: " << this->DSMBuffer->GetStartServerId() <<
-       ", endServerId set: " << this->DSMBuffer->GetEndServerId());
-  }
-  //
-  // setup service thread
-  //
+
   if (this->DsmIsServer == 1) {
+    // Uniform Dsm : every node has a buffer the same size. (Addresses are sequential)
+    this->DSMBuffer->ConfigureUniform(this->DSMComm, ((long long) this->GetLocalBufferSizeMBytes())*1024*1024, -1, -1);
+    if (this->UpdatePiece == 0) {
+      vtkDebugMacro(<< "Length set: " << this->DSMBuffer->GetLength() <<
+         ", totalLength set: " << this->DSMBuffer->GetTotalLength() <<
+         ", startServerId set: " << this->DSMBuffer->GetStartServerId() <<
+         ", endServerId set: " << this->DSMBuffer->GetEndServerId());
+    }
+    //
+    // setup service thread
+    //
     vtkDebugMacro(<< "Creating service thread...");
 #ifdef HAVE_PTHREADS
     // Start another thread to handle DSM requests from other nodes
@@ -214,8 +226,10 @@ bool H5FDdsmManager::CreateDSM()
     }
     this->DSMBuffer->SetIsServer(true);
     vtkDebugMacro(<<"DSM Service Ready on " << this->UpdatePiece);
-  } else {
+  } 
+  else {
     this->DSMBuffer->SetIsServer(false);
+    this->DSMBuffer->SetComm(this->DSMComm);
   }
 
   return true;

@@ -145,7 +145,7 @@ H5FDdsmDriver::ConfigureUniform(H5FDdsmComm *aComm, H5FDdsmInt64 aLength, H5FDds
     this->SetEndServerId(EndId);
     this->SetComm(aComm);
     if((aComm->GetId() >= StartId) && (aComm->GetId() <= EndId)){
-        this->SetLength(aLength);
+        this->SetLength(aLength, 1);
         this->StartAddress = (aComm->GetId() - StartId) * aLength;
         this->EndAddress = this->StartAddress + aLength - 1;
     }else{

@@ -463,7 +463,7 @@ int H5FDdsmSocket::Send(const void* data, int length)
       n = send(this->ClientSocketDescriptor, buffer+total, length-total, flags);
     }
     if (n < 0) {
-      H5FDdsmError("Socket Error: Send failed.");
+      H5FDdsmError("Socket Error: Send failed (size was " << length <<")");
       return -1;
     }
     total += n;
