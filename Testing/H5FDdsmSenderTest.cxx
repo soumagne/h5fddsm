@@ -195,7 +195,7 @@ void TestParticleClose()
 //----------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------
-#define MAX_LENGTH  10
+#define MAX_LENGTH  3
 #define LOOPS       10
 #define AVERAGE     10
 
@@ -203,6 +203,7 @@ int main(int argc, char **argv)
 {
   int            nlocalprocs, rank;
 //  int            Lengths[MAX_LENGTH] = { 1000, 5000, 10000, 50000, 100000, 500000, 1000000, 5000000, 10000000, 50000000 };
+  int            Lengths[MAX_LENGTH] = { 50000, 500000, 50000000 };
   MPI_Comm       dcomm = MPI_COMM_WORLD;
   double         remoteMB, MBytes, GBytes, Bytes, SendBytes, bandwidth;
   double         totaltime;
@@ -226,6 +227,15 @@ int main(int argc, char **argv)
   }
   MPI_Barrier(dcomm);
 #endif
+
+  const char *dsm_env = getenv("DSM_CONFIG_PATH");
+  std::string hdffile;
+  if (dsm_env) {
+    hdffile = std::string(dsm_env) + std::string("/hdf-output.h5");
+    if (rank == 0) {
+      std::cout << "HDF output goes to : " << hdffile.c_str() << std::endl;
+    }
+  }
 
   //
   // Create a DSM manager
@@ -261,10 +271,10 @@ int main(int argc, char **argv)
 //  for (length=0; length<MAX_LENGTH; length++) {
 
   for (int type=0; type<2; type++) {
-    if (type==0) {
+    if (type==0 && rank == 0) {
       std::cout << "Writing to DSM" << std::endl;
     }
-    else if (type==1) {
+    else if (type==1 && rank == 0) {
       std::cout << "Writing to Disk" << std::endl;
     }
     for (int loop=0; loop<LOOPS; loop++) {
@@ -282,7 +292,7 @@ int main(int argc, char **argv)
             totaltime += TestParticleWrite(fullname, (int)numParticles, rank, nlocalprocs, dcomm, dsmBuffer);
           }
           else if (type==1) {
-            totaltime += TestParticleWrite("/scratch/rosa/biddisco/hdftest/hdf-test.hf", (int)numParticles, rank, nlocalprocs, dcomm, NULL);
+            totaltime += TestParticleWrite(hdffile.c_str(), (int)numParticles, rank, nlocalprocs, dcomm, NULL);
           }
         }
         totaltime = totaltime/AVERAGE;
@@ -297,7 +307,6 @@ int main(int argc, char **argv)
         }
       }
     }
-
   }
 
   dsmManager->DisconnectDSM();

@@ -132,6 +132,12 @@ int main (int argc, char* argv[])
   int provided, rank, size;
   MPI_Comm dcomm = MPI_COMM_WORLD;
 
+  // default GB
+  double DSMSize = 40;
+  if (argv[1]) {
+    DSMSize = atof(argv[1]);
+  }
+
   //
   // Receiver will spawn a thread to handle incoming data Put/Get requests
   // we must therefore have MPI_THREAD_MULTIPLE 
@@ -172,7 +178,7 @@ int main (int argc, char* argv[])
   //
   H5FDdsmManager *dsmManager = new H5FDdsmManager();
   dsmManager->SetCommunicator(dcomm);
-  dsmManager->SetLocalBufferSizeMBytes(10*1024/8);
+  dsmManager->SetLocalBufferSizeMBytes(DSMSize*1024/size);
   dsmManager->SetDsmCommType(H5FD_DSM_COMM_SOCKET);
   dsmManager->SetDsmIsServer(1);
   dsmManager->SetServerHostName(server_name.c_str());
