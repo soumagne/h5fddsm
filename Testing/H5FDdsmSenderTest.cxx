@@ -68,7 +68,7 @@ void write_ecrit_particule(
     EcritParticuleHDFTesting *buf, const char *filename,
     int len,  int start, int total, H5FDdsmBuffer *dsmBuffer)
 {
-  hid_t      file_id, group_id, dataset_id;
+  hid_t      file_id, group_id, dataset_id, xfer_plist_id;
   hid_t      file_space_id, mem_space_id;
   hid_t      acc_plist_id;
   hsize_t    count[2]    = {total, 3};
@@ -78,7 +78,7 @@ void write_ecrit_particule(
 
   /* Set up file access property list with parallel I/O */
   acc_plist_id = H5Pcreate(H5P_FILE_ACCESS);
-  H5CHECK_ERROR(acc_plist_id, "H5Pcreate access");
+  H5CHECK_ERROR(acc_plist_id, "H5Pcreate(H5P_FILE_ACCESS)");
   if (dsmBuffer) {
     H5FD_dsm_init();
     H5Pset_fapl_dsm(acc_plist_id, H5FD_DSM_INCREMENT, dsmBuffer);
@@ -94,7 +94,7 @@ void write_ecrit_particule(
 
   /* Close property list */
   status = H5Pclose(acc_plist_id);
-  H5CHECK_ERROR(status, "H5Pclose");
+  H5CHECK_ERROR(status, "H5Pclose(acc_plist_id)");
 
   /* Create the file_space_id */
   file_space_id = H5Screate_simple(2, count, NULL);
@@ -117,16 +117,31 @@ void write_ecrit_particule(
   H5CHECK_ERROR(status, "H5Sselect_hyperslab");
 
   /* Create Dataset, Write Data, Close Dataset */
-  status = H5Dwrite(dataset_id, H5T_NATIVE_DOUBLE, mem_space_id, file_space_id, H5P_DEFAULT, (*buf).Ddata);
+  if (dsmBuffer) {
+    status = H5Dwrite(dataset_id, H5T_NATIVE_DOUBLE, mem_space_id, file_space_id, H5P_DEFAULT, (*buf).Ddata);
+    H5CHECK_ERROR(status, "H5Dwrite");
+  } else {
+    xfer_plist_id = H5Pcreate(H5P_DATASET_XFER);
+    H5CHECK_ERROR(xfer_plist_id, "H5Pcreate(H5P_DATASET_XFER)");
+    H5Pset_dxpl_mpio(xfer_plist_id, H5FD_MPIO_COLLECTIVE);
+    status = H5Dwrite(dataset_id, H5T_NATIVE_DOUBLE, mem_space_id, file_space_id, xfer_plist_id, (*buf).Ddata);
+    H5CHECK_ERROR(status, "H5Dwrite");
+    status = H5Pclose(xfer_plist_id);
+    H5CHECK_ERROR(status, "H5Pclose(xfer_plist_id)");
+  }
   H5CHECK_ERROR(status, "H5Dwrite");
 
   /* Release resources */
-  H5Sclose(mem_space_id);
+  status = H5Sclose(mem_space_id);
+  H5CHECK_ERROR(status, "H5Sclose");
   status = H5Dclose(dataset_id);
   H5CHECK_ERROR(status, "H5Dclose");
-  H5Sclose(file_space_id);
-  H5Gclose(group_id);
-  H5Fclose(file_id);
+  status = H5Sclose(file_space_id);
+  H5CHECK_ERROR(status, "H5Sclose");
+  status = H5Gclose(group_id);
+  H5CHECK_ERROR(status, "H5Gclose");
+  status = H5Fclose(file_id);
+  H5CHECK_ERROR(status, "H5Fclose");
 }
 //----------------------------------------------------------------------------
 // Test Particle write (H5Part compatible)
@@ -181,15 +196,16 @@ void TestParticleClose()
 //
 //----------------------------------------------------------------------------
 #define MAX_LENGTH  10
+#define LOOPS       10
 #define AVERAGE     10
 
 int main(int argc, char **argv)
 {
-  int            nlocalprocs, rank, loop;
+  int            nlocalprocs, rank;
 //  int            Lengths[MAX_LENGTH] = { 1000, 5000, 10000, 50000, 100000, 500000, 1000000, 5000000, 10000000, 50000000 };
   MPI_Comm       dcomm = MPI_COMM_WORLD;
   double         remoteMB, MBytes, GBytes, Bytes, SendBytes, bandwidth;
-  double         totaltime, timetaken[AVERAGE];
+  double         totaltime;
   char           fullname[256] = "dsm";
 
   //
@@ -243,34 +259,47 @@ int main(int argc, char **argv)
   }
 
 //  for (length=0; length<MAX_LENGTH; length++) {
-    double numParticles = 1024*1024*(remoteMB-1)/(sizeof(double)*3.0*nlocalprocs);
-/*
-    double numParticles = Lengths[length];
-*/
-    Bytes       = numParticles*sizeof(double)*3.0; // 3 = {x,y,z}
-    SendBytes   = Bytes*(double)nlocalprocs;
-    MBytes      = SendBytes/(1024.0*1024.0);
-    GBytes      = MBytes/(1024.0);
-    if (MBytes<remoteMB) {
-      for (loop=0; loop<AVERAGE; loop++) {
-        timetaken[loop] = TestParticleWrite(fullname, (int)numParticles, rank, nlocalprocs, dcomm, dsmBuffer);
-      }
-      totaltime = 0;
-      for (loop=0; loop<AVERAGE; loop++) {
-        totaltime += timetaken[loop];
-      }
-      totaltime = totaltime/AVERAGE;
-      bandwidth = (MBytes/totaltime);
-      if (rank==0) {
-        std::cout << "Particles, "        << numParticles << ", "
-                  << "NumArrays, "        << 3            << ", "
-                  << "NProcs, "           << nlocalprocs  << ", "
-                  << "Mbytes, "           << MBytes       << ", "
-                  << "TotalTime, "        << totaltime    << ", "
-                  << "Bandwidth (MB/s), " << bandwidth    << std::endl;
+
+  for (int type=0; type<2; type++) {
+    if (type==0) {
+      std::cout << "Writing to DSM" << std::endl;
+    }
+    else if (type==1) {
+      std::cout << "Writing to Disk" << std::endl;
+    }
+    for (int loop=0; loop<LOOPS; loop++) {
+      double numParticles = 1024*1024*(remoteMB-1)/(sizeof(double)*3.0*nlocalprocs);
+      // double numParticles = Lengths[length];
+
+      Bytes       = numParticles*sizeof(double)*3.0; // 3 = {x,y,z}
+      SendBytes   = Bytes*(double)nlocalprocs;
+      MBytes      = SendBytes/(1024.0*1024.0);
+      GBytes      = MBytes/(1024.0);
+      if (MBytes<remoteMB) {
+        totaltime = 0;
+        for (int avg=0; avg<AVERAGE; avg++) {
+          if (type==0) {
+            totaltime += TestParticleWrite(fullname, (int)numParticles, rank, nlocalprocs, dcomm, dsmBuffer);
+          }
+          else if (type==1) {
+            totaltime += TestParticleWrite("/scratch/rosa/biddisco/hdftest/hdf-test.hf", (int)numParticles, rank, nlocalprocs, dcomm, NULL);
+          }
+        }
+        totaltime = totaltime/AVERAGE;
+        bandwidth = (MBytes/totaltime);
+        if (rank==0) {
+          std::cout << "Particles, "        << numParticles << ", "
+                    << "NumArrays, "        << 3            << ", "
+                    << "NProcs, "           << nlocalprocs  << ", "
+                    << "Mbytes, "           << MBytes       << ", "
+                    << "TotalTime, "        << totaltime    << ", "
+                    << "Bandwidth (MB/s), " << bandwidth    << std::endl;
+        }
       }
     }
-//  }
+
+  }
+
   dsmManager->DisconnectDSM();
 
   TestParticleClose();

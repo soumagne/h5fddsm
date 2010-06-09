@@ -172,7 +172,7 @@ int main (int argc, char* argv[])
   //
   H5FDdsmManager *dsmManager = new H5FDdsmManager();
   dsmManager->SetCommunicator(dcomm);
-  dsmManager->SetLocalBufferSizeMBytes(256);
+  dsmManager->SetLocalBufferSizeMBytes(10*1024/8);
   dsmManager->SetDsmCommType(H5FD_DSM_COMM_SOCKET);
   dsmManager->SetDsmIsServer(1);
   dsmManager->SetServerHostName(server_name.c_str());
@@ -198,7 +198,7 @@ int main (int argc, char* argv[])
   while(connected) {
     if (dsmManager->GetDsmUpdateReady()) {
       if (rank == 0) {
-        std::cout << "Receive count : " << ++Counter << std::endl;
+//        std::cout << "Receive count : " << ++Counter << std::endl;
       }
       //
       // H5Dump
