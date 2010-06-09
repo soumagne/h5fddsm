@@ -20,11 +20,11 @@
   #include <windows.h> 
   #define sleep(a) ::Sleep(a)
 #else
-  void Sleep(int ms) {
+  void mySleep(int ms) {
     usleep(ms*1000); //convert to microseconds
     return;
   }
-  #define sleep(a) Sleep(a)
+  #define sleep(a) mySleep(a)
 #endif
 
 #ifdef HAVE_PTHREADS
@@ -173,7 +173,7 @@ int main (int argc, char* argv[])
   H5FDdsmManager *dsmManager = new H5FDdsmManager();
   dsmManager->SetCommunicator(dcomm);
   dsmManager->SetLocalBufferSizeMBytes(512);
-  dsmManager->SetDsmCommType(H5FD_DSM_COMM_MPI);
+  dsmManager->SetDsmCommType(H5FD_DSM_COMM_SOCKET);
   dsmManager->SetDsmIsServer(1);
   dsmManager->SetServerHostName(server_name.c_str());
   dsmManager->SetServerPort(default_port_number);
