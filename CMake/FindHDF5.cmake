@@ -1,4 +1,8 @@
 #
+# To be used by projects that make use of Cmakeified hdf5-1.8.5 
+#
+
+#
 # Find the HDF5 includes and get all installed hdf5 library settings from
 # HDF5-config.cmake file : Requires a CMake compatible hdf5-1.8.5 or later 
 # for this feature to work. The following vars are set if hdf5 is found.
@@ -39,7 +43,7 @@ FIND_PATH(HDF5_ROOT_DIR "HDF5-config.cmake"
   /usr/local/lib64
   /usr/lib
   /usr/lib64
-  "C:/Program Files/HDF5"
+  "C:/Program Files/HDF5/lib"
 )
 
 FIND_PATH(HDF5_INCLUDE_DIR "H5public.h"
@@ -50,5 +54,4 @@ IF(HDF5_INCLUDE_DIR)
   SET(HDF5_FOUND "YES")
   INCLUDE(${HDF5_ROOT_DIR}/HDF5-config.cmake)
 ENDIF(HDF5_INCLUDE_DIR)
-
 

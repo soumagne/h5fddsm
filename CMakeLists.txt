@@ -71,9 +71,6 @@ IF(NOT HDF5_FOUND)
   MESSAGE(FATAL_ERROR "This project requires HDF5 1.8.5-VFD configured with CMake")
 ENDIF(NOT HDF5_FOUND)
   
-IF (NOT HDF5_SOURCE_DIR)
-  INCLUDE( ${HDF5_CONFIG_FILE} )
-ENDIF  (NOT HDF5_SOURCE_DIR)
 INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
 
 #-----------------------------------------------------------------------------
