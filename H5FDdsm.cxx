@@ -455,13 +455,9 @@ H5Pset_fapl_dsm(hid_t fapl_id, size_t increment, void *dsmBuffer)
       H5FDdsmIniFile config;
       std::string configPath;
 
-      const char *dsm_env = getenv("DSM_CONFIG_PATH");
+      const char *dsm_env = getenv("H5FD_DSM_CONFIG_PATH");
       if (dsm_env) {
         configPath = std::string(dsm_env) + std::string("/.dsm_config");
-      }
-      else {
-        // Parse DSM configuration file
-        configPath = std::string(H5FDdsm_CONFIG_PATH) + std::string("/.dsm_config");
       }
 
       std::string mode = config.GetValue("DSM_COMM_SYSTEM", "Comm", configPath);

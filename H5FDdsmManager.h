@@ -118,8 +118,7 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
 
     // Description:
     // If the .dsm_config file exists in the standard location
-    // $ENV{DSM_CONFIG_PATH}/.dsm_config or in the location set by
-    // @CMAKE{H5FDdsm_CONFIG_PATH}/.dsm_config then the server/port/mode
+    // $ENV{H5FD_DSM_CONFIG_PATH}/.dsm_config then the server/port/mode
     // information can be read. This is for use the by a DSM client.
     // DSM servers write their .dsm_config when PublishDSM() is called
     // Returns false if the .dsm_config file is not read

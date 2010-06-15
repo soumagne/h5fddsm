@@ -228,7 +228,7 @@ int main(int argc, char **argv)
   MPI_Barrier(dcomm);
 #endif
 
-  const char *dsm_env = getenv("DSM_CONFIG_PATH");
+  const char *dsm_env = getenv("H5FD_DSM_CONFIG_PATH");
   std::string hdffile;
   if (dsm_env) {
     hdffile = std::string(dsm_env) + std::string("/hdf-output.h5");

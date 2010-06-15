@@ -19,8 +19,6 @@
   # define H5FDdsm_ABI_HIDDEN
 #endif
 
-#cmakedefine H5FDdsm_CONFIG_PATH "${H5FDdsm_CONFIG_PATH}"
-
 #cmakedefine H5FDdsm_BUILD_SHARED_LIBS
 
 #if defined (H5FDdsm_BUILD_SHARED_LIBS)

@@ -342,7 +342,7 @@ void H5FDdsmManager::PublishDSM()
   if (this->UpdatePiece == 0) {
     H5FDdsmIniFile dsmConfigFile;
     std::string fullDsmConfigFilePath;
-    const char *dsm_env = getenv("DSM_CONFIG_PATH");
+    const char *dsm_env = getenv("H5FD_DSM_CONFIG_PATH");
     if (dsm_env /*&& !this->GetDsmConfigFilePath()*/) {
       this->SetDsmConfigFilePath(dsm_env);
     }
@@ -472,13 +472,9 @@ bool H5FDdsmManager::ReadDSMConfigFile()
 {
   H5FDdsmIniFile config;
   std::string configPath;
-  const char *dsm_env = getenv("DSM_CONFIG_PATH");
+  const char *dsm_env = getenv("H5FD_DSM_CONFIG_PATH");
   if (dsm_env) {
     configPath = std::string(dsm_env) + std::string("/.dsm_config");
-  }
-  else {
-    // Parse DSM configuration file
-    configPath = std::string(H5FDdsm_CONFIG_PATH) + std::string("/.dsm_config");
   }
   if (FileExists(configPath.c_str())) {
     if (this->UpdatePiece == 0) {
