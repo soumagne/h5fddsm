@@ -181,19 +181,19 @@ ENDIF(WIN32)
 # Option to build Fortran bindings
 # We will use the name mangling and type checks from the HDF5 project
 #-----------------------------------------------------------------------------
-OPTION (BUILD_FORTRAN "Build FORTRAN bindings" OFF)
-IF (BUILD_FORTRAN)
+OPTION (H5FD_DSM_BUILD_FORTRAN "Build FORTRAN bindings" OFF)
+IF (H5FD_DSM_BUILD_FORTRAN)
   ADD_SUBDIRECTORY (${H5FDdsm_SOURCE_DIR}/fortran ${PROJECT_BINARY_DIR}/fortran)
-ENDIF (BUILD_FORTRAN)
+ENDIF (H5FD_DSM_BUILD_FORTRAN)
 
 #-----------------------------------------------------------------------------
 # Testing
 #-----------------------------------------------------------------------------
-OPTION(BUILD_TESTING "Build Testing code" OFF)
+OPTION(H5FD_DSM_BUILD_TESTING "Build Testing code" ON)
 
-#IF(BUILD_TESTING)
+IF(H5FD_DSM_BUILD_TESTING)
  ADD_SUBDIRECTORY(Testing)
-#ENDIF(BUILD_TESTING)
+ENDIF(H5FD_DSM_BUILD_TESTING)
  
 #-----------------------------------------------------------------------------
 # Debugging below here
