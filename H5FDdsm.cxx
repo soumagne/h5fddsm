@@ -456,6 +456,7 @@ H5Pset_fapl_dsm(hid_t fapl_id, size_t increment, void *dsmBuffer)
       std::string configPath;
 
       const char *dsm_env = getenv("H5FD_DSM_CONFIG_PATH");
+      if (!dsm_env) dsm_env = getenv("HOME");
       if (dsm_env) {
         configPath = std::string(dsm_env) + std::string("/.dsm_config");
       }
