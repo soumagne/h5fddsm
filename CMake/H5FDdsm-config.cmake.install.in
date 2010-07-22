@@ -1,0 +1,21 @@
+#-----------------------------------------------------------------------------
+# HDF5 Config file for compiling against hdf5 install directory
+#-----------------------------------------------------------------------------
+
+GET_FILENAME_COMPONENT (SELF_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+GET_FILENAME_COMPONENT (H5FD_DSM_INCLUDE_DIRS "${SELF_DIR}/../include" ABSOLUTE)
+SET (H5FD_DSM_FORTRAN_DIR ${H5FD_DSM_INCLUDE_DIRS}/fortran)
+
+#-----------------------------------------------------------------------------
+# Don't include targets if this file is being picked up by another
+# project which has already build hdf5 as a subproject
+#-----------------------------------------------------------------------------
+IF (NOT TARGET "H5FDdsm")
+  INCLUDE (${SELF_DIR}/H5FDdsm-targets.cmake)
+ENDIF (NOT TARGET "H5FDdsm")
+
+SET (H5FD_DSM_VERSION_STRING @H5FD_DSM_VERSION_STRING@)
+SET (H5FD_DSM_VERSION_MAJOR  @H5FD_DSM_VERSION_MAJOR@)
+SET (H5FD_DSM_VERSION_MINOR  @H5FD_DSM_VERSION_MINOR@)
+
+SET (H5FD_DSM_BUILD_FORTRAN @H5FD_DSM_BUILD_FORTRAN@)

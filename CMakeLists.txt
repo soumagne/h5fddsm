@@ -18,6 +18,14 @@ SET (CMAKE_Fortran_MODULE_DIRECTORY
 )
 
 #-----------------------------------------------------------------------------
+# Targets built within this project are exported at Install time for use
+# by other projects using FindH5FDdsm. 
+#-----------------------------------------------------------------------------
+IF (NOT H5FD_DSM_EXPORTED_TARGETS)
+  SET (H5FD_DSM_EXPORTED_TARGETS "H5FDdsm-targets")
+ENDIF (NOT H5FD_DSM_EXPORTED_TARGETS)
+
+#-----------------------------------------------------------------------------
 # Choose static or shared libraries.
 #-----------------------------------------------------------------------------
 OPTION(BUILD_SHARED_LIBS "Build with shared libraries." OFF)
@@ -189,8 +197,86 @@ OPTION(H5FD_DSM_BUILD_TESTING "Build Testing code" ON)
 IF(H5FD_DSM_BUILD_TESTING)
  ADD_SUBDIRECTORY(Testing)
 ENDIF(H5FD_DSM_BUILD_TESTING)
+
+#-----------------------------------------------------------------------------
+# Add file(s) to CMake Install
+#-----------------------------------------------------------------------------
+INSTALL (
+  FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/H5FDdsm.h
+    ${H5FDdsm_BINARY_DIR}/H5FDdsmConfig.h
+  DESTINATION
+    include
+  COMPONENT
+    headers
+)
+
+#-----------------------------------------------------------------------------
+# Add Target(s) to CMake Install 
+#-----------------------------------------------------------------------------
+INSTALL (
+  TARGETS
+    H5FDdsm
+  EXPORT
+    ${H5FD_DSM_EXPORTED_TARGETS}
+  LIBRARY DESTINATION lib 
+  ARCHIVE DESTINATION lib 
+  RUNTIME DESTINATION bin 
+)
+
+#-----------------------------------------------------------------------------
+# Add Target(s) to CMake Install for import into other projects
+#-----------------------------------------------------------------------------
+INSTALL (
+  EXPORT
+    ${H5FD_DSM_EXPORTED_TARGETS}
+  DESTINATION
+    lib
+  FILE
+    H5FDdsm-targets.cmake
+)
+
+#-----------------------------------------------------------------------------
+# Export all exported targets to the build tree for use by parent project
+#-----------------------------------------------------------------------------
+EXPORT (
+  TARGETS
+    H5FDdsm ${H5FD_DSM_LIB_DEPENDENCIES}
+  FILE
+    H5FDdsm-targets.cmake
+)
  
+#-----------------------------------------------------------------------------
+# Configure the HDF5-config.cmake file for the build directory
+#-----------------------------------------------------------------------------
+SET (H5FD_DSM_INCLUDES_BUILD_TIME
+  ${H5FDdsm_SOURCE_DIR}
+  ${H5FDdsm_SOURCE_DIR}/h5dump
+)
+SET (H5FD_DSM_VERSION_STRING "1")
+SET (H5FD_DSM_VERSION_MAJOR  "0")
+SET (H5FD_DSM_VERSION_MINOR  "0")
+
+CONFIGURE_FILE (
+    ${H5FDdsm_SOURCE_DIR}/CMake/H5FDdsm-config.cmake.build.in 
+    ${H5FDdsm_BINARY_DIR}/H5FDdsm-config.cmake @ONLY
+)
+
+#-----------------------------------------------------------------------------
+# Configure the H5FDdsm-config.cmake file for the install directory
+#-----------------------------------------------------------------------------
+INSTALL (CODE
+    "SET (H5FD_DSM_INSTALL_SKIP_TARGETS 1)
+     INCLUDE (${H5FDdsm_BINARY_DIR}/H5FDdsm-config.cmake) 
+     CONFIGURE_FILE (
+         \"${H5FDdsm_SOURCE_DIR}/CMake/H5FDdsm-config.cmake.install.in\" 
+         \"${CMAKE_INSTALL_PREFIX}/lib/H5FDdsm-config.cmake\" @ONLY
+     )
+    "
+)
+
 #-----------------------------------------------------------------------------
 # Debugging below here
 #-----------------------------------------------------------------------------
 #MESSAGE("MPI_LIBRARY is ${MPI_LIBRARY}, MPI dir is ${MPI_INCLUDE_PATH}, HDF5 dir is ${HDF5_INCLUDE_DIR}")
+
