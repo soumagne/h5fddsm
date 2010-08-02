@@ -141,11 +141,10 @@ SET(H5FDdsmSources
   H5FDdsmMsg.cxx
   H5FDdsmSocket.cxx
   H5FDdsmStorage.cxx
-  #
-  # Utility classes which make life easier (especially testing etc)
-  #
   H5FDdsmManager.cxx
-  H5FDdsmDump
+  H5FDdsmDump.cxx
+  H5FDdsmSteering.cxx
+  # TODO Find the correct place for h5Dump
   h5dump/h5dump.cxx
   h5dump/h5tools.cxx
   h5dump/h5tools_ref.cxx
