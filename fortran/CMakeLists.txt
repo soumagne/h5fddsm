@@ -106,3 +106,38 @@ IF (BUILD_TESTING)
  )
     
 ENDIF (BUILD_TESTING)
+
+#-----------------------------------------------------------------------------
+# Add Target(s) to CMake Install for import into other projects
+#-----------------------------------------------------------------------------
+INSTALL (
+  TARGETS
+    H5FDdsm_fortran
+    H5FDdsm_f90CStub
+  EXPORT
+    ${H5FD_DSM_EXPORTED_TARGETS}
+  LIBRARY DESTINATION lib COMPONENT fortlibraries
+  ARCHIVE DESTINATION lib COMPONENT fortlibraries
+  RUNTIME DESTINATION bin COMPONENT fortlibraries
+)
+
+#-----------------------------------------------------------------------------
+# Add file(s) to CMake Install
+#-----------------------------------------------------------------------------
+INSTALL (
+  FILES 
+    ${CMAKE_CURRENT_SOURCE_DIR}/H5f90dsmproto.h 
+  DESTINATION 
+    include/fortran 
+  COMPONENT 
+    fortheaders
+)
+
+INSTALL (
+  DIRECTORY
+    ${CMAKE_Fortran_MODULE_DIRECTORY}/\${BUILD_TYPE}/
+  DESTINATION
+    include/fortran
+  COMPONENT
+    fortheaders
+)
