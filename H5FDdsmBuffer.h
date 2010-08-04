@@ -131,6 +131,8 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     bool                    IsReadOnly;
     H5FDdsmInt32            ServiceThreadUseCopy;
     H5FDdsmString           XMLDescription;
+
+    H5FDdsmSteerer         *DsmSteerer;
 };
 
 #endif // __H5FDdsmBuffer_h

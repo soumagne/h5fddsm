@@ -98,8 +98,8 @@ H5FDdsm_EXPORT void   H5FD_dsm_term(void);
 H5FDdsm_EXPORT herr_t H5FD_dsm_query(const H5FD_t *_file, unsigned long *flags);
 
 // dsmBuffer must be NULL or a pointer to an H5FDdsmBuffer object
-H5FDdsm_EXPORT herr_t H5Pset_fapl_dsm(hid_t fapl_id, size_t  increment, void  *dsmBuffer);
-H5FDdsm_EXPORT herr_t H5Pget_fapl_dsm(hid_t fapl_id, size_t *increment, void **dsmBuffer);
+H5FDdsm_EXPORT herr_t H5Pset_fapl_dsm(hid_t fapl_id, MPI_Comm dsmComm, void  *dsmBuffer);
+H5FDdsm_EXPORT herr_t H5Pget_fapl_dsm(hid_t fapl_id, MPI_Comm *dsmComm, void **dsmBuffer);
 
 //---------------------------------------------------------------------------
 #ifdef __cplusplus

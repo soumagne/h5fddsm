@@ -104,11 +104,7 @@ extern "C" {
 #define HGOTO_ERROR(a,b,c,d) { printf("%s",d); goto done; }
 //--------------------------------------------------------------------------
 //
-#include "H5FDdsmBuffer.h"
-#include "H5FDdsmComm.h"
-#include "H5FDdsmCommSocket.h"
-#include "H5FDdsmCommMpi.h"
-#include "H5FDdsmIniFile.h"
+#include "H5FDdsmManager.h"
 //
 #ifdef H5_HAVE_PARALLEL
 
@@ -132,11 +128,9 @@ extern "C" {
 static hid_t H5FD_DSM_g = 0;
 
 // @TODO Warning, the use of static objects here is very dangerous!
-//
-// This H5FDdsmComm and this H5FDdsmBuffer are used only when no DsmBuffer
+// This H5FDdsmManager is used only when no DsmBuffer
 // is passed to set_fapl_dsm function
-static H5FDdsmComm     *dsmCommSingleton = NULL;
-static H5FDdsmBuffer *dsmBufferSingleton = NULL;
+static H5FDdsmManager *dsmManagerSingleton = NULL;
 
 //--------------------------------------------------------------------------
 /*
@@ -404,13 +398,15 @@ H5FD_dsm_term(void)
 {
   FUNC_ENTER_NOAPI_NOINIT_NOFUNC(H5FD_dsm_term)
 
-  if (dsmBufferSingleton) {
-    if (dsmBufferSingleton->GetIsConnected()) {
-      dsmBufferSingleton->GetComm()->RemoteCommRecvReady();
-      dsmBufferSingleton->RequestDisconnection();
+  if (dsmManagerSingleton) {
+    if (!dsmManagerSingleton->GetDsmIsServer() && dsmManagerSingleton->GetDSMHandle()->GetIsConnected()) {
+      dsmManagerSingleton->DisconnectDSM();
     }
-    delete dsmBufferSingleton;
-    delete dsmCommSingleton;
+    if (dsmManagerSingleton->GetDsmIsServer()) {
+      dsmManagerSingleton->UnpublishDSM();
+    }
+    delete dsmManagerSingleton;
+    dsmManagerSingleton = NULL;
   }
 
   // Reset VFL ID
@@ -433,7 +429,7 @@ H5FD_dsm_term(void)
  *-------------------------------------------------------------------------
  */
 herr_t
-H5Pset_fapl_dsm(hid_t fapl_id, size_t increment, void *dsmBuffer)
+H5Pset_fapl_dsm(hid_t fapl_id, MPI_Comm dsmComm, void *dsmBuffer)
 {
   H5FD_dsm_fapl_t fa;
   herr_t ret_value = SUCCEED;
@@ -445,48 +441,25 @@ H5Pset_fapl_dsm(hid_t fapl_id, size_t increment, void *dsmBuffer)
   if (NULL == (plist = (H5P_genplist_t*) H5P_object_verify(fapl_id, H5P_FILE_ACCESS)))
     HGOTO_ERROR(H5E_ARGS, H5E_BADTYPE, FAIL, "not a file access property list");
 
-  fa.increment = increment;
+  fa.increment = H5FD_DSM_INCREMENT;
 
   if (dsmBuffer) {
     fa.buffer = static_cast <H5FDdsmBuffer*> (dsmBuffer);
   }
   else {
-    if (dsmBufferSingleton == NULL) {
-      H5FDdsmIniFile config;
-      std::string configPath;
-
-      const char *dsm_env = getenv("H5FD_DSM_CONFIG_PATH");
-      if (!dsm_env) dsm_env = getenv("HOME");
-      if (dsm_env) {
-        configPath = std::string(dsm_env) + std::string("/.dsm_config");
+    if (dsmManagerSingleton == NULL) {
+      dsmManagerSingleton = new H5FDdsmManager();
+      dsmManagerSingleton->ReadDSMConfigFile();
+      dsmManagerSingleton->SetCommunicator(dsmComm);
+      dsmManagerSingleton->CreateDSM();
+      if (dsmManagerSingleton->GetDsmIsServer()) {
+        dsmManagerSingleton->PublishDSM();
+      } else {
+        dsmManagerSingleton->ConnectDSM();
       }
-
-      std::string mode = config.GetValue("DSM_COMM_SYSTEM", "Comm", configPath);
-      std::string host = config.GetValue("DSM_BASE_HOST", "Comm", configPath);
-      std::string port = config.GetValue("DSM_BASE_PORT", "Comm", configPath);
-
-      if (mode == "socket") {
-        dsmCommSingleton = new H5FDdsmCommSocket();
-        dynamic_cast<H5FDdsmCommSocket*>(dsmCommSingleton)->DupComm(MPI_COMM_WORLD);
-        dynamic_cast<H5FDdsmCommSocket*>(dsmCommSingleton)->SetDsmMasterHostName(host.c_str());
-        dynamic_cast<H5FDdsmCommSocket*>(dsmCommSingleton)->SetDsmMasterPort(atoi(port.c_str()));
-      } else if (mode == "mpi") {
-        dsmCommSingleton = new H5FDdsmCommMpi();
-        dynamic_cast<H5FDdsmCommMpi*>(dsmCommSingleton)->DupComm(MPI_COMM_WORLD);
-        dynamic_cast<H5FDdsmCommMpi*>(dsmCommSingleton)->SetDsmMasterHostName(host.c_str());
-      }
-      dsmCommSingleton->Init();
-
-      // Create DSM buffer object
-      dsmBufferSingleton = new H5FDdsmBuffer();
-      dsmBufferSingleton->SetComm(dsmCommSingleton);
-      dsmBufferSingleton->SetServiceThreadUseCopy(0);
-      dsmBufferSingleton->SetIsServer(0);
     }
-    fa.buffer = dsmBufferSingleton;
-    //    HGOTO_ERROR(H5E_VFL, H5E_BADVALUE, FAIL, "No DSM buffer set");
+    fa.buffer = dsmManagerSingleton->GetDSMHandle();
   }
-
   ret_value = H5P_set_driver(plist, H5FD_DSM, &fa);
 
   done: FUNC_LEAVE_API(ret_value)
@@ -506,7 +479,7 @@ H5Pset_fapl_dsm(hid_t fapl_id, size_t increment, void *dsmBuffer)
  *-------------------------------------------------------------------------
  */
 herr_t
-H5Pget_fapl_dsm(hid_t fapl_id, size_t *increment/*out*/, void **dsmBuffer /* out */)
+H5Pget_fapl_dsm(hid_t fapl_id, MPI_Comm *dsmComm/*out*/, void **dsmBuffer /* out */)
 {
   H5FD_dsm_fapl_t *fa;
   H5P_genplist_t *plist; // Property list pointer
@@ -522,7 +495,14 @@ H5Pget_fapl_dsm(hid_t fapl_id, size_t *increment/*out*/, void **dsmBuffer /* out
   if (NULL == (fa = (H5FD_dsm_fapl_t*) H5P_get_driver_info(plist)))
     HGOTO_ERROR(H5E_PLIST, H5E_BADVALUE, FAIL, "bad VFL driver info");
 
-  if (increment) *increment = fa->increment;
+  if (dsmComm) {
+    if (fa->buffer->GetComm()->GetCommType() == H5FD_DSM_COMM_SOCKET) {
+      *dsmComm = dynamic_cast <H5FDdsmCommSocket*> (fa->buffer->GetComm())->GetComm();
+    }
+    else if (fa->buffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI) {
+      *dsmComm = dynamic_cast <H5FDdsmCommMpi*> (fa->buffer->GetComm())->GetComm();
+    }
+  }
   if (dsmBuffer) *dsmBuffer = fa->buffer;
 
   done: FUNC_LEAVE_API(ret_value)

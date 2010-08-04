@@ -23,21 +23,29 @@
 
 =========================================================================*/
 
-#ifndef H5FDDSMSTEERING_H
-#define H5FDDSMSTEERING_H
+#ifndef H5FDDSMSTEERER_H
+#define H5FDDSMSTEERER_H
 
-/*#include "H5FDdsmObject.h"
+void H5FD_dsm_begin_loop(const char *name);
+void H5FD_dsm_end_loop(const char *name);
 
-class H5FDdsm_EXPORT H5FDdsmSteering : public H5FDdsmObject {
+#include "H5FDdsmObject.h"
+#include "H5FDdsmBuffer.h"
+
+class H5FDdsm_EXPORT H5FDdsmSteerer : public H5FDdsmObject {
 
 public:
-  H5FDdsmSteering();
-  ~H5FDdsmSteering();
-*/
-  void H5FD_dsm_begin_loop(const char *name);
-  void H5FD_dsm_end_loop(const char *name);
-/*protected:
+  H5FDdsmSteerer();
+  ~H5FDdsmSteerer();
 
+  void SetDsmBuffer(H5FDdsmBuffer *dsmBuffer);
+  void SendSteeringCommand(const char *command);
+  void ReceiveSteeringCommands();
+
+protected:
+  void CheckCommand(const char *command);
+
+  H5FDdsmBuffer *DSMBuffer;
 };
-*/
-#endif /* H5FDDSMSTEERING_H */
+
+#endif /* H5FDDSMSTEERER_H */

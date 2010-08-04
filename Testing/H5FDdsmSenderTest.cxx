@@ -81,7 +81,7 @@ void write_ecrit_particule(
   H5CHECK_ERROR(acc_plist_id, "H5Pcreate(H5P_FILE_ACCESS)");
   if (dsmBuffer) {
     H5FD_dsm_init();
-    H5Pset_fapl_dsm(acc_plist_id, H5FD_DSM_INCREMENT, dsmBuffer);
+    H5Pset_fapl_dsm(acc_plist_id, MPI_COMM_WORLD, dsmBuffer);
     H5CHECK_ERROR(status, "H5Pset_fapl_dsm");
   } else {
     H5Pset_fapl_mpio(acc_plist_id, MPI_COMM_WORLD, MPI_INFO_NULL);

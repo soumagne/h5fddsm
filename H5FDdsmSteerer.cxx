@@ -23,28 +23,44 @@
 
 =========================================================================*/
 
-#include "H5FDdsmSteering.h"
+#include "H5FDdsmSteerer.h"
 
-volatile int pause = 1;
 //----------------------------------------------------------------------------
-//H5FDdsmSteering::H5FDdsmSteering() {}
-//----------------------------------------------------------------------------
-//H5FDdsmSteering::~H5FDdsmSteering() {}
-//----------------------------------------------------------------------------
-//void H5FDdsmSteering::
 void H5FD_dsm_begin_loop(const char *name)
 {
+  volatile int pause = 0;
+
   while (pause == 1) {
     // spin
     // look for new data coming in and new update of the value
   }
 }
 //----------------------------------------------------------------------------
-//void H5FDdsmSteering::
 void H5FD_dsm_end_loop(const char *name)
 {
   // finish to build - close the HTM loop section
   // for later
 }
 //----------------------------------------------------------------------------
+H5FDdsmSteerer::H5FDdsmSteerer()
+{
+  this->dsmBuffer = NULL;
+}
+//----------------------------------------------------------------------------
+H5FDdsmSteerer::~H5FDdsmSteerer() {}
+//----------------------------------------------------------------------------
+void H5FDdsmSteerer::SetDsmBuffer(H5FDdsmBuffer *dsmBuffer)
+{
+  this->DSMBuffer = dsmBuffer;
+}
+//----------------------------------------------------------------------------
+void H5FDdsmSteerer::SendSteeringCommand(const char *command)
+{
+  this->CheckCommand(command);
+  // Send the command
+}
+//----------------------------------------------------------------------------
+void H5FDdsmSteerer::ReceiveSteeringCommands()
+{
 
+}
