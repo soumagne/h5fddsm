@@ -25,7 +25,7 @@
 #ifndef XDMFDSMCOMMSOCKET_H
 #define XDMFDSMCOMMSOCKET_H
 
-#define H5FD_DSM_MAX_SOCKET 256
+#define H5FD_DSM_MAX_SOCKET 1024
 
 #include "H5FDdsmComm.h"
 #include "H5FDdsmSocket.h"
@@ -75,6 +75,9 @@ public:
   H5FDdsmInt32   RemoteCommSendXML(H5FDdsmString file, H5FDdsmInt32 dest);
   H5FDdsmInt32   RemoteCommRecvXML(H5FDdsmString *file);
 
+  H5FDdsmInt32   RemoteCommSendSteeringCmd(H5FDdsmString cmd);
+  H5FDdsmInt32   RemoteCommRecvSteeringCmd(H5FDdsmString *cmd);
+
   H5FDdsmInt32   HasStillData();
 
 protected:
@@ -83,12 +86,12 @@ protected:
 
   MPI_Comm             Comm;
   H5FDdsmSocket       *InterComm[H5FD_DSM_MAX_SOCKET]; // Internode Socket Collection for data exchange
-  H5FDdsmInt32            InterSize;
+  H5FDdsmInt32         InterSize;
   H5FDdsmSocket       *DsmMasterSocket; // Used for initializing connection and send comm orders
-  H5FDdsmByte             DsmMasterHostName[MPI_MAX_PORT_NAME];
-  H5FDdsmInt32            DsmMasterPort;
+  H5FDdsmByte          DsmMasterHostName[MPI_MAX_PORT_NAME];
+  H5FDdsmInt32         DsmMasterPort;
   //
-  H5FDdsmFloat64          TransferRate;
+  H5FDdsmFloat64       TransferRate;
 };
 
 #endif /* XDMFDSMCOMMSOCKET_H */

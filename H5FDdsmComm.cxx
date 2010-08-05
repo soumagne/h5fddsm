@@ -163,6 +163,18 @@ H5FDdsmComm::RemoteCommRecvXML(H5FDdsmString *file)
 }
 
 H5FDdsmInt32
+H5FDdsmComm::RemoteCommSendSteeringCmd(H5FDdsmString cmd)
+{
+  return(H5FD_DSM_SUCCESS);
+}
+
+H5FDdsmInt32
+H5FDdsmComm::RemoteCommRecvSteeringCmd(H5FDdsmString *cmd)
+{
+  return(H5FD_DSM_SUCCESS);
+}
+
+H5FDdsmInt32
 H5FDdsmComm::HasStillData()
 {
   return(H5FD_DSM_FALSE);

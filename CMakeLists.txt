@@ -151,7 +151,7 @@ SET(H5FDdsmSources
   H5FDdsmStorage.cxx
   H5FDdsmManager.cxx
   H5FDdsmDump.cxx
-  H5FDdsmSteering.cxx
+  H5FDdsmSteerer.cxx
   # TODO Find the correct place for h5Dump
   h5dump/h5dump.cxx
   h5dump/h5tools.cxx

@@ -108,11 +108,12 @@ class H5FDdsm_EXPORT H5FDdsmDriver : public H5FDdsmObject {
   //! Storage
     H5FDdsmGetValueMacro(Storage, H5FDdsmStorage *);
     H5FDdsmInt32   SetStorage(H5FDdsmStorage *Storage);
-    H5FDdsmInt32   ClearStorage();
+    virtual H5FDdsmInt32   ClearStorage();
 
   //! Comm
     H5FDdsmGetValueMacro(Comm, H5FDdsmComm *);
-    H5FDdsmSetValueMacro(Comm, H5FDdsmComm *);
+    virtual H5FDdsmInt32 SetComm(H5FDdsmComm *comm);
+    // H5FDdsmSetValueMacro(Comm, H5FDdsmComm *);
 
     //! Msg
     H5FDdsmGetValueMacro(Msg, H5FDdsmMsg *);

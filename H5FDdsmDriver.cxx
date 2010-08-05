@@ -121,7 +121,6 @@ H5FDdsmDriver::SetStorage(H5FDdsmStorage *aStorage){
 
 H5FDdsmInt32
 H5FDdsmDriver::ClearStorage() {
-
   if(this->Storage && this->StorageIsMine) {
     H5FDdsmDebug("Resetting storage");
     H5FDdsmDebug("start address: " << this->StartAddress);
@@ -129,8 +128,13 @@ H5FDdsmDriver::ClearStorage() {
     this->SetLength(this->Length);
     this->DataPointer = (H5FDdsmByte *)this->Storage->GetDataPointer();
   }
+  return(H5FD_DSM_SUCCESS);
+}
 
-  return H5FD_DSM_SUCCESS;
+H5FDdsmInt32
+H5FDdsmDriver::SetComm(H5FDdsmComm *comm) {
+  this->Comm = comm;
+  return(H5FD_DSM_SUCCESS);
 }
 
 H5FDdsmInt32

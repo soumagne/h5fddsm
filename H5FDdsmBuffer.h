@@ -53,6 +53,7 @@
 #define __H5FDdsmBuffer_h
 
 #include "H5FDdsmDriver.h"
+#include "H5FDdsmSteerer.h"
 
 #define H5FD_DSM_MAX_LOCKS 32
 
@@ -74,6 +75,8 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     virtual ~H5FDdsmBuffer();
 
     H5FDdsmInt32   ClearStorage();
+
+    H5FDdsmInt32   SetComm(H5FDdsmComm *comm);
 
     H5FDdsmGetValueMacro(ThreadDsmReady, H5FDdsmInt32);
     H5FDdsmSetValueMacro(ThreadDsmReady, H5FDdsmInt32);
@@ -123,6 +126,8 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     H5FDdsmInt32   Service(H5FDdsmInt32 *ReturnOpcode=0);
     void *      ServiceThread();
 
+    H5FDdsmSteerer *GetSteerer() { return(Steerer); }
+
   protected:
     volatile H5FDdsmInt32   ThreadDsmReady;
     volatile H5FDdsmBoolean IsConnected;
@@ -132,7 +137,7 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     H5FDdsmInt32            ServiceThreadUseCopy;
     H5FDdsmString           XMLDescription;
 
-    H5FDdsmSteerer         *DsmSteerer;
+    H5FDdsmSteerer         *Steerer;
 };
 
 #endif // __H5FDdsmBuffer_h

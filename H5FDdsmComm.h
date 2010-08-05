@@ -116,6 +116,9 @@ public:
     virtual H5FDdsmInt32   RemoteCommSendXML(H5FDdsmString file, H5FDdsmInt32 dest);
     virtual H5FDdsmInt32   RemoteCommRecvXML(H5FDdsmString *file);
 
+    virtual H5FDdsmInt32   RemoteCommSendSteeringCmd(H5FDdsmString cmd);
+    virtual H5FDdsmInt32   RemoteCommRecvSteeringCmd(H5FDdsmString *cmd);
+
     virtual H5FDdsmInt32   HasStillData();
 
 protected:

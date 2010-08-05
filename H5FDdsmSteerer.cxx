@@ -44,23 +44,63 @@ void H5FD_dsm_end_loop(const char *name)
 //----------------------------------------------------------------------------
 H5FDdsmSteerer::H5FDdsmSteerer()
 {
-  this->dsmBuffer = NULL;
+  this->CurrentCommand = NULL;
+  this->Comm = NULL;
 }
 //----------------------------------------------------------------------------
-H5FDdsmSteerer::~H5FDdsmSteerer() {}
-//----------------------------------------------------------------------------
-void H5FDdsmSteerer::SetDsmBuffer(H5FDdsmBuffer *dsmBuffer)
-{
-  this->DSMBuffer = dsmBuffer;
+H5FDdsmSteerer::~H5FDdsmSteerer() {
+  this->SetCurrentCommand(NULL);
 }
 //----------------------------------------------------------------------------
-void H5FDdsmSteerer::SendSteeringCommand(const char *command)
+H5FDdsmInt32 H5FDdsmSteerer::SetCurrentCommand(H5FDdsmConstString cmd)
 {
-  this->CheckCommand(command);
+  std::string oldCommand;
+  if (this->CurrentCommand != NULL) oldCommand = this->CurrentCommand;
+  if (this->CurrentCommand == cmd) { return(H5FD_DSM_SUCCESS); }
+  if (this->CurrentCommand && cmd && strcmp(this->CurrentCommand, cmd) == 0 ) { return(H5FD_DSM_SUCCESS); }
+  if ( this->CurrentCommand ) { delete [] this->CurrentCommand; this->CurrentCommand = 0; }
+  if (cmd) {
+    this->CurrentCommand = new char[strlen(cmd) + 1]; strcpy(this->CurrentCommand, cmd);
+    if ((oldCommand == "pause") && strcmp(this->CurrentCommand, "play") == 0) {
+      this->SendSteeringCommands();
+    }
+  }
+  return(H5FD_DSM_SUCCESS);
+}
+//----------------------------------------------------------------------------
+void H5FDdsmSteerer::SendSteeringCommands()
+{
+  if (this->CurrentCommand == NULL) this->SetCurrentCommand("none");
   // Send the command
+  std::cerr << "Sending steering command " << this->CurrentCommand << std::endl;
+  this->Comm->RemoteCommSendSteeringCmd(this->CurrentCommand);
 }
 //----------------------------------------------------------------------------
 void H5FDdsmSteerer::ReceiveSteeringCommands()
 {
+  // Receive commands
+  H5FDdsmString cmd;
+  this->Comm->RemoteCommRecvSteeringCmd(&cmd);
+  std::string stringCommand = cmd;
+  delete []cmd;
+  std::cerr << "Received steering command: " << stringCommand << std::endl;
+  //  if (this->Pause) {
+  if (stringCommand == "pause") {
+    this->ReceiveSteeringCommands();
+  }
+}
+//----------------------------------------------------------------------------
+H5FDdsmInt32 H5FDdsmSteerer::CheckCommand(const char *command)
+{
+  std::string stringCommand = command;
+  H5FDdsmBoolean isSteerable;
 
+  if (stringCommand == "pause") {
+    isSteerable = true;
+  }
+  else {
+    isSteerable = false;
+  }
+
+  return(H5FD_DSM_SUCCESS);
 }

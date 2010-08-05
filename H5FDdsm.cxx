@@ -682,6 +682,9 @@ H5FD_dsm_open(const char *name, unsigned UNUSED flags, hid_t fapl_id, haddr_t ma
         // Receive ready for write from DSM
         file->DsmBuffer->GetComm()->RemoteCommRecvReady();
 
+        // TODO Probably do this somewhere else but here for now
+        file->DsmBuffer->GetSteerer()->ReceiveSteeringCommands();
+
         // This is a critical part, we need to synchronize before
         // and after the ClearStorage method call
         PRINT_INFO("Request Clear DSM before create");

@@ -534,6 +534,8 @@ void H5FDdsmManager::SetSteeringCommand(char *command)
     const char *cp2 = (command);
     this->SteeringCommand = cp1;
     do { *cp1++ = *cp2++; } while ( --n );
+    // Send command
+    this->DSMBuffer->GetSteerer()->SetCurrentCommand(command);
   }
   else {
     this->SteeringCommand = NULL;

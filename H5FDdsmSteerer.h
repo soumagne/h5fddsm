@@ -30,7 +30,7 @@ void H5FD_dsm_begin_loop(const char *name);
 void H5FD_dsm_end_loop(const char *name);
 
 #include "H5FDdsmObject.h"
-#include "H5FDdsmBuffer.h"
+#include "H5FDdsmComm.h"
 
 class H5FDdsm_EXPORT H5FDdsmSteerer : public H5FDdsmObject {
 
@@ -38,14 +38,19 @@ public:
   H5FDdsmSteerer();
   ~H5FDdsmSteerer();
 
-  void SetDsmBuffer(H5FDdsmBuffer *dsmBuffer);
-  void SendSteeringCommand(const char *command);
+  // Set/Get the current command
+  H5FDdsmInt32 SetCurrentCommand(H5FDdsmConstString cmd);
+  H5FDdsmGetStringMacro(CurrentCommand);
+
+  H5FDdsmSetValueMacro(Comm, H5FDdsmComm*);
+  void SendSteeringCommands();
   void ReceiveSteeringCommands();
 
 protected:
-  void CheckCommand(const char *command);
+  H5FDdsmInt32 CheckCommand(const char *command);
 
-  H5FDdsmBuffer *DSMBuffer;
+  H5FDdsmComm *Comm;
+  H5FDdsmString CurrentCommand;
 };
 
 #endif /* H5FDDSMSTEERER_H */
