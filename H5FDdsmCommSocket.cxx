@@ -496,6 +496,7 @@ H5FDdsmCommSocket::RemoteCommSendSteeringCmd(H5FDdsmString cmd)
 {
   if (H5FDdsmComm::RemoteCommSendSteeringCmd(cmd) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
   //
+  if (!this->InterComm[0]) return(H5FD_DSM_FAIL);
   if (this->Id == 0) {
     H5FDdsmInt32 length = strlen(cmd) + 1;
     this->InterComm[0]->Send(&length, sizeof(H5FDdsmInt32));
@@ -512,6 +513,7 @@ H5FDdsmCommSocket::RemoteCommRecvSteeringCmd(H5FDdsmString *cmd)
   //
   if (H5FDdsmComm::RemoteCommRecvSteeringCmd(cmd) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
   //
+  if (!this->InterComm[0]) return(H5FD_DSM_FAIL);
   if (this->Id == 0) {
     this->InterComm[0]->Receive(&length, sizeof(H5FDdsmInt32));
     *cmd = new char[length];

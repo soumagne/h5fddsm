@@ -1,7 +1,7 @@
 /*=========================================================================
 
-  Project                 : vtkCSCS
-  Module                  : H5FDdsmManager.h
+  Project                 : H5FDdsm
+  Module                  : H5FDdsmManager.cxx
 
   Copyright (C) CSCS - Swiss National Supercomputing Centre.
   You may use modify and and distribute this code freely providing 
@@ -32,12 +32,6 @@
   #define access _access
 #endif
 
-//----------------------------------------------------------------------------
-#undef  vtkDebugMacro
-#define vtkDebugMacro(a) H5FDdsmExternalDebug(a)
-
-#undef  vtkErrorMacro
-#define vtkErrorMacro(a) H5FDdsmExternalError(a)
 //----------------------------------------------------------------------------
 H5FDdsmManager::H5FDdsmManager() 
 {
@@ -114,7 +108,11 @@ void H5FDdsmManager::ClearDsmUpdateReady()
 void H5FDdsmManager::SetDsmWriteDisk(int enable)
 {
   if (this->DSMBuffer) {
-//  this->DSMBuffer->SendCommandHeader()
+    if (enable) {
+      this->SetSteeringCommand((char *)"writeDisk");
+    } else {
+      this->SetSteeringCommand((char *)"writeDSM");
+    }
   }
 }
 //----------------------------------------------------------------------------
@@ -149,7 +147,7 @@ bool H5FDdsmManager::DestroyDSM()
   if (this->DSMBuffer) {
     delete this->DSMBuffer;
     this->DSMBuffer = NULL;
-    vtkDebugMacro(<<"DSM destroyed on " << this->UpdatePiece);
+    H5FDdsmDebug(<<"DSM destroyed on " << this->UpdatePiece);
   }
 
   this->SetServerHostName(NULL);
@@ -194,12 +192,12 @@ bool H5FDdsmManager::CreateDSM()
   //
   if (this->GetDsmCommType() == H5FD_DSM_COMM_MPI) {
     this->DSMComm = new H5FDdsmCommMpi();
-    vtkDebugMacro(<< "Using MPI Intercomm...");
+    H5FDdsmDebug(<< "Using MPI Intercomm...");
     dynamic_cast<H5FDdsmCommMpi*> (this->DSMComm)->DupComm(this->Communicator);
   }
   else if (this->GetDsmCommType() == H5FD_DSM_COMM_SOCKET) {
     this->DSMComm = new H5FDdsmCommSocket();
-    vtkDebugMacro(<< "Using Socket Intercomm...");
+    H5FDdsmDebug(<< "Using Socket Intercomm...");
     dynamic_cast<H5FDdsmCommSocket*> (this->DSMComm)->DupComm(this->Communicator);
   }
   // this->DSMComm->DebugOn();
@@ -215,7 +213,7 @@ bool H5FDdsmManager::CreateDSM()
     // Uniform Dsm : every node has a buffer the same size. (Addresses are sequential)
     this->DSMBuffer->ConfigureUniform(this->DSMComm, ((long long) this->GetLocalBufferSizeMBytes())*1024*1024, -1, -1);
     if (this->UpdatePiece == 0) {
-      vtkDebugMacro(<< "Length set: " << this->DSMBuffer->GetLength() <<
+      H5FDdsmDebug(<< "Length set: " << this->DSMBuffer->GetLength() <<
          ", totalLength set: " << this->DSMBuffer->GetTotalLength() <<
          ", startServerId set: " << this->DSMBuffer->GetStartServerId() <<
          ", endServerId set: " << this->DSMBuffer->GetEndServerId());
@@ -223,7 +221,7 @@ bool H5FDdsmManager::CreateDSM()
     //
     // setup service thread
     //
-    vtkDebugMacro(<< "Creating service thread...");
+    H5FDdsmDebug(<< "Creating service thread...");
 #ifdef HAVE_PTHREADS
     // Start another thread to handle DSM requests from other nodes
     pthread_create(&this->ServiceThread, NULL, &H5FDdsmBufferServiceThread, (void *) this->DSMBuffer);
@@ -237,7 +235,7 @@ bool H5FDdsmManager::CreateDSM()
       // Spin until service initialized
     }
     this->DSMBuffer->SetIsServer(true);
-    vtkDebugMacro(<<"DSM Service Ready on " << this->UpdatePiece);
+    H5FDdsmDebug(<<"DSM Service Ready on " << this->UpdatePiece);
   } 
   else {
     this->DSMBuffer->SetIsServer(false);
@@ -250,7 +248,7 @@ bool H5FDdsmManager::CreateDSM()
 void H5FDdsmManager::ClearDSM()
 {
   this->DSMBuffer->ClearStorage();
-  if (this->UpdatePiece == 0) vtkDebugMacro(<< "DSM cleared");
+  if (this->UpdatePiece == 0) H5FDdsmDebug(<< "DSM cleared");
 }
 //----------------------------------------------------------------------------
 void H5FDdsmManager::RequestRemoteChannel()
@@ -260,13 +258,13 @@ void H5FDdsmManager::RequestRemoteChannel()
 //----------------------------------------------------------------------------
 void H5FDdsmManager::ConnectDSM()
 {
-  if (this->UpdatePiece == 0) vtkDebugMacro(<< "Connect DSM");
+  if (this->UpdatePiece == 0) H5FDdsmDebug(<< "Connect DSM");
 
   if (this->GetDsmCommType() == H5FD_DSM_COMM_MPI) {
     if (this->GetServerHostName() != NULL) {
       dynamic_cast<H5FDdsmCommMpi*> (this->DSMBuffer->GetComm())->SetDsmMasterHostName(this->GetServerHostName());
       if (this->UpdatePiece == 0) {
-        vtkDebugMacro(<< "Initializing connection to "
+        H5FDdsmDebug(<< "Initializing connection to "
             << dynamic_cast<H5FDdsmCommMpi*> (this->DSMBuffer->GetComm())->GetDsmMasterHostName());
       }
     }
@@ -276,7 +274,7 @@ void H5FDdsmManager::ConnectDSM()
       dynamic_cast<H5FDdsmCommSocket*> (this->DSMBuffer->GetComm())->SetDsmMasterHostName(this->GetServerHostName());
       dynamic_cast<H5FDdsmCommSocket*> (this->DSMBuffer->GetComm())->SetDsmMasterPort(this->GetServerPort());
       if (this->UpdatePiece == 0) {
-        vtkDebugMacro(<< "Initializing connection to "
+        H5FDdsmDebug(<< "Initializing connection to "
             << dynamic_cast<H5FDdsmCommSocket*> (this->DSMBuffer->GetComm())->GetDsmMasterHostName()
             << ":"
             << dynamic_cast<H5FDdsmCommSocket*> (this->DSMBuffer->GetComm())->GetDsmMasterPort());
@@ -284,7 +282,7 @@ void H5FDdsmManager::ConnectDSM()
     }
   }
   else {
-    if (this->UpdatePiece == 0) vtkErrorMacro(<< "NULL port");
+    if (this->UpdatePiece == 0) H5FDdsmError(<< "NULL port");
   }
 
 
@@ -295,15 +293,15 @@ void H5FDdsmManager::ConnectDSM()
     if (this->DSMBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_SOCKET) {
       H5FDdsmConstString hostName = dynamic_cast<H5FDdsmCommSocket*> (this->DSMBuffer->GetComm())->GetDsmMasterHostName();
       H5FDdsmInt32 port = dynamic_cast<H5FDdsmCommSocket*> (this->DSMBuffer->GetComm())->GetDsmMasterPort();
-      vtkDebugMacro(<<"DSM driver connecting on: " << hostName << ":" << port);
+      H5FDdsmDebug(<<"DSM driver connecting on: " << hostName << ":" << port);
     }
     else if (this->DSMBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI) {
       H5FDdsmConstString hostName = dynamic_cast<H5FDdsmCommMpi*> (this->DSMBuffer->GetComm())->GetDsmMasterHostName();
-      vtkDebugMacro(<<"DSM driver connecting on: " << hostName);
+      H5FDdsmDebug(<<"DSM driver connecting on: " << hostName);
     }
 #endif
     if (this->DSMBuffer->GetComm()->RemoteCommConnect() == H5FD_DSM_SUCCESS) {
-      vtkDebugMacro(<< "Connected!");
+      H5FDdsmDebug(<< "Connected!");
       this->DSMBuffer->SetIsConnected(true);
 
       // Receive DSM info
@@ -314,33 +312,33 @@ void H5FDdsmManager::ConnectDSM()
       this->DSMBuffer->GetComm()->RemoteCommRecvInfo(&length, &totalLength, &startServerId, &endServerId);
 
       this->DSMBuffer->SetLength(length, 0);
-      vtkDebugMacro(<<"Length received: " << this->DSMBuffer->GetLength());
+      H5FDdsmDebug(<<"Length received: " << this->DSMBuffer->GetLength());
 
       this->DSMBuffer->SetTotalLength(totalLength);
-      vtkDebugMacro(<<"totalLength received: " << this->DSMBuffer->GetTotalLength());
+      H5FDdsmDebug(<<"totalLength received: " << this->DSMBuffer->GetTotalLength());
 
       this->DSMBuffer->SetStartServerId(startServerId);
-      vtkDebugMacro(<<"startServerId received: " << this->DSMBuffer->GetStartServerId());
+      H5FDdsmDebug(<<"startServerId received: " << this->DSMBuffer->GetStartServerId());
 
       this->DSMBuffer->SetEndServerId(endServerId);
-      vtkDebugMacro(<<"endServerId received: " << this->DSMBuffer->GetEndServerId());
+      H5FDdsmDebug(<<"endServerId received: " << this->DSMBuffer->GetEndServerId());
     }
     else {
-      vtkErrorMacro(<< "DSMBuffer Comm_connect error");
+      H5FDdsmError(<< "DSMBuffer Comm_connect error");
     }
   }
 }
 //----------------------------------------------------------------------------
 void H5FDdsmManager::DisconnectDSM()
 {
-  if (this->UpdatePiece == 0) vtkDebugMacro(<< "Disconnect DSM");
+  if (this->UpdatePiece == 0) H5FDdsmDebug(<< "Disconnect DSM");
   this->DSMBuffer->GetComm()->RemoteCommRecvReady();
   this->DSMBuffer->RequestDisconnection(); // Go back to normal channel
 }
 //----------------------------------------------------------------------------
 void H5FDdsmManager::PublishDSM()
 {
-  if (this->UpdatePiece == 0) vtkDebugMacro(<< "Opening port...");
+  if (this->UpdatePiece == 0) H5FDdsmDebug(<< "Opening port...");
   if (this->GetDsmCommType() == H5FD_DSM_COMM_SOCKET) {
     dynamic_cast<H5FDdsmCommSocket*>
     (this->DSMBuffer->GetComm())->SetDsmMasterHostName(this->GetServerHostName());
@@ -372,7 +370,7 @@ void H5FDdsmManager::PublishDSM()
     if (this->GetDsmCommType() == H5FD_DSM_COMM_MPI) {
       this->SetServerHostName(dynamic_cast<H5FDdsmCommMpi*>
       (this->DSMBuffer->GetComm())->GetDsmMasterHostName());
-      vtkDebugMacro(<< "Server PortName: " << this->GetServerHostName());
+      H5FDdsmDebug(<< "Server PortName: " << this->GetServerHostName());
       if (this->GetDsmConfigFilePath()) {
         dsmConfigFile.SetValue("DSM_COMM_SYSTEM", "mpi", "Comm", fullDsmConfigFilePath);
         dsmConfigFile.SetValue("DSM_BASE_HOST", this->GetServerHostName(), "Comm", fullDsmConfigFilePath);
@@ -382,7 +380,7 @@ void H5FDdsmManager::PublishDSM()
       (this->DSMBuffer->GetComm())->GetDsmMasterHostName());
       this->SetServerPort(dynamic_cast<H5FDdsmCommSocket*>
       (this->DSMBuffer->GetComm())->GetDsmMasterPort());
-      vtkDebugMacro(<< "Server HostName: " << this->GetServerHostName()
+      H5FDdsmDebug(<< "Server HostName: " << this->GetServerHostName()
           << ", Server port: " << this->GetServerPort());
       if (this->GetDsmConfigFilePath()) {
         char serverPort[32];
@@ -400,7 +398,7 @@ void H5FDdsmManager::PublishDSM()
 
 void H5FDdsmManager::UnpublishDSM()
 {
-  if (this->UpdatePiece == 0) vtkDebugMacro(<< "Closing port...");
+  if (this->UpdatePiece == 0) H5FDdsmDebug(<< "Closing port...");
   this->DSMBuffer->GetComm()->ClosePort();
 
   if (this->UpdatePiece == 0) {
@@ -409,7 +407,7 @@ void H5FDdsmManager::UnpublishDSM()
       this->SetServerPort(0);
     }
   }
-  if (this->UpdatePiece == 0) vtkDebugMacro(<< "Port closed");
+  if (this->UpdatePiece == 0) H5FDdsmDebug(<< "Port closed");
 }
 //----------------------------------------------------------------------------
 void H5FDdsmManager::H5Dump()
@@ -419,7 +417,7 @@ void H5FDdsmManager::H5Dump()
     myDsmDump->SetDsmBuffer(this->DSMBuffer);
     myDsmDump->SetFileName("DSM.h5");
     myDsmDump->Dump();
-    if (this->UpdatePiece == 0) vtkDebugMacro(<< "Dump done");
+    if (this->UpdatePiece == 0) H5FDdsmDebug(<< "Dump done");
     delete myDsmDump;
   }
 }
@@ -431,7 +429,7 @@ void H5FDdsmManager::H5DumpLight()
     myDsmDump->SetDsmBuffer(this->DSMBuffer);
     myDsmDump->SetFileName("DSM.h5");
     myDsmDump->DumpLight();
-    if (this->UpdatePiece == 0) vtkDebugMacro(<< "Dump light done");
+    if (this->UpdatePiece == 0) H5FDdsmDebug(<< "Dump light done");
     delete myDsmDump;
   }
 }
@@ -444,8 +442,8 @@ void H5FDdsmManager::H5DumpXML()
     myDsmDump->SetDsmBuffer(this->DSMBuffer);
     myDsmDump->SetFileName("DSM.h5");
     myDsmDump->DumpXML(dumpStream);
-    if (this->UpdatePiece == 0) vtkDebugMacro(<< "Dump XML done");
-    if (this->UpdatePiece == 0) vtkDebugMacro(<< dumpStream.str().c_str());
+    if (this->UpdatePiece == 0) H5FDdsmDebug(<< "Dump XML done");
+    if (this->UpdatePiece == 0) H5FDdsmDebug(<< dumpStream.str().c_str());
     delete myDsmDump;
   }
 }
@@ -523,22 +521,17 @@ bool H5FDdsmManager::ReadDSMConfigFile()
   return false;
 }
 //----------------------------------------------------------------------------
-void H5FDdsmManager::SetSteeringCommand(char *command)
+void H5FDdsmManager::SetSteeringCommand(char *cmd)
 {
-  std::cerr << "cmd: " << command << std::endl;
-  if (this->SteeringCommand && command && (!strcmp(this->SteeringCommand,command))) { return;}
-  if (this->SteeringCommand) { delete [] this->SteeringCommand; }
-  if (command) {
-    size_t n = strlen(command) + 1;
-    char *cp1 =  new char[n];
-    const char *cp2 = (command);
-    this->SteeringCommand = cp1;
-    do { *cp1++ = *cp2++; } while ( --n );
+  H5FDdsmDebug(<< "cmd: " << cmd);
+  if (this->SteeringCommand == cmd) { return; }
+  if (this->SteeringCommand && cmd && !strcmp(this->SteeringCommand,cmd)) { return; }
+  if (this->SteeringCommand) { delete [] this->SteeringCommand; this->SteeringCommand = NULL; }
+  if (cmd) {
+    this->SteeringCommand = new char[strlen(cmd) + 1];
+    strcpy(this->SteeringCommand, cmd);
     // Send command
-    this->DSMBuffer->GetSteerer()->SetCurrentCommand(command);
-  }
-  else {
-    this->SteeringCommand = NULL;
+    this->DSMBuffer->GetSteerer()->SetCurrentCommand(cmd);
   }
 }
 //----------------------------------------------------------------------------

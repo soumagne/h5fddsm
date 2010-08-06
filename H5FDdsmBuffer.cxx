@@ -95,7 +95,7 @@ H5FDdsmBuffer::H5FDdsmBuffer() {
 H5FDdsmBuffer::~H5FDdsmBuffer() {
     if (this->StorageIsMine) delete[] this->Locks;
     if (this->XMLDescription) delete[] this->XMLDescription;
-    if (this->Steerer) delete[] this->Steerer;
+    if (this->Steerer) delete this->Steerer;
 }
 
 H5FDdsmInt32

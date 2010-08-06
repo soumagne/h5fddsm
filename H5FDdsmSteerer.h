@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Project                 : H5FDdsm
-  Module                  : H5FDdsmStorage.h
+  Module                  : H5FDdsmSteerer.h
 
   Authors:
      John Biddiscombe     Jerome Soumagne
@@ -42,6 +42,11 @@ public:
   H5FDdsmInt32 SetCurrentCommand(H5FDdsmConstString cmd);
   H5FDdsmGetStringMacro(CurrentCommand);
 
+  // Set/Get WriteToDSM value
+  // Allows the H5FDdsm driver to switch to the MPIO driver
+  H5FDdsmSetValueMacro(WriteToDSM, H5FDdsmInt32);
+  H5FDdsmGetValueMacro(WriteToDSM, H5FDdsmInt32);
+
   H5FDdsmSetValueMacro(Comm, H5FDdsmComm*);
   void SendSteeringCommands();
   void ReceiveSteeringCommands();
@@ -49,8 +54,10 @@ public:
 protected:
   H5FDdsmInt32 CheckCommand(const char *command);
 
-  H5FDdsmComm *Comm;
+  H5FDdsmComm  *Comm;
   H5FDdsmString CurrentCommand;
+  volatile H5FDdsmInt32  Pause;
+  H5FDdsmInt32  WriteToDSM;
 };
 
 #endif /* H5FDDSMSTEERER_H */

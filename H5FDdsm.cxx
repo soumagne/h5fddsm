@@ -69,6 +69,8 @@ extern "C" {
 #include "H5MMprivate.h"  // Memory management
 #include "H5Pprivate.h"   // Property lists
 
+#include "H5FDmpio.h"
+
 #ifdef __cplusplus
 }
 #endif
@@ -459,6 +461,14 @@ H5Pset_fapl_dsm(hid_t fapl_id, MPI_Comm dsmComm, void *dsmBuffer)
       }
     }
     fa.buffer = dsmManagerSingleton->GetDSMHandle();
+  }
+  PRINT_DSM_INFO(fa.buffer->GetComm()->GetId(), "Get Write to DSM value: " << fa.buffer->GetSteerer()->GetWriteToDSM());
+  if (!fa.buffer->GetSteerer()->GetWriteToDSM()) {
+    PRINT_DSM_INFO(fa.buffer->GetComm()->GetId(), "Using MPIO driver temporarily");
+    H5Pset_fapl_mpio(fapl_id, dsmComm, MPI_INFO_NULL);
+    // next time step will go back to the DSM
+    fa.buffer->GetSteerer()->SetWriteToDSM(1);
+    goto done;
   }
   ret_value = H5P_set_driver(plist, H5FD_DSM, &fa);
 

@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Project                 : H5FDdsm
-  Module                  : H5FDdsmStorage.h
+  Module                  : H5FDdsmSteerer.cxx
 
   Authors:
      John Biddiscombe     Jerome Soumagne
@@ -28,12 +28,7 @@
 //----------------------------------------------------------------------------
 void H5FD_dsm_begin_loop(const char *name)
 {
-  volatile int pause = 0;
-
-  while (pause == 1) {
-    // spin
-    // look for new data coming in and new update of the value
-  }
+  // start HTM loop section
 }
 //----------------------------------------------------------------------------
 void H5FD_dsm_end_loop(const char *name)
@@ -44,23 +39,28 @@ void H5FD_dsm_end_loop(const char *name)
 //----------------------------------------------------------------------------
 H5FDdsmSteerer::H5FDdsmSteerer()
 {
+  this->Pause = 0;
+  this->WriteToDSM = 1;
   this->CurrentCommand = NULL;
   this->Comm = NULL;
+  this->DebugOn();
 }
 //----------------------------------------------------------------------------
-H5FDdsmSteerer::~H5FDdsmSteerer() {
+H5FDdsmSteerer::~H5FDdsmSteerer()
+{
   this->SetCurrentCommand(NULL);
 }
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmSteerer::SetCurrentCommand(H5FDdsmConstString cmd)
 {
   std::string oldCommand;
-  if (this->CurrentCommand != NULL) oldCommand = this->CurrentCommand;
   if (this->CurrentCommand == cmd) { return(H5FD_DSM_SUCCESS); }
-  if (this->CurrentCommand && cmd && strcmp(this->CurrentCommand, cmd) == 0 ) { return(H5FD_DSM_SUCCESS); }
-  if ( this->CurrentCommand ) { delete [] this->CurrentCommand; this->CurrentCommand = 0; }
+  if (this->CurrentCommand != NULL) { oldCommand = this->CurrentCommand; }
+  if (this->CurrentCommand && cmd && !strcmp(this->CurrentCommand, cmd)) { return(H5FD_DSM_SUCCESS); }
+  if (this->CurrentCommand) { delete [] this->CurrentCommand; this->CurrentCommand = NULL; }
   if (cmd) {
-    this->CurrentCommand = new char[strlen(cmd) + 1]; strcpy(this->CurrentCommand, cmd);
+    this->CurrentCommand = new char[strlen(cmd) + 1];
+    strcpy(this->CurrentCommand, cmd);
     if ((oldCommand == "pause") && strcmp(this->CurrentCommand, "play") == 0) {
       this->SendSteeringCommands();
     }
@@ -72,8 +72,9 @@ void H5FDdsmSteerer::SendSteeringCommands()
 {
   if (this->CurrentCommand == NULL) this->SetCurrentCommand("none");
   // Send the command
-  std::cerr << "Sending steering command " << this->CurrentCommand << std::endl;
+  H5FDdsmDebug("Sending steering command " << this->CurrentCommand);
   this->Comm->RemoteCommSendSteeringCmd(this->CurrentCommand);
+  if (strcmp(this->CurrentCommand, "pause")) this->SetCurrentCommand("none");
 }
 //----------------------------------------------------------------------------
 void H5FDdsmSteerer::ReceiveSteeringCommands()
@@ -83,24 +84,40 @@ void H5FDdsmSteerer::ReceiveSteeringCommands()
   this->Comm->RemoteCommRecvSteeringCmd(&cmd);
   std::string stringCommand = cmd;
   delete []cmd;
-  std::cerr << "Received steering command: " << stringCommand << std::endl;
-  //  if (this->Pause) {
-  if (stringCommand == "pause") {
-    this->ReceiveSteeringCommands();
-  }
+  H5FDdsmDebug("Received steering command: " << stringCommand);
+  this->CheckCommand(stringCommand.c_str());
 }
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmSteerer::CheckCommand(const char *command)
 {
   std::string stringCommand = command;
-  H5FDdsmBoolean isSteerable;
 
-  if (stringCommand == "pause") {
-    isSteerable = true;
+  if (stringCommand == "none") {
+    return H5FD_DSM_FAIL;
   }
-  else {
-    isSteerable = false;
+  else if (stringCommand == "pause") {
+    this->Pause = 1;
+    while (this->Pause) {
+      this->ReceiveSteeringCommands();
+    }
   }
+  else if (stringCommand == "play") {
+    // nothing special
+    this->Pause = 0;
+  }
+  else if (stringCommand == "restart") {
 
+  }
+  else if (stringCommand == "notSend") {
+
+  }
+  else if (stringCommand == "writeDisk") {
+    H5FDdsmDebug("Setting WriteToDSM to 0");
+    this->WriteToDSM = 0;
+  }
+  else if (stringCommand == "writeDSM") {
+    H5FDdsmDebug("Setting WriteToDSM to 1");
+    this->WriteToDSM = 1;
+  }
   return(H5FD_DSM_SUCCESS);
 }

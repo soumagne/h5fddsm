@@ -470,6 +470,7 @@ H5FDdsmCommMpi::RemoteCommSendSteeringCmd(H5FDdsmString cmd)
 {
   if (H5FDdsmComm::RemoteCommSendSteeringCmd(cmd) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
   //
+  if (this->InterComm == MPI_COMM_NULL) return(H5FD_DSM_FAIL);
   if (this->Id == 0) {
     H5FDdsmInt32 length = strlen(cmd) + 1;
     if (MPI_Send(cmd, length, MPI_CHAR, 0, H5FD_DSM_STEERING_TAG, this->InterComm) != MPI_SUCCESS){
@@ -488,6 +489,7 @@ H5FDdsmCommMpi::RemoteCommRecvSteeringCmd(H5FDdsmString *cmd)
   //
   if (H5FDdsmComm::RemoteCommRecvSteeringCmd(cmd) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
   //
+  if (this->InterComm == MPI_COMM_NULL) return(H5FD_DSM_FAIL);
   if (this->Id == 0) {
     MPI_Status status;
     MPI_Probe(0, H5FD_DSM_STEERING_TAG, this->InterComm, &status);

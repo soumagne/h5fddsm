@@ -1,6 +1,6 @@
 /*=========================================================================
 
-  Project                 : vtkCSCS
+  Project                 : H5FDdsm
   Module                  : H5FDdsmManager.h
 
   Copyright (C) CSCS - Swiss National Supercomputing Centre.
@@ -15,9 +15,9 @@
   implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 =========================================================================*/
-// .NAME H5FDdsmManager - Create/Expose an Xdmf DSM to Paraview
+// .NAME H5FDdsmManager - Create/Expose an Xdmf DSM to an external application
 // .SECTION Description
-// Create/Expose an Xdmf DSM to Paraview
+// Create/Expose an Xdmf DSM to an external application
 
 #ifndef __H5FDdsmManager_h
 #define __H5FDdsmManager_h
@@ -89,8 +89,8 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     int GetAcceptedConnection();
 
     // Description:
-    // Get/Set the update ready flag which triggers the VTK pipeline update and the
-    // display of DSM objects.
+    // Get/Set the update ready flag which triggers the pipeline update and
+    // possibly the display of DSM objects.
     H5FDdsmSetValueMacro(DsmUpdateReady, int);
     int  GetDsmUpdateReady();
     void ClearDsmUpdateReady();
@@ -105,8 +105,7 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     // Description:
     // Set/Get the current given steering command.
     // The command is then passed to the simulation.
-    // vtkSetStringMacro(SteeringCommand);
-    void SetSteeringCommand(char *command);
+    void SetSteeringCommand(char *cmd);
     H5FDdsmGetStringMacro(SteeringCommand);
 
     // Description:
