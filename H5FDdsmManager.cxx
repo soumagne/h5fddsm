@@ -30,6 +30,7 @@
 #ifdef _WIN32
 #include <io.h>
   #define access _access
+  #define atoll _atoi64 
 #endif
 
 //----------------------------------------------------------------------------
