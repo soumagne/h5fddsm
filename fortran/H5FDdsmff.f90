@@ -37,7 +37,7 @@
 !
 ! Inputs:
 !		prp_id		- file access property list identifier
-!		increment	- Default memory increment size
+!		comm        - Communicator used by the IO nodes
 ! Outputs:
 !		hdferr:		- error code
 !				 	Success:  0
