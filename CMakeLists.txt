@@ -88,8 +88,11 @@ ENDIF (BUILD_SHARED_LIBS)
 #-----------------------------------------------------------------------------
 # Find HDF5
 #-----------------------------------------------------------------------------
-FIND_PACKAGE(HDF5 "1.8.5" REQUIRED NO_MODULE PATHS "$ENV{ProgramFiles}/HDF5")
-MESSAGE("HDF5_INCLUDE_DIR ${HDF5_INCLUDE_DIR}")
+IF (NOT H5FD_DSM_EXTERNALLY_CONFIGURED)
+  FIND_PACKAGE(HDF5 "1.8.5" REQUIRED NO_MODULE PATHS "$ENV{ProgramFiles}/HDF5")
+ELSE (NOT H5FD_DSM_EXTERNALLY_CONFIGURED)
+  FIND_PACKAGE(HDF5 REQUIRED NO_MODULE PATHS "${HDF5_DIR}")
+ENDIF (NOT H5FD_DSM_EXTERNALLY_CONFIGURED)
 INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
 
 #-----------------------------------------------------------------------------
