@@ -1,0 +1,23 @@
+#-----------------------------------------------------------------------------
+# H5FDdsm Version file for install directory
+#-----------------------------------------------------------------------------
+
+SET (PACKAGE_VERSION @H5FDdsm_PACKAGE_VERSION@)
+
+IF ("${PACKAGE_FIND_VERSION_MAJOR}" EQUAL @H5FDdsm_VERS_MAJOR@)
+
+  # exact match for version @H5FDdsm_VERS_MAJOR@.@H5FDdsm_VERS_MINOR@
+  IF ("${PACKAGE_FIND_VERSION_MINOR}" EQUAL @H5FDdsm_VERS_MINOR@)
+
+    # compatible with any version @H5FDdsm_VERS_MAJOR@.@H5FDdsm_VERS_MINOR@.x
+    SET (PACKAGE_VERSION_COMPATIBLE 1) 
+    
+    IF ("${PACKAGE_FIND_VERSION_PATCH}" EQUAL @H5FDdsm_VERS_RELEASE@)
+      SET (PACKAGE_VERSION_EXACT 1)    
+     
+    ENDIF ("${PACKAGE_FIND_VERSION_PATCH}" EQUAL @H5FDdsm_VERS_RELEASE@)
+    
+  ENDIF ("${PACKAGE_FIND_VERSION_MINOR}" EQUAL @H5FDdsm_VERS_MINOR@)
+ENDIF ("${PACKAGE_FIND_VERSION_MAJOR}" EQUAL @H5FDdsm_VERS_MAJOR@)
+
+
