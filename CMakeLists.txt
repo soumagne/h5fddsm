@@ -88,8 +88,11 @@ ENDIF (BUILD_SHARED_LIBS)
 #-----------------------------------------------------------------------------
 # Find HDF5
 #-----------------------------------------------------------------------------
-FIND_PACKAGE(HDF5 "1.8.5" REQUIRED NO_MODULE PATHS "$ENV{ProgramFiles}/HDF5")
-MESSAGE("HDF5_INCLUDE_DIR ${HDF5_INCLUDE_DIR}")
+IF (NOT H5FD_DSM_EXTERNALLY_CONFIGURED)
+  FIND_PACKAGE(HDF5 "1.8.5" REQUIRED NO_MODULE PATHS "$ENV{ProgramFiles}/HDF5")
+ELSE (NOT H5FD_DSM_EXTERNALLY_CONFIGURED)
+  FIND_PACKAGE(HDF5 REQUIRED NO_MODULE PATHS "${HDF5_DIR}")
+ENDIF (NOT H5FD_DSM_EXTERNALLY_CONFIGURED)
 INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
 
 #-----------------------------------------------------------------------------
@@ -242,9 +245,9 @@ INSTALL (
   EXPORT
     ${H5FD_DSM_EXPORTED_TARGETS}
   DESTINATION
-    lib/cmake//h5fddsm-${H5FDdsm_PACKAGE_VERSION}
+    lib/cmake/h5fddsm-${H5FDdsm_PACKAGE_VERSION}
   FILE
-    H5FDdsm-targets.cmake
+    h5fddsm-targets.cmake
 )
 
 #-----------------------------------------------------------------------------
@@ -254,7 +257,7 @@ EXPORT (
   TARGETS
     H5FDdsm ${H5FD_DSM_LIB_DEPENDENCIES}
   FILE
-    H5FDdsm-targets.cmake
+    h5fddsm-targets.cmake
 )
  
 #-----------------------------------------------------------------------------
@@ -269,25 +272,39 @@ SET (H5FD_DSM_VERSION_MAJOR  "0")
 SET (H5FD_DSM_VERSION_MINOR  "0")
 
 CONFIGURE_FILE (
-    ${H5FDdsm_SOURCE_DIR}/CMake/H5FDdsm-config.cmake.build.in 
-    ${H5FDdsm_BINARY_DIR}/H5FDdsm-config.cmake @ONLY
+  ${H5FDdsm_SOURCE_DIR}/CMake/H5FDdsm-config.cmake.build.in 
+  ${H5FDdsm_BINARY_DIR}/h5fddsm-config.cmake @ONLY
 )
 
 #-----------------------------------------------------------------------------
-# Configure the H5FDdsm-config.cmake file for the install directory
+# Configure the h5fddsm-config.cmake file for the install directory
 #-----------------------------------------------------------------------------
-INSTALL (CODE
-    "SET (H5FD_DSM_INSTALL_SKIP_TARGETS 1)
-     INCLUDE (${H5FDdsm_BINARY_DIR}/H5FDdsm-config.cmake) 
-     CONFIGURE_FILE (
-         \"${H5FDdsm_SOURCE_DIR}/CMake/H5FDdsm-config.cmake.install.in\" 
-         \"${CMAKE_INSTALL_PREFIX}/lib/H5FDdsm-config.cmake\" @ONLY
-     )
-    "
+CONFIGURE_FILE (
+  ${H5FDdsm_SOURCE_DIR}/CMake/H5FDdsm-config.cmake.install.in
+  ${H5FDdsm_BINARY_DIR}/CMakeFiles/h5fddsm-config.cmake @ONLY
+)
+INSTALL (
+  FILES
+    ${H5FDdsm_BINARY_DIR}/CMakeFiles/h5fddsm-config.cmake
+  DESTINATION
+    lib/cmake/h5fddsm-${H5FDdsm_PACKAGE_VERSION}
+)
+
+#-----------------------------------------------------------------------------
+# Configure the hdf5-config-version .cmake file for the install directory
+#-----------------------------------------------------------------------------
+CONFIGURE_FILE (
+  ${H5FDdsm_SOURCE_DIR}/CMake/h5fddsm-config-version.cmake.in
+  ${H5FDdsm_BINARY_DIR}/CMakeFiles/h5fddsm-config-version.cmake @ONLY
+)
+INSTALL (
+  FILES
+    ${H5FDdsm_BINARY_DIR}/CMakeFiles/h5fddsm-config-version.cmake
+  DESTINATION
+    lib/cmake/h5fddsm-${H5FDdsm_PACKAGE_VERSION}
 )
 
 #-----------------------------------------------------------------------------
 # Debugging below here
 #-----------------------------------------------------------------------------
-#MESSAGE("MPI_LIBRARY is ${MPI_LIBRARY}, MPI dir is ${MPI_INCLUDE_PATH}, HDF5 dir is ${HDF5_INCLUDE_DIR}")
 
