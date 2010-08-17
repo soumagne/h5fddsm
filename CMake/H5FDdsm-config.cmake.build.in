@@ -1,20 +1,34 @@
 #-----------------------------------------------------------------------------
 # H5FDdsm Config file for compiling against the build directory
 #-----------------------------------------------------------------------------
+GET_FILENAME_COMPONENT (SELF_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
 
-SET (H5FD_DSM_INCLUDE_DIRS "@H5FD_DSM_INCLUDES_BUILD_TIME@")
+#-----------------------------------------------------------------------------
+# User Options
+#-----------------------------------------------------------------------------
+SET (H5FD_DSM_BUILD_FORTRAN @H5FD_DSM_BUILD_FORTRAN@)
+
+#-----------------------------------------------------------------------------
+# Directories
+#-----------------------------------------------------------------------------
+SET (H5FD_DSM_INCLUDE_DIR "@H5FD_DSM_INCLUDES_BUILD_TIME@")
+
+IF (H5FD_DSM_BUILD_FORTRAN)
+  SET (H5FD_DSM_INCLUDE_DIR_FORTRAN "@H5FD_DSM_INCLUDES_BUILD_TIME@")
+ENDIF (H5FD_DSM_BUILD_FORTRAN)
+
+#-----------------------------------------------------------------------------
+# Version Strings
+#-----------------------------------------------------------------------------
+SET (H5FD_DSM_VERSION_STRING @H5FD_DSM_VERSION_STRING@)
+SET (H5FD_DSM_VERSION_MAJOR  @H5FD_DSM_VERSION_MAJOR@)
+SET (H5FD_DSM_VERSION_MINOR  @H5FD_DSM_VERSION_MINOR@)
 
 #-----------------------------------------------------------------------------
 # Don't include targets if this file is being picked up by another
 # project which has already build H5FDdsm as a subproject
 #-----------------------------------------------------------------------------
 IF (NOT TARGET "H5FDdsm" AND NOT H5FD_DSM_INSTALL_SKIP_TARGETS)
-  GET_FILENAME_COMPONENT (SELF_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
-  INCLUDE (${SELF_DIR}/H5FDdsm-targets.cmake)
+  INCLUDE (${SELF_DIR}/h5fddsm-targets.cmake)
 ENDIF (NOT TARGET "H5FDdsm" AND NOT H5FD_DSM_INSTALL_SKIP_TARGETS)
 
-SET (H5FD_DSM_VERSION_STRING @H5FD_DSM_VERSION_STRING@)
-SET (H5FD_DSM_VERSION_MAJOR  @H5FD_DSM_VERSION_MAJOR@)
-SET (H5FD_DSM_VERSION_MINOR  @H5FD_DSM_VERSION_MINOR@)
-
-SET (H5FD_DSM_BUILD_FORTRAN @H5FD_DSM_BUILD_FORTRAN@)
