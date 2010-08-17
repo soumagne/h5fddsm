@@ -2,6 +2,20 @@ cmake_minimum_required (VERSION 2.8)
 PROJECT (H5FDdsm C CXX)
 
 #-----------------------------------------------------------------------------
+# Version information 
+#-----------------------------------------------------------------------------
+SET (H5FDdsm_VERS_MAJOR   "1")
+SET (H5FDdsm_VERS_MINOR   "0")
+SET (H5FDdsm_VERS_RELEASE "0")
+SET (H5FDdsm_PACKAGE "h5fddsm")
+SET (H5FDdsm_PACKAGE_NAME "H5FDdsm")
+SET (H5FDdsm_PACKAGE_VERSION "${H5FDdsm_VERS_MAJOR}.${H5FDdsm_VERS_MINOR}.${H5FDdsm_VERS_RELEASE}")
+SET (H5FDdsm_PACKAGE_VERSION_MAJOR "${H5FDdsm_VERS_MAJOR}.${H5FDdsm_VERS_MINOR}")
+SET (H5FDdsm_PACKAGE_VERSION_MINOR "${H5FDdsm_VERS_RELEASE}")
+SET (H5FDdsm_PACKAGE_STRING "${H5FDdsm_PACKAGE_NAME} ${H5FDdsm_PACKAGE_VERSION}")
+SET (H5FDdsm_PACKAGE_TARNAME "h5fddsm")
+
+#-----------------------------------------------------------------------------
 # Setup output Directories
 #-----------------------------------------------------------------------------
 SET (CMAKE_RUNTIME_OUTPUT_DIRECTORY
@@ -74,12 +88,9 @@ ENDIF (BUILD_SHARED_LIBS)
 #-----------------------------------------------------------------------------
 # Find HDF5
 #-----------------------------------------------------------------------------
-INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/CMake/FindHDF5.cmake)
-IF(NOT HDF5_FOUND)
-  MESSAGE(FATAL_ERROR "This project requires HDF5 1.8.5-VFD configured with CMake")
-ENDIF(NOT HDF5_FOUND)
-  
-INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIRS})
+FIND_PACKAGE(HDF5 "1.8.5" REQUIRED NO_MODULE PATHS "$ENV{ProgramFiles}/HDF5")
+MESSAGE("HDF5_INCLUDE_DIR ${HDF5_INCLUDE_DIR}")
+INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
 
 #-----------------------------------------------------------------------------
 # Find MPI
@@ -185,6 +196,7 @@ ENDIF(WIN32)
 #-----------------------------------------------------------------------------
 OPTION (H5FD_DSM_BUILD_FORTRAN "Build FORTRAN bindings" OFF)
 IF (H5FD_DSM_BUILD_FORTRAN)
+  INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR_FORTRAN})
   ADD_SUBDIRECTORY (${H5FDdsm_SOURCE_DIR}/fortran ${PROJECT_BINARY_DIR}/fortran)
 ENDIF (H5FD_DSM_BUILD_FORTRAN)
 
@@ -230,7 +242,7 @@ INSTALL (
   EXPORT
     ${H5FD_DSM_EXPORTED_TARGETS}
   DESTINATION
-    lib
+    lib/cmake//h5fddsm-${H5FDdsm_PACKAGE_VERSION}
   FILE
     H5FDdsm-targets.cmake
 )

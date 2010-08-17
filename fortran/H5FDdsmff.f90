@@ -46,14 +46,14 @@
 !				NONE
 !
 !----------------------------------------------------------------------
-         SUBROUTINE h5pset_fapl_dsm_f(prp_id, increment, hdferr)
+         SUBROUTINE h5pset_fapl_dsm_f(prp_id, comm, hdferr)
             IMPLICIT NONE
             INTEGER(HID_T), INTENT(IN) :: prp_id ! Property list identifier
-            INTEGER, INTENT(IN)  :: increment    ! Default memory increment
+            INTEGER, INTENT(IN)  :: comm         ! Default communicator
             INTEGER, INTENT(OUT) :: hdferr       ! Error code
 
             INTEGER, EXTERNAL :: h5pset_fapl_dsm_c
-            hdferr = h5pset_fapl_dsm_c(prp_id, increment, 0)
+            hdferr = h5pset_fapl_dsm_c(prp_id, comm, 0)
           END SUBROUTINE h5pset_fapl_dsm_f
 
 !----------------------------------------------------------------------
