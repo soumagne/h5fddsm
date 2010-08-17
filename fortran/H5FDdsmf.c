@@ -30,21 +30,21 @@
  * Name:        h5pset_fapl_dsm_c
  * Purpose:     Call H5Pset_fapl_dsm to set mode for DSM parallel I/O 
  * Inputs:      prp_id    - property list identifier
- *              increment - default memory increment size
+ *              Comm      - Communicator used by the IO nodes
  *              buffer    - Pointer to a DSM buffer object, or NULL
  * Returns:     0 on success, -1 on failure
  *---------------------------------------------------------------------------*/
-int_f nh5pset_fapl_dsm_c(hid_t_f *prp_id, int_f* dsmComm)
+int_f nh5pset_fapl_dsm_c(hid_t_f *prp_id, int_f* Comm)
 {
      int      ret_value = -1;
      hid_t    c_prp_id  = *prp_id;
-     MPI_Comm Comm      = *dsmComm;
+     MPI_Comm dsmComm   = *Comm;
      herr_t ret;
 
      /*
       * Call H5Pset_fapl_dsm function.
       */
-     ret = H5Pset_fapl_dsm(c_prp_id, Comm, NULL);
+     ret = H5Pset_fapl_dsm(c_prp_id, dsmComm, NULL);
      if (ret < 0) return ret_value;
      ret_value = 0;
      return ret_value;

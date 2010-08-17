@@ -178,7 +178,7 @@ int main (int argc, char* argv[])
   //
   H5FDdsmManager *dsmManager = new H5FDdsmManager();
   dsmManager->SetCommunicator(dcomm);
-  dsmManager->SetLocalBufferSizeMBytes(DSMSize*1024/size);
+  dsmManager->SetLocalBufferSizeMBytes(DSMSize/size);
   dsmManager->SetDsmCommType(H5FD_DSM_COMM_SOCKET);
   dsmManager->SetDsmIsServer(1);
   dsmManager->SetServerHostName(server_name.c_str());

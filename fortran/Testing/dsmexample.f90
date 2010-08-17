@@ -47,8 +47,6 @@
      INTEGER :: error, error_n  ! Error flags
      INTEGER :: i, j
      !
-     INTEGER :: increment = 100000
-     !
      ! MPI definitions and calls.
      !
      INTEGER :: mpierror       ! MPI error flag
@@ -79,7 +77,7 @@
      ! Setup file access property list with parallel I/O access.
      !
      CALL h5pcreate_f(H5P_FILE_ACCESS_F, plist_id, error)
-     CALL h5pset_fapl_dsm_f(plist_id, increment, error)
+     CALL h5pset_fapl_dsm_f(plist_id, comm, error)
 
      !
      ! Figure out the filename to use.  If your system does not support
