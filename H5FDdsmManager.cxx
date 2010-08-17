@@ -526,7 +526,7 @@ bool H5FDdsmManager::ReadDSMConfigFile()
 //----------------------------------------------------------------------------
 void H5FDdsmManager::SetSteeringCommand(char *command)
 {
-  std::cerr << "cmd: " << command << std::endl;
+  if (command) std::cerr << "cmd: " << command << std::endl;
   if (this->SteeringCommand && command && (!strcmp(this->SteeringCommand,command))) { return;}
   if (this->SteeringCommand) { delete [] this->SteeringCommand; }
   if (command) {
