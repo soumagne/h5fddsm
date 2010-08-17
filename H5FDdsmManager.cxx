@@ -60,13 +60,18 @@ H5FDdsmManager::H5FDdsmManager()
   this->ServerHostName          = NULL;
   this->ServerPort              = 0;
   this->DsmConfigFilePath       = NULL;
+  this->DsmUpdateReady          = 0;
+  this->DsmWriteDisk            = 0;
+  this->SteeringCommand         = NULL;
   this->XMLStringSend           = NULL;
 }
 //----------------------------------------------------------------------------
 H5FDdsmManager::~H5FDdsmManager()
 { 
   this->DestroyDSM();
+
   this->SetDsmConfigFilePath(NULL);
+  this->SetSteeringCommand(NULL);
   this->SetXMLStringSend(NULL);
 }
 //----------------------------------------------------------------------------
@@ -103,6 +108,13 @@ void H5FDdsmManager::ClearDsmUpdateReady()
 {
   if (this->DSMBuffer) {
     this->DSMBuffer->SetIsUpdateReady(0);
+  }
+}
+//----------------------------------------------------------------------------
+void H5FDdsmManager::SetDsmWriteDisk(int enable)
+{
+  if (this->DSMBuffer) {
+//  this->DSMBuffer->SendCommandHeader()
   }
 }
 //----------------------------------------------------------------------------
@@ -322,6 +334,7 @@ void H5FDdsmManager::ConnectDSM()
 void H5FDdsmManager::DisconnectDSM()
 {
   if (this->UpdatePiece == 0) vtkDebugMacro(<< "Disconnect DSM");
+  this->DSMBuffer->GetComm()->RemoteCommRecvReady();
   this->DSMBuffer->RequestDisconnection(); // Go back to normal channel
 }
 //----------------------------------------------------------------------------
@@ -482,18 +495,48 @@ bool H5FDdsmManager::ReadDSMConfigFile()
     if (this->UpdatePiece == 0) {
       std::cout << "Reading from " << configPath.c_str() << std::endl;
     }
-    std::string mode = config.GetValue("DSM_COMM_SYSTEM", "Comm", configPath);
+    std::string mode = config.GetValue("DSM_INIT_MODE",   "General", configPath);
+    std::string size = config.GetValue("DSM_INIT_SIZE",   "General", configPath);
+
+    std::string comm = config.GetValue("DSM_COMM_SYSTEM", "Comm", configPath);
     std::string host = config.GetValue("DSM_BASE_HOST",   "Comm", configPath);
     std::string port = config.GetValue("DSM_BASE_PORT",   "Comm", configPath);
-    if (mode == "socket") {
+
+    // General settings
+    if (mode == "server" && atoll(size.c_str())) {
+      this->SetLocalBufferSizeMBytes(atoll(size.c_str()));
+      this->SetDsmIsServer(true);
+    } else {
+      this->SetDsmIsServer(false);
+    }
+
+    // Comm settings
+    if (comm == "socket") {
       this->SetDsmCommType(H5FD_DSM_COMM_SOCKET);
-      this->SetServerPort(atoi(port.c_str()));
-    } else if (mode == "mpi") {
+      if (mode != "server") this->SetServerPort(atoi(port.c_str()));
+    } else if (comm == "mpi") {
       this->SetDsmCommType(H5FD_DSM_COMM_MPI);
     }
-    this->SetServerHostName(host.c_str());
+    if (mode != "server") this->SetServerHostName(host.c_str());
     return true;
   }
   return false;
+}
+//----------------------------------------------------------------------------
+void H5FDdsmManager::SetSteeringCommand(char *command)
+{
+  std::cerr << "cmd: " << command << std::endl;
+  if (this->SteeringCommand && command && (!strcmp(this->SteeringCommand,command))) { return;}
+  if (this->SteeringCommand) { delete [] this->SteeringCommand; }
+  if (command) {
+    size_t n = strlen(command) + 1;
+    char *cp1 =  new char[n];
+    const char *cp2 = (command);
+    this->SteeringCommand = cp1;
+    do { *cp1++ = *cp2++; } while ( --n );
+  }
+  else {
+    this->SteeringCommand = NULL;
+  }
 }
 //----------------------------------------------------------------------------

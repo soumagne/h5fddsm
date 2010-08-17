@@ -491,7 +491,7 @@ h5tools_get_fapl(hid_t fapl, const char *driver, unsigned *drivernum, void *dsmB
         if(!h5tools_mpi_init_g)
             MPI_Initialized(&h5tools_mpi_init_g);
         if(h5tools_mpi_init_g) {
-            if(H5Pset_fapl_dsm(new_fapl, H5FD_DSM_INCREMENT, dsmBuffer) < 0)
+            if(H5Pset_fapl_dsm(new_fapl, MPI_COMM_WORLD, dsmBuffer) < 0)
                 goto error;
 
             H5FD_dsm_init();

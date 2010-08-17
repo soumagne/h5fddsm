@@ -23,8 +23,8 @@
 #define __H5FDdsmManager_h
 
 #include "H5FDdsm.h"
-#include "H5FDdsmObject.h"
 #include "H5FDdsmBuffer.h"
+#include "H5FDdsmCommSocket.h"
 #include "H5FDdsmCommMpi.h"
 #include "H5FDdsmIniFile.h"
 
@@ -96,6 +96,20 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     void ClearDsmUpdateReady();
 
     // Description:
+    // Get/Set the "write to disk" flag, in this case data is written to disk
+    // using the HDF MPIO parallel driver
+//    H5FDdsmSetValueMacro(DsmWriteDisk, int);
+    void SetDsmWriteDisk(int enable);
+    H5FDdsmGetValueMacro(DsmWriteDisk, int);
+
+    // Description:
+    // Set/Get the current given steering command.
+    // The command is then passed to the simulation.
+    // vtkSetStringMacro(SteeringCommand);
+    void SetSteeringCommand(char *command);
+    H5FDdsmGetStringMacro(SteeringCommand);
+
+    // Description:
     // When sending, the writer can SetXMLDescriptionSend and it will be transmitted
     // to the receiver. When receiving, GetXMLDescriptionReceive queries the internal DSMBuffer
     // object to see if a string is present
@@ -151,8 +165,11 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     char           *DsmConfigFilePath;
     //
     int             DsmUpdateReady;
+    int             DsmWriteDisk;
     //
     char           *XMLStringSend;
+    //
+    char           *SteeringCommand;
 
 private:
     H5FDdsmManager(const H5FDdsmManager&);  // Not implemented.
