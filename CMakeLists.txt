@@ -4,7 +4,7 @@ PROJECT (H5FDdsm C CXX)
 #-----------------------------------------------------------------------------
 # Variable naming convention
 #-----------------------------------------------------------------------------
-#
+
 # Inside CMakeLists files for the project, variable names use H5FDdsm_XXX
 #
 # Variables exported to other projects and user visible options are H5FD_DSM_XXX
