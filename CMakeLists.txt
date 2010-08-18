@@ -2,6 +2,15 @@ cmake_minimum_required (VERSION 2.8)
 PROJECT (H5FDdsm C CXX)
 
 #-----------------------------------------------------------------------------
+# Variable naming convention
+#-----------------------------------------------------------------------------
+#
+# Inside CMakeLists files for the project, variable names use H5FDdsm_XXX
+#
+# Variables exported to other projects and user visible options are H5FD_DSM_XXX
+#
+
+#-----------------------------------------------------------------------------
 # Version information 
 #-----------------------------------------------------------------------------
 SET (H5FDdsm_VERS_MAJOR   "1")
@@ -268,9 +277,6 @@ SET (H5FD_DSM_INCLUDES_BUILD_TIME
   ${H5FDdsm_SOURCE_DIR}
   ${H5FDdsm_SOURCE_DIR}/h5dump
 )
-SET (H5FD_DSM_VERSION_STRING "1")
-SET (H5FD_DSM_VERSION_MAJOR  "0")
-SET (H5FD_DSM_VERSION_MINOR  "0")
 
 CONFIGURE_FILE (
   ${H5FDdsm_SOURCE_DIR}/CMake/H5FDdsm-config.cmake.build.in 

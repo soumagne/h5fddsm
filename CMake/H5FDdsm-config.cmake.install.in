@@ -20,9 +20,11 @@ ENDIF (H5FD_DSM_BUILD_FORTRAN)
 #-----------------------------------------------------------------------------
 # Version Strings
 #-----------------------------------------------------------------------------
-SET (H5FD_DSM_VERSION_STRING @H5FD_DSM_VERSION_STRING@)
-SET (H5FD_DSM_VERSION_MAJOR  @H5FD_DSM_VERSION_MAJOR@)
-SET (H5FD_DSM_VERSION_MINOR  @H5FD_DSM_VERSION_MINOR@)
+SET (H5FD_DSM_VERSION_STRING  @H5FDdsm_PACKAGE_VERSION@)
+SET (H5FD_DSM_VERSION_MAJOR   @H5FDdsm_VERS_MAJOR@)
+SET (H5FD_DSM_VERSION_MINOR   @H5FDdsm_VERS_MINOR@)
+SET (H5FD_DSM_VERSION_RELEASE @H5FDdsm_VERS_RELEASE@)
+SET (H5FD_DSM_PACKAGE_STRING  @H5FDdsm_PACKAGE_STRING@)
 
 #-----------------------------------------------------------------------------
 # Don't include targets if this file is being picked up by another
