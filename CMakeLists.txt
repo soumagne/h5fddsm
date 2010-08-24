@@ -300,7 +300,7 @@ INSTALL (
 # Configure the hdf5-config-version .cmake file for the install directory
 #-----------------------------------------------------------------------------
 CONFIGURE_FILE (
-  ${H5FDdsm_SOURCE_DIR}/CMake/h5fddsm-config-version.cmake.in
+  ${H5FDdsm_SOURCE_DIR}/CMake/H5FDdsm-config-version.cmake.in
   ${H5FDdsm_BINARY_DIR}/CMakeFiles/h5fddsm-config-version.cmake @ONLY
 )
 INSTALL (
