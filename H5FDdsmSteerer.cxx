@@ -23,20 +23,50 @@
 
 =========================================================================*/
 
+#include "H5FDdsm.h"
 #include "H5FDdsmSteerer.h"
+#include "H5FDdsmBuffer.h"
 #include <string>
 
 //----------------------------------------------------------------------------
-void H5FD_dsm_begin_loop(const char *name)
+// C steering bindings
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+//----------------------------------------------------------------------------
+void H5FD_dsm_steering_init(MPI_Comm comm)
 {
-  // start HTM loop section
+  hid_t hdf5_fapl;
+  H5Pset_fapl_dsm(hdf5_fapl, comm, NULL);
+
 }
 //----------------------------------------------------------------------------
-void H5FD_dsm_end_loop(const char *name)
+void H5FD_dsm_begin_loop(const char *name, void *dsm_buffer)
+{
+  H5FDdsmBuffer *dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
+  // start HTM loop section
+  if (dsmBuffer) std::cerr << "dsmBuffer is not NULL" << std::endl;
+  if (dsmBuffer && dsmBuffer->GetSteerer()) {
+    std::cerr << "dsmBuffer steerer is not NULL" << std::endl;
+  }
+
+  if (dsmBuffer && dsmBuffer->GetSteerer()) {
+//    if (steerer->GetPause())
+      std::cerr << "Pause is now activated" << std::endl;
+  }
+
+}
+//----------------------------------------------------------------------------
+void H5FD_dsm_end_loop(const char *name, void *dsm_buffer)
 {
   // finish to build - close the HTM loop section
   // for later
 }
+//----------------------------------------------------------------------------
+#ifdef __cplusplus
+}
+#endif
 //----------------------------------------------------------------------------
 H5FDdsmSteerer::H5FDdsmSteerer()
 {

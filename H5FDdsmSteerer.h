@@ -26,8 +26,17 @@
 #ifndef H5FDDSMSTEERER_H
 #define H5FDDSMSTEERER_H
 
-void H5FD_dsm_begin_loop(const char *name);
-void H5FD_dsm_end_loop(const char *name);
+#include <mpi.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+void H5FD_dsm_steering_init(MPI_Comm comm);
+void H5FD_dsm_begin_loop(const char *name, void *dsm_buffer);
+void H5FD_dsm_end_loop(const char *name, void *dsm_buffer);
+#ifdef __cplusplus
+}
+#endif
 
 #include "H5FDdsmObject.h"
 #include "H5FDdsmComm.h"
@@ -46,6 +55,10 @@ public:
   // Allows the H5FDdsm driver to switch to the MPIO driver
   H5FDdsmSetValueMacro(WriteToDSM, H5FDdsmInt32);
   H5FDdsmGetValueMacro(WriteToDSM, H5FDdsmInt32);
+
+  // Set/Get the Pause value
+  H5FDdsmSetValueMacro(Pause, H5FDdsmInt32);
+  H5FDdsmGetValueMacro(Pause, H5FDdsmInt32);
 
   H5FDdsmSetValueMacro(Comm, H5FDdsmComm*);
   void SendSteeringCommands();

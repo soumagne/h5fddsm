@@ -513,7 +513,11 @@ H5Pget_fapl_dsm(hid_t fapl_id, MPI_Comm *dsmComm/*out*/, void **dsmBuffer /* out
       *dsmComm = dynamic_cast <H5FDdsmCommMpi*> (fa->buffer->GetComm())->GetComm();
     }
   }
-  if (dsmBuffer) *dsmBuffer = fa->buffer;
+  //if (dsmBuffer) *dsmBuffer = fa->buffer;
+  if (fa->buffer) {
+    std::cerr << "setting buffer to fa->buffer" << endl;
+    *dsmBuffer = fa->buffer;
+  }
 
   done: FUNC_LEAVE_API(ret_value)
 }
