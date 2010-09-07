@@ -81,6 +81,10 @@ public:
     H5FDdsmGetValueMacro(TotalSize, H5FDdsmInt32);
     H5FDdsmSetValueMacro(TotalSize, H5FDdsmInt32);
 
+    // InterSize
+    H5FDdsmGetValueMacro(InterSize, H5FDdsmInt32);
+    H5FDdsmSetValueMacro(InterSize, H5FDdsmInt32);
+
     //! CommType
     H5FDdsmGetValueMacro(CommType, H5FDdsmInt32);
     H5FDdsmSetValueMacro(CommType, H5FDdsmInt32);
@@ -124,6 +128,7 @@ public:
 protected:
     H5FDdsmInt32       Id;
     H5FDdsmInt32       TotalSize;
+    H5FDdsmInt32       InterSize;
     H5FDdsmInt32       CommType;
     H5FDdsmInt32       CommChannel;
 };

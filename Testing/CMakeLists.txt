@@ -22,6 +22,26 @@ TARGET_LINK_LIBRARIES(H5FDdsmReceiverTest
 )
 
 #-----------------------------------------------------------------------------
+# H5FDdsmSenderTest2 : Send data as fast as possible across the network
+#-----------------------------------------------------------------------------
+ADD_EXECUTABLE(H5FDdsmSenderTest2 
+  H5FDdsmSenderTest2.cxx
+)
+TARGET_LINK_LIBRARIES(H5FDdsmSenderTest2 
+  H5FDdsm
+)
+
+#-----------------------------------------------------------------------------
+# H5FDdsmReceiverTest2 : Receive data from Sender and do a light H5Dump
+#-----------------------------------------------------------------------------
+ADD_EXECUTABLE(H5FDdsmReceiverTest2 
+  H5FDdsmReceiverTest2.cxx
+)
+TARGET_LINK_LIBRARIES(H5FDdsmReceiverTest2
+  H5FDdsm
+)
+
+#-----------------------------------------------------------------------------
 # Add Target(s) to CMake Install 
 #-----------------------------------------------------------------------------
 INSTALL (

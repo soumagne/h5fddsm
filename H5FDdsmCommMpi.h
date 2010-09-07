@@ -118,7 +118,6 @@ public:
 protected:
     MPI_Comm       Comm;
     MPI_Comm       InterComm;
-    H5FDdsmInt32   InterSize;
     H5FDdsmByte    DsmMasterHostName[MPI_MAX_PORT_NAME];
     //
     H5FDdsmFloat64 TransferRate;

@@ -86,7 +86,6 @@ protected:
 
   MPI_Comm             Comm;
   H5FDdsmSocket       *InterComm[H5FD_DSM_MAX_SOCKET]; // Internode Socket Collection for data exchange
-  H5FDdsmInt32         InterSize;
   H5FDdsmSocket       *DsmMasterSocket; // Used for initializing connection and send comm orders
   H5FDdsmByte          DsmMasterHostName[MPI_MAX_PORT_NAME];
   H5FDdsmInt32         DsmMasterPort;

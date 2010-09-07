@@ -74,7 +74,7 @@ H5FDdsmSteerer::H5FDdsmSteerer()
   this->WriteToDSM = 1;
   this->CurrentCommand = NULL;
   this->Comm = NULL;
-  this->DebugOn();
+  //this->DebugOn();
 }
 //----------------------------------------------------------------------------
 H5FDdsmSteerer::~H5FDdsmSteerer()
