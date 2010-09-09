@@ -115,7 +115,7 @@ double TestParticleWrite(const char *filename, hsize_t N, int mpiId, int mpiNum,
   ParticleBuffer_t WriteBuffer;
   hsize_t i, start, total;
   double   *doublearray;
-
+  static int step_increment = 0;
   start = N*mpiId;
   total = N*mpiNum;
   // set all array pointers to zero
@@ -124,7 +124,7 @@ double TestParticleWrite(const char *filename, hsize_t N, int mpiId, int mpiNum,
   // create arrays for the test vars we selected above
   doublearray = (double*)malloc(sizeof(double)*N);
   for (i=0; i<N; i++) {
-    doublearray[i] = i + start;
+    doublearray[i] = i + start + step_increment;
   }
   WriteBuffer.Ddata = doublearray;
 
@@ -137,6 +137,7 @@ double TestParticleWrite(const char *filename, hsize_t N, int mpiId, int mpiNum,
 
   // free all array pointers
   freeBuffer(&WriteBuffer);
+  step_increment++;
   return t2-t1;
 };
 //----------------------------------------------------------------------------
@@ -145,8 +146,8 @@ void TestParticleClose()
   H5close();
 }
 //----------------------------------------------------------------------------
-#define LOOPS       5
-#define AVERAGE     10
+#define LOOPS       10
+#define AVERAGE     100
 #define TYPES       1 // 2 if disk output test required
 
 int main(int argc, char **argv)

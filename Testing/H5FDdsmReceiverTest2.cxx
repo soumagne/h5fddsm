@@ -122,6 +122,7 @@ double TestParticleRead(const char *filename, int rank, hsize_t N,
   hsize_t   i;
   double   *doublearray;
   int fail_count = 0;
+  static int step_increment = 0;
 
   // set all array pointers to zero
   initBuffer(&ReadBuffer);
@@ -143,8 +144,8 @@ double TestParticleRead(const char *filename, int rank, hsize_t N,
   if (rank == 0) {
     /* Check the results. */
     for (i=0; i<N; i++) {
-      if((doublearray[i] != i) && (fail_count<10)) {
-        fprintf(stderr," doublearray[%llu] is %llu, should be %llu\n", i, (hsize_t)doublearray[i], i);
+      if((doublearray[i] != (i + step_increment)) && (fail_count<10)) {
+        fprintf(stderr," doublearray[%llu] is %llu, should be %llu\n", i, (hsize_t)doublearray[i], (i+step_increment));
         fail_count++;
       }
     }
@@ -157,6 +158,7 @@ double TestParticleRead(const char *filename, int rank, hsize_t N,
   }
   // free all array pointers
   freeBuffer(&ReadBuffer);
+  step_increment++;
   return t2-t1;
 };
 //----------------------------------------------------------------------------
@@ -240,11 +242,11 @@ int main (int argc, char* argv[])
   H5FDdsmManager *dsmManager = new H5FDdsmManager();
   dsmManager->SetCommunicator(dcomm);
   dsmManager->SetLocalBufferSizeMBytes(DSMSize/size);
-  dsmManager->SetDsmCommType(H5FD_DSM_COMM_SOCKET); // Socket by default
-  // dsmManager->SetDsmCommType(H5FD_DSM_COMM_MPI);
+  // dsmManager->SetDsmCommType(H5FD_DSM_COMM_SOCKET); // Socket by default
+  dsmManager->SetDsmCommType(H5FD_DSM_COMM_MPI);
   dsmManager->SetDsmIsServer(1);
   dsmManager->SetServerHostName(server_name.c_str());
-  dsmManager->SetServerPort(default_port_number);
+  // dsmManager->SetServerPort(default_port_number);
   dsmManager->CreateDSM();
   // Publish writes .dsm_config file with server name/port/mode in
   // then spawns thread which waits for incoming connections
