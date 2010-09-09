@@ -232,11 +232,11 @@ int main(int argc, char **argv)
         bandwidth = (MBytes/totaltime);
         if (rank==0) {
           std::cout << "Particles, "        << numParticles << ", "
-                    << "NumArrays, "        << 1            << ", "
-                    << "NProcs, "           << nlocalprocs  << ", "
-                    << "Mbytes, "           << MBytes       << ", "
-                    << "TotalTime, "        << totaltime    << ", "
-                    << "Bandwidth (MB/s), " << bandwidth    << std::endl;
+              << "NumArrays, "        << 1            << ", "
+              << "NProcs, "           << nlocalprocs  << ", "
+              << "Mbytes, "           << MBytes       << ", "
+              << "TotalTime, "        << totaltime    << ", "
+              << "Bandwidth (MB/s), " << bandwidth    << std::endl;
         }
       }
     }

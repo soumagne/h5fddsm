@@ -271,33 +271,39 @@ static const H5FD_class_mpi_t H5FD_dsm_g = {
 //--------------------------------------------------------------------------
 typedef struct
 {
-  int64_t start;
-  int64_t end;
+  H5FDdsmInt64 start;
+  H5FDdsmInt64 end;
 } DsmEntry;
 //--------------------------------------------------------------------------
 H5FDdsmInt32
 DsmUpdateEntry(H5FD_dsm_t *file)
 {
-  int64_t addr;
+  H5FDdsmInt64 addr;
   DsmEntry entry;
 
   PRINT_INFO("DsmUpdateEntry()");
 
   if (!file->DsmBuffer) return (H5FD_DSM_FAIL);
 
-  file->end = MAX(((int64_t)(file->start + file->eof)), (int64_t)file->end);
+  file->end = MAX((H5FDdsmInt64)(file->start + file->eof), (H5FDdsmInt64)file->end);
   file->eof = file->end - file->start;
 
   entry.start = file->start;
   entry.end = file->end;
-  addr = file->DsmBuffer->GetTotalLength() - sizeof(entry) - sizeof(int64_t);
+  addr = file->DsmBuffer->GetTotalLength() - sizeof(entry) - sizeof(H5FDdsmInt64);
 
   PRINT_INFO("DsmUpdateEntry start " <<
       file->start <<
       " end " << file->end <<
       " addr " << addr);
 
-  if (file->DsmBuffer->Put(addr, sizeof(entry), &entry) != H5FD_DSM_SUCCESS) return H5FD_DSM_FAIL;
+  // Only one of the processes writing to the DSM needs to write file metadata
+  // but we must be careful that all the processes keep the metadata synchronized
+  // Do not send anything if the end of the file is 0
+  if ((file->DsmBuffer->GetComm()->GetId() == 0) && (entry.end > 0)) {
+    if (file->DsmBuffer->Put(addr, sizeof(entry), &entry) != H5FD_DSM_SUCCESS) return H5FD_DSM_FAIL;
+  }
+  file->DsmBuffer->GetComm()->Barrier();
   //else {
     // Send is non blocking, make sure it's there
     //if (file->DsmBuffer->Get(addr, sizeof(entry), &entry) != H5FD_DSM_SUCCESS) return H5FD_DSM_FAIL;
@@ -308,14 +314,14 @@ DsmUpdateEntry(H5FD_dsm_t *file)
 H5FDdsmInt32
 DsmGetEntry(H5FD_dsm_t *file)
 {
-  int64_t addr;
+  H5FDdsmInt64 addr;
   DsmEntry entry;
 
   PRINT_INFO("DsmGetEntry()");
 
   if (!file->DsmBuffer) return (H5FD_DSM_FAIL);
 
-  addr = file->DsmBuffer->GetTotalLength() - sizeof(DsmEntry) - sizeof(int64_t);
+  addr = file->DsmBuffer->GetTotalLength() - sizeof(DsmEntry) - sizeof(H5FDdsmInt64);
 
   if (file->DsmBuffer->Get(addr, sizeof(DsmEntry), &entry) != H5FD_DSM_SUCCESS) {
     PRINT_INFO("DsmGetEntry failed");
@@ -513,11 +519,7 @@ H5Pget_fapl_dsm(hid_t fapl_id, MPI_Comm *dsmComm/*out*/, void **dsmBuffer /* out
       *dsmComm = dynamic_cast <H5FDdsmCommMpi*> (fa->buffer->GetComm())->GetComm();
     }
   }
-  //if (dsmBuffer) *dsmBuffer = fa->buffer;
-  if (fa->buffer) {
-    std::cerr << "setting buffer to fa->buffer" << endl;
-    *dsmBuffer = fa->buffer;
-  }
+  if (dsmBuffer) *dsmBuffer = fa->buffer;
 
   done: FUNC_LEAVE_API(ret_value)
 }

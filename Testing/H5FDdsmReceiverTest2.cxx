@@ -94,8 +94,8 @@ void particle_read(
 
   // Read the dataset
   if (rank == 0) {
-	  status = H5Dread(dataset_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, (*buf).Ddata);
-	  H5CHECK_ERROR(dataset_id, "H5Dread");
+    status = H5Dread(dataset_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, (*buf).Ddata);
+    H5CHECK_ERROR(dataset_id, "H5Dread");
   }
 
   // Release resources
@@ -116,7 +116,7 @@ void freeBuffer(ParticleBuffer_t *buffer) {
 }
 //----------------------------------------------------------------------------
 double TestParticleRead(const char *filename, int rank, hsize_t N,
-		MPI_Comm dcomm, H5FDdsmBuffer *dsmBuffer)
+    MPI_Comm dcomm, H5FDdsmBuffer *dsmBuffer)
 {
   ParticleBuffer_t ReadBuffer;
   hsize_t   i;
@@ -141,19 +141,19 @@ double TestParticleRead(const char *filename, int rank, hsize_t N,
   double t2 = MPI_Wtime();
 
   if (rank == 0) {
-  /* Check the results. */
-  for (i=0; i<N; i++) {
-	  if((doublearray[i] != i) && (fail_count<10)) {
-		  fprintf(stderr," doublearray[%llu] is %llu, should be %llu\n", i, (hsize_t)doublearray[i], i);
-		  fail_count++;
-	  }
-  }
-  if (fail_count == 0) {
-	  if (rank == 0) printf("DSM read test PASSED\n");
-  }
-  else {
-	  fprintf(stderr,"DSM Write FAILED for PE %d, %d or more wrong values\n", rank, fail_count);
-  }
+    /* Check the results. */
+    for (i=0; i<N; i++) {
+      if((doublearray[i] != i) && (fail_count<10)) {
+        fprintf(stderr," doublearray[%llu] is %llu, should be %llu\n", i, (hsize_t)doublearray[i], i);
+        fail_count++;
+      }
+    }
+    if (fail_count == 0) {
+      if (rank == 0) printf("DSM read test PASSED\n");
+    }
+    else {
+      fprintf(stderr,"DSM Write FAILED for PE %d, %d or more wrong values\n", rank, fail_count);
+    }
   }
   // free all array pointers
   freeBuffer(&ReadBuffer);
@@ -170,28 +170,28 @@ void ThreadExecute(void *dsm, H5FDdsmInt64 &counter) {
 };
 //----------------------------------------------------------------------------
 #ifdef HAVE_PTHREADS
-  // nothing required
+// nothing required
 #elif HAVE_BOOST_THREADS
 class DSMListenThread {
-  public:
-    DSMListenThread(H5FDdsmManager *dsm)
-    {
-      this->dsmManager = dsm;
-      Counter          = 0;
-      UpdatesCounter   = 0;
+public:
+  DSMListenThread(H5FDdsmManager *dsm)
+  {
+    this->dsmManager = dsm;
+    Counter          = 0;
+    UpdatesCounter   = 0;
+  }
+  void operator()() {
+    while (this->dsmManager) {
+      UpdatesCounter ++;
+      ThreadExecute(this->dsmManager, Counter);
+      std::cout << UpdatesCounter << " : " << Counter << std::endl;
+      // somed delay here ?
     }
-    void operator()() {
-      while (this->dsmManager) {
-        UpdatesCounter ++;
-        ThreadExecute(this->dsmManager, Counter);
-        std::cout << UpdatesCounter << " : " << Counter << std::endl;
-        // somed delay here ?
-      }
-    }
-    //
-    H5FDdsmManager *dsmManager;
-    H5FDdsmInt64    Counter;
-    H5FDdsmInt64    UpdatesCounter;
+  }
+  //
+  H5FDdsmManager *dsmManager;
+  H5FDdsmInt64    Counter;
+  H5FDdsmInt64    UpdatesCounter;
 };
 #endif
 //----------------------------------------------------------------------------
@@ -216,7 +216,7 @@ int main (int argc, char* argv[])
   if (rank == 0) {
     if (provided != MPI_THREAD_MULTIPLE) {
       std::cout << "MPI_THREAD_MULTIPLE not set, you may need to recompile your "
-        << "MPI distribution with threads enabled" << std::endl;
+          << "MPI distribution with threads enabled" << std::endl;
     }
     else {
       std::cout << "MPI_THREAD_MULTIPLE is OK" << std::endl;
@@ -241,6 +241,7 @@ int main (int argc, char* argv[])
   dsmManager->SetCommunicator(dcomm);
   dsmManager->SetLocalBufferSizeMBytes(DSMSize/size);
   dsmManager->SetDsmCommType(H5FD_DSM_COMM_SOCKET); // Socket by default
+  // dsmManager->SetDsmCommType(H5FD_DSM_COMM_MPI);
   dsmManager->SetDsmIsServer(1);
   dsmManager->SetServerHostName(server_name.c_str());
   dsmManager->SetServerPort(default_port_number);
@@ -274,12 +275,13 @@ int main (int argc, char* argv[])
       numParticles = (1024*1024*((dsmManager->GetDSMHandle()->GetTotalLength()/(1024.0*1024.0))-1)/(sizeof(double)*nremoteprocs));
       // Check data
       if (rank == 0) {
-    	  // printf("Trying to read %d * %llu particles\n", nremoteprocs, numParticles);
+        // printf("Trying to read %d * %llu particles\n", nremoteprocs, numParticles);
       }
-	  TestParticleRead(fullname, rank, nremoteprocs*numParticles, dcomm, dsmManager->GetDSMHandle());
+      TestParticleRead(fullname, rank, nremoteprocs*numParticles, dcomm, dsmManager->GetDSMHandle());
 
       // Sync here
       MPI_Barrier(dcomm);
+
       // Clean up for next step
       dsmManager->ClearDsmUpdateReady();
       dsmManager->RequestRemoteChannel();

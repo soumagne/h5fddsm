@@ -328,6 +328,7 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
           break;
         case H5FD_DSM_CLEAR_STORAGE:
           H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "Clearing DSM");
+          this->Comm->Barrier();
           this->ClearStorage();
           this->Comm->Barrier();
           break;
@@ -335,7 +336,9 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
           if (!this->Comm->HasStillData() || !this->IsConnected) {
             this->Comm->Barrier();
             this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_LOCAL);
+            this->Comm->Barrier();
             this->SetIsUpdateReady(true);
+            this->Comm->Barrier();
             H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "IsUpdateReady, Switched to Local channel");
           }
           break;
