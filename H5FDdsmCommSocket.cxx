@@ -233,7 +233,6 @@ H5FDdsmCommSocket::OpenPort()
     strcpy(this->DsmMasterHostName, this->DsmMasterSocket->GetHostName());
     this->DsmMasterSocket->Listen();
   }
-  this->Barrier();
 
   return(H5FD_DSM_SUCCESS);
 }
@@ -250,7 +249,6 @@ H5FDdsmCommSocket::ClosePort()
       return(H5FD_DSM_FAIL);
     }
   }
-  this->Barrier();
 
   return(H5FD_DSM_SUCCESS);
 }
@@ -326,7 +324,7 @@ H5FDdsmInt32
 H5FDdsmCommSocket::RemoteCommDisconnect()
 {
   if (H5FDdsmComm::RemoteCommDisconnect() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
-  this->Barrier();
+
   for (int i=0; i<H5FD_DSM_MAX_SOCKET; i++) {
     if (this->InterComm[i]) delete this->InterComm[i];
     this->InterComm[i] = NULL;

@@ -462,9 +462,13 @@ H5Pset_fapl_dsm(hid_t fapl_id, MPI_Comm dsmComm, void *dsmBuffer)
       dsmManagerSingleton->CreateDSM();
       if (dsmManagerSingleton->GetDsmIsServer()) {
         dsmManagerSingleton->PublishDSM();
+        while (!dsmManagerSingleton->GetDSMHandle()->GetIsConnected()) {
+          // Spin
+        }
       } else {
         dsmManagerSingleton->ConnectDSM();
       }
+      dsmManagerSingleton->GetDSMHandle()->SetIsAutoAllocated(true);
     }
     fa.buffer = dsmManagerSingleton->GetDSMHandle();
   }
@@ -626,6 +630,10 @@ H5FD_dsm_open(const char *name, unsigned UNUSED flags, hid_t fapl_id, haddr_t ma
         file->DsmBuffer->ClearStorage();
         file->DsmBuffer->GetComm()->Barrier();
       } else {
+        // Check that the DSM ready for update flag is set
+        while (!file->DsmBuffer->GetIsUpdateReady() && file->DsmBuffer->GetIsAutoAllocated()) {
+          // Spin
+        }
         // For now a file in a DSM Buffer which is not created is considered as open in read-only
         PRINT_INFO("SetIsReadOnly(true)");
         file->DsmBuffer->SetIsReadOnly(true);
@@ -787,6 +795,11 @@ H5FD_dsm_close(H5FD_t *_file)
       file->DsmBuffer->RequestPipelineUpdate();
     }
   } else {
+    if (file->DsmBuffer->GetIsUpdateReady() && file->DsmBuffer->GetIsAutoAllocated()) {
+      // file->DsmBuffer->GetComm()->Barrier();
+      file->DsmBuffer->SetIsUpdateReady(false);
+      file->DsmBuffer->RequestRemoteChannel();
+    }
     PRINT_INFO("SetIsReadOnly(false)");
     file->DsmBuffer->SetIsReadOnly(false);
   }

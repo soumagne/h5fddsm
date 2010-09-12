@@ -85,7 +85,7 @@ int H5FDdsmManager::GetAcceptedConnection()
 {
   int ret = 0;
   if (this->DSMBuffer) {
-    if (this->DSMBuffer->GetIsConnected()) return 1;
+    if (this->DSMBuffer->GetIsConnected()) ret = 1;
   }
   return ret;
 }
@@ -94,7 +94,7 @@ int H5FDdsmManager::GetDsmUpdateReady()
 {
   int ret = 0;
   if (this->DSMBuffer) {
-    if (this->DSMBuffer->GetIsUpdateReady()) return 1;
+    if (this->DSMBuffer->GetIsUpdateReady()) ret = 1;
   }
   return ret;
 }
@@ -356,12 +356,12 @@ void H5FDdsmManager::PublishDSM()
     std::string fullDsmConfigFilePath;
     const char *dsmEnvPath = getenv("H5FD_DSM_CONFIG_PATH");
     if (!dsmEnvPath) dsmEnvPath = getenv("HOME");
-    if (dsmEnvPath /*&& !this->GetDsmConfigFilePath()*/) {
+    if (dsmEnvPath) {
       this->SetDsmConfigFilePath(dsmEnvPath);
     }
     if (this->GetDsmConfigFilePath()) {
       fullDsmConfigFilePath = std::string(this->GetDsmConfigFilePath()) +
-          std::string("/.dsm_config");
+          std::string("/.dsm_client_config");
       dsmConfigFile.Create(fullDsmConfigFilePath);
       dsmConfigFile.AddSection("Comm", fullDsmConfigFilePath);
 
@@ -485,16 +485,21 @@ bool H5FDdsmManager::ReadDSMConfigFile()
 {
   H5FDdsmIniFile config;
   std::string configPath;
+  std::string mode = "client";
   const char *dsmEnvPath = getenv("H5FD_DSM_CONFIG_PATH");
-  if (!dsmEnvPath) dsmEnvPath = getenv("HOME");
-  if (dsmEnvPath) {
-    configPath = std::string(dsmEnvPath) + std::string("/.dsm_config");
+  const char *dsmServerEnvPath = getenv("H5FD_DSM_SERVER_CONFIG_PATH");
+
+  if (dsmServerEnvPath) {
+    mode = "server";
+    configPath = std::string(dsmServerEnvPath) + std::string("/.dsm_server_config");
+  } else {
+    if (!dsmEnvPath) dsmEnvPath = getenv("HOME");
+    configPath = std::string(dsmEnvPath) + std::string("/.dsm_client_config");
   }
   if (FileExists(configPath.c_str())) {
     if (this->UpdatePiece == 0) {
       std::cout << "Reading from " << configPath.c_str() << std::endl;
     }
-    std::string mode = config.GetValue("DSM_INIT_MODE",   "General", configPath);
     std::string size = config.GetValue("DSM_INIT_SIZE",   "General", configPath);
 
     std::string comm = config.GetValue("DSM_COMM_SYSTEM", "Comm", configPath);
@@ -512,11 +517,11 @@ bool H5FDdsmManager::ReadDSMConfigFile()
     // Comm settings
     if (comm == "socket") {
       this->SetDsmCommType(H5FD_DSM_COMM_SOCKET);
-      if (mode != "server") this->SetServerPort(atoi(port.c_str()));
+      this->SetServerPort(atoi(port.c_str()));
     } else if (comm == "mpi") {
       this->SetDsmCommType(H5FD_DSM_COMM_MPI);
     }
-    if (mode != "server") this->SetServerHostName(host.c_str());
+    this->SetServerHostName(host.c_str());
     return true;
   }
   return false;

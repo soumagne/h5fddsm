@@ -192,7 +192,6 @@ H5FDdsmCommMpi::OpenPort() {
   if (this->Id == 0) {
     MPI_Open_port(MPI_INFO_NULL, this->DsmMasterHostName);
   }
-  this->Barrier();
   return(H5FD_DSM_SUCCESS);
 }
 
@@ -203,7 +202,6 @@ H5FDdsmCommMpi::ClosePort() {
   if (this->Id == 0) {
     MPI_Close_port(this->DsmMasterHostName);
   }
-  this->Barrier();
   return(H5FD_DSM_SUCCESS);
 }
 
@@ -264,7 +262,7 @@ H5FDdsmInt32
 H5FDdsmCommMpi::RemoteCommDisconnect() {
 
   if(H5FDdsmComm::RemoteCommDisconnect() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
-  this->Barrier();
+
   if (this->InterComm) {
     MPI_Comm_disconnect(&this->InterComm);
     this->InterComm = MPI_COMM_NULL;

@@ -79,6 +79,7 @@ H5FDdsmBuffer::H5FDdsmBuffer() {
     H5FDdsmInt64 i;
     this->ThreadDsmReady = 0;
     this->DataPointer = 0;
+    this->IsAutoAllocated = false;
     this->IsServer = true;
     this->IsConnected = false;
     this->IsUpdateReady = false;
@@ -610,7 +611,6 @@ H5FDdsmBuffer::RequestPipelineUpdate() {
     H5FDdsmDebug("Send request pipeline update to " << i);
     this->SendCommandHeader(H5FD_DSM_PIPELINE_UPDATE, i, 0, 0);
   }
-
   this->Comm->Barrier();
   return(H5FD_DSM_SUCCESS);
 }

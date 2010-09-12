@@ -92,6 +92,10 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     H5FDdsmGetValueMacro(IsUpdateReady, H5FDdsmBoolean);
     H5FDdsmSetValueMacro(IsUpdateReady, H5FDdsmBoolean);
 
+    // Is the DSMBuffer auto allocated within the driver or not
+    H5FDdsmGetValueMacro(IsAutoAllocated, bool);
+    H5FDdsmSetValueMacro(IsAutoAllocated, bool);
+
     // Is the DSMBuffer in server or client mode
     H5FDdsmGetValueMacro(IsServer, bool);
     H5FDdsmSetValueMacro(IsServer, bool);
@@ -132,6 +136,7 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     volatile H5FDdsmInt32   ThreadDsmReady;
     volatile H5FDdsmBoolean IsConnected;
     volatile H5FDdsmBoolean IsUpdateReady;
+    bool                    IsAutoAllocated;
     bool                    IsServer;
     bool                    IsReadOnly;
     H5FDdsmInt32            ServiceThreadUseCopy;
