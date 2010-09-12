@@ -29,7 +29,7 @@ main(int argc, char *argv[])
   int             dset1_data[3][3], dset2_data[2][10];
   int             rank, size;
   int             dsm = 1;
-  int             nwrite = 5;
+  int             nwrite = 1;
 
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -149,6 +149,7 @@ main(int argc, char *argv[])
 
   PRINT_INFO("Now exiting...");
   PRINT_DEBUG_INFO("About to MPI_Finalize");
+  MPI_Barrier(MPI_COMM_WORLD);
   H5close();
   MPI_Finalize();
   return EXIT_SUCCESS;
