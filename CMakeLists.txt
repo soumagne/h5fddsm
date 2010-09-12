@@ -134,16 +134,16 @@ ENDIF (WIN32)
 # Configure our module header file
 #-----------------------------------------------------------------------------
 CONFIGURE_FILE(
-  ${H5FDdsm_SOURCE_DIR}/H5FDdsmConfig.h.in 
-  ${H5FDdsm_BINARY_DIR}/H5FDdsmConfig.h
+  ${H5FDdsm_SOURCE_DIR}/src/H5FDdsmConfig.h.in 
+  ${H5FDdsm_BINARY_DIR}/src/H5FDdsmConfig.h
 )
 
 #-----------------------------------------------------------------------------
 # Include all directories used by this source
 #-----------------------------------------------------------------------------
-INCLUDE_DIRECTORIES(${H5FDdsm_SOURCE_DIR})
+INCLUDE_DIRECTORIES(${H5FDdsm_SOURCE_DIR}/src)
 INCLUDE_DIRECTORIES(${H5FDdsm_SOURCE_DIR}/h5dump)
-INCLUDE_DIRECTORIES(${H5FDdsm_BINARY_DIR})
+INCLUDE_DIRECTORIES(${H5FDdsm_BINARY_DIR}/src)
 
 #-----------------------------------------------
 # Setup some convenience flags depending on machine
@@ -161,20 +161,20 @@ ENDIF(COMPUTERNAME)
 # Specify project source files
 #-----------------------------------------------------------------------------
 SET(H5FDdsmSources
-  H5FDdsm.cxx
-  H5FDdsmBuffer.cxx
-  H5FDdsmComm.cxx
-  H5FDdsmCommMpi.cxx
-  H5FDdsmCommSocket.cxx
-  H5FDdsmDriver.cxx
-  H5FDdsmIniFile.cxx
-  H5FDdsmObject.cxx
-  H5FDdsmMsg.cxx
-  H5FDdsmSocket.cxx
-  H5FDdsmStorage.cxx
-  H5FDdsmManager.cxx
-  H5FDdsmDump.cxx
-  H5FDdsmSteerer.cxx
+  src/H5FDdsm.cxx
+  src/H5FDdsmBuffer.cxx
+  src/H5FDdsmComm.cxx
+  src/H5FDdsmCommMpi.cxx
+  src/H5FDdsmCommSocket.cxx
+  src/H5FDdsmDriver.cxx
+  src/H5FDdsmIniFile.cxx
+  src/H5FDdsmObject.cxx
+  src/H5FDdsmMsg.cxx
+  src/H5FDdsmSocket.cxx
+  src/H5FDdsmStorage.cxx
+  src/H5FDdsmManager.cxx
+  src/H5FDdsmDump.cxx
+  src/H5FDdsmSteerer.cxx
   # TODO Find the correct place for h5Dump
   h5dump/h5dump.cxx
   h5dump/h5tools.cxx
@@ -226,8 +226,8 @@ ENDIF(H5FD_DSM_BUILD_TESTING)
 #-----------------------------------------------------------------------------
 INSTALL (
   FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/H5FDdsm.h
-    ${H5FDdsm_BINARY_DIR}/H5FDdsmConfig.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsm.h
+    ${H5FDdsm_BINARY_DIR}/src/H5FDdsmConfig.h
   DESTINATION
     include
   COMPONENT
@@ -273,7 +273,7 @@ EXPORT (
 # Configure the HDF5-config.cmake file for the build directory
 #-----------------------------------------------------------------------------
 SET (H5FD_DSM_INCLUDES_BUILD_TIME
-  ${H5FDdsm_SOURCE_DIR}
+  ${H5FDdsm_SOURCE_DIR}/src
   ${H5FDdsm_SOURCE_DIR}/h5dump
 )
 
