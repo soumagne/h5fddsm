@@ -13,9 +13,9 @@ PROJECT (H5FDdsm C CXX)
 #-----------------------------------------------------------------------------
 # Version information 
 #-----------------------------------------------------------------------------
-SET (H5FDdsm_VERS_MAJOR   "1")
-SET (H5FDdsm_VERS_MINOR   "0")
-SET (H5FDdsm_VERS_RELEASE "0")
+SET (H5FDdsm_VERS_MAJOR   "0")
+SET (H5FDdsm_VERS_MINOR   "9")
+SET (H5FDdsm_VERS_RELEASE "4")
 SET (H5FDdsm_PACKAGE "h5fddsm")
 SET (H5FDdsm_PACKAGE_NAME "H5FDdsm")
 SET (H5FDdsm_PACKAGE_VERSION "${H5FDdsm_VERS_MAJOR}.${H5FDdsm_VERS_MINOR}.${H5FDdsm_VERS_RELEASE}")
