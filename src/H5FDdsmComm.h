@@ -96,6 +96,8 @@ public:
     virtual H5FDdsmInt32   Init();
     virtual H5FDdsmInt32   Send(H5FDdsmMsg *Msg);
     virtual H5FDdsmInt32   Receive(H5FDdsmMsg *Msg);
+    virtual H5FDdsmInt32   SendData(H5FDdsmMsg *DataMsg);
+    virtual H5FDdsmInt32   ReceiveData(H5FDdsmMsg *DataMsg);
     virtual H5FDdsmInt32   Check(H5FDdsmMsg *Msg);
     virtual H5FDdsmInt32   Barrier();
 

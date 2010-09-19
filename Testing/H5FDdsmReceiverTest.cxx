@@ -37,54 +37,27 @@ typedef std::vector<double>::size_type itype;
 
 #ifdef MACHINE_AGNO
   #define server "agno.staff.cscs.ch"
-  #define client "agno.staff.cscs.ch"
   #define PORT 22000
 #endif
 
 #ifdef MACHINE_DINO
   #define server "agno.staff.cscs.ch"
-  #define client "dino.staff.cscs.ch"
   #define PORT 22000
 #endif
 
 #ifdef MACHINE_BRENO
   #define server "agno.staff.cscs.ch"
-  #define client "breno.staff.cscs.ch"
   #define PORT 22000
 #endif
 
 #ifndef server
-  #define server "agno.staff.cscs.ch"
-  #define client "breno.staff.cscs.ch"
+  #define server "default"
   #define PORT 22000
 #endif
 
 std::string server_name = server;
-std::string client_name = client;
 int default_port_number = PORT;
 
-//----------------------------------------------------------------------------
-std::string usage = "\n"\
-    "Usage : ConvertToXdmf \n" \
-    " Win32  : ConvertToXdmf -D D:/data/xdmf -F elements.vtu -O D:/data/xdmf/test \n" \
-    " Win32  : ConvertToXdmf -D D:/data/VectorField -F damBreakMarin.pvd -O D:/data/xdmf/test \n" \
-    " Win32  : ConvertToXdmf -D D:/data/cfxtestdata/Example -F TRS_Default_003.res -O D:/data/xdmf/test \n" \
-    " Win32  : ConvertToXdmf -D C:/data/xdmf/test -F TRS_Default_003.xmf -O C:/data/xdmf/scratch \n" \
-    " laptop : ConvertToXdmf -D C:\\Data\\cfxtestdata\\Example -F TRS_Default_003.res -O C:\\Data\\cfxtestdata\\xml \n" \
-    " Linux  : ConvertToXdmf -r -b -s -D /project/csvis/CFXData/Francis -F 1800_001.res -O /project/csvis/CFXData/XML \n" \
-    "  -D /project/csvis/CFXData/Francis \n"        \
-    "  -F 1800_001.res \n"                          \
-    "  -O output directory \n"                      \
-    "  -i timestep - interpolate data using timestep between outputs \n" \
-    "  -r rotate vectors for stn frame \n"          \
-    "  -f flip 180degrees (csf data) \n"            \
-    "  -a append to existing set (otherwise overwrite) \n" \
-    "  -s Force Static flag \n" \
-    "  -v Subdivide cells (only Tetrahedra + Hexahedra supported currently) \n" \
-    "  -Client Send data from DSM Client to DSM Server \n" \
-    "  -Server Wait for data from DSM Client \n" \
-    "  -DSM Write to self contained DSM \n";
-//----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 void ThreadExecute(void *dsm, H5FDdsmInt64 &counter) {
   H5FDdsmManager *DSM = (H5FDdsmManager*)dsm;
@@ -199,12 +172,12 @@ int main (int argc, char* argv[])
     sleep(1000);
   }
 
-  H5FDdsmInt64   Counter = 0;
+  // H5FDdsmInt64   Counter = 0;
   bool connected = true;  
   while(connected) {
     if (dsmManager->GetDsmUpdateReady()) {
       if (rank == 0) {
-//        std::cout << "Receive count : " << ++Counter << std::endl;
+        // std::cout << "Receive count : " << ++Counter << std::endl;
       }
       //
       // H5Dump

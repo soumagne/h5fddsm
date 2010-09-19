@@ -81,30 +81,6 @@ extern "C" {
 #endif
 
 //--------------------------------------------------------------------------
-// Unfortunately, some of the HDF5 macros use internal variables which are not exported
-// from the hdf5 lib/dll so we must override the macros and lose some debugging info
-
-#undef FUNC_ENTER_NOAPI_NOINIT_NOFUNC
-#define FUNC_ENTER_NOAPI_NOINIT_NOFUNC(a)
-
-#undef FUNC_ENTER_API
-#define FUNC_ENTER_API(a,b)
-
-#undef FUNC_LEAVE_API
-#define FUNC_LEAVE_API(a) return a;
-
-#undef FUNC_ENTER_NOAPI
-#define FUNC_ENTER_NOAPI(a,b)
-
-#undef FUNC_LEAVE_NOAPI
-#define FUNC_LEAVE_NOAPI(a) return a;
-
-#undef FUNC_LEAVE_NOAPI_VOID
-#define FUNC_LEAVE_NOAPI_VOID
-
-#undef HGOTO_ERROR
-#define HGOTO_ERROR(a,b,c,d) { printf("%s",d); goto done; }
-//--------------------------------------------------------------------------
 //
 #include "H5FDdsmManager.h"
 //
@@ -177,28 +153,7 @@ typedef struct H5FD_dsm_fapl_t
  * REGION_OVERFLOW:  Checks whether an address and size pair describe data
  *      which can be addressed entirely in memory.
  */
-#if (H5_VERS_MAJOR>1)||((H5_VERS_MAJOR==1)&&(H5_VERS_MINOR==6))
-#  ifdef H5_HAVE_LSEEK64
-#    define file_offset_t        off64_t
-#    define file_seek            lseek64
-#    define file_truncate        ftruncate64
-#  elif defined (WIN32) && !defined(__MWERKS__)
-#    // MSVC
-#    define file_offset_t __int64
-#    define file_seek _lseeki64
-#    define file_truncate        _ftruncatei64
-#  else
-#    define file_offset_t        off_t
-#    define file_seek            lseek
-#    define file_truncate        HDftruncate
-#  endif
-#  define MAXADDR (((haddr_t)1<<(8*sizeof(file_offset_t)-1))-1)
-#  define DSM_HSIZE_T size_t
-#else
-#  define MAXADDR     ((haddr_t)((~(size_t)0)-1))
-#  define DSM_HSIZE_T size_t
-//#  define DSM_HSIZE_T hsize_t
-#endif
+#define MAXADDR                 ((haddr_t)((~(size_t)0)-1))
 #define ADDR_OVERFLOW(A)        (HADDR_UNDEF==(A) || (A) > (haddr_t)MAXADDR)
 #define SIZE_OVERFLOW(Z)        ((Z) > (hsize_t)MAXADDR)
 #define REGION_OVERFLOW(A,Z)    (ADDR_OVERFLOW(A) || SIZE_OVERFLOW(Z) ||      \
@@ -216,8 +171,8 @@ static int      H5FD_dsm_cmp(const H5FD_t *_f1, const H5FD_t *_f2);
 static haddr_t  H5FD_dsm_get_eoa(const H5FD_t *_file, H5FD_mem_t type);
 static herr_t   H5FD_dsm_set_eoa(H5FD_t *_file, H5FD_mem_t type, haddr_t addr);
 static haddr_t  H5FD_dsm_get_eof(const H5FD_t *_file);
-static herr_t   H5FD_dsm_read(H5FD_t *_file, H5FD_mem_t type, hid_t fapl_id, haddr_t addr, DSM_HSIZE_T size, void *buf);
-static herr_t   H5FD_dsm_write(H5FD_t *_file, H5FD_mem_t type, hid_t fapl_id, haddr_t addr, DSM_HSIZE_T size, const void *buf);
+static herr_t   H5FD_dsm_read(H5FD_t *_file, H5FD_mem_t type, hid_t fapl_id, haddr_t addr, size_t size, void *buf);
+static herr_t   H5FD_dsm_write(H5FD_t *_file, H5FD_mem_t type, hid_t fapl_id, haddr_t addr, size_t size, const void *buf);
 static herr_t   H5FD_dsm_flush(H5FD_t *_file, hid_t dxpl_id, unsigned closing);
 
 // MPI specific ones
@@ -257,8 +212,8 @@ static const H5FD_class_mpi_t H5FD_dsm_g = {
         NULL,                     // get_handle
         H5FD_dsm_read,            // read
         H5FD_dsm_write,           // write
-        NULL,                     // flush
-        NULL,                    	// truncate
+        H5FD_dsm_flush,           // flush
+        NULL,                     // truncate
         NULL,                     // lock
         NULL,                     // unlock
         H5FD_FLMAP_SINGLE         // fl_map
@@ -387,6 +342,7 @@ H5FD_dsm_init(void)
   // Set return value
   ret_value = H5FD_DSM_g;
 
+done:
   FUNC_LEAVE_NOAPI(ret_value);
 }
 
@@ -482,7 +438,8 @@ H5Pset_fapl_dsm(hid_t fapl_id, MPI_Comm dsmComm, void *dsmBuffer)
   }
   ret_value = H5P_set_driver(plist, H5FD_DSM, &fa);
 
-  done: FUNC_LEAVE_API(ret_value)
+done: 
+  FUNC_LEAVE_API(ret_value)
 }
 
 /*-------------------------------------------------------------------------
@@ -525,7 +482,8 @@ H5Pget_fapl_dsm(hid_t fapl_id, MPI_Comm *dsmComm/*out*/, void **dsmBuffer /* out
   }
   if (dsmBuffer) *dsmBuffer = fa->buffer;
 
-  done: FUNC_LEAVE_API(ret_value)
+done: 
+  FUNC_LEAVE_API(ret_value)
 }
 
 /*-------------------------------------------------------------------------
@@ -561,7 +519,8 @@ H5FD_dsm_fapl_get(H5FD_t *_file)
   // Set return value
   ret_value = fa;
 
-  done: FUNC_LEAVE_NOAPI(ret_value)
+done: 
+  FUNC_LEAVE_NOAPI(ret_value)
 }
 
 /*-------------------------------------------------------------------------
@@ -624,11 +583,11 @@ H5FD_dsm_open(const char *name, unsigned UNUSED flags, hid_t fapl_id, haddr_t ma
 
       if (H5F_ACC_CREAT & flags) {
         // This is a critical part, we need to synchronize before
-        // and after the ClearStorage method call
-        PRINT_INFO("Clear DSM before create");
-        file->DsmBuffer->GetComm()->Barrier();
-        file->DsmBuffer->ClearStorage();
-        file->DsmBuffer->GetComm()->Barrier();
+        // and after the ClearStorage method call if needed
+        // PRINT_INFO("Clear DSM before create");
+        // file->DsmBuffer->GetComm()->Barrier();
+        // file->DsmBuffer->ClearStorage();
+        // file->DsmBuffer->GetComm()->Barrier();
       } else {
         // Check that the DSM ready for update flag is set
         while (!file->DsmBuffer->GetIsUpdateReady() && file->DsmBuffer->GetIsAutoAllocated()) {
@@ -711,9 +670,9 @@ H5FD_dsm_open(const char *name, unsigned UNUSED flags, hid_t fapl_id, haddr_t ma
 
         // This is a critical part, we need to synchronize before
         // and after the ClearStorage method call
-        PRINT_INFO("Request Clear DSM before create");
-        file->DsmBuffer->GetComm()->Barrier();
-        file->DsmBuffer->RequestClearStorage();
+        // PRINT_INFO("Request Clear DSM before create");
+        // file->DsmBuffer->GetComm()->Barrier();
+        // file->DsmBuffer->RequestClearStorage();
       }
     }
   }
@@ -743,7 +702,8 @@ H5FD_dsm_open(const char *name, unsigned UNUSED flags, hid_t fapl_id, haddr_t ma
   // Set return value
   ret_value = (H5FD_t *) file;
 
-  done: FUNC_LEAVE_NOAPI(ret_value)
+done: 
+  FUNC_LEAVE_NOAPI(ret_value)
 }
 
 /*-------------------------------------------------------------------------
@@ -809,7 +769,9 @@ H5FD_dsm_close(H5FD_t *_file)
   HDmemset(file, 0, sizeof(H5FD_dsm_t));
   H5MM_xfree(file);
   PRINT_DSM_INFO("Undef", "File closed");
-  done: FUNC_LEAVE_NOAPI(ret_value)
+
+done: 
+  FUNC_LEAVE_NOAPI(ret_value)
 }
 
 /*-------------------------------------------------------------------------
@@ -853,7 +815,8 @@ H5FD_dsm_cmp(const H5FD_t *_f1, const H5FD_t *_f2)
 
   ret_value = HDstrcmp(f1->name, f2->name);
 
-  done: FUNC_LEAVE_NOAPI(ret_value)
+done: 
+  FUNC_LEAVE_NOAPI(ret_value)
 }
 
 /*-------------------------------------------------------------------------
@@ -882,6 +845,7 @@ H5FD_dsm_get_eoa(const H5FD_t *_file, H5FD_mem_t type)
   // Set return value
   ret_value = file->eoa;
 
+done:
   FUNC_LEAVE_NOAPI(ret_value)
 }
 
@@ -919,7 +883,8 @@ H5FD_dsm_set_eoa(H5FD_t *_file, H5FD_mem_t type, haddr_t addr)
   file->eof = file->eoa = addr;
   DsmUpdateEntry(file);
 
-  done: FUNC_LEAVE_NOAPI(ret_value)
+done:
+  FUNC_LEAVE_NOAPI(ret_value)
 }
 
 /*-------------------------------------------------------------------------
@@ -953,6 +918,7 @@ H5FD_dsm_get_eof(const H5FD_t *_file)
   // Set return value
   ret_value = MAX(file->eof, file->eoa);
 
+done:
   FUNC_LEAVE_NOAPI(ret_value)
 }
 
@@ -974,7 +940,7 @@ H5FD_dsm_get_eof(const H5FD_t *_file)
  */
 static herr_t
 H5FD_dsm_read(H5FD_t *_file, H5FD_mem_t UNUSED type, hid_t UNUSED dxpl_id,
-    haddr_t addr, DSM_HSIZE_T size, void *buf/*out*/)
+    haddr_t addr, size_t size, void *buf/*out*/)
 {
   H5FD_dsm_t *file = (H5FD_dsm_t*) _file;
   herr_t ret_value = SUCCEED; // Return value
@@ -1022,7 +988,8 @@ H5FD_dsm_read(H5FD_t *_file, H5FD_mem_t UNUSED type, hid_t UNUSED dxpl_id,
   // Read zeros for the part which is after the EOF markers
   if (size > 0) HDmemset(buf, 0, size);
 
-  done: FUNC_LEAVE_NOAPI(ret_value)
+done: 
+  FUNC_LEAVE_NOAPI(ret_value)
 }
 
 /*-------------------------------------------------------------------------
@@ -1042,7 +1009,7 @@ H5FD_dsm_read(H5FD_t *_file, H5FD_mem_t UNUSED type, hid_t UNUSED dxpl_id,
  */
 static herr_t
 H5FD_dsm_write(H5FD_t *_file, H5FD_mem_t UNUSED type, hid_t UNUSED dxpl_id,
-    haddr_t addr, DSM_HSIZE_T size, const void *buf)
+    haddr_t addr, size_t size, const void *buf)
 {
   H5FD_dsm_t *file = (H5FD_dsm_t*) _file;
   herr_t ret_value = SUCCEED; // Return value
@@ -1092,7 +1059,8 @@ H5FD_dsm_write(H5FD_t *_file, H5FD_mem_t UNUSED type, hid_t UNUSED dxpl_id,
 
   file->dirty = TRUE;
 
-  done: FUNC_LEAVE_NOAPI(ret_value)
+done: 
+  FUNC_LEAVE_NOAPI(ret_value)
 }
 
 /*-------------------------------------------------------------------------
@@ -1138,11 +1106,13 @@ H5FD_dsm_flush(H5FD_t *_file, hid_t UNUSED dxpl_id, unsigned UNUSED closing)
          ptr += (size_t)n;
          size -= (size_t)n;
          }
-     */
+     
     file->dirty = FALSE;
+  */
   }
 
-  /*done: */FUNC_LEAVE_NOAPI(ret_value)
+done:
+  FUNC_LEAVE_NOAPI(ret_value)
 }
 
 /*-------------------------------------------------------------------------
@@ -1171,6 +1141,7 @@ H5FD_dsm_mpi_rank(const H5FD_t *_file)
   // Set return value
   ret_value = file->DsmBuffer->GetComm()->GetId();
 
+done:
   FUNC_LEAVE_NOAPI(ret_value)
 } // end H5FD_dsm_mpi_rank()
 
@@ -1200,6 +1171,7 @@ H5FD_dsm_mpi_size(const H5FD_t *_file)
   /* Set return value */
   ret_value = file->DsmBuffer->GetComm()->GetTotalSize();
 
+done:
   FUNC_LEAVE_NOAPI(ret_value)
 } // end H5FD_dsm_mpi_size()
 
@@ -1237,6 +1209,7 @@ H5FD_dsm_communicator(const H5FD_t *_file)
     = dynamic_cast <H5FDdsmCommMpi*> (file->DsmBuffer->GetComm())->GetComm();
   }
 
+done:
   FUNC_LEAVE_NOAPI(ret_value)
 } // end H5FD_mpi_posix_communicator()
 
@@ -1257,21 +1230,22 @@ H5FD_dsm_communicator(const H5FD_t *_file)
 herr_t
 H5FD_dsm_query(const H5FD_t *_file, unsigned long *flags)
 {
-    H5FD_dsm_t *file = (H5FD_dsm_t*) _file;
-    herr_t ret_value=SUCCEED;
+  H5FD_dsm_t *file = (H5FD_dsm_t*) _file;
+  herr_t ret_value=SUCCEED;
 
-    FUNC_ENTER_NOAPI(H5FD_dsm_query, FAIL)
+  FUNC_ENTER_NOAPI(H5FD_dsm_query, FAIL)
 
-    /* Set the VFL feature flags that this driver supports */
-    if(flags && !file->DsmBuffer->GetIsReadOnly()) { // If it is read-only use the driver serially
-        *flags=0;
-        *flags|=H5FD_FEAT_AGGREGATE_METADATA;  /* OK to aggregate metadata allocations */
-        *flags|=H5FD_FEAT_AGGREGATE_SMALLDATA; /* OK to aggregate "small" raw data allocations */
-        *flags|=H5FD_FEAT_HAS_MPI;             /* This driver uses MPI */
-        *flags|=H5FD_FEAT_ALLOCATE_EARLY;      /* Allocate space early instead of late */
-    } /* end if */
+  /* Set the VFL feature flags that this driver supports */
+  if(flags && !file->DsmBuffer->GetIsReadOnly()) { // If it is read-only use the driver serially
+    *flags=0;
+    *flags|=H5FD_FEAT_AGGREGATE_METADATA;  /* OK to aggregate metadata allocations */
+    *flags|=H5FD_FEAT_AGGREGATE_SMALLDATA; /* OK to aggregate "small" raw data allocations */
+    *flags|=H5FD_FEAT_HAS_MPI;             /* This driver uses MPI */
+    *flags|=H5FD_FEAT_ALLOCATE_EARLY;      /* Allocate space early instead of late */
+  } /* end if */
 
-    FUNC_LEAVE_NOAPI(ret_value)
+done:
+  FUNC_LEAVE_NOAPI(ret_value)
 }
 
 /*

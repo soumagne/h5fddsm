@@ -70,10 +70,9 @@ H5FDdsmDriver::H5FDdsmDriver() {
     this->StorageIsMine = 1;
     this->Locks = 0;
     // For Alignment
-    this->SetLength(H5FD_DSM_DEFAULT_LENGTH);
+    this->Length = 0;
     this->DataPointer = (H5FDdsmByte *)this->Storage->GetDataPointer();
-    this->StartAddress = 0;
-    this->EndAddress = this->StartAddress + this->Length - 1;
+    this->StartAddress = this->EndAddress = 0;
     this->Comm = 0;
     this->StartServerId = this->EndServerId = -1;
     this->Msg = new H5FDdsmMsg;
@@ -149,6 +148,7 @@ H5FDdsmDriver::ConfigureUniform(H5FDdsmComm *aComm, H5FDdsmInt64 aLength, H5FDds
     this->SetEndServerId(EndId);
     this->SetComm(aComm);
     if((aComm->GetId() >= StartId) && (aComm->GetId() <= EndId)){
+        this->Storage->SetComm(aComm);
         this->SetLength(aLength, 1);
         this->StartAddress = (aComm->GetId() - StartId) * aLength;
         this->EndAddress = this->StartAddress + aLength - 1;
@@ -220,8 +220,6 @@ H5FDdsmDriver::SendDone(){
 
 H5FDdsmInt32
 H5FDdsmDriver::SetLength(H5FDdsmInt64 aLength, H5FDdsmBoolean AllowAllocate){
-    // Make it longer than actually needed for round off.
-    //if(this->Storage->SetNumberOfElements((aLength / sizeof(H5FDdsmInt64)) + 1, AllowAllocate) != H5FD_DSM_SUCCESS){
     if(this->Storage->SetNumberOfElements(aLength, AllowAllocate) != H5FD_DSM_SUCCESS) {
         H5FDdsmError("Cannot set Dsm Length to " << Length);
         return(H5FD_DSM_FAIL);
@@ -300,7 +298,7 @@ H5FDdsmDriver::SendData(H5FDdsmInt32 Dest, void *Data, H5FDdsmInt64 aLength, H5F
     Msg->SetLength(aLength);
     Msg->SetTag(Tag);
     Msg->SetData(Data);
-    return(this->Comm->Send(Msg));
+    return(this->Comm->SendData(Msg));
 }
 
 H5FDdsmInt32
@@ -315,11 +313,11 @@ H5FDdsmDriver::ReceiveData(H5FDdsmInt32 Source, void *Data, H5FDdsmInt64 aLength
     Msg->SetTag(Tag);
     Msg->SetData(Data);
     if(Block){
-        Status = this->Comm->Receive(Msg);
+        Status = this->Comm->ReceiveData(Msg);
     }else{
         Status = this->Comm->Check(Msg);
         if(Status == H5FD_DSM_SUCCESS){
-            Status = this->Comm->Receive(Msg);
+            Status = this->Comm->ReceiveData(Msg);
         }
     }
     return(Status);

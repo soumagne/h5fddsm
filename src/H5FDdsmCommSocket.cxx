@@ -177,8 +177,6 @@ H5FDdsmCommSocket::Send(H5FDdsmMsg *Msg)
 
   if (H5FDdsmComm::Send(Msg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
-  H5FDdsmFloat64 startTime = MPI_Wtime();
-
   if (this->CommChannel == H5FD_DSM_COMM_CHANNEL_REMOTE) {
     H5FDdsmDebug("(" << this->Id << ") Sending to remote DSM " << Msg->Length << " bytes to " << Msg->Dest << " Tag = " << H5FDdsmTagToString(Msg->Tag));
     this->InterComm[Msg->Dest]->Send(Msg->Data, Msg->Length);
@@ -192,18 +190,22 @@ H5FDdsmCommSocket::Send(H5FDdsmMsg *Msg)
     }
   }
 
-  H5FDdsmFloat64 endTime = MPI_Wtime();
-  if ((Msg->Tag == H5FD_DSM_PUT_DATA_TAG) && (Msg->Length > 1024.f)) {
-    //
-    // This value is only valid when transferring big chunks of data when local
-    // buffers are saturated. It does not measure the end-to-end tranfer rate.
-    this->TransferRate = Msg->Length/((endTime - startTime)*1024*1024);
-    //cout << "(" << this->Id << ") Sent " << Msg->Length << " bytes to "
-    //     << Msg->Dest << " at " << this->TransferRate << " MB/s" << endl;
-    //
-  }
   H5FDdsmDebug("(" << this->Id << ") Sent " << Msg->Length << " bytes to " << Msg->Dest);
 
+  return(H5FD_DSM_SUCCESS);
+}
+//----------------------------------------------------------------------------
+H5FDdsmInt32
+H5FDdsmCommSocket::ReceiveData(H5FDdsmMsg *DataMsg)
+{
+  if (this->Receive(DataMsg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+  return(H5FD_DSM_SUCCESS);
+}
+//----------------------------------------------------------------------------
+H5FDdsmInt32
+H5FDdsmCommSocket::SendData(H5FDdsmMsg *DataMsg)
+{
+  if (this->Send(DataMsg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
   return(H5FD_DSM_SUCCESS);
 }
 //----------------------------------------------------------------------------

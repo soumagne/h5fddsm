@@ -83,13 +83,13 @@ public:
     H5FDdsmGetStringMacro(DsmMasterHostName);
     void SetDsmMasterHostName(H5FDdsmConstString hostName);
 
-    H5FDdsmGetValueMacro(TransferRate, H5FDdsmFloat64);
-
     H5FDdsmInt32   DupComm(MPI_Comm Source);
 #endif
     H5FDdsmInt32   Init();
     H5FDdsmInt32   Send(H5FDdsmMsg *Msg);
     H5FDdsmInt32   Receive(H5FDdsmMsg *Msg);
+    H5FDdsmInt32   SendData(H5FDdsmMsg *DataMsg);
+    H5FDdsmInt32   ReceiveData(H5FDdsmMsg *DataMsg);
     H5FDdsmInt32   Check(H5FDdsmMsg *Msg);
     H5FDdsmInt32   Barrier();
 
@@ -119,8 +119,6 @@ protected:
     MPI_Comm       Comm;
     MPI_Comm       InterComm;
     H5FDdsmByte    DsmMasterHostName[MPI_MAX_PORT_NAME];
-    //
-    H5FDdsmFloat64 TransferRate;
 };
 
 #endif // __H5FDdsmCommMpi_h

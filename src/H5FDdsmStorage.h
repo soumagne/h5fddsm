@@ -28,6 +28,8 @@
 
 #include "H5FDdsmObject.h"
 
+class H5FDdsmComm;
+
 class H5FDdsm_EXPORT H5FDdsmStorage : public H5FDdsmObject {
 
 public:
@@ -35,6 +37,10 @@ public:
   ~H5FDdsmStorage();
 
   H5FDdsmPointer  GetDataPointer(H5FDdsmInt64 Index = 0);
+
+  //! Comm
+  H5FDdsmGetValueMacro(Comm, H5FDdsmComm *);
+  H5FDdsmSetValueMacro(Comm, H5FDdsmComm *);
 
   H5FDdsmGetValueMacro(NumberOfElements, H5FDdsmInt64);
   H5FDdsmInt32 SetNumberOfElements(H5FDdsmInt64 Length, H5FDdsmBoolean AllowAllocate=1);
@@ -44,6 +50,7 @@ protected:
 
   H5FDdsmPointer  DataPointer;
   H5FDdsmInt64    NumberOfElements;
+  H5FDdsmComm    *Comm;
 };
 
 #endif /* XDMFDSMSTORAGE_H */

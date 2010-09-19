@@ -48,13 +48,13 @@ public:
   H5FDdsmGetValueMacro(DsmMasterPort, H5FDdsmInt32);
   H5FDdsmSetValueMacro(DsmMasterPort, H5FDdsmInt32);
 
-  H5FDdsmGetValueMacro(TransferRate, H5FDdsmFloat64);
-
   H5FDdsmInt32   DupComm(MPI_Comm Source);
 
   H5FDdsmInt32   Init();
   H5FDdsmInt32   Send(H5FDdsmMsg *Msg);
   H5FDdsmInt32   Receive(H5FDdsmMsg *Msg);
+  H5FDdsmInt32   SendData(H5FDdsmMsg *DataMsg);
+  H5FDdsmInt32   ReceiveData(H5FDdsmMsg *DataMsg);
   H5FDdsmInt32   Check(H5FDdsmMsg *Msg);
   H5FDdsmInt32   Barrier();
 
@@ -89,8 +89,6 @@ protected:
   H5FDdsmSocket       *DsmMasterSocket; // Used for initializing connection and send comm orders
   H5FDdsmByte          DsmMasterHostName[MPI_MAX_PORT_NAME];
   H5FDdsmInt32         DsmMasterPort;
-  //
-  H5FDdsmFloat64       TransferRate;
 };
 
 #endif /* XDMFDSMCOMMSOCKET_H */

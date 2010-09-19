@@ -139,19 +139,19 @@ class H5FDdsm_EXPORT H5FDdsmDriver : public H5FDdsmObject {
     H5FDdsmInt32   SendDone();
 
   protected:
-    H5FDdsmInt32   DsmType;
-    H5FDdsmInt32   StartServerId;
-    H5FDdsmInt32   EndServerId;
-    H5FDdsmInt32   StorageIsMine;
-    H5FDdsmInt64   StartAddress;
-    H5FDdsmInt64   EndAddress;
-    H5FDdsmInt64   Length;
-    H5FDdsmInt64   TotalLength;
+    H5FDdsmInt32    DsmType;
+    H5FDdsmInt32    StartServerId;
+    H5FDdsmInt32    EndServerId;
+    H5FDdsmInt32    StorageIsMine;
+    H5FDdsmInt64    StartAddress;
+    H5FDdsmInt64    EndAddress;
+    H5FDdsmInt64    Length;
+    H5FDdsmInt64    TotalLength;
     H5FDdsmInt64   *Locks;
-    H5FDdsmStorage   *Storage;
-    H5FDdsmComm *Comm;
-    H5FDdsmMsg  *Msg;
-    H5FDdsmMsg  *ServiceMsg;
+    H5FDdsmStorage *Storage;
+    H5FDdsmComm    *Comm;
+    H5FDdsmMsg     *Msg;
+    H5FDdsmMsg     *ServiceMsg;
     H5FDdsmByte    *DataPointer;
 };
 
