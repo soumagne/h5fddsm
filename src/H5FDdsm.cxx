@@ -970,12 +970,12 @@ H5FD_dsm_read(H5FD_t *_file, H5FD_mem_t UNUSED type, hid_t UNUSED dxpl_id,
   PRINT_INFO("check addr ( " << addr << " )  < file->eof ( " << file->eof << " )");
 
   if (addr < file->eof) {
-    DSM_HSIZE_T nbytes;
+    size_t  nbytes;
     hsize_t temp_nbytes;
 
     temp_nbytes = file->eof - addr;
-    H5_CHECK_OVERFLOW(temp_nbytes,hsize_t,DSM_HSIZE_T);
-    nbytes = MIN(size,(DSM_HSIZE_T)temp_nbytes);
+    H5_CHECK_OVERFLOW(temp_nbytes,hsize_t,size_t);
+    nbytes = MIN(size,(size_t)temp_nbytes);
     if (file->DsmBuffer->Get(file->start + addr, nbytes, buf) <= 0) {
       HGOTO_ERROR(H5E_VFL, H5E_READERROR, FAIL, "can't read from DSM");
     }
