@@ -227,7 +227,7 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
                 H5FDdsmError("Length too long");
                 return(H5FD_DSM_FAIL);
             }
-            datap = this->DataPointer;
+            if ((datap = this->DataPointer) == NULL) H5FDdsmError("Null Data Pointer when trying to put data");
             datap += Address - this->StartAddress;
             status = this->ReceiveData(who, datap, aLength, H5FD_DSM_PUT_DATA_TAG, IsService);
             if (status == H5FD_DSM_FAIL){
@@ -243,8 +243,7 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
                 H5FDdsmError("Server Start = " << this->StartAddress << " End = " << this->EndAddress);
                 return(H5FD_DSM_FAIL);
             }
-            if ((datap = this->DataPointer) == NULL)
-              H5FDdsmError("Null Data Pointer when trying to get data");
+            if ((datap = this->DataPointer) == NULL) H5FDdsmError("Null Data Pointer when trying to get data");
             datap += Address - this->StartAddress;
             status = this->SendData(who, datap, aLength, H5FD_DSM_GET_DATA_TAG, IsService);
             if (status == H5FD_DSM_FAIL){
@@ -301,7 +300,7 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
         case H5FD_DSM_REMOTE_CHANNEL:
           H5FDdsmDebug("Switching to Remote channel");
           if (!this->IsConnected) {
-            this->Comm->RemoteCommAccept();
+            this->Comm->RemoteCommAccept(this->DataPointer, this->Length);
             // send DSM information
             this->Comm->RemoteCommSendInfo(&this->Length, &this->TotalLength, &this->StartServerId, &this->EndServerId);
             this->IsConnected = true;
@@ -466,18 +465,26 @@ H5FDdsmBuffer::Put(H5FDdsmInt64 Address, H5FDdsmInt64 aLength, void *Data){
 
     }else{
       H5FDdsmInt32   status;
-
-      status = this->SendCommandHeader(H5FD_DSM_OPCODE_PUT, who, Address, len);
-      if (status == H5FD_DSM_FAIL){
-        H5FDdsmError("Failed to send PUT Header to " << who);
-        return(H5FD_DSM_FAIL);
+      // TODO For now, one-sided comms are only used with the inter-communicator
+      if ((this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) && !this->IsServer) {
+        H5FDdsmDebug("PUT request from " << who << " for " << len << " bytes @ " << Address);
+        status = this->PutData(who, datap, len, Address - astart);
+        if (status == H5FD_DSM_FAIL){
+          H5FDdsmError("Failed to do an RMA PUT to " << who);
+          return(H5FD_DSM_FAIL);
+        }
+      } else {
+        status = this->SendCommandHeader(H5FD_DSM_OPCODE_PUT, who, Address, len);
+        if (status == H5FD_DSM_FAIL){
+          H5FDdsmError("Failed to send PUT Header to " << who);
+          return(H5FD_DSM_FAIL);
+        }
+        status = this->SendData(who, datap, len, H5FD_DSM_PUT_DATA_TAG);
+        if (status == H5FD_DSM_FAIL){
+          H5FDdsmError("Failed to send " << len << " bytes of data to " << who);
+          return(H5FD_DSM_FAIL);
+        }
       }
-      status = this->SendData(who, datap, len, H5FD_DSM_PUT_DATA_TAG);
-      if (status == H5FD_DSM_FAIL){
-        H5FDdsmError("Failed to send " << len << " bytes of data to " << who);
-        return(H5FD_DSM_FAIL);
-      }
-
     }
     aLength -= len;
     Address += len;
@@ -509,19 +516,27 @@ H5FDdsmBuffer::Get(H5FDdsmInt64 Address, H5FDdsmInt64 aLength, void *Data){
             memcpy(datap, dp, len);
 
         }else{
-            H5FDdsmInt32   status;
-
+          H5FDdsmInt32   status;
+          // TODO For now, one-sided comms are only used with the inter-communicator
+          if ((this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) && !this->IsServer) {
+            H5FDdsmDebug("Get request from " << who << " for " << len << " bytes @ " << Address);
+            status = this->GetData(who, datap, len, Address - astart);
+            if (status == H5FD_DSM_FAIL){
+              H5FDdsmError("Failed to do an RMA GET from " << who);
+              return(H5FD_DSM_FAIL);
+            }
+          } else {
             status = this->SendCommandHeader(H5FD_DSM_OPCODE_GET, who, Address, len);
             if (status == H5FD_DSM_FAIL){
-                H5FDdsmError("Failed to send GET Header to " << who);
-                return(H5FD_DSM_FAIL);
+              H5FDdsmError("Failed to send GET Header to " << who);
+              return(H5FD_DSM_FAIL);
             }
             status = this->ReceiveData(who, datap, len, H5FD_DSM_GET_DATA_TAG);
             if (status == H5FD_DSM_FAIL){
-                H5FDdsmError("Failed to receive " << len << " bytes of data from " << who);
-                return(H5FD_DSM_FAIL);
+              H5FDdsmError("Failed to receive " << len << " bytes of data from " << who);
+              return(H5FD_DSM_FAIL);
             }
-
+          }
         }
         aLength -= len;
         Address += len;

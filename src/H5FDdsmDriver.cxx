@@ -298,7 +298,7 @@ H5FDdsmDriver::SendData(H5FDdsmInt32 Dest, void *Data, H5FDdsmInt64 aLength, H5F
     Msg->SetLength(aLength);
     Msg->SetTag(Tag);
     Msg->SetData(Data);
-    return(this->Comm->SendData(Msg));
+    return(this->Comm->Send(Msg));
 }
 
 H5FDdsmInt32
@@ -313,12 +313,39 @@ H5FDdsmDriver::ReceiveData(H5FDdsmInt32 Source, void *Data, H5FDdsmInt64 aLength
     Msg->SetTag(Tag);
     Msg->SetData(Data);
     if(Block){
-        Status = this->Comm->ReceiveData(Msg);
+        Status = this->Comm->Receive(Msg);
     }else{
         Status = this->Comm->Check(Msg);
         if(Status == H5FD_DSM_SUCCESS){
-            Status = this->Comm->ReceiveData(Msg);
+            Status = this->Comm->Receive(Msg);
         }
     }
     return(Status);
+}
+
+H5FDdsmInt32
+H5FDdsmDriver::PutData(H5FDdsmInt32 Dest, void *Data, H5FDdsmInt64 aLength, H5FDdsmInt64 aAddress){
+
+    H5FDdsmMsg *Msg = NULL;
+    Msg = this->Msg;
+
+    Msg->SetSource(this->Comm->GetId());
+    Msg->SetDest(Dest);
+    Msg->SetLength(aLength);
+    Msg->SetAddress(aAddress);
+    Msg->SetData(Data);
+    return(this->Comm->PutData(Msg));
+}
+
+H5FDdsmInt32
+H5FDdsmDriver::GetData(H5FDdsmInt32 Source, void *Data, H5FDdsmInt64 aLength, H5FDdsmInt64 aAddress){
+
+    H5FDdsmMsg *Msg = NULL;
+    Msg = this->Msg;
+
+    Msg->SetSource(Source);
+    Msg->SetLength(aLength);
+    Msg->SetAddress(aAddress);
+    Msg->SetData(Data);
+    return(this->Comm->GetData(Msg));
 }

@@ -88,14 +88,16 @@ public:
     H5FDdsmInt32   Init();
     H5FDdsmInt32   Send(H5FDdsmMsg *Msg);
     H5FDdsmInt32   Receive(H5FDdsmMsg *Msg);
-    H5FDdsmInt32   SendData(H5FDdsmMsg *DataMsg);
-    H5FDdsmInt32   ReceiveData(H5FDdsmMsg *DataMsg);
+    // Additional methods for one sided communications
+    H5FDdsmInt32   PutData(H5FDdsmMsg *DataMsg);
+    H5FDdsmInt32   GetData(H5FDdsmMsg *DataMsg);
+    //
     H5FDdsmInt32   Check(H5FDdsmMsg *Msg);
     H5FDdsmInt32   Barrier();
 
     H5FDdsmInt32   OpenPort();
     H5FDdsmInt32   ClosePort();
-    H5FDdsmInt32   RemoteCommAccept();
+    H5FDdsmInt32   RemoteCommAccept(void *storagePointer, H5FDdsmInt64 storageSize);
     H5FDdsmInt32   RemoteCommConnect();
     H5FDdsmInt32   RemoteCommDisconnect();
 
@@ -118,6 +120,7 @@ public:
 protected:
     MPI_Comm       Comm;
     MPI_Comm       InterComm;
+    MPI_Win        Win;
     H5FDdsmByte    DsmMasterHostName[MPI_MAX_PORT_NAME];
 };
 

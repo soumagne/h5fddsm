@@ -99,28 +99,28 @@ H5FDdsmComm::Send(H5FDdsmMsg *Msg){
 }
 
 H5FDdsmInt32
-H5FDdsmComm::ReceiveData(H5FDdsmMsg *DataMsg){
+H5FDdsmComm::GetData(H5FDdsmMsg *DataMsg){
     if(DataMsg->Tag <= 0) DataMsg->Tag = H5FD_DSM_DEFAULT_TAG;
     if(DataMsg->Length <= 0 ){
-        H5FDdsmError("Cannot Receive Message of Length = " << DataMsg->Length);
+        H5FDdsmError("Cannot Get Message of Length = " << DataMsg->Length);
         return(H5FD_DSM_FAIL);
     }
     if(DataMsg->Data <= 0 ){
-        H5FDdsmError("Cannot Receive Message into Data Buffer = " << DataMsg->Length);
+        H5FDdsmError("Cannot Get Message into Data Buffer = " << DataMsg->Length);
         return(H5FD_DSM_FAIL);
     }
     return(H5FD_DSM_SUCCESS);
 }
 
 H5FDdsmInt32
-H5FDdsmComm::SendData(H5FDdsmMsg *DataMsg){
+H5FDdsmComm::PutData(H5FDdsmMsg *DataMsg){
     if(DataMsg->Tag <= 0) DataMsg->Tag = H5FD_DSM_DEFAULT_TAG;
     if(DataMsg->Length <= 0 ){
-        H5FDdsmError("Cannot Send Message of Length = " << DataMsg->Length);
+        H5FDdsmError("Cannot Put Message of Length = " << DataMsg->Length);
         return(H5FD_DSM_FAIL);
     }
     if(DataMsg->Data <= 0 ){
-        H5FDdsmError("Cannot Send Message from Data Buffer = " << DataMsg->Length);
+        H5FDdsmError("Cannot Put Message from Data Buffer = " << DataMsg->Length);
         return(H5FD_DSM_FAIL);
     }
     return(H5FD_DSM_SUCCESS);
@@ -142,7 +142,11 @@ H5FDdsmComm::ClosePort(){
 }
 
 H5FDdsmInt32
-H5FDdsmComm::RemoteCommAccept(){
+H5FDdsmComm::RemoteCommAccept(void *storagePointer, H5FDdsmInt64 storageSize){
+  if (!storagePointer) {
+    H5FDdsmError("Null Data Pointer passed to CommAccept");
+    return(H5FD_DSM_FAIL);
+  }
   return(H5FD_DSM_SUCCESS);
 }
 

@@ -60,6 +60,8 @@
 // Macros to choose communication system to use
 #define H5FD_DSM_COMM_MPI        0x10
 #define H5FD_DSM_COMM_SOCKET     0x11
+#define H5FD_DSM_COMM_MPI_RMA    0x12
+#define H5FD_DSM_COMM_GNI        0x13
 
 // Macros to switch between remote/local channels
 #define H5FD_DSM_COMM_CHANNEL_LOCAL  0x20
@@ -96,8 +98,10 @@ public:
     virtual H5FDdsmInt32   Init();
     virtual H5FDdsmInt32   Send(H5FDdsmMsg *Msg);
     virtual H5FDdsmInt32   Receive(H5FDdsmMsg *Msg);
-    virtual H5FDdsmInt32   SendData(H5FDdsmMsg *DataMsg);
-    virtual H5FDdsmInt32   ReceiveData(H5FDdsmMsg *DataMsg);
+    // Additional methods for one sided communications
+    virtual H5FDdsmInt32   PutData(H5FDdsmMsg *DataMsg);
+    virtual H5FDdsmInt32   GetData(H5FDdsmMsg *DataMsg);
+    //
     virtual H5FDdsmInt32   Check(H5FDdsmMsg *Msg);
     virtual H5FDdsmInt32   Barrier();
 
@@ -107,7 +111,7 @@ public:
 
     virtual H5FDdsmInt32   OpenPort();
     virtual H5FDdsmInt32   ClosePort();
-    virtual H5FDdsmInt32   RemoteCommAccept();
+    virtual H5FDdsmInt32   RemoteCommAccept(void *storagePointer, H5FDdsmInt64 storageSize);
     virtual H5FDdsmInt32   RemoteCommConnect();
     virtual H5FDdsmInt32   RemoteCommDisconnect();
 

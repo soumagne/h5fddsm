@@ -41,7 +41,7 @@ H5FDdsmStorage::H5FDdsmStorage()
 H5FDdsmStorage::~H5FDdsmStorage()
 {
   if (this->DataPointer) {
-    if (this->Comm && this->Comm->GetCommType() == H5FD_DSM_COMM_MPI) {
+    if (this->Comm && (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA)) {
       MPI_Free_mem(this->DataPointer);
     } else {
       free(this->DataPointer);
@@ -71,7 +71,7 @@ H5FDdsmInt32  H5FDdsmStorage::SetNumberOfElements(H5FDdsmInt64 Length, H5FDdsmBo
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmStorage::Allocate()
 {
-  if (this->Comm && this->Comm->GetCommType() == H5FD_DSM_COMM_MPI) {
+  if (this->Comm && (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA)) {
     int err;
     if (this->DataPointer) {
       MPI_Free_mem(this->DataPointer);

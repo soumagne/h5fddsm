@@ -56,6 +56,7 @@ typedef struct ParticleBuffer {
   #define PORT 22000
 #endif
 
+#define COMM_TYPE H5FD_DSM_COMM_SOCKET
 std::string server_name = server;
 int default_port_number = PORT;
 
@@ -242,11 +243,10 @@ int main (int argc, char* argv[])
   H5FDdsmManager *dsmManager = new H5FDdsmManager();
   dsmManager->SetCommunicator(dcomm);
   dsmManager->SetLocalBufferSizeMBytes(DSMSize/size);
-  // dsmManager->SetDsmCommType(H5FD_DSM_COMM_SOCKET); // Socket by default
-  dsmManager->SetDsmCommType(H5FD_DSM_COMM_MPI);
+  dsmManager->SetDsmCommType(COMM_TYPE);
   dsmManager->SetDsmIsServer(1);
   dsmManager->SetServerHostName(server_name.c_str());
-  // dsmManager->SetServerPort(default_port_number);
+  dsmManager->SetServerPort(default_port_number);
   dsmManager->CreateDSM();
   // Publish writes .dsm_config file with server name/port/mode in
   // then spawns thread which waits for incoming connections

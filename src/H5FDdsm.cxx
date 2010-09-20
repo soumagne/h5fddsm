@@ -476,7 +476,8 @@ H5Pget_fapl_dsm(hid_t fapl_id, MPI_Comm *dsmComm/*out*/, void **dsmBuffer /* out
     if (fa->buffer->GetComm()->GetCommType() == H5FD_DSM_COMM_SOCKET) {
       *dsmComm = dynamic_cast <H5FDdsmCommSocket*> (fa->buffer->GetComm())->GetComm();
     }
-    else if (fa->buffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI) {
+    else if ((fa->buffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI) ||
+        (fa->buffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI_RMA)) {
       *dsmComm = dynamic_cast <H5FDdsmCommMpi*> (fa->buffer->GetComm())->GetComm();
     }
   }
@@ -630,7 +631,8 @@ H5FD_dsm_open(const char *name, unsigned UNUSED flags, hid_t fapl_id, haddr_t ma
           H5FDdsmInt32 port = dynamic_cast<H5FDdsmCommSocket*> (file->DsmBuffer->GetComm())->GetDsmMasterPort();
           PRINT_INFO("DSM driver connecting on: " << hostName << ":" << port);
         }
-        else if (file->DsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI) {
+        else if ((file->DsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI) ||
+            (file->DsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI_RMA)) {
           H5FDdsmConstString hostName = dynamic_cast<H5FDdsmCommMpi*> (file->DsmBuffer->GetComm())->GetDsmMasterHostName();
           PRINT_INFO("DSM driver connecting on: " << hostName);
         }
@@ -742,7 +744,8 @@ H5FD_dsm_close(H5FD_t *_file)
     if (file->DsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_SOCKET) {
       comm = dynamic_cast <H5FDdsmCommSocket*> (file->DsmBuffer->GetComm())->GetComm();
     }
-    else if (file->DsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI) {
+    else if ((file->DsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI) ||
+        (file->DsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI_RMA)) {
       comm = dynamic_cast <H5FDdsmCommMpi*> (file->DsmBuffer->GetComm())->GetComm();
     }
 
@@ -1204,7 +1207,8 @@ H5FD_dsm_communicator(const H5FD_t *_file)
   ret_value
   = dynamic_cast <H5FDdsmCommSocket*> (file->DsmBuffer->GetComm())->GetComm();
   }
-  else if (file->DsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI) {
+  else if ((file->DsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI) ||
+      (file->DsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI_RMA)) {
     ret_value
     = dynamic_cast <H5FDdsmCommMpi*> (file->DsmBuffer->GetComm())->GetComm();
   }

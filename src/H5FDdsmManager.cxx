@@ -191,9 +191,14 @@ bool H5FDdsmManager::CreateDSM()
   //
   // Create Xdmf DSM communicator
   //
-  if (this->GetDsmCommType() == H5FD_DSM_COMM_MPI) {
+  if ((this->GetDsmCommType() == H5FD_DSM_COMM_MPI) ||
+      (this->GetDsmCommType() == H5FD_DSM_COMM_MPI_RMA)) {
     this->DSMComm = new H5FDdsmCommMpi();
-    H5FDdsmDebug(<< "Using MPI Intercomm...");
+    if (this->GetDsmCommType() == H5FD_DSM_COMM_MPI) H5FDdsmDebug(<< "Using MPI Intercomm...");
+    if (this->GetDsmCommType() == H5FD_DSM_COMM_MPI_RMA) {
+      this->DSMComm->SetCommType(H5FD_DSM_COMM_MPI_RMA);
+      H5FDdsmDebug(<< "Using MPI RMA Intercomm...");
+    }
     dynamic_cast<H5FDdsmCommMpi*> (this->DSMComm)->DupComm(this->Communicator);
   }
   else if (this->GetDsmCommType() == H5FD_DSM_COMM_SOCKET) {
@@ -261,7 +266,8 @@ void H5FDdsmManager::ConnectDSM()
 {
   if (this->UpdatePiece == 0) H5FDdsmDebug(<< "Connect DSM");
 
-  if (this->GetDsmCommType() == H5FD_DSM_COMM_MPI) {
+  if ((this->GetDsmCommType() == H5FD_DSM_COMM_MPI) ||
+      (this->GetDsmCommType() == H5FD_DSM_COMM_MPI_RMA)) {
     if (this->GetServerHostName() != NULL) {
       dynamic_cast<H5FDdsmCommMpi*> (this->DSMBuffer->GetComm())->SetDsmMasterHostName(this->GetServerHostName());
       if (this->UpdatePiece == 0) {
@@ -291,12 +297,13 @@ void H5FDdsmManager::ConnectDSM()
 #ifdef H5FD_DSM_DEBUG
     this->DSMBuffer->DebugOn();
     this->DSMBuffer->GetComm()->DebugOn();
-    if (this->DSMBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_SOCKET) {
+    if (this->GetDsmCommType() == H5FD_DSM_COMM_SOCKET) {
       H5FDdsmConstString hostName = dynamic_cast<H5FDdsmCommSocket*> (this->DSMBuffer->GetComm())->GetDsmMasterHostName();
       H5FDdsmInt32 port = dynamic_cast<H5FDdsmCommSocket*> (this->DSMBuffer->GetComm())->GetDsmMasterPort();
       H5FDdsmDebug(<<"DSM driver connecting on: " << hostName << ":" << port);
     }
-    else if (this->DSMBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI) {
+    else   if ((this->GetDsmCommType() == H5FD_DSM_COMM_MPI) ||
+        (this->GetDsmCommType() == H5FD_DSM_COMM_MPI_RMA)) {
       H5FDdsmConstString hostName = dynamic_cast<H5FDdsmCommMpi*> (this->DSMBuffer->GetComm())->GetDsmMasterHostName();
       H5FDdsmDebug(<<"DSM driver connecting on: " << hostName);
     }
@@ -368,12 +375,18 @@ void H5FDdsmManager::PublishDSM()
       std::cout << "Written " << fullDsmConfigFilePath.c_str() << std::endl;
 
     }
-    if (this->GetDsmCommType() == H5FD_DSM_COMM_MPI) {
+    if ((this->GetDsmCommType() == H5FD_DSM_COMM_MPI) ||
+        (this->GetDsmCommType() == H5FD_DSM_COMM_MPI_RMA)) {
       this->SetServerHostName(dynamic_cast<H5FDdsmCommMpi*>
       (this->DSMBuffer->GetComm())->GetDsmMasterHostName());
       H5FDdsmDebug(<< "Server PortName: " << this->GetServerHostName());
       if (this->GetDsmConfigFilePath()) {
-        dsmConfigFile.SetValue("DSM_COMM_SYSTEM", "mpi", "Comm", fullDsmConfigFilePath);
+        if (this->GetDsmCommType() == H5FD_DSM_COMM_MPI) {
+          dsmConfigFile.SetValue("DSM_COMM_SYSTEM", "mpi", "Comm", fullDsmConfigFilePath);
+        }
+        if (this->GetDsmCommType() == H5FD_DSM_COMM_MPI_RMA) {
+          dsmConfigFile.SetValue("DSM_COMM_SYSTEM", "mpi_rma", "Comm", fullDsmConfigFilePath);
+        }
         dsmConfigFile.SetValue("DSM_BASE_HOST", this->GetServerHostName(), "Comm", fullDsmConfigFilePath);
       }
     } else if (this->GetDsmCommType() == H5FD_DSM_COMM_SOCKET) {
@@ -520,6 +533,8 @@ bool H5FDdsmManager::ReadDSMConfigFile()
       this->SetServerPort(atoi(port.c_str()));
     } else if (comm == "mpi") {
       this->SetDsmCommType(H5FD_DSM_COMM_MPI);
+    } else if (comm == "mpi_rma") {
+      this->SetDsmCommType(H5FD_DSM_COMM_MPI_RMA);
     }
     this->SetServerHostName(host.c_str());
     return true;

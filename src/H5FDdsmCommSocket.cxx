@@ -196,20 +196,6 @@ H5FDdsmCommSocket::Send(H5FDdsmMsg *Msg)
 }
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmCommSocket::ReceiveData(H5FDdsmMsg *DataMsg)
-{
-  if (this->Receive(DataMsg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
-  return(H5FD_DSM_SUCCESS);
-}
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmCommSocket::SendData(H5FDdsmMsg *DataMsg)
-{
-  if (this->Send(DataMsg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
-  return(H5FD_DSM_SUCCESS);
-}
-//----------------------------------------------------------------------------
-H5FDdsmInt32
 H5FDdsmCommSocket::Barrier()
 {
   if (H5FDdsmComm::Barrier() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
@@ -256,9 +242,9 @@ H5FDdsmCommSocket::ClosePort()
 }
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmCommSocket::RemoteCommAccept()
+H5FDdsmCommSocket::RemoteCommAccept(void *storagePointer, H5FDdsmInt64 storageSize)
 {
-  if (H5FDdsmComm::RemoteCommAccept() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+  if (H5FDdsmComm::RemoteCommAccept(storagePointer, storageSize) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
   // Needed if we want to insert a timeout
   // if (this->MasterSocket->Select(100) <= 0 ) return(H5FD_DSM_FAIL);
