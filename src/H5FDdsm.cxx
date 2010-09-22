@@ -81,6 +81,16 @@ extern "C" {
 #endif
 
 //--------------------------------------------------------------------------
+// Unfortunately, some of the HDF5 macros use internal variables which are not exported
+// from the hdf5 lib/dll so we must override the macros and lose some debugging info
+#ifdef WIN32
+  #if defined(H5_INIT_GLOBAL)
+    #undef H5_INIT_GLOBAL
+    int dummy = TRUE;
+    #define H5_INIT_GLOBAL dummy
+  #endif
+#endif
+//--------------------------------------------------------------------------
 //
 #include "H5FDdsmManager.h"
 //
