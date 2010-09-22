@@ -20,7 +20,7 @@ ENDIF(CMAKE_Fortran_COMPILER MATCHES ifort)
 INCLUDE_DIRECTORIES( 
   ${H5FDdsm_SOURCE_DIR}
   ${CMAKE_Fortran_MODULE_DIRECTORY}
-  ${HDF5_INCLUDE_DIR}/fortran
+  ${HDF5_INCLUDE_DIR_FORTRAN}
   ${H5FDdsm_F90_BINARY_DIR}
  )
 
@@ -57,20 +57,18 @@ TARGET_LINK_LIBRARIES(H5FDdsm_fortran
   H5FDdsm_f90CStub 
 )
 
-IF (WIN32)
-  IF (MSVC)
-    SET_TARGET_PROPERTIES (H5FDdsm_fortran
-	    PROPERTIES
-		    LINKER_LANGUAGE Fortran
-			LINK_FLAGS "/SUBSYSTEM:CONSOLE"
+IF (WIN32 AND MSVC)
+  SET_TARGET_PROPERTIES (H5FDdsm_fortran
+    PROPERTIES
+      LINKER_LANGUAGE Fortran
+	  LINK_FLAGS "/SUBSYSTEM:CONSOLE"
 	)
-  ELSE (MSVC)
-    SET_TARGET_PROPERTIES (H5FDdsm_fortran
-	    PROPERTIES
-		    LINKER_LANGUAGE Fortran
-	)
-  ENDIF (MSVC)
-ENDIF (WIN32)
+ENDIF (WIN32 AND MSVC)
+
+SET_TARGET_PROPERTIES (H5FDdsm_fortran
+  PROPERTIES
+    LINKER_LANGUAGE Fortran
+)
 
 #-----------------------------------------------------------------------------
 # Build the Fortran Tests

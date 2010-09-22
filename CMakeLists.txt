@@ -61,38 +61,14 @@ ELSE(BUILD_SHARED_LIBS)
 ENDIF(BUILD_SHARED_LIBS)
 
 #-----------------------------------------------------------------------------
-# To fix potential linker problems with mixed static/shared/debug/release
-# version of the runtime libraries under MSVC, set flags accordingly
+# To fix potential linker problems with mixed static/shared on linux
 #-----------------------------------------------------------------------------
-IF (BUILD_SHARED_LIBS)
-  IF (MSVC)
-    FOREACH (flag_var
-        CMAKE_C_FLAGS CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELEASE
-        CMAKE_C_FLAGS_MINSIZEREL CMAKE_C_FLAGS_RELWITHDEBINFO
-        CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
-        CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
-      IF (${flag_var} MATCHES "/MT")
-        STRING (REGEX REPLACE "/MT" "/MD" ${flag_var} "${${flag_var}}")
-      ENDIF (${flag_var} MATCHES "/MT")
-    ENDFOREACH (flag_var)
-  ENDIF (MSVC)
-ELSE (BUILD_SHARED_LIBS)
+IF (NOT BUILD_SHARED_LIBS)
   IF (NOT WIN32)
     # should this be a user setting : Everyone uses it anyway ?
     ADD_DEFINITIONS(-DPIC)
   ENDIF (NOT WIN32)
-  IF (MSVC)
-    FOREACH (flag_var
-        CMAKE_C_FLAGS CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELEASE
-        CMAKE_C_FLAGS_MINSIZEREL CMAKE_C_FLAGS_RELWITHDEBINFO
-        CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
-        CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
-      IF (${flag_var} MATCHES "/MD")
-        STRING (REGEX REPLACE "/MD" "/MT" ${flag_var} "${${flag_var}}")
-      ENDIF (${flag_var} MATCHES "/MD")
-    ENDFOREACH (flag_var)
-  ENDIF (MSVC)
-ENDIF (BUILD_SHARED_LIBS)
+ENDIF (NOT BUILD_SHARED_LIBS)
 
 #-----------------------------------------------------------------------------
 # Find HDF5
@@ -116,7 +92,6 @@ ADD_DEFINITIONS(-DMPICH_SKIP_MPICXX)
 #-----------------------------------------------------------------------------
 IF (WIN32)
   SET(Boost_DEBUG ON)
-  SET(Boost_ADDITIONAL_VERSIONS "1.39" "1.39.0" "1.40" "1.40.0")
   SET(BOOST_ROOT "C:/Program Files/Boost")
   SET(Boost_USE_STATIC_LIBS   ON)
   SET(Boost_USE_MULTITHREADED ON)
@@ -156,6 +131,26 @@ IF(COMPUTERNAME)
     ADD_DEFINITIONS(-DH5FD_DEBUG_WITH_THREADS)
   ENDIF ("${COMPUTERNAME}" MATCHES "AGNO") 
 ENDIF(COMPUTERNAME)
+
+#-----------------------------------------------------------------------------
+# Linking against mpich2 libs on win32 causes trouble if we don't add some flags
+#-----------------------------------------------------------------------------
+MACRO (SET_LINK_OPTIONS target)
+  IF (WIN32 AND MSVC)
+    SET_TARGET_PROPERTIES (${target}
+        PROPERTIES
+            LINK_FLAGS_RELEASE "/NODEFAULTLIB:MSVCRT"
+            LINK_FLAGS_DEBUG "/NODEFAULTLIB:MSVCRTD"
+    ) 
+  ENDIF (WIN32 AND MSVC)
+ENDMACRO (SET_LINK_OPTIONS)
+#----------------------------
+# Fortran
+#----------------------------
+MACRO (SET_FORTRAN_LINK_OPTIONS target)
+  SET_LINK_OPTIONS(target)
+  SET_TARGET_PROPERTIES (${target} PROPERTIES LINKER_LANGUAGE Fortran)
+ENDMACRO (SET_FORTRAN_LINK_OPTIONS)
 
 #-----------------------------------------------------------------------------
 # Specify project source files
