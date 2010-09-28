@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Project                 : H5FDdsm
-  Module                  : H5FDdsmSteerer.h
+  Module                  : H5FDdsmSteering.h
 
   Authors:
      John Biddiscombe     Jerome Soumagne
@@ -23,45 +23,21 @@
 
 =========================================================================*/
 
-#ifndef H5FDDSMSTEERER_H
-#define H5FDDSMSTEERER_H
+#ifndef H5FDDSMSTEERING_H
+#define H5FDDSMSTEERING_H
 
+#include <H5FDdsm.h>
 #include <mpi.h>
+#include <hdf5.h>
 
-#include "H5FDdsmObject.h"
+#ifdef __cplusplus
+extern "C" {
+#endif
+  H5FDdsm_EXPORT herr_t H5FD_dsm_steering_init(MPI_Comm comm);
+  H5FDdsm_EXPORT herr_t H5FD_dsm_begin_loop(const char *name);
+  H5FDdsm_EXPORT herr_t H5FD_dsm_end_loop(const char *name);
+#ifdef __cplusplus
+}
+#endif
 
-class H5FDdsmComm;
-
-class H5FDdsm_EXPORT H5FDdsmSteerer : public H5FDdsmObject {
-
-public:
-  H5FDdsmSteerer();
-  ~H5FDdsmSteerer();
-
-  // Set/Get the current command
-  H5FDdsmInt32 SetCurrentCommand(H5FDdsmConstString cmd);
-  H5FDdsmGetStringMacro(CurrentCommand);
-
-  // Set/Get WriteToDSM value
-  // Allows the H5FDdsm driver to switch to the MPIO driver
-  H5FDdsmSetValueMacro(WriteToDSM, H5FDdsmInt32);
-  H5FDdsmGetValueMacro(WriteToDSM, H5FDdsmInt32);
-
-  // Set/Get the Pause value
-  H5FDdsmSetValueMacro(Pause, H5FDdsmInt32);
-  H5FDdsmGetValueMacro(Pause, H5FDdsmInt32);
-
-  H5FDdsmSetValueMacro(Comm, H5FDdsmComm*);
-  void SendSteeringCommands();
-  void ReceiveSteeringCommands();
-
-protected:
-  H5FDdsmInt32 CheckCommand(const char *command);
-
-  H5FDdsmComm  *Comm;
-  H5FDdsmString CurrentCommand;
-  volatile H5FDdsmInt32  Pause;
-  H5FDdsmInt32  WriteToDSM;
-};
-
-#endif /* H5FDDSMSTEERER_H */
+#endif /* H5FDDSMSTEERING_H */

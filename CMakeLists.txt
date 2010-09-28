@@ -170,6 +170,7 @@ SET(H5FDdsmSources
   src/H5FDdsmManager.cxx
   src/H5FDdsmDump.cxx
   src/H5FDdsmSteerer.cxx
+  src/H5FDdsmSteering.cxx
   # TODO Find the correct place for h5Dump
   h5dump/h5dump.cxx
   h5dump/h5tools.cxx
@@ -222,6 +223,7 @@ ENDIF(H5FD_DSM_BUILD_TESTING)
 INSTALL (
   FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsm.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmSteering.h
     ${H5FDdsm_BINARY_DIR}/src/H5FDdsmConfig.h
   DESTINATION
     include
