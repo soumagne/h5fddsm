@@ -22,7 +22,9 @@
   Framework Programme (FP7/2007-2013) under grant agreement 225967 “NextMuSE”
 
 =========================================================================*/
-
+// Put this before others as we must not mess up WIN32 macros/defs
+#include "H5Eprivate.h" // Error handling
+//
 #include "H5FDdsm.h"
 #include "H5FDdsmSteering.h"
 #include "H5FDdsmSteerer.h"
@@ -30,10 +32,6 @@
 
 //----------------------------------------------------------------------------
 // C steering bindings
-#ifdef __cplusplus
-extern "C" {
-#endif
-#include "H5Eprivate.h" // Error handling
 
 void *dsm_buffer = NULL; // pointer to internal dsm buffer reference
 //----------------------------------------------------------------------------
@@ -69,6 +67,3 @@ herr_t H5FD_dsm_end_loop(const char *name)
   return(SUCCEED);
 }
 //----------------------------------------------------------------------------
-#ifdef __cplusplus
-}
-#endif
