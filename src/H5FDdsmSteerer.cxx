@@ -33,7 +33,7 @@ H5FDdsmSteerer::H5FDdsmSteerer()
   this->WriteToDSM = 1;
   this->CurrentCommand = NULL;
   this->Comm = NULL;
-  //this->DebugOn();
+  // this->DebugOn();
 }
 //----------------------------------------------------------------------------
 H5FDdsmSteerer::~H5FDdsmSteerer()
@@ -44,6 +44,7 @@ H5FDdsmSteerer::~H5FDdsmSteerer()
 H5FDdsmInt32 H5FDdsmSteerer::SetCurrentCommand(H5FDdsmConstString cmd)
 {
   std::string oldCommand;
+  H5FDdsmDebug("SetCurrentCommand to: " << cmd);
   if (this->CurrentCommand == cmd) { return(H5FD_DSM_SUCCESS); }
   if (this->CurrentCommand != NULL) { oldCommand = this->CurrentCommand; }
   if (this->CurrentCommand && cmd && !strcmp(this->CurrentCommand, cmd)) { return(H5FD_DSM_SUCCESS); }
@@ -78,6 +79,11 @@ void H5FDdsmSteerer::ReceiveSteeringCommands()
   this->CheckCommand(stringCommand.c_str());
 }
 //----------------------------------------------------------------------------
+H5FDdsmInt32 H5FDdsmSteerer::IsSteerable(const char *name) {
+
+  return(H5FD_DSM_SUCCESS);
+}
+//----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmSteerer::CheckCommand(const char *command)
 {
   std::string stringCommand = command;
@@ -101,11 +107,11 @@ H5FDdsmInt32 H5FDdsmSteerer::CheckCommand(const char *command)
   else if (stringCommand == "notSend") {
 
   }
-  else if (stringCommand == "writeDisk") {
+  else if (stringCommand == "disk") {
     H5FDdsmDebug("Setting WriteToDSM to 0");
     this->WriteToDSM = 0;
   }
-  else if (stringCommand == "writeDSM") {
+  else if (stringCommand == "dsm") {
     H5FDdsmDebug("Setting WriteToDSM to 1");
     this->WriteToDSM = 1;
   }

@@ -55,6 +55,8 @@ public:
   void SendSteeringCommands();
   void ReceiveSteeringCommands();
 
+  H5FDdsmInt32 IsSteerable(const char *name);
+
 protected:
   H5FDdsmInt32 CheckCommand(const char *command);
 

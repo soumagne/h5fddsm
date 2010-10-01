@@ -273,7 +273,7 @@ DsmUpdateEntry(H5FD_dsm_t *file)
     // Send is non blocking, make sure it's there
     //if (file->DsmBuffer->Get(addr, sizeof(entry), &entry) != H5FD_DSM_SUCCESS) return H5FD_DSM_FAIL;
   //}
-  return H5FD_DSM_SUCCESS;
+  return(H5FD_DSM_SUCCESS);
 }
 //--------------------------------------------------------------------------
 H5FDdsmInt32
@@ -301,7 +301,90 @@ DsmGetEntry(H5FD_dsm_t *file)
       " end " << file->end <<
       " addr " << addr);
 
-  return H5FD_DSM_SUCCESS;
+  return(H5FD_DSM_SUCCESS);
+}
+//--------------------------------------------------------------------------
+H5FDdsmInt32
+DsmAutoAlloc(MPI_Comm comm)
+{
+  if (!dsmManagerSingleton) {
+    dsmManagerSingleton = new H5FDdsmManager();
+    dsmManagerSingleton->ReadDSMConfigFile();
+    dsmManagerSingleton->SetCommunicator(comm);
+    dsmManagerSingleton->CreateDSM();
+    if (dsmManagerSingleton->GetDsmIsServer()) {
+      dsmManagerSingleton->PublishDSM();
+      while (!dsmManagerSingleton->GetDSMHandle()->GetIsConnected()) {
+        // Spin
+      }
+    } else {
+      dsmManagerSingleton->ConnectDSM();
+    }
+    dsmManagerSingleton->GetDSMHandle()->SetIsAutoAllocated(true);
+  }
+  return(H5FD_DSM_SUCCESS);
+}
+//--------------------------------------------------------------------------
+H5FDdsmInt32
+DsmAutoDealloc()
+{
+  if (dsmManagerSingleton) {
+    if (!dsmManagerSingleton->GetDsmIsServer() && dsmManagerSingleton->GetDSMHandle()->GetIsConnected()) {
+      dsmManagerSingleton->DisconnectDSM();
+    }
+    if (dsmManagerSingleton->GetDsmIsServer()) {
+      dsmManagerSingleton->UnpublishDSM();
+    }
+    delete dsmManagerSingleton;
+    dsmManagerSingleton = NULL;
+  }
+  return(H5FD_DSM_SUCCESS);
+}
+//--------------------------------------------------------------------------
+void *
+DsmGetAutoAllocatedBuffer() {
+  void *buffer = NULL;
+
+  if (dsmManagerSingleton) {
+    buffer = (void*)dsmManagerSingleton->GetDSMHandle();
+  }
+  return(buffer);
+}
+//--------------------------------------------------------------------------
+H5FDdsmInt32
+DsmBufferConnect(H5FDdsmBuffer *dsmBuffer)
+{
+  // Initialize the connection if it has not been done already
+  if (!dsmBuffer->GetIsConnected()) {
+    if (dsmBuffer->GetComm()->RemoteCommConnect() == H5FD_DSM_SUCCESS) {
+      PRINT_DSM_INFO(dsmBuffer->GetComm()->GetId(), "Connected!");
+      dsmBuffer->SetIsConnected(true);
+
+      // Receive DSM info
+      H5FDdsmInt64 length;
+      H5FDdsmInt64 totalLength;
+      H5FDdsmInt32 startServerId, endServerId;
+
+      dsmBuffer->GetComm()->RemoteCommRecvInfo(&length, &totalLength, &startServerId, &endServerId);
+
+      dsmBuffer->SetLength(length, 0);
+      PRINT_DSM_INFO(dsmBuffer->GetComm()->GetId(), "Length received: " << dsmBuffer->GetLength());
+
+      dsmBuffer->SetTotalLength(totalLength);
+      PRINT_DSM_INFO(dsmBuffer->GetComm()->GetId(), "totalLength received: " << dsmBuffer->GetTotalLength());
+
+      dsmBuffer->SetStartServerId(startServerId);
+      PRINT_DSM_INFO(dsmBuffer->GetComm()->GetId(), "startServerId received: " << dsmBuffer->GetStartServerId());
+
+      dsmBuffer->SetEndServerId(endServerId);
+      PRINT_DSM_INFO(dsmBuffer->GetComm()->GetId(), "endServerId received: " << dsmBuffer->GetEndServerId());
+    }
+    else {
+      H5FDdsmError(<< "DSMBuffer Comm_connect error");
+      return(H5FD_DSM_FAIL);
+    }
+  }
+  return(H5FD_DSM_SUCCESS);
 }
 /*--------------------------------------------------------------------------
  NAME
@@ -372,16 +455,7 @@ H5FD_dsm_term(void)
 {
   FUNC_ENTER_NOAPI_NOINIT_NOFUNC(H5FD_dsm_term)
 
-  if (dsmManagerSingleton) {
-    if (!dsmManagerSingleton->GetDsmIsServer() && dsmManagerSingleton->GetDSMHandle()->GetIsConnected()) {
-      dsmManagerSingleton->DisconnectDSM();
-    }
-    if (dsmManagerSingleton->GetDsmIsServer()) {
-      dsmManagerSingleton->UnpublishDSM();
-    }
-    delete dsmManagerSingleton;
-    dsmManagerSingleton = NULL;
-  }
+  DsmAutoDealloc();
 
   // Reset VFL ID
   H5FD_DSM_g = 0;
@@ -419,26 +493,13 @@ H5Pset_fapl_dsm(hid_t fapl_id, MPI_Comm dsmComm, void *dsmBuffer)
 
   if (dsmBuffer) {
     fa.buffer = static_cast <H5FDdsmBuffer*> (dsmBuffer);
+    if (!fa.buffer->GetIsServer()) DsmBufferConnect(fa.buffer);
   }
   else {
-    if (dsmManagerSingleton == NULL) {
-      dsmManagerSingleton = new H5FDdsmManager();
-      dsmManagerSingleton->ReadDSMConfigFile();
-      dsmManagerSingleton->SetCommunicator(dsmComm);
-      dsmManagerSingleton->CreateDSM();
-      if (dsmManagerSingleton->GetDsmIsServer()) {
-        dsmManagerSingleton->PublishDSM();
-        while (!dsmManagerSingleton->GetDSMHandle()->GetIsConnected()) {
-          // Spin
-        }
-      } else {
-        dsmManagerSingleton->ConnectDSM();
-      }
-      dsmManagerSingleton->GetDSMHandle()->SetIsAutoAllocated(true);
-    }
+    if (dsmManagerSingleton == NULL) DsmAutoAlloc(dsmComm);
     fa.buffer = dsmManagerSingleton->GetDSMHandle();
   }
-  PRINT_DSM_INFO(fa.buffer->GetComm()->GetId(), "Get Write to DSM value: " << fa.buffer->GetSteerer()->GetWriteToDSM());
+
   if (!fa.buffer->GetSteerer()->GetWriteToDSM()) {
     PRINT_DSM_INFO(fa.buffer->GetComm()->GetId(), "Using MPIO driver temporarily");
     H5Pset_fapl_mpio(fapl_id, dsmComm, MPI_INFO_NULL);
@@ -586,19 +647,12 @@ H5FD_dsm_open(const char *name, unsigned UNUSED flags, hid_t fapl_id, haddr_t ma
   // See if DsmBuffer exists
   if (!fa->buffer) {
     HGOTO_ERROR(H5E_VFL, H5E_NOTFOUND, NULL, "DSM buffer not found");
-  }
-  else {
+  } else {
     file->DsmBuffer = fa->buffer;
 
     if (file->DsmBuffer->GetIsServer()) {
-
       if (H5F_ACC_CREAT & flags) {
-        // This is a critical part, we need to synchronize before
-        // and after the ClearStorage method call if needed
-        // PRINT_INFO("Clear DSM before create");
-        // file->DsmBuffer->GetComm()->Barrier();
-        // file->DsmBuffer->ClearStorage();
-        // file->DsmBuffer->GetComm()->Barrier();
+        //
       } else {
         // Check that the DSM ready for update flag is set
         while (!file->DsmBuffer->GetIsUpdateReady() && file->DsmBuffer->GetIsAutoAllocated()) {
@@ -610,9 +664,7 @@ H5FD_dsm_open(const char *name, unsigned UNUSED flags, hid_t fapl_id, haddr_t ma
       }
 
       PRINT_INFO("Opening " << name);
-
       if (DsmGetEntry(file) == H5FD_DSM_FAIL) {
-
         if (H5F_ACC_CREAT & flags) {
           PRINT_INFO("Creating " << name);
           DsmUpdateEntry(file);
@@ -629,62 +681,13 @@ H5FD_dsm_open(const char *name, unsigned UNUSED flags, hid_t fapl_id, haddr_t ma
       }
 
       file->eof = file->end - file->start;
-
-    } else { // try to connect to see if the DSM is handled by someone else
-
-      if (!file->DsmBuffer->GetIsConnected()) {
-#ifdef H5FD_DSM_DEBUG
-        file->DsmBuffer->DebugOn();
-        file->DsmBuffer->GetComm()->DebugOn();
-        if (file->DsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_SOCKET) {
-          H5FDdsmConstString hostName = dynamic_cast<H5FDdsmCommSocket*> (file->DsmBuffer->GetComm())->GetDsmMasterHostName();
-          H5FDdsmInt32 port = dynamic_cast<H5FDdsmCommSocket*> (file->DsmBuffer->GetComm())->GetDsmMasterPort();
-          PRINT_INFO("DSM driver connecting on: " << hostName << ":" << port);
-        }
-        else if ((file->DsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI) ||
-            (file->DsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI_RMA)) {
-          H5FDdsmConstString hostName = dynamic_cast<H5FDdsmCommMpi*> (file->DsmBuffer->GetComm())->GetDsmMasterHostName();
-          PRINT_INFO("DSM driver connecting on: " << hostName);
-        }
-#endif
-        if (file->DsmBuffer->GetComm()->RemoteCommConnect() != H5FD_DSM_SUCCESS) {
-          HGOTO_ERROR(H5E_VFL, H5E_MPI, NULL, "Comm_connect error");
-        }
-        PRINT_INFO("Connected!");
-        file->DsmBuffer->SetIsConnected(true);
-
-        // Receive DSM info
-        H5FDdsmInt64 length;
-        H5FDdsmInt64 totalLength;
-        H5FDdsmInt32 startServerId, endServerId;
-
-        file->DsmBuffer->GetComm()->RemoteCommRecvInfo(&length, &totalLength, &startServerId, &endServerId);
-
-        file->DsmBuffer->SetLength(length, 0);
-        PRINT_INFO("Length received: " << file->DsmBuffer->GetLength());
-
-        file->DsmBuffer->SetTotalLength(totalLength);
-        PRINT_INFO("totalLength received: " << file->DsmBuffer->GetTotalLength());
-
-        file->DsmBuffer->SetStartServerId(startServerId);
-        PRINT_INFO("startServerId received: " << file->DsmBuffer->GetStartServerId());
-
-        file->DsmBuffer->SetEndServerId(endServerId);
-        PRINT_INFO("endServerId received: " << file->DsmBuffer->GetEndServerId());
-      }
-
+    } else {
       if (H5F_ACC_CREAT & flags) {
         // Receive ready for write from DSM
         file->DsmBuffer->GetComm()->RemoteCommRecvReady();
 
         // TODO Probably do this somewhere else but here for now
         file->DsmBuffer->GetSteerer()->ReceiveSteeringCommands();
-
-        // This is a critical part, we need to synchronize before
-        // and after the ClearStorage method call
-        // PRINT_INFO("Request Clear DSM before create");
-        // file->DsmBuffer->GetComm()->Barrier();
-        // file->DsmBuffer->RequestClearStorage();
       }
     }
   }

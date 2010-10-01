@@ -96,13 +96,6 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     void ClearDsmUpdateReady();
 
     // Description:
-    // Get/Set the "write to disk" flag, in this case data is written to disk
-    // using the HDF MPIO parallel driver
-//    H5FDdsmSetValueMacro(DsmWriteDisk, int);
-    void SetDsmWriteDisk(int enable);
-    H5FDdsmGetValueMacro(DsmWriteDisk, int);
-
-    // Description:
     // Set/Get the current given steering command.
     // The command is then passed to the simulation.
     void SetSteeringCommand(char *cmd);
@@ -164,7 +157,6 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     char           *DsmConfigFilePath;
     //
     int             DsmUpdateReady;
-    int             DsmWriteDisk;
     //
     char           *XMLStringSend;
     //

@@ -56,7 +56,6 @@ H5FDdsmManager::H5FDdsmManager()
   this->ServerPort              = 0;
   this->DsmConfigFilePath       = NULL;
   this->DsmUpdateReady          = 0;
-  this->DsmWriteDisk            = 0;
   this->SteeringCommand         = NULL;
   this->XMLStringSend           = NULL;
 }
@@ -103,17 +102,6 @@ void H5FDdsmManager::ClearDsmUpdateReady()
 {
   if (this->DSMBuffer) {
     this->DSMBuffer->SetIsUpdateReady(0);
-  }
-}
-//----------------------------------------------------------------------------
-void H5FDdsmManager::SetDsmWriteDisk(int enable)
-{
-  if (this->DSMBuffer) {
-    if (enable) {
-      this->SetSteeringCommand((char *)"writeDisk");
-    } else {
-      this->SetSteeringCommand((char *)"writeDSM");
-    }
   }
 }
 //----------------------------------------------------------------------------
@@ -545,8 +533,7 @@ bool H5FDdsmManager::ReadDSMConfigFile()
 void H5FDdsmManager::SetSteeringCommand(char *cmd)
 {
   H5FDdsmDebug(<< "cmd: " << cmd);
-  if (this->SteeringCommand == cmd) { return; }
-  if (this->SteeringCommand && cmd && !strcmp(this->SteeringCommand,cmd)) { return; }
+  if (!strcmp(cmd, "none")) { return; }
   if (this->SteeringCommand) { delete [] this->SteeringCommand; this->SteeringCommand = NULL; }
   if (cmd) {
     this->SteeringCommand = new char[strlen(cmd) + 1];

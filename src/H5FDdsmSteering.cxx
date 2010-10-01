@@ -23,13 +23,36 @@
 
 =========================================================================*/
 // Put this before others as we must not mess up WIN32 macros/defs
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "H5Eprivate.h" // Error handling
+
+#ifdef __cplusplus
+}
+#endif
+
+// H5private.h defines attribute, but we don't want it as it causes link errors on some gcc versions
+#ifdef __GNUC__
+# undef __attribute__
+#endif
+
 //
 #include "H5FDdsm.h"
 #include "H5FDdsmSteering.h"
 #include "H5FDdsmSteerer.h"
 #include "H5FDdsmBuffer.h"
 
+#define DSM_STEERING_GOTO_ERROR(x, ret_val) \
+{                                           \
+   fprintf(stderr, "Error at %s %s:%d %s\n", __FILE__, FUNC, __LINE__, x); \
+   err_occurred = TRUE;                     \
+   HGOTO_DONE(ret_val)                      \
+}
+
+extern H5FDdsmInt32 DsmAutoAlloc(MPI_Comm comm);
+extern void* DsmGetAutoAllocatedBuffer();
 //----------------------------------------------------------------------------
 // C steering bindings
 
@@ -37,33 +60,71 @@ void *dsm_buffer = NULL; // pointer to internal dsm buffer reference
 //----------------------------------------------------------------------------
 herr_t H5FD_dsm_steering_init(MPI_Comm comm)
 {
-  MPI_Comm retComm;
-  hid_t hdf5_fapl;
+  herr_t ret_value = SUCCEED;
+  FUNC_ENTER_NOAPI(H5FD_dsm_steering_init, FAIL)
 
-  hdf5_fapl = H5Pcreate(H5P_FILE_ACCESS);
-  H5Pset_fapl_dsm(hdf5_fapl, comm, NULL);
-  H5Pget_fapl_dsm(hdf5_fapl, &retComm, &dsm_buffer);
-  H5Pclose(hdf5_fapl);
+  DsmAutoAlloc(comm);
+  dsm_buffer = DsmGetAutoAllocatedBuffer();
 
-  return(SUCCEED);
+  if (!dsm_buffer) {
+    DSM_STEERING_GOTO_ERROR("Error during initialization of the DSM Steering library", FAIL)
+  }
+
+done:
+  FUNC_LEAVE_NOAPI(ret_value);
 }
 //----------------------------------------------------------------------------
 herr_t H5FD_dsm_begin_loop(const char *name)
 {
-  H5FDdsmBuffer *dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
-  // start HTM loop section
-  if (dsmBuffer) std::cerr << "dsmBuffer is not NULL" << std::endl;
-  if (dsmBuffer && dsmBuffer->GetSteerer()) {
-    std::cerr << "dsmBuffer steerer is not NULL" << std::endl;
+  herr_t ret_value = SUCCEED;
+  H5FDdsmBuffer *dsmBuffer;
+  FUNC_ENTER_NOAPI(H5FD_dsm_begin_loop, FAIL)
+
+  if (!dsm_buffer) {
+    DSM_STEERING_GOTO_ERROR("Attempting to use the DSM Steering library before calling H5FD_dsm_steering_init", FAIL)
   }
 
-  return(SUCCEED);
+  dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
+  // start HTM loop section
+//  if (dsmBuffer) fprintf(stderr, "dsmBuffer is not NULL\n");
+//  if (dsmBuffer && dsmBuffer->GetSteerer()) {
+//    fprintf(stderr, "dsmBuffer steerer is not NULL\n");
+//  }
+
+done:
+  FUNC_LEAVE_NOAPI(ret_value);
 }
 //----------------------------------------------------------------------------
 herr_t H5FD_dsm_end_loop(const char *name)
 {
+  herr_t ret_value = SUCCEED;
+  FUNC_ENTER_NOAPI(H5FD_dsm_end_loop, FAIL)
+
+  if (!dsm_buffer) {
+    DSM_STEERING_GOTO_ERROR("Attempting to use the DSM Steering library before calling H5FD_dsm_steering_init", FAIL)
+  }
+
   // finish to build - close the HTM loop section
   // for later
-  return(SUCCEED);
+
+done:
+  FUNC_LEAVE_NOAPI(ret_value);
+}
+//----------------------------------------------------------------------------
+herr_t H5FD_dsm_is_steerable(const char *name)
+{
+  H5FDdsmBuffer *dsmBuffer;
+  herr_t ret_value = SUCCEED;
+  FUNC_ENTER_NOAPI(H5FD_dsm_is_steerable, FAIL)
+
+  if (!dsm_buffer) {
+    DSM_STEERING_GOTO_ERROR("Attempting to use the DSM Steering library before calling H5FD_dsm_steering_init", FAIL)
+  }
+
+  dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
+  if (!dsmBuffer->GetSteerer()->IsSteerable(name)) ret_value = FAIL;
+
+done:
+  FUNC_LEAVE_NOAPI(ret_value);
 }
 //----------------------------------------------------------------------------
