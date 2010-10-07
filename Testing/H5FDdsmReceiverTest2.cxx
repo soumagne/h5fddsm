@@ -30,12 +30,6 @@ typedef struct ParticleBuffer {
   #define sleep(a) mySleep(a)
 #endif
 
-#ifdef HAVE_PTHREADS
-    pthread_t      ServiceThread;
-#elif HAVE_BOOST_THREADS
-    boost::thread *ServiceThread;
-#endif
-
 #ifdef MACHINE_AGNO
   #define server "agno.staff.cscs.ch"
   #define PORT 22000
@@ -171,32 +165,6 @@ void ThreadExecute(void *dsm, H5FDdsmInt64 &counter) {
     counter ++;
   }
 };
-//----------------------------------------------------------------------------
-#ifdef HAVE_PTHREADS
-// nothing required
-#elif HAVE_BOOST_THREADS
-class DSMListenThread {
-public:
-  DSMListenThread(H5FDdsmManager *dsm)
-  {
-    this->dsmManager = dsm;
-    Counter          = 0;
-    UpdatesCounter   = 0;
-  }
-  void operator()() {
-    while (this->dsmManager) {
-      UpdatesCounter ++;
-      ThreadExecute(this->dsmManager, Counter);
-      std::cout << UpdatesCounter << " : " << Counter << std::endl;
-      // somed delay here ?
-    }
-  }
-  //
-  H5FDdsmManager *dsmManager;
-  H5FDdsmInt64    Counter;
-  H5FDdsmInt64    UpdatesCounter;
-};
-#endif
 //----------------------------------------------------------------------------
 int main (int argc, char* argv[])
 {

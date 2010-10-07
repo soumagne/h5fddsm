@@ -1,6 +1,19 @@
+#-----------------------------------------------
+# Setup some convenience flags depending on machine
+#-----------------------------------------------
 IF (WIN32)
-  ADD_DEFINITIONS(-DH5FD_TEST_WAIT)
+  SET(COMPUTERNAME $ENV{COMPUTERNAME})
+  IF(COMPUTERNAME)
+    MESSAGE("Setting computername #DEFINE to MACHINE_$ENV{COMPUTERNAME}")
+    ADD_DEFINITIONS(-DMACHINE_$ENV{COMPUTERNAME})
+    IF ("${COMPUTERNAME}" MATCHES "AGNO")
+      ADD_DEFINITIONS(-DH5FD_DEBUG_WITH_THREADS)
+    ENDIF ("${COMPUTERNAME}" MATCHES "AGNO") 
+  ENDIF(COMPUTERNAME)
+
+  ADD_DEFINITIONS(-DH5FD_TEST_WAIT) # For debug
 ENDIF(WIN32)
+
 #-----------------------------------------------------------------------------
 # H5FDdsmSenderTest : Send data as fast as possible across the network
 #-----------------------------------------------------------------------------

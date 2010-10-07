@@ -1,12 +1,3 @@
-#ifndef WIN32
-  #define HAVE_PTHREADS
-  extern "C" {
-    #include <pthread.h>
-  }
-#elif HAVE_BOOST_THREADS
-  #include <boost/thread/thread.hpp> // Boost Threads
-#endif
-
 // Xdmf/DSM features 
 #include "H5FDdsm.h"
 #include "H5FDdsmManager.h"
@@ -17,7 +8,7 @@
 
 // Sleep  in milliseconds
 #ifdef _WIN32
-  #include <windows.h> 
+  #include <windows.h>
   #define sleep(a) ::Sleep(a)
 #else
   void mySleep(int ms) {
@@ -25,12 +16,6 @@
     return;
   }
   #define sleep(a) mySleep(a)
-#endif
-
-#ifdef HAVE_PTHREADS
-    pthread_t      ServiceThread;
-#elif HAVE_BOOST_THREADS
-    boost::thread *ServiceThread;
 #endif
 
 typedef std::vector<double>::size_type itype;
@@ -68,38 +53,6 @@ void ThreadExecute(void *dsm, H5FDdsmInt64 &counter) {
     counter ++;
   }
 };
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-#ifdef HAVE_PTHREADS
-  // nothing required
-#elif HAVE_BOOST_THREADS
-class DSMListenThread {
-  public:
-    DSMListenThread(H5FDdsmManager *dsm)
-    {
-      this->dsmManager = dsm;
-      Counter          = 0;
-      UpdatesCounter   = 0;
-    }
-    void operator()() {
-      while (this->dsmManager) {
-        UpdatesCounter ++;
-        ThreadExecute(this->dsmManager, Counter);
-        std::cout << UpdatesCounter << " : " << Counter << std::endl;
-        // somed delay here ?
-      }
-    }
-    //
-    H5FDdsmManager *dsmManager;
-    H5FDdsmInt64    Counter;
-    H5FDdsmInt64    UpdatesCounter;
-};
-#endif
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 int main (int argc, char* argv[])
 {

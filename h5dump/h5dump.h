@@ -45,10 +45,6 @@ extern "C" {
 
 #include <sstream>
 
-#if defined(_WIN32) && !defined(WIN32)
-# define WIN32
-#endif
-
 #define H5DUMP_MAX_RANK     H5S_MAX_RANK
 
 #define ATTRIBUTE_DATA  0

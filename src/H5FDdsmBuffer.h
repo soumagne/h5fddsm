@@ -57,10 +57,16 @@
 
 #define H5FD_DSM_MAX_LOCKS 32
 
-//! Helper for pthread_create()
+//! Helper for pthread_create() and CreateThread()
 extern "C" {
-H5FDdsm_EXPORT void *
-H5FDdsmBufferServiceThread(void *DsmObj);
+#ifdef _WIN32
+	#include <windows.h>
+	H5FDdsm_EXPORT DWORD WINAPI
+		H5FDdsmBufferServiceThread(void *DsmObj);
+#else
+	H5FDdsm_EXPORT void *
+		H5FDdsmBufferServiceThread(void *DsmObj);
+#endif
 }
 
 //! Base comm object for Distributed Shared Memory implementation

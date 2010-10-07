@@ -52,7 +52,12 @@
 #include "H5FDdsmBuffer.h"
 #include "H5FDdsmComm.h"
 #include "H5FDdsmMsg.h"
-#include <algorithm>
+
+#ifndef NOMINMAX
+#ifndef min
+#define min(a,b)  (((a) < (b)) ? (a) : (b))
+#endif
+#endif  /* NOMINMAX for _WIN32 compatibility */ 
 
 #define H5FD_DSM_OPCODE_PUT          0x01
 #define H5FD_DSM_OPCODE_GET          0x02
@@ -68,11 +73,19 @@
 int ForceCommunication = 0;
 
 extern "C"{
-H5FDdsm_EXPORT void *
-H5FDdsmBufferServiceThread(void *DsmObj){
-    H5FDdsmBuffer *Dsm = (H5FDdsmBuffer *)DsmObj;
-    return(Dsm->ServiceThread());
-}
+#ifdef _WIN32
+		H5FDdsm_EXPORT DWORD WINAPI H5FDdsmBufferServiceThread(void *DsmObj) {
+		H5FDdsmBuffer *Dsm = (H5FDdsmBuffer *)DsmObj;
+		Dsm->ServiceThread();
+		return(0);
+	}
+#else
+	H5FDdsm_EXPORT void *
+		H5FDdsmBufferServiceThread(void *DsmObj){
+			H5FDdsmBuffer *Dsm = (H5FDdsmBuffer *)DsmObj;
+			return(Dsm->ServiceThread());
+	}
+#endif
 }
 
 H5FDdsmBuffer::H5FDdsmBuffer() {
@@ -455,7 +468,7 @@ H5FDdsmBuffer::Put(H5FDdsmInt64 Address, H5FDdsmInt64 aLength, void *Data){
       return(H5FD_DSM_FAIL);
     }
     this->GetAddressRangeForId(who, &astart, &aend);
-    len = static_cast<int>(std::min(aLength, aend - Address + 1));
+    len = static_cast<int>(min(aLength, aend - Address + 1));
     H5FDdsmDebug("Put " << len << " Bytes to Address " << Address << " Id = " << who);
     if (!ForceCommunication && (who == MyId && !this->IsConnected)) { // check if a remote DSM is connected
       H5FDdsmByte *dp;
@@ -507,7 +520,7 @@ H5FDdsmBuffer::Get(H5FDdsmInt64 Address, H5FDdsmInt64 aLength, void *Data){
             return(H5FD_DSM_FAIL);
         }
         this->GetAddressRangeForId(who, &astart, &aend);
-        len = static_cast<int>(std::min(aLength, aend - Address + 1));
+        len = static_cast<int>(min(aLength, aend - Address + 1));
         H5FDdsmDebug("Get " << len << " Bytes from Address " << Address << " Id = " << who);
         if (!ForceCommunication && (who == MyId)){
             H5FDdsmByte *dp;

@@ -99,7 +99,7 @@ typedef unsigned char H5FDdsmChar;
 // messages arrive in a readable manner, not overlapped and munged as two
 // processes simultaneously write debug statements
 //------------------------------------------------------------------------------
-#ifdef WIN32 
+#ifdef _WIN32 
   #ifndef H5FD_DSM_USE_WIN32_THREADS 
    #define H5FD_DSM_USE_WIN32_THREADS 
   #endif

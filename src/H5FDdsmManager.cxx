@@ -40,12 +40,10 @@ H5FDdsmManager::H5FDdsmManager()
   this->UpdatePiece             = 0;
   this->UpdateNumPieces         = 0;
   this->LocalBufferSizeMBytes   = 128;
-#ifdef HAVE_PTHREADS
   this->ServiceThread           = 0;
-#elif HAVE_BOOST_THREADS
-  this->ServiceThread           = NULL;
+#ifdef _WIN32
+  this->ServiceThreadHandle     = NULL;
 #endif
-
   //
   this->Communicator            = NULL;
   this->DSMBuffer               = NULL;
@@ -116,16 +114,17 @@ bool H5FDdsmManager::DestroyDSM()
     this->DSMBuffer->SendDone();
   }
 */
-#ifdef HAVE_PTHREADS
+#ifdef _WIN32
+  if (this->ServiceThread) {
+	  WaitForSingleObject(this->ServiceThreadHandle, INFINITE);
+    CloseHandle(this->ServiceThreadHandle);
+	this->ServiceThread = 0;
+    this->ServiceThreadHandle = NULL;
+  }
+#else
   if (this->ServiceThread) {
     pthread_join(this->ServiceThread, NULL);
     this->ServiceThread = 0;
-  }
-#elif HAVE_BOOST_THREADS
-  if (this->ServiceThread) {
-    this->ServiceThread->join();
-    delete this->ServiceThread;
-    this->ServiceThread = NULL;
   }
 #endif
 
@@ -148,24 +147,6 @@ H5FDdsmBuffer *H5FDdsmManager::GetDSMHandle()
 {
   return DSMBuffer;
 }
-//----------------------------------------------------------------------------
-#ifdef HAVE_PTHREADS
-// nothing at the moment
-#elif HAVE_BOOST_THREADS
-class DSMServiceThread 
-{
-public:
-  DSMServiceThread(H5FDdsmBuffer *dsmObject)
-  {
-    this->DSMObject = dsmObject;
-  }
-  void operator()() {
-    this->DSMObject->ServiceThread();
-  }
-  //
-  H5FDdsmBuffer *DSMObject;
-};
-#endif
 //----------------------------------------------------------------------------
 bool H5FDdsmManager::CreateDSM()
 {
@@ -216,12 +197,11 @@ bool H5FDdsmManager::CreateDSM()
     // setup service thread
     //
     H5FDdsmDebug(<< "Creating service thread...");
-#ifdef HAVE_PTHREADS
-    // Start another thread to handle DSM requests from other nodes
+#ifdef _WIN32
+	this->ServiceThreadHandle = CreateThread(NULL, 0, H5FDdsmBufferServiceThread, (void *) this->DSMBuffer,	0, &this->ServiceThread);
+#else
+	// Start another thread to handle DSM requests from other nodes
     pthread_create(&this->ServiceThread, NULL, &H5FDdsmBufferServiceThread, (void *) this->DSMBuffer);
-#elif HAVE_BOOST_THREADS
-    DSMServiceThread MyDSMServiceThread(this->DSMBuffer);
-    this->ServiceThread = new boost::thread(MyDSMServiceThread);
 #endif
 
     // Wait for DSM to be ready

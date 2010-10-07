@@ -87,24 +87,6 @@ INCLUDE( ${CMAKE_CURRENT_SOURCE_DIR}/CMake/FindMPI.cmake)
 INCLUDE_DIRECTORIES(${MPI_INCLUDE_PATH})
 
 #-----------------------------------------------------------------------------
-# Find and Use Boost for threads used in test send/receive on win32
-#-----------------------------------------------------------------------------
-IF (WIN32)
-  SET(Boost_DEBUG ON)
-  SET(BOOST_ROOT "C:/Program Files/Boost")
-  SET(Boost_USE_STATIC_LIBS   ON)
-  SET(Boost_USE_MULTITHREADED ON)
-  FIND_PACKAGE(Boost 1.38.0 COMPONENTS thread) 
-
-  IF(Boost_FOUND)
-    INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
-    #MESSAGE(${Boost_INCLUDE_DIRS})
-    ADD_DEFINITIONS(-DHAVE_BOOST_THREADS)
-    LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
-  ENDIF(Boost_FOUND)
-ENDIF (WIN32)
-
-#-----------------------------------------------------------------------------
 # Configure our module header file
 #-----------------------------------------------------------------------------
 CONFIGURE_FILE(
@@ -118,18 +100,6 @@ CONFIGURE_FILE(
 INCLUDE_DIRECTORIES(${H5FDdsm_SOURCE_DIR}/src)
 INCLUDE_DIRECTORIES(${H5FDdsm_SOURCE_DIR}/h5dump)
 INCLUDE_DIRECTORIES(${H5FDdsm_BINARY_DIR}/src)
-
-#-----------------------------------------------
-# Setup some convenience flags depending on machine
-#-----------------------------------------------
-SET(COMPUTERNAME $ENV{COMPUTERNAME})
-IF(COMPUTERNAME)
-  MESSAGE("Setting computername #DEFINE to MACHINE_$ENV{COMPUTERNAME}")
-  ADD_DEFINITIONS(-DMACHINE_$ENV{COMPUTERNAME})
-  IF ("${COMPUTERNAME}" MATCHES "AGNO")
-    ADD_DEFINITIONS(-DH5FD_DEBUG_WITH_THREADS)
-  ENDIF ("${COMPUTERNAME}" MATCHES "AGNO") 
-ENDIF(COMPUTERNAME)
 
 #-----------------------------------------------------------------------------
 # Linking against mpich2 libs on win32 causes trouble if we don't add some flags
@@ -170,7 +140,6 @@ SET(H5FDdsmSources
   src/H5FDdsmDump.cxx
   src/H5FDdsmSteerer.cxx
   src/H5FDdsmSteering.cxx
-  # TODO Find the correct place for h5Dump
   h5dump/h5dump.cxx
   h5dump/h5tools.cxx
   h5dump/h5tools_ref.cxx

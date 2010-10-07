@@ -41,7 +41,7 @@
 =========================================================================*/
 #include "H5FDdsmSocket.h"
 
-#if defined(_WIN32) && !defined(__CYGWIN__)
+#ifdef _WIN32
 #include <windows.h>
 #include <winsock.h>
 #else
@@ -57,7 +57,7 @@
 #include <ifaddrs.h>
 #endif
 
-#if defined(_WIN32) && !defined(__CYGWIN__)
+#ifdef _WIN32
 #define WSA_VERSION MAKEWORD(1,1)
 #define H5FDdsmCloseSocketMacro(sock) (closesocket(sock))
 #else
@@ -232,7 +232,7 @@ int H5FDdsmSocket::Bind(int port, const char *hostName)
 #endif
 
   int result = bind(this->SocketDescriptor, reinterpret_cast<sockaddr*>(&server), sizeof(server));
-#ifdef WIN32
+#ifdef _WIN32
   if (result==-1) {
     int err = WSAGetLastError();
     return -1;
@@ -286,10 +286,10 @@ int H5FDdsmSocket::Select(unsigned long msec)
 int H5FDdsmSocket::Accept()
 {
   struct sockaddr_in client;
-#if !defined(_WIN32) || defined(__CYGWIN__)
-  socklen_t client_len = sizeof(client);
+#ifdef _WIN32
+    int client_len = sizeof(client);
 #else
-  int client_len = sizeof(client);
+  socklen_t client_len = sizeof(client);
 #endif
 
   if (this->SocketDescriptor < 0) {
@@ -345,10 +345,10 @@ int H5FDdsmSocket::GetPort()
 {
   struct sockaddr_in sockinfo;
   memset(&sockinfo, 0, sizeof(sockinfo));
-#if !defined(_WIN32) || defined(__CYGWIN__)
-  socklen_t sizebuf = sizeof(sockinfo);
-#else
+#ifdef _WIN32
   int sizebuf = sizeof(sockinfo);
+#else
+    socklen_t sizebuf = sizeof(sockinfo);
 #endif
   if(getsockname(this->SocketDescriptor, reinterpret_cast<sockaddr*>(&sockinfo), &sizebuf) != 0) {
     return -1;
@@ -361,10 +361,10 @@ const char* H5FDdsmSocket::GetHostName()
 {
   struct sockaddr_in sockinfo;
   memset(&sockinfo, 0, sizeof(sockinfo));
-#if !defined(_WIN32) || defined(__CYGWIN__)
-  socklen_t sizebuf = sizeof(sockinfo);
+#ifdef _WIN32
+    int sizebuf = sizeof(sockinfo);
 #else
-  int sizebuf = sizeof(sockinfo);
+  socklen_t sizebuf = sizeof(sockinfo);
 #endif
   if(getsockname(this->SocketDescriptor, reinterpret_cast<sockaddr*>(&sockinfo), &sizebuf) != 0) {
     return NULL;
@@ -449,14 +449,13 @@ int H5FDdsmSocket::Send(const void* data, int length)
   const char* buffer = reinterpret_cast<const char*>(data);
   int total = 0;
   do {
-    int flags, n;
-#if defined(_WIN32) && !defined(__CYGWIN__)
-    flags = 0;
-#else
-    // disabling, since not present on SUN.
-    // flags = MSG_NOSIGNAL; //disable signal on Unix boxes.
-    flags = 0;
+	int flags, n;
+
+#ifndef _WIN32
+	// disabling, since not present on SUN.
+	// flags = MSG_NOSIGNAL; //disable signal on Unix boxes.
 #endif
+	flags = 0;
     if (this->ClientSocketDescriptor < 0) {// Send from client to server
       n = send(this->SocketDescriptor, buffer+total, length-total, flags);
     } else {// Send from server to client
@@ -482,7 +481,7 @@ int H5FDdsmSocket::Receive(void* data, int length, int readFully/*=1*/)
   int total = 0;
   do {
     int n;
-#if defined(_WIN32) && !defined(__CYGWIN__)
+#ifdef _WIN32
     int trys = 0;
 #endif
     if (this->ClientSocketDescriptor < 0) {// Recv from Server to Client
@@ -491,7 +490,7 @@ int H5FDdsmSocket::Receive(void* data, int length, int readFully/*=1*/)
       n = recv(this->ClientSocketDescriptor, buffer+total, length-total, 0);
     }
     if(n < 1) {
-#if defined(_WIN32) && !defined(__CYGWIN__)
+#ifdef _WIN32
       // On long messages, Windows recv sometimes fails with WSAENOBUFS, but
       // will work if you try again.
       int error = WSAGetLastError();

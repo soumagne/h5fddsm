@@ -28,13 +28,12 @@
 #include "H5FDdsmCommMpi.h"
 #include "H5FDdsmIniFile.h"
 
-#ifndef WIN32
-  #define HAVE_PTHREADS
+#ifdef _WIN32
+  #include <windows.h>
+#else
   extern "C" {
     #include <pthread.h>
   }
-#elif HAVE_BOOST_THREADS
-  #include <boost/thread/thread.hpp> // Boost Threads
 #endif
 
 class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
@@ -140,10 +139,11 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     int            UpdateNumPieces;
     H5FDdsmInt64   LocalBufferSizeMBytes;
 
-#ifdef HAVE_PTHREADS
+#ifdef _WIN32
+    DWORD          ServiceThread;
+	HANDLE         ServiceThreadHandle;
+#else
     pthread_t      ServiceThread;
-#elif HAVE_BOOST_THREADS
-    boost::thread *ServiceThread;
 #endif
 
     MPI_Comm        Communicator;
