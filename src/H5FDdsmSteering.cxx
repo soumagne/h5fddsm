@@ -23,21 +23,12 @@
 
 =========================================================================*/
 // Put this before others as we must not mess up WIN32 macros/defs
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #include "H5Eprivate.h" // Error handling
-
-#ifdef __cplusplus
-}
-#endif
-
 // H5private.h defines attribute, but we don't want it as it causes link errors on some gcc versions
 #ifdef __GNUC__
 # undef __attribute__
 #endif
-
 //
 #include "H5FDdsm.h"
 #include "H5FDdsmSteering.h"

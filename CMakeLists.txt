@@ -85,7 +85,6 @@ INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
 #-----------------------------------------------------------------------------
 INCLUDE( ${CMAKE_CURRENT_SOURCE_DIR}/CMake/FindMPI.cmake)
 INCLUDE_DIRECTORIES(${MPI_INCLUDE_PATH})
-ADD_DEFINITIONS(-DMPICH_SKIP_MPICXX)
 
 #-----------------------------------------------------------------------------
 # Find and Use Boost for threads used in test send/receive on win32
