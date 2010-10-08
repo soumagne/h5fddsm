@@ -313,12 +313,11 @@ DsmAutoAlloc(MPI_Comm comm)
     dsmManagerSingleton->SetCommunicator(comm);
     dsmManagerSingleton->CreateDSM();
     if (dsmManagerSingleton->GetDsmIsServer()) {
+      // TODO Leave the auto publish here for now
       dsmManagerSingleton->PublishDSM();
       while (!dsmManagerSingleton->GetDSMHandle()->GetIsConnected()) {
         // Spin
       }
-    } else {
-      dsmManagerSingleton->ConnectDSM();
     }
     dsmManagerSingleton->GetDSMHandle()->SetIsAutoAllocated(true);
   }
@@ -380,7 +379,7 @@ DsmBufferConnect(H5FDdsmBuffer *dsmBuffer)
       PRINT_DSM_INFO(dsmBuffer->GetComm()->GetId(), "endServerId received: " << dsmBuffer->GetEndServerId());
     }
     else {
-      H5FDdsmError(<< "DSMBuffer Comm_connect error");
+      PRINT_DSM_INFO(dsmBuffer->GetComm()->GetId(), "DSMBuffer Comm_connect returned FAIL");
       return(H5FD_DSM_FAIL);
     }
   }
@@ -498,13 +497,19 @@ H5Pset_fapl_dsm(hid_t fapl_id, MPI_Comm dsmComm, void *dsmBuffer)
   else {
     if (dsmManagerSingleton == NULL) DsmAutoAlloc(dsmComm);
     fa.buffer = dsmManagerSingleton->GetDSMHandle();
+    if (!dsmManagerSingleton->GetDSMHandle()->GetIsConnected()) {
+      dsmManagerSingleton->ReadDSMConfigFile();
+      dsmManagerSingleton->ConnectDSM();
+    }
   }
 
-  if (!fa.buffer->GetSteerer()->GetWriteToDSM()) {
-    PRINT_DSM_INFO(fa.buffer->GetComm()->GetId(), "Using MPIO driver temporarily");
+  if (!fa.buffer->GetSteerer()->GetWriteToDSM() || (dsmManagerSingleton && !dsmManagerSingleton->GetDSMHandle()->GetIsConnected())) {
+    // When the set_fapl_dsm is called with a NULL dsmBuffer argument and no connection can be established
+    // use automatically the MPIO driver
+    PRINT_DSM_INFO(fa.buffer->GetComm()->GetId(), "Using MPIO driver");
     H5Pset_fapl_mpio(fapl_id, dsmComm, MPI_INFO_NULL);
-    // next time step will go back to the DSM
-    fa.buffer->GetSteerer()->SetWriteToDSM(1);
+    // next time step will go back to the DSM if a steering asked for writing to the disk
+    if (fa.buffer->GetSteerer()->GetWriteToDSM()) fa.buffer->GetSteerer()->SetWriteToDSM(1);
     goto done;
   }
   ret_value = H5P_set_driver(plist, H5FD_DSM, &fa);

@@ -275,37 +275,42 @@ H5FDdsmCommSocket::RemoteCommAccept(void *storagePointer, H5FDdsmInt64 storageSi
 H5FDdsmInt32
 H5FDdsmCommSocket::RemoteCommConnect()
 {
+  H5FDdsmInt32 isMasterConnected = H5FD_DSM_FAIL;
+
   if (H5FDdsmComm::RemoteCommConnect() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
   if (this->Id == 0) {
-    int retry = 100;
-    while (retry>0) {
-      if (this->DsmMasterSocket->Connect(this->DsmMasterHostName, this->DsmMasterPort) == H5FD_DSM_FAIL) {
-        retry -= 1;
-        H5FDdsmError("Socket connection failed : " << "Retrying " << retry);
-        sleep(1000);
-      }
-      else retry = -1;
+    if (this->DsmMasterSocket->Connect(this->DsmMasterHostName, this->DsmMasterPort) == 0) {
+      isMasterConnected = H5FD_DSM_SUCCESS;
     }
-    if (retry!=-1) {
-      H5FDdsmError("Socket connection failed");
+    if (isMasterConnected == H5FD_DSM_FAIL) {
+      H5FDdsmDebug("Socket connection failed");
+    } else {
+      this->DsmMasterSocket->Send(&this->TotalSize, sizeof(H5FDdsmInt32));
+      this->DsmMasterSocket->Receive(&this->InterSize, sizeof(H5FDdsmInt32));
+    }
+  }
+  if (MPI_Bcast(&isMasterConnected, sizeof(H5FDdsmInt32), MPI_UNSIGNED_CHAR, 0, this->Comm) != MPI_SUCCESS) {
+    H5FDdsmError("Id = " << this->Id << " MPI_Bcast of isMasterConnected failed");
+    return(H5FD_DSM_FAIL);;
+  }
+
+  if (isMasterConnected == H5FD_DSM_SUCCESS) {
+    if (MPI_Bcast(&this->InterSize, sizeof(H5FDdsmInt32), MPI_UNSIGNED_CHAR, 0, this->Comm) != MPI_SUCCESS){
+      H5FDdsmError("Id = " << this->Id << " MPI_Bcast of InterSize failed");
       return(H5FD_DSM_FAIL);
     }
-    this->DsmMasterSocket->Send(&this->TotalSize, sizeof(H5FDdsmInt32));
-    this->DsmMasterSocket->Receive(&this->InterSize, sizeof(H5FDdsmInt32));
-  }
-  if (MPI_Bcast(&this->InterSize, sizeof(H5FDdsmInt32), MPI_UNSIGNED_CHAR, 0, this->Comm) != MPI_SUCCESS){
-    H5FDdsmError("Id = " << this->Id << " MPI_Bcast of InterSize failed");
+
+    if (this->InterCommClientConnect() != H5FD_DSM_SUCCESS) {
+      H5FDdsmError("Id = " << this->Id << " Error in InterCommClientConnect");
+      return(H5FD_DSM_FAIL);
+    }
+
+    this->CommChannel = H5FD_DSM_COMM_CHANNEL_REMOTE;
+    return(H5FD_DSM_SUCCESS);
+  } else {
     return(H5FD_DSM_FAIL);
   }
-
-  if (this->InterCommClientConnect() != H5FD_DSM_SUCCESS) {
-    H5FDdsmError("Id = " << this->Id << " Error in InterCommClientConnect");
-    return(H5FD_DSM_FAIL);
-  }
-
-  this->CommChannel = H5FD_DSM_COMM_CHANNEL_REMOTE;
-  return(H5FD_DSM_SUCCESS);
 }
 //----------------------------------------------------------------------------
 H5FDdsmInt32

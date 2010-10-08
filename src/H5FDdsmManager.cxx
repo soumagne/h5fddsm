@@ -234,34 +234,33 @@ void H5FDdsmManager::ConnectDSM()
 {
   if (this->UpdatePiece == 0) H5FDdsmDebug(<< "Connect DSM");
 
-  if ((this->GetDsmCommType() == H5FD_DSM_COMM_MPI) ||
-      (this->GetDsmCommType() == H5FD_DSM_COMM_MPI_RMA)) {
-    if (this->GetServerHostName() != NULL) {
-      dynamic_cast<H5FDdsmCommMpi*> (this->DSMBuffer->GetComm())->SetDsmMasterHostName(this->GetServerHostName());
-      if (this->UpdatePiece == 0) {
-        H5FDdsmDebug(<< "Initializing connection to "
-            << dynamic_cast<H5FDdsmCommMpi*> (this->DSMBuffer->GetComm())->GetDsmMasterHostName());
-      }
-    }
-  }
-  else if (this->GetDsmCommType() == H5FD_DSM_COMM_SOCKET) {
-    if ((this->GetServerHostName() != NULL) && (this->GetServerPort() != 0)) {
-      dynamic_cast<H5FDdsmCommSocket*> (this->DSMBuffer->GetComm())->SetDsmMasterHostName(this->GetServerHostName());
-      dynamic_cast<H5FDdsmCommSocket*> (this->DSMBuffer->GetComm())->SetDsmMasterPort(this->GetServerPort());
-      if (this->UpdatePiece == 0) {
-        H5FDdsmDebug(<< "Initializing connection to "
-            << dynamic_cast<H5FDdsmCommSocket*> (this->DSMBuffer->GetComm())->GetDsmMasterHostName()
-            << ":"
-            << dynamic_cast<H5FDdsmCommSocket*> (this->DSMBuffer->GetComm())->GetDsmMasterPort());
-      }
-    }
-  }
-  else {
-    if (this->UpdatePiece == 0) H5FDdsmError(<< "NULL port");
-  }
-
-
   if (!this->DSMBuffer->GetIsConnected()) {
+
+    if ((this->GetDsmCommType() == H5FD_DSM_COMM_MPI) ||
+        (this->GetDsmCommType() == H5FD_DSM_COMM_MPI_RMA)) {
+      if (this->GetServerHostName() != NULL) {
+        dynamic_cast<H5FDdsmCommMpi*> (this->DSMBuffer->GetComm())->SetDsmMasterHostName(this->GetServerHostName());
+        if (this->UpdatePiece == 0) {
+          H5FDdsmDebug(<< "Initializing connection to "
+              << dynamic_cast<H5FDdsmCommMpi*> (this->DSMBuffer->GetComm())->GetDsmMasterHostName());
+        }
+      }
+    }
+    else if (this->GetDsmCommType() == H5FD_DSM_COMM_SOCKET) {
+      if ((this->GetServerHostName() != NULL) && (this->GetServerPort() != 0)) {
+        dynamic_cast<H5FDdsmCommSocket*> (this->DSMBuffer->GetComm())->SetDsmMasterHostName(this->GetServerHostName());
+        dynamic_cast<H5FDdsmCommSocket*> (this->DSMBuffer->GetComm())->SetDsmMasterPort(this->GetServerPort());
+        if (this->UpdatePiece == 0) {
+          H5FDdsmDebug(<< "Initializing connection to "
+              << dynamic_cast<H5FDdsmCommSocket*> (this->DSMBuffer->GetComm())->GetDsmMasterHostName()
+              << ":"
+              << dynamic_cast<H5FDdsmCommSocket*> (this->DSMBuffer->GetComm())->GetDsmMasterPort());
+        }
+      }
+    }
+    else {
+      if (this->UpdatePiece == 0) H5FDdsmError(<< "NULL port");
+    }
 #ifdef H5FD_DSM_DEBUG
     this->DSMBuffer->DebugOn();
     this->DSMBuffer->GetComm()->DebugOn();
@@ -300,7 +299,7 @@ void H5FDdsmManager::ConnectDSM()
       H5FDdsmDebug(<<"endServerId received: " << this->DSMBuffer->GetEndServerId());
     }
     else {
-      H5FDdsmError(<< "DSMBuffer Comm_connect error");
+      H5FDdsmDebug(<< "DSMBuffer Comm_connect returned FAIL");
     }
   }
 }
