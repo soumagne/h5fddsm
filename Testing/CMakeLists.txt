@@ -23,6 +23,7 @@ ADD_EXECUTABLE(H5FDdsmSenderTest
 TARGET_LINK_LIBRARIES(H5FDdsmSenderTest 
   H5FDdsm
 )
+SET_LINK_OPTIONS(H5FDdsmSenderTest)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmReceiverTest : Receive data from Sender and do a light H5Dump
@@ -33,6 +34,7 @@ ADD_EXECUTABLE(H5FDdsmReceiverTest
 TARGET_LINK_LIBRARIES(H5FDdsmReceiverTest
   H5FDdsm
 )
+SET_LINK_OPTIONS(H5FDdsmReceiverTest)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmSenderTest2 : Send data as fast as possible across the network
@@ -43,6 +45,7 @@ ADD_EXECUTABLE(H5FDdsmSenderTest2
 TARGET_LINK_LIBRARIES(H5FDdsmSenderTest2 
   H5FDdsm
 )
+SET_LINK_OPTIONS(H5FDdsmSenderTest2)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmReceiverTest2 : Receive data from Sender and do a light H5Dump
@@ -53,6 +56,7 @@ ADD_EXECUTABLE(H5FDdsmReceiverTest2
 TARGET_LINK_LIBRARIES(H5FDdsmReceiverTest2
   H5FDdsm
 )
+SET_LINK_OPTIONS(H5FDdsmReceiverTest2)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmSenderTest3 : Send data as a client
@@ -63,6 +67,7 @@ ADD_EXECUTABLE(H5FDdsmSenderTest3
 TARGET_LINK_LIBRARIES(H5FDdsmSenderTest3 
   H5FDdsm
 )
+SET_LINK_OPTIONS(H5FDdsmSenderTest3)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmReceiverTest3 : Receive data as a server and check the data
@@ -73,6 +78,7 @@ ADD_EXECUTABLE(H5FDdsmReceiverTest3
 TARGET_LINK_LIBRARIES(H5FDdsmReceiverTest3
   H5FDdsm
 )
+SET_LINK_OPTIONS(H5FDdsmReceiverTest3)
 
 #-----------------------------------------------------------------------------
 # Add Target(s) to CMake Install 
