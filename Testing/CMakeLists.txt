@@ -87,6 +87,8 @@ INSTALL (
   TARGETS
     H5FDdsmSenderTest
     H5FDdsmReceiverTest
+    H5FDdsmSenderTest2
+    H5FDdsmReceiverTest2
   EXPORT
     ${H5FD_DSM_EXPORTED_TARGETS}
   LIBRARY DESTINATION lib 
