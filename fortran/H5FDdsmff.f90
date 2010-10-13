@@ -28,6 +28,11 @@
 !
      MODULE H5FDDSM
          USE H5GLOBAL
+         
+         IMPLICIT NONE
+         
+         INTEGER(HID_T)  :: DSM_FileHandle = 0
+       
          CONTAINS
 
 !----------------------------------------------------------------------
