@@ -54,7 +54,6 @@ H5FDdsmManager::H5FDdsmManager()
   this->ServerPort              = 0;
   this->DsmConfigFilePath       = NULL;
   this->DsmUpdateReady          = 0;
-  this->SteeringCommand         = NULL;
   this->XMLStringSend           = NULL;
 }
 //----------------------------------------------------------------------------
@@ -513,10 +512,7 @@ void H5FDdsmManager::SetSteeringCommand(char *cmd)
 {
   H5FDdsmDebug(<< "cmd: " << cmd);
   if (!strcmp(cmd, "none")) { return; }
-  if (this->SteeringCommand) { delete [] this->SteeringCommand; this->SteeringCommand = NULL; }
   if (cmd) {
-    this->SteeringCommand = new char[strlen(cmd) + 1];
-    strcpy(this->SteeringCommand, cmd);
     // Send command
     this->DSMBuffer->GetSteerer()->SetCurrentCommand(cmd);
   }

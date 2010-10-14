@@ -159,8 +159,6 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     int             DsmUpdateReady;
     //
     char           *XMLStringSend;
-    //
-    char           *SteeringCommand;
 
 private:
     H5FDdsmManager(const H5FDdsmManager&);  // Not implemented.
