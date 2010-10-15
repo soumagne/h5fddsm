@@ -98,7 +98,6 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     // Set/Get the current given steering command.
     // The command is then passed to the simulation.
     void SetSteeringCommand(char *cmd);
-    H5FDdsmGetStringMacro(SteeringCommand);
 
     // Description:
     // When sending, the writer can SetXMLDescriptionSend and it will be transmitted
