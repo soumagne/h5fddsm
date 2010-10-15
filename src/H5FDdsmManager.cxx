@@ -62,7 +62,6 @@ H5FDdsmManager::~H5FDdsmManager()
   this->DestroyDSM();
 
   this->SetDsmConfigFilePath(NULL);
-  this->SetSteeringCommand(NULL);
   this->SetXMLStringSend(NULL);
 }
 //----------------------------------------------------------------------------
@@ -511,8 +510,8 @@ bool H5FDdsmManager::ReadDSMConfigFile()
 void H5FDdsmManager::SetSteeringCommand(char *cmd)
 {
   H5FDdsmDebug(<< "cmd: " << cmd);
-  if (!strcmp(cmd, "none")) { return; }
   if (cmd) {
+    if (!strcmp(cmd, "none")) { return; }
     // Send command
     this->DSMBuffer->GetSteerer()->SetCurrentCommand(cmd);
   }
