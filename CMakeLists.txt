@@ -105,13 +105,13 @@ INCLUDE_DIRECTORIES(${H5FDdsm_BINARY_DIR}/src)
 # Linking against mpich2 libs on win32 causes trouble if we don't add some flags
 #-----------------------------------------------------------------------------
 MACRO (SET_LINK_OPTIONS target)
-  IF (WIN32 AND MSVC)
+  IF (WIN32 AND MSVC AND NOT BUILD_SHARED_LIBS)
     SET_TARGET_PROPERTIES (${target}
         PROPERTIES
             LINK_FLAGS_RELEASE "/NODEFAULTLIB:MSVCRT"
             LINK_FLAGS_DEBUG "/NODEFAULTLIB:MSVCRTD"
     ) 
-  ENDIF (WIN32 AND MSVC)
+  ENDIF (WIN32 AND MSVC AND NOT BUILD_SHARED_LIBS)
 ENDMACRO (SET_LINK_OPTIONS)
 #----------------------------
 # Fortran
@@ -126,7 +126,6 @@ ENDMACRO (SET_FORTRAN_LINK_OPTIONS)
 #-----------------------------------------------------------------------------
 IF (BUILD_SHARED_LIBS)
   IF (MSVC)
-    SET (CMAKE_MFC_FLAG 0)
     FOREACH (flag_var
         CMAKE_C_FLAGS CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELEASE
         CMAKE_C_FLAGS_MINSIZEREL CMAKE_C_FLAGS_RELWITHDEBINFO
@@ -139,7 +138,6 @@ IF (BUILD_SHARED_LIBS)
   ENDIF (MSVC)
 ELSE (BUILD_SHARED_LIBS)
   IF (MSVC)
-    SET (CMAKE_MFC_FLAG 0)
     FOREACH (flag_var
         CMAKE_C_FLAGS CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELEASE
         CMAKE_C_FLAGS_MINSIZEREL CMAKE_C_FLAGS_RELWITHDEBINFO
