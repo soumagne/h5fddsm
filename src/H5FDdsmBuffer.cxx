@@ -70,8 +70,6 @@
 #define H5FD_DSM_CLEAR_STORAGE       0x09
 #define H5FD_DSM_PIPELINE_UPDATE     0x10
 
-int ForceCommunication = 0;
-
 extern "C"{
 #ifdef _WIN32
 		H5FDdsm_EXPORT DWORD WINAPI H5FDdsmBufferServiceThread(void *DsmObj) {
@@ -93,6 +91,7 @@ H5FDdsmBuffer::H5FDdsmBuffer() {
     this->ThreadDsmReady = 0;
     this->DataPointer = 0;
     this->IsAutoAllocated = false;
+    this->CommSwitchOnClose = true;
     this->IsServer = true;
     this->IsConnected = false;
     this->IsUpdateReady = false;
@@ -321,7 +320,7 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
           this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_REMOTE);
           this->Comm->RemoteCommSendReady();
           // TODO Send steering order here for now, the previous ready should now go away
-          this->Steerer->SendSteeringCommands();
+          //this->Steerer->SendSteeringCommands();
           H5FDdsmDebug("Switched to Remote channel");
           break;
         case H5FD_DSM_LOCAL_CHANNEL: // Should be used only when going back to remote after that
@@ -347,11 +346,9 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
           break;
         case H5FD_DSM_PIPELINE_UPDATE:
           if (!this->Comm->HasStillData() || !this->IsConnected) {
-            this->Comm->Barrier();
             this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_LOCAL);
             this->Comm->Barrier();
             this->SetIsUpdateReady(true);
-            this->Comm->Barrier();
             H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "IsUpdateReady, Switched to Local channel");
           }
           break;
@@ -470,7 +467,7 @@ H5FDdsmBuffer::Put(H5FDdsmInt64 Address, H5FDdsmInt64 aLength, void *Data){
     this->GetAddressRangeForId(who, &astart, &aend);
     len = static_cast<int>(min(aLength, aend - Address + 1));
     H5FDdsmDebug("Put " << len << " Bytes to Address " << Address << " Id = " << who);
-    if (!ForceCommunication && (who == MyId && !this->IsConnected)) { // check if a remote DSM is connected
+    if (who == MyId && !this->IsConnected) { // check if a remote DSM is connected
       H5FDdsmByte *dp;
       dp = this->DataPointer;
       dp += Address - this->StartAddress;
@@ -479,7 +476,7 @@ H5FDdsmBuffer::Put(H5FDdsmInt64 Address, H5FDdsmInt64 aLength, void *Data){
     }else{
       H5FDdsmInt32   status;
       // TODO For now, one-sided comms are only used with the inter-communicator
-      if ((this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) && !this->IsServer) {
+      if ((this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) && (this->Comm->GetCommChannel() == H5FD_DSM_COMM_CHANNEL_REMOTE)) {
         H5FDdsmDebug("PUT request from " << who << " for " << len << " bytes @ " << Address);
         status = this->PutData(who, datap, len, Address - astart);
         if (status == H5FD_DSM_FAIL){
@@ -522,7 +519,7 @@ H5FDdsmBuffer::Get(H5FDdsmInt64 Address, H5FDdsmInt64 aLength, void *Data){
         this->GetAddressRangeForId(who, &astart, &aend);
         len = static_cast<int>(min(aLength, aend - Address + 1));
         H5FDdsmDebug("Get " << len << " Bytes from Address " << Address << " Id = " << who);
-        if (!ForceCommunication && (who == MyId)){
+        if ((who == MyId) && (!this->IsConnected || this->IsServer)){
             H5FDdsmByte *dp;
             dp = this->DataPointer;
             dp += Address - this->StartAddress;
@@ -531,7 +528,7 @@ H5FDdsmBuffer::Get(H5FDdsmInt64 Address, H5FDdsmInt64 aLength, void *Data){
         }else{
           H5FDdsmInt32   status;
           // TODO For now, one-sided comms are only used with the inter-communicator
-          if ((this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) && !this->IsServer) {
+          if ((this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) && (this->Comm->GetCommChannel() == H5FD_DSM_COMM_CHANNEL_REMOTE)) {
             H5FDdsmDebug("Get request from " << who << " for " << len << " bytes @ " << Address);
             status = this->GetData(who, datap, len, Address - astart);
             if (status == H5FD_DSM_FAIL){

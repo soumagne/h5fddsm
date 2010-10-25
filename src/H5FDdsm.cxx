@@ -253,26 +253,24 @@ DsmUpdateEntry(H5FD_dsm_t *file)
   file->end = MAX((H5FDdsmInt64)(file->start + file->eof), (H5FDdsmInt64)file->end);
   file->eof = file->end - file->start;
 
-  entry.start = file->start;
-  entry.end = file->end;
-  addr = file->DsmBuffer->GetTotalLength() - sizeof(entry) - sizeof(H5FDdsmInt64);
+  if (!file->DsmBuffer->GetIsReadOnly()) {
+    entry.start = file->start;
+    entry.end = file->end;
+    addr = file->DsmBuffer->GetTotalLength() - sizeof(entry) - sizeof(H5FDdsmInt64);
 
-  PRINT_INFO("DsmUpdateEntry start " <<
-      file->start <<
-      " end " << file->end <<
-      " addr " << addr);
+    PRINT_INFO("DsmUpdateEntry start " <<
+        file->start <<
+        " end " << file->end <<
+        " addr " << addr);
 
-  // Only one of the processes writing to the DSM needs to write file metadata
-  // but we must be careful that all the processes keep the metadata synchronized
-  // Do not send anything if the end of the file is 0
-  if ((file->DsmBuffer->GetComm()->GetId() == 0) && (entry.end > 0)) {
-    if (file->DsmBuffer->Put(addr, sizeof(entry), &entry) != H5FD_DSM_SUCCESS) return H5FD_DSM_FAIL;
+    // Only one of the processes writing to the DSM needs to write file metadata
+    // but we must be careful that all the processes keep the metadata synchronized
+    // Do not send anything if the end of the file is 0
+    if ((file->DsmBuffer->GetComm()->GetId() == 0) && (entry.end > 0)) {
+      if (file->DsmBuffer->Put(addr, sizeof(entry), &entry) != H5FD_DSM_SUCCESS) return H5FD_DSM_FAIL;
+    }
+    file->DsmBuffer->GetComm()->Barrier();
   }
-  file->DsmBuffer->GetComm()->Barrier();
-  //else {
-    // Send is non blocking, make sure it's there
-    //if (file->DsmBuffer->Get(addr, sizeof(entry), &entry) != H5FD_DSM_SUCCESS) return H5FD_DSM_FAIL;
-  //}
   return(H5FD_DSM_SUCCESS);
 }
 //--------------------------------------------------------------------------
@@ -288,7 +286,7 @@ DsmGetEntry(H5FD_dsm_t *file)
 
   addr = file->DsmBuffer->GetTotalLength() - sizeof(DsmEntry) - sizeof(H5FDdsmInt64);
 
-  if (file->DsmBuffer->Get(addr, sizeof(DsmEntry), &entry) != H5FD_DSM_SUCCESS) {
+  if (file->DsmBuffer->Get(addr, sizeof(entry), &entry) != H5FD_DSM_SUCCESS) {
     PRINT_INFO("DsmGetEntry failed");
     return H5FD_DSM_FAIL;
   }
@@ -461,6 +459,84 @@ H5FD_dsm_term(void)
 
   FUNC_LEAVE_NOAPI_VOID
 } // end H5FD_dsm_term()
+
+/*-------------------------------------------------------------------------
+ * Function:  H5FD_dsm_set_mode
+ *
+ * Purpose:  Set a specific operating for the DSM
+ *
+ * Return:  <none>
+ *
+ * Programmer:  Jerome Soumagne
+ *
+ *-------------------------------------------------------------------------
+ */
+herr_t
+H5FD_dsm_set_mode(unsigned long flags, void *dsmBuffer)
+{
+  herr_t ret_value = SUCCEED;
+  H5FDdsmBuffer *buffer = NULL;
+
+  FUNC_ENTER_NOAPI(H5FD_dsm_set_mode, FAIL)
+
+  if (dsmBuffer) {
+    buffer = static_cast <H5FDdsmBuffer*> (dsmBuffer);
+  } else {
+    if (dsmManagerSingleton) {
+      buffer = dsmManagerSingleton->GetDSMHandle();
+    } else {
+      HGOTO_ERROR(H5E_VFL, H5E_NOTFOUND, NULL, "No DSM buffer found");
+    }
+  }
+
+  switch(flags) {
+  case H5FD_DSM_MANUAL_SERVER_UPDATE:
+    buffer->SetCommSwitchOnClose(false);
+    break;
+  default:
+    PRINT_DSM_INFO(buffer->GetComm()->GetId(), "Not implemented mode");
+    break;
+  }
+
+done:
+  FUNC_LEAVE_NOAPI(ret_value);
+}
+
+/*-------------------------------------------------------------------------
+ * Function:  H5FD_dsm_server_update
+ *
+ * Purpose:  Switch communicators and send an update ready to the DSM servers
+ *
+ * Return:  <none>
+ *
+ * Programmer:  Jerome Soumagne
+ *
+ *-------------------------------------------------------------------------
+ */
+herr_t
+H5FD_dsm_server_update(void *dsmBuffer)
+{
+  herr_t ret_value = SUCCEED;
+  H5FDdsmBuffer *buffer = NULL;
+
+  FUNC_ENTER_NOAPI(H5FD_dsm_server_update, FAIL)
+
+  if (dsmBuffer) {
+    buffer = static_cast <H5FDdsmBuffer*> (dsmBuffer);
+  } else {
+    if (dsmManagerSingleton) {
+      buffer = dsmManagerSingleton->GetDSMHandle();
+    } else {
+      HGOTO_ERROR(H5E_VFL, H5E_NOTFOUND, NULL, "No DSM buffer found");
+    }
+  }
+  if (!buffer->GetCommSwitchOnClose()) {
+    buffer->RequestPipelineUpdate();
+  }
+
+done:
+  FUNC_LEAVE_NOAPI(ret_value);
+}
 
 /*-------------------------------------------------------------------------
  * Function:  H5Pset_fapl_dsm
@@ -651,48 +727,34 @@ H5FD_dsm_open(const char *name, unsigned UNUSED flags, hid_t fapl_id, haddr_t ma
 
   // See if DsmBuffer exists
   if (!fa->buffer) {
+    if (file->name) H5MM_xfree(file->name);
+    H5MM_xfree(file);
     HGOTO_ERROR(H5E_VFL, H5E_NOTFOUND, NULL, "DSM buffer not found");
   } else {
     file->DsmBuffer = fa->buffer;
 
-    if (file->DsmBuffer->GetIsServer()) {
-      if (H5F_ACC_CREAT & flags) {
-        //
-      } else {
-        // Check that the DSM ready for update flag is set
-        while (!file->DsmBuffer->GetIsUpdateReady() && file->DsmBuffer->GetIsAutoAllocated()) {
-          // Spin
-        }
-        // For now a file in a DSM Buffer which is not created is considered as open in read-only
-        PRINT_INFO("SetIsReadOnly(true)");
-        file->DsmBuffer->SetIsReadOnly(true);
-      }
-
-      PRINT_INFO("Opening " << name);
-      if (DsmGetEntry(file) == H5FD_DSM_FAIL) {
-        if (H5F_ACC_CREAT & flags) {
-          PRINT_INFO("Creating " << name);
-          DsmUpdateEntry(file);
-        }
-        else {
-          if (file->name) H5MM_xfree(file->name);
-          H5MM_xfree(file);
-          HGOTO_ERROR(H5E_VFL, H5E_NOTFOUND, NULL, "DSM buffer already existing not found");
-        }
-      }
-      else {
-        PRINT_INFO("Opened from Entry "
-            << name << " Start " << file->start << " End " << file->end);
-      }
-
-      file->eof = file->end - file->start;
+    PRINT_INFO("Opening " << name);
+    if (DsmGetEntry(file) == H5FD_DSM_FAIL) {
+      if (file->name) H5MM_xfree(file->name);
+      H5MM_xfree(file);
+      HGOTO_ERROR(H5E_VFL, H5E_NOTFOUND, NULL, "DSM buffer already existing not found");
     } else {
       if (H5F_ACC_CREAT & flags) {
         // Receive ready for write from DSM
         file->DsmBuffer->GetComm()->RemoteCommRecvReady();
-
+        //
         // TODO Probably do this somewhere else but here for now
-        file->DsmBuffer->GetSteerer()->ReceiveSteeringCommands();
+        //file->DsmBuffer->GetSteerer()->ReceiveSteeringCommands();
+        file->start = file->end = 0;
+        PRINT_INFO("Creating " << name);
+        DsmUpdateEntry(file);
+      } else {
+        // For now a file in a DSM Buffer which is not created is considered as open in read-only
+        file->eof = file->end - file->start;
+        PRINT_INFO("SetIsReadOnly(true)");
+        file->DsmBuffer->SetIsReadOnly(true);
+        PRINT_INFO("Opened from Entry "
+            << name << " Start " << file->start << " End " << file->end);
       }
     }
   }
@@ -749,13 +811,11 @@ H5FD_dsm_close(H5FD_t *_file)
 
   FUNC_ENTER_NOAPI(H5FD_dsm_close, FAIL)
 
-  PRINT_INFO(
-      "Closing Start " << file->start << " End " << file->end <<
+  PRINT_INFO("Closing Start " << file->start << " End " << file->end <<
       " Eoa " << file->eoa << " Eof " << file->eof);
 
   if (DsmUpdateEntry(file) != H5FD_DSM_SUCCESS)
     HGOTO_ERROR(H5E_VFL, H5E_CLOSEERROR, FAIL, "can't close DSM");
-  PRINT_INFO("UpdateEntry");
 
   if (!file->DsmBuffer->GetIsReadOnly()) {
     PRINT_INFO("Gathering dirty info");
@@ -772,12 +832,12 @@ H5FD_dsm_close(H5FD_t *_file)
     // Gather all the dirty flags because some processes may not have written yet
     MPI_Allreduce(&file->dirty, &isSomeoneDirty, sizeof(hbool_t), MPI_UNSIGNED_CHAR, MPI_MAX, comm);
 
-    if (isSomeoneDirty) {
+    if (isSomeoneDirty && file->DsmBuffer->GetCommSwitchOnClose()) {
       file->DsmBuffer->RequestPipelineUpdate();
+      file->dirty = FALSE;
     }
   } else {
-    if (file->DsmBuffer->GetIsUpdateReady() && file->DsmBuffer->GetIsAutoAllocated()) {
-      // file->DsmBuffer->GetComm()->Barrier();
+    if (file->DsmBuffer->GetIsUpdateReady() && file->DsmBuffer->GetIsAutoAllocated() && file->DsmBuffer->GetCommSwitchOnClose()) {
       file->DsmBuffer->SetIsUpdateReady(false);
       file->DsmBuffer->RequestRemoteChannel();
     }

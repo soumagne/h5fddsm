@@ -86,6 +86,11 @@
 //---------------------------------------------------------------------------
 #define H5FD_DSM_INCREMENT 1000000
 
+//---------------------------------------------------------------------------
+// Specific DSM operating modes
+//---------------------------------------------------------------------------
+#define H5FD_DSM_MANUAL_SERVER_UPDATE 0x20
+
 #ifdef __cplusplus
   extern "C" {
 #endif
@@ -96,6 +101,9 @@
 H5FDdsm_EXPORT hid_t  H5FD_dsm_init(void);
 H5FDdsm_EXPORT void   H5FD_dsm_term(void);
 H5FDdsm_EXPORT herr_t H5FD_dsm_query(const H5FD_t *_file, unsigned long *flags);
+
+H5FDdsm_EXPORT herr_t H5FD_dsm_set_mode(unsigned long flags, void *dsmBuffer);
+H5FDdsm_EXPORT herr_t H5FD_dsm_server_update(void *dsmBuffer);
 
 // dsmBuffer must be NULL or a pointer to an H5FDdsmBuffer object
 H5FDdsm_EXPORT herr_t H5Pset_fapl_dsm(hid_t fapl_id, MPI_Comm  dsmComm, void  *dsmBuffer);

@@ -168,7 +168,7 @@ H5FDdsmInt32
 H5FDdsmCommMpi::GetData(H5FDdsmMsg *DataMsg){
     H5FDdsmInt32   status;
 
-    if (this->Receive(DataMsg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+    if (H5FDdsmComm::GetData(DataMsg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
     MPI_Win_lock(MPI_LOCK_EXCLUSIVE, DataMsg->Source, 0, this->Win);
 

@@ -102,6 +102,10 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     H5FDdsmGetValueMacro(IsAutoAllocated, bool);
     H5FDdsmSetValueMacro(IsAutoAllocated, bool);
 
+    // Does the DSM switch automatically the communicator on H5Fclose or not
+    H5FDdsmGetValueMacro(CommSwitchOnClose, bool);
+    H5FDdsmSetValueMacro(CommSwitchOnClose, bool);
+
     // Is the DSMBuffer in server or client mode
     H5FDdsmGetValueMacro(IsServer, bool);
     H5FDdsmSetValueMacro(IsServer, bool);
@@ -144,6 +148,7 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     volatile H5FDdsmBoolean IsUpdateReady;
     bool                    IsAutoAllocated;
     bool                    IsServer;
+    bool                    CommSwitchOnClose;
     bool                    IsReadOnly;
     H5FDdsmInt32            ServiceThreadUseCopy;
     H5FDdsmString           XMLDescription;
