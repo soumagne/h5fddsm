@@ -81,6 +81,28 @@ TARGET_LINK_LIBRARIES(H5FDdsmReceiverTest3
 SET_LINK_OPTIONS(H5FDdsmReceiverTest3)
 
 #-----------------------------------------------------------------------------
+# H5FDdsmReceiverTest4 : Receive data as a server and check the data
+#-----------------------------------------------------------------------------
+ADD_EXECUTABLE(H5FDdsmReceiverTest4
+  H5FDdsmReceiverTest4.cxx
+)
+TARGET_LINK_LIBRARIES(H5FDdsmReceiverTest4
+  H5FDdsm
+)
+SET_LINK_OPTIONS(H5FDdsmReceiverTest4)
+
+#-----------------------------------------------------------------------------
+# H5FDdsmSenderTest4 : Send data as a client
+#-----------------------------------------------------------------------------
+ADD_EXECUTABLE(H5FDdsmSenderTest4
+  H5FDdsmSenderTest4.cxx
+)
+TARGET_LINK_LIBRARIES(H5FDdsmSenderTest4
+  H5FDdsm
+)
+SET_LINK_OPTIONS(H5FDdsmSenderTest4)
+
+#-----------------------------------------------------------------------------
 # Add Target(s) to CMake Install 
 #-----------------------------------------------------------------------------
 INSTALL (
