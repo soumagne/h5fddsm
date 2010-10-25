@@ -33,6 +33,7 @@ H5FDdsmSteerer::H5FDdsmSteerer()
   this->WriteToDSM = 1;
   this->CurrentCommand = NULL;
   this->Comm = NULL;
+  this->SteerableObjects = NULL;
   // this->DebugOn();
 }
 //----------------------------------------------------------------------------
@@ -79,12 +80,13 @@ void H5FDdsmSteerer::ReceiveSteeringCommands()
   this->CheckCommand(stringCommand.c_str());
 }
 //----------------------------------------------------------------------------
-H5FDdsmInt32 H5FDdsmSteerer::IsSteerable(const char *name) {
+H5FDdsmInt32 H5FDdsmSteerer::IsSteerable(H5FDdsmConstString parentName, H5FDdsmConstString name) {
+  std::cout << "IsSteerable: " << parentName << ", " << name << std::endl;
 
   return(H5FD_DSM_SUCCESS);
 }
 //----------------------------------------------------------------------------
-H5FDdsmInt32 H5FDdsmSteerer::CheckCommand(const char *command)
+H5FDdsmInt32 H5FDdsmSteerer::CheckCommand(H5FDdsmConstString command)
 {
   std::string stringCommand = command;
 

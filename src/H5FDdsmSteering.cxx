@@ -77,10 +77,10 @@ herr_t H5FD_dsm_begin_loop(const char *name)
 
   dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
   // start HTM loop section
-//  if (dsmBuffer) fprintf(stderr, "dsmBuffer is not NULL\n");
-//  if (dsmBuffer && dsmBuffer->GetSteerer()) {
-//    fprintf(stderr, "dsmBuffer steerer is not NULL\n");
-//  }
+  if (dsmBuffer) fprintf(stderr, "dsmBuffer is not NULL\n");
+  if (dsmBuffer && dsmBuffer->GetSteerer()) {
+    fprintf(stderr, "dsmBuffer steerer is not NULL\n");
+  }
 
 done:
   FUNC_LEAVE_NOAPI(ret_value);
@@ -102,7 +102,7 @@ done:
   FUNC_LEAVE_NOAPI(ret_value);
 }
 //----------------------------------------------------------------------------
-herr_t H5FD_dsm_is_steerable(const char *name)
+herr_t H5FD_dsm_is_steerable(const char *parent_name, const char *name)
 {
   H5FDdsmBuffer *dsmBuffer;
   herr_t ret_value = SUCCEED;
@@ -113,7 +113,10 @@ herr_t H5FD_dsm_is_steerable(const char *name)
   }
 
   dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
-  if (!dsmBuffer->GetSteerer()->IsSteerable(name)) ret_value = FAIL;
+  if (!dsmBuffer->GetSteerer()->IsSteerable(parent_name, name)) {
+    fprintf(stderr, "%s/%s is not steerable\n", parent_name, name);
+    ret_value = FAIL;
+  }
 
 done:
   FUNC_LEAVE_NOAPI(ret_value);

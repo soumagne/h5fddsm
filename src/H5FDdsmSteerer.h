@@ -55,15 +55,16 @@ public:
   void SendSteeringCommands();
   void ReceiveSteeringCommands();
 
-  H5FDdsmInt32 IsSteerable(const char *name);
+  H5FDdsmInt32 IsSteerable(H5FDdsmConstString parentName, H5FDdsmConstString name);
 
 protected:
-  H5FDdsmInt32 CheckCommand(const char *command);
+  H5FDdsmInt32 CheckCommand(H5FDdsmConstString command);
 
   H5FDdsmComm  *Comm;
   H5FDdsmString CurrentCommand;
   volatile H5FDdsmInt32  Pause;
   H5FDdsmInt32  WriteToDSM;
+  std::string   *SteerableObjects;
 };
 
 #endif /* H5FDDSMSTEERER_H */
