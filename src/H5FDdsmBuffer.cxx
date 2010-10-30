@@ -95,7 +95,7 @@ H5FDdsmBuffer::H5FDdsmBuffer() {
     this->IsServer = true;
     this->IsConnected = false;
     this->IsUpdateReady = false;
-    this->IsReadOnly = false;
+    this->IsReadOnly = true;
     this->Locks = new H5FDdsmInt64[H5FD_DSM_MAX_LOCKS];
     for(i=0;i < H5FD_DSM_MAX_LOCKS;i++) this->Locks[i] = -1;
 
@@ -320,7 +320,7 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
           this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_REMOTE);
           this->Comm->RemoteCommSendReady();
           // TODO Send steering order here for now, the previous ready should now go away
-          //this->Steerer->SendSteeringCommands();
+          this->Steerer->SendSteeringCommands();
           H5FDdsmDebug("Switched to Remote channel");
           break;
         case H5FD_DSM_LOCAL_CHANNEL: // Should be used only when going back to remote after that

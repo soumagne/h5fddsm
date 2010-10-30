@@ -55,7 +55,7 @@
  * Purpose:  A driver which stores the HDF5 data in DSM using
  *    the HDF5 public API and H5FDdsm related classes.
  *    This driver is useful for distributed parallel access to hdf5 files.
- *    Derived from the "core" and "mpio" drivers and from the H5FDdsm2 dsm driver.
+ *    Derived from the "core" and "mpio" drivers.
  *
  ========================================================================*/
 

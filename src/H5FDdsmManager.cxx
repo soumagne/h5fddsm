@@ -306,6 +306,7 @@ void H5FDdsmManager::DisconnectDSM()
 {
   if (this->UpdatePiece == 0) H5FDdsmDebug(<< "Disconnect DSM");
   this->DSMBuffer->GetComm()->RemoteCommRecvReady();
+  this->DSMBuffer->GetSteerer()->ReceiveSteeringCommands();
   this->DSMBuffer->RequestDisconnection(); // Go back to normal channel
 }
 //----------------------------------------------------------------------------

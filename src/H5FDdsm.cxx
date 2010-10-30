@@ -733,28 +733,35 @@ H5FD_dsm_open(const char *name, unsigned UNUSED flags, hid_t fapl_id, haddr_t ma
   } else {
     file->DsmBuffer = fa->buffer;
 
-    PRINT_INFO("Opening " << name);
-    if (DsmGetEntry(file) == H5FD_DSM_FAIL) {
-      if (file->name) H5MM_xfree(file->name);
-      H5MM_xfree(file);
-      HGOTO_ERROR(H5E_VFL, H5E_NOTFOUND, NULL, "DSM buffer already existing not found");
-    } else {
-      if (H5F_ACC_CREAT & flags) {
-        // Receive ready for write from DSM
-        file->DsmBuffer->GetComm()->RemoteCommRecvReady();
-        //
-        // TODO Probably do this somewhere else but here for now
-        //file->DsmBuffer->GetSteerer()->ReceiveSteeringCommands();
-        file->start = file->end = 0;
-        PRINT_INFO("Creating " << name);
-        DsmUpdateEntry(file);
+    if (H5F_ACC_CREAT & flags) {
+      // Receive ready for write from DSM
+      file->DsmBuffer->GetComm()->RemoteCommRecvReady();
+      // TODO Probably do this somewhere else but here for now
+      file->DsmBuffer->GetSteerer()->ReceiveSteeringCommands();
+    }
+    //
+    if ((H5F_ACC_CREAT & flags) || (H5F_ACC_RDONLY == flags)) {
+      PRINT_INFO("Opening " << name);
+      if (DsmGetEntry(file) == H5FD_DSM_FAIL) {
+        if (file->name) H5MM_xfree(file->name);
+        H5MM_xfree(file);
+        HGOTO_ERROR(H5E_VFL, H5E_NOTFOUND, NULL, "Cannot get existing DSM buffer entries");
       } else {
-        // For now a file in a DSM Buffer which is not created is considered as open in read-only
-        file->eof = file->end - file->start;
-        PRINT_INFO("SetIsReadOnly(true)");
-        file->DsmBuffer->SetIsReadOnly(true);
-        PRINT_INFO("Opened from Entry "
-            << name << " Start " << file->start << " End " << file->end);
+        if (H5F_ACC_CREAT & flags) {
+          file->start = file->end = 0;
+          PRINT_INFO("Creating " << name);
+          PRINT_INFO("SetIsReadOnly(false)");
+          file->DsmBuffer->SetIsReadOnly(false);
+          DsmUpdateEntry(file);
+          PRINT_INFO("Created from Entry "
+               << name << " Start " << file->start << " End " << file->end);
+        } else { // Read-only
+          file->eof = file->end - file->start;
+          PRINT_INFO("SetIsReadOnly(true)");
+          file->DsmBuffer->SetIsReadOnly(true);
+          PRINT_INFO("Opened from Entry "
+              << name << " Start " << file->start << " End " << file->end);
+        }
       }
     }
   }
@@ -836,13 +843,13 @@ H5FD_dsm_close(H5FD_t *_file)
       file->DsmBuffer->RequestPipelineUpdate();
       file->dirty = FALSE;
     }
+    PRINT_INFO("SetIsReadOnly(true)");
+    file->DsmBuffer->SetIsReadOnly(true);
   } else {
     if (file->DsmBuffer->GetIsUpdateReady() && file->DsmBuffer->GetIsAutoAllocated() && file->DsmBuffer->GetCommSwitchOnClose()) {
       file->DsmBuffer->SetIsUpdateReady(false);
       file->DsmBuffer->RequestRemoteChannel();
     }
-    PRINT_INFO("SetIsReadOnly(false)");
-    file->DsmBuffer->SetIsReadOnly(false);
   }
 
   // Release resources
