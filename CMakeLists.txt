@@ -15,7 +15,7 @@ PROJECT (H5FDdsm C CXX)
 #-----------------------------------------------------------------------------
 SET (H5FDdsm_VERS_MAJOR   "0")
 SET (H5FDdsm_VERS_MINOR   "9")
-SET (H5FDdsm_VERS_RELEASE "4")
+SET (H5FDdsm_VERS_RELEASE "5")
 SET (H5FDdsm_PACKAGE "h5fddsm")
 SET (H5FDdsm_PACKAGE_NAME "H5FDdsm")
 SET (H5FDdsm_PACKAGE_VERSION "${H5FDdsm_VERS_MAJOR}.${H5FDdsm_VERS_MINOR}.${H5FDdsm_VERS_RELEASE}")
