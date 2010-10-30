@@ -167,9 +167,9 @@ void TestParticleClose()
 //----------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------
-#define MAX_LENGTH  3
+//#define MAX_LENGTH  3
 #define LOOPS       10
-#define AVERAGE     10
+#define AVERAGE     100
 #define TYPES       1 // 2 if disk output test required
 
 int main(int argc, char **argv)
