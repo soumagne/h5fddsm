@@ -76,11 +76,11 @@ herr_t H5FD_dsm_begin_loop(const char *name)
   }
 
   dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
-  // start HTM loop section
-  if (dsmBuffer) fprintf(stderr, "dsmBuffer is not NULL\n");
-  if (dsmBuffer && dsmBuffer->GetSteerer()) {
-    fprintf(stderr, "dsmBuffer steerer is not NULL\n");
-  }
+  // Do stuff here
+//  if (dsmBuffer) fprintf(stderr, "dsmBuffer is not NULL\n");
+//  if (dsmBuffer && dsmBuffer->GetSteerer()) {
+//    fprintf(stderr, "dsmBuffer steerer is not NULL\n");
+//  }
 
 done:
   FUNC_LEAVE_NOAPI(ret_value);

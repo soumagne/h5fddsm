@@ -30,12 +30,12 @@
 
 #include "H5FDdsmObject.h"
 
-class H5FDdsmComm;
+class H5FDdsmBuffer;
 
 class H5FDdsm_EXPORT H5FDdsmSteerer : public H5FDdsmObject {
 
 public:
-  H5FDdsmSteerer();
+  H5FDdsmSteerer(H5FDdsmBuffer *);
   ~H5FDdsmSteerer();
 
   // Set/Get the current command
@@ -47,22 +47,16 @@ public:
   H5FDdsmSetValueMacro(WriteToDSM, H5FDdsmInt32);
   H5FDdsmGetValueMacro(WriteToDSM, H5FDdsmInt32);
 
-  // Set/Get the Pause value
-  H5FDdsmSetValueMacro(Pause, H5FDdsmInt32);
-  H5FDdsmGetValueMacro(Pause, H5FDdsmInt32);
-
-  H5FDdsmSetValueMacro(Comm, H5FDdsmComm*);
-  void SendSteeringCommands();
-  void ReceiveSteeringCommands();
+  H5FDdsmInt32 UpdateSteeringCommands();
+  H5FDdsmInt32 GetSteeringCommands();
 
   H5FDdsmInt32 IsSteerable(H5FDdsmConstString parentName, H5FDdsmConstString name);
 
 protected:
   H5FDdsmInt32 CheckCommand(H5FDdsmConstString command);
 
-  H5FDdsmComm  *Comm;
+  H5FDdsmBuffer  *DsmBuffer;
   H5FDdsmString CurrentCommand;
-  volatile H5FDdsmInt32  Pause;
   H5FDdsmInt32  WriteToDSM;
   std::string   *SteerableObjects;
 };

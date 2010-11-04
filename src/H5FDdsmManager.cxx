@@ -225,6 +225,8 @@ void H5FDdsmManager::ClearDSM()
 //----------------------------------------------------------------------------
 void H5FDdsmManager::RequestRemoteChannel()
 {
+  // TODO Update steering orders here for now
+  this->DSMBuffer->GetSteerer()->UpdateSteeringCommands();
   this->DSMBuffer->RequestRemoteChannel();
 }
 //----------------------------------------------------------------------------
@@ -306,7 +308,6 @@ void H5FDdsmManager::DisconnectDSM()
 {
   if (this->UpdatePiece == 0) H5FDdsmDebug(<< "Disconnect DSM");
   this->DSMBuffer->GetComm()->RemoteCommRecvReady();
-  this->DSMBuffer->GetSteerer()->ReceiveSteeringCommands();
   this->DSMBuffer->RequestDisconnection(); // Go back to normal channel
 }
 //----------------------------------------------------------------------------

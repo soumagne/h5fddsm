@@ -541,53 +541,6 @@ H5FDdsmCommMpi::RemoteCommRecvXML(H5FDdsmString *file)
 }
 
 H5FDdsmInt32
-H5FDdsmCommMpi::RemoteCommSendSteeringCmd(H5FDdsmString cmd)
-{
-  if (H5FDdsmComm::RemoteCommSendSteeringCmd(cmd) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
-  //
-  if (this->InterComm == MPI_COMM_NULL) return(H5FD_DSM_FAIL);
-  if (this->Id == 0) {
-    H5FDdsmInt32 length = strlen(cmd) + 1;
-    if (MPI_Send(cmd, length, MPI_CHAR, 0, H5FD_DSM_STEERING_TAG, this->InterComm) != MPI_SUCCESS){
-      H5FDdsmError("Id = " << this->Id << " MPI_Send of steering cmd failed");
-      return(H5FD_DSM_FAIL);
-    }
-  }
-  this->Barrier();
-  return(H5FD_DSM_SUCCESS);
-}
-
-H5FDdsmInt32
-H5FDdsmCommMpi::RemoteCommRecvSteeringCmd(H5FDdsmString *cmd)
-{
-  H5FDdsmInt32 length; // string is null terminated on send
-  //
-  if (H5FDdsmComm::RemoteCommRecvSteeringCmd(cmd) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
-  //
-  if (this->InterComm == MPI_COMM_NULL) return(H5FD_DSM_FAIL);
-  if (this->Id == 0) {
-    MPI_Status status;
-    MPI_Probe(0, H5FD_DSM_STEERING_TAG, this->InterComm, &status);
-    MPI_Get_count(&status, MPI_CHAR, &length);
-    *cmd = new char[length];
-    if (MPI_Recv(*cmd, length, MPI_CHAR, 0, H5FD_DSM_STEERING_TAG, this->InterComm, &status) != MPI_SUCCESS){
-      H5FDdsmError("Id = " << this->Id << " MPI_Recv of steering cmd failed");
-      return(H5FD_DSM_FAIL);
-    }
-  }
-  if (MPI_Bcast(&length, sizeof(H5FDdsmInt32), MPI_UNSIGNED_CHAR, 0, this->Comm) != MPI_SUCCESS) {
-    H5FDdsmError("Id = " << this->Id << " MPI_Bcast of length failed");
-    return(H5FD_DSM_FAIL);
-  }
-  if (this->Id != 0) *cmd = new char[length];
-  if (MPI_Bcast(*cmd, length, MPI_CHAR, 0, this->Comm) != MPI_SUCCESS) {
-    H5FDdsmError("Id = " << this->Id << " MPI_Bcast of steering cmd failed");
-    return(H5FD_DSM_FAIL);
-  }
-  return(H5FD_DSM_SUCCESS);
-}
-
-H5FDdsmInt32
 H5FDdsmCommMpi::HasStillData()
 {
   H5FDdsmInt32 ret = H5FD_DSM_TRUE;

@@ -71,6 +71,19 @@ class H5FDdsmStorage;
 
 #define H5FD_DSM_DEFAULT_LENGTH 10000
 
+typedef struct
+{
+  H5FDdsmInt64 start;
+  H5FDdsmInt64 end;
+} H5FDdsmEntry; // 16
+
+typedef struct
+{
+  H5FDdsmEntry     entry;
+  H5FDdsmByte  steering_cmd[40];
+  H5FDdsmInt64 unused;
+} H5FDdsmMetaData; // 64
+
 class H5FDdsm_EXPORT H5FDdsmDriver : public H5FDdsmObject {
 
   public:
@@ -108,12 +121,11 @@ class H5FDdsm_EXPORT H5FDdsmDriver : public H5FDdsmObject {
   //! Storage
     H5FDdsmGetValueMacro(Storage, H5FDdsmStorage *);
     H5FDdsmInt32   SetStorage(H5FDdsmStorage *Storage);
-    virtual H5FDdsmInt32   ClearStorage();
+    H5FDdsmInt32   ClearStorage();
 
   //! Comm
     H5FDdsmGetValueMacro(Comm, H5FDdsmComm *);
-    virtual H5FDdsmInt32 SetComm(H5FDdsmComm *comm);
-    // H5FDdsmSetValueMacro(Comm, H5FDdsmComm *);
+    H5FDdsmSetValueMacro(Comm, H5FDdsmComm *);
 
     //! Msg
     H5FDdsmGetValueMacro(Msg, H5FDdsmMsg *);

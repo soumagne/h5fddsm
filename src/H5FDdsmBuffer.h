@@ -80,10 +80,6 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     H5FDdsmBuffer();
     virtual ~H5FDdsmBuffer();
 
-    H5FDdsmInt32   ClearStorage();
-
-    H5FDdsmInt32   SetComm(H5FDdsmComm *comm);
-
     H5FDdsmGetValueMacro(ThreadDsmReady, H5FDdsmInt32);
     H5FDdsmSetValueMacro(ThreadDsmReady, H5FDdsmInt32);
 

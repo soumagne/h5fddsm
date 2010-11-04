@@ -234,17 +234,11 @@ static const H5FD_class_mpi_t H5FD_dsm_g = {
 };
 
 //--------------------------------------------------------------------------
-typedef struct
-{
-  H5FDdsmInt64 start;
-  H5FDdsmInt64 end;
-} DsmEntry;
-//--------------------------------------------------------------------------
 H5FDdsmInt32
 DsmUpdateEntry(H5FD_dsm_t *file)
 {
   H5FDdsmInt64 addr;
-  DsmEntry entry;
+  H5FDdsmEntry entry;
 
   PRINT_INFO("DsmUpdateEntry()");
 
@@ -256,7 +250,7 @@ DsmUpdateEntry(H5FD_dsm_t *file)
   if (!file->DsmBuffer->GetIsReadOnly()) {
     entry.start = file->start;
     entry.end = file->end;
-    addr = file->DsmBuffer->GetTotalLength() - sizeof(entry) - sizeof(H5FDdsmInt64);
+    addr = file->DsmBuffer->GetTotalLength() - sizeof(H5FDdsmMetaData);
 
     PRINT_INFO("DsmUpdateEntry start " <<
         file->start <<
@@ -278,13 +272,13 @@ H5FDdsmInt32
 DsmGetEntry(H5FD_dsm_t *file)
 {
   H5FDdsmInt64 addr;
-  DsmEntry entry;
+  H5FDdsmEntry entry;
 
   PRINT_INFO("DsmGetEntry()");
 
   if (!file->DsmBuffer) return (H5FD_DSM_FAIL);
 
-  addr = file->DsmBuffer->GetTotalLength() - sizeof(DsmEntry) - sizeof(H5FDdsmInt64);
+  addr = file->DsmBuffer->GetTotalLength() - sizeof(H5FDdsmMetaData);
 
   if (file->DsmBuffer->Get(addr, sizeof(entry), &entry) != H5FD_DSM_SUCCESS) {
     PRINT_INFO("DsmGetEntry failed");
@@ -579,13 +573,13 @@ H5Pset_fapl_dsm(hid_t fapl_id, MPI_Comm dsmComm, void *dsmBuffer)
     }
   }
 
-  if (!fa.buffer->GetSteerer()->GetWriteToDSM() || (dsmManagerSingleton && !dsmManagerSingleton->GetDSMHandle()->GetIsConnected())) {
+  if (!fa.buffer->GetSteerer()->GetWriteToDSM() || (fa.buffer && !fa.buffer->GetIsConnected())) {
+    // next time step will go back to the DSM if a steering asked for writing to the disk
+    if (fa.buffer->GetSteerer()) fa.buffer->GetSteerer()->SetWriteToDSM(1);
     // When the set_fapl_dsm is called with a NULL dsmBuffer argument and no connection can be established
     // use automatically the MPIO driver
     PRINT_DSM_INFO(fa.buffer->GetComm()->GetId(), "Using MPIO driver");
     H5Pset_fapl_mpio(fapl_id, dsmComm, MPI_INFO_NULL);
-    // next time step will go back to the DSM if a steering asked for writing to the disk
-    if (fa.buffer->GetSteerer()->GetWriteToDSM()) fa.buffer->GetSteerer()->SetWriteToDSM(1);
     goto done;
   }
   ret_value = H5P_set_driver(plist, H5FD_DSM, &fa);
@@ -733,11 +727,11 @@ H5FD_dsm_open(const char *name, unsigned UNUSED flags, hid_t fapl_id, haddr_t ma
   } else {
     file->DsmBuffer = fa->buffer;
 
-    if (H5F_ACC_CREAT & flags) {
+    if ((H5F_ACC_CREAT & flags) && !file->DsmBuffer->GetIsServer()) {
       // Receive ready for write from DSM
       file->DsmBuffer->GetComm()->RemoteCommRecvReady();
       // TODO Probably do this somewhere else but here for now
-      file->DsmBuffer->GetSteerer()->ReceiveSteeringCommands();
+      file->DsmBuffer->GetSteerer()->GetSteeringCommands();
     }
     //
     if ((H5F_ACC_CREAT & flags) || (H5F_ACC_RDONLY == flags)) {

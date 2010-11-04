@@ -102,28 +102,13 @@ H5FDdsmBuffer::H5FDdsmBuffer() {
     this->ServiceThreadUseCopy = 1;
     this->XMLDescription = NULL;
 
-    this->Steerer = new H5FDdsmSteerer();
+    this->Steerer = new H5FDdsmSteerer(this);
 }
 
 H5FDdsmBuffer::~H5FDdsmBuffer() {
     if (this->StorageIsMine) delete[] this->Locks;
     if (this->XMLDescription) delete[] this->XMLDescription;
     if (this->Steerer) delete this->Steerer;
-}
-
-H5FDdsmInt32
-H5FDdsmBuffer::ClearStorage()
-{
-  if (H5FDdsmDriver::ClearStorage() != H5FD_DSM_SUCCESS) return H5FD_DSM_FAIL;
-  return H5FD_DSM_SUCCESS;
-}
-
-H5FDdsmInt32
-H5FDdsmBuffer::SetComm(H5FDdsmComm *comm)
-{
-  if (H5FDdsmDriver::SetComm(comm) != H5FD_DSM_SUCCESS) return H5FD_DSM_FAIL;
-  if (this->Steerer) this->Steerer->SetComm(comm);
-  return H5FD_DSM_SUCCESS;
 }
 
 /*
@@ -319,8 +304,6 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
           }
           this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_REMOTE);
           this->Comm->RemoteCommSendReady();
-          // TODO Send steering order here for now, the previous ready should now go away
-          this->Steerer->SendSteeringCommands();
           H5FDdsmDebug("Switched to Remote channel");
           break;
         case H5FD_DSM_LOCAL_CHANNEL: // Should be used only when going back to remote after that

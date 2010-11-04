@@ -131,12 +131,6 @@ H5FDdsmDriver::ClearStorage() {
 }
 
 H5FDdsmInt32
-H5FDdsmDriver::SetComm(H5FDdsmComm *comm) {
-  this->Comm = comm;
-  return(H5FD_DSM_SUCCESS);
-}
-
-H5FDdsmInt32
 H5FDdsmDriver::ConfigureUniform(H5FDdsmComm *aComm, H5FDdsmInt64 aLength, H5FDdsmInt32 StartId, H5FDdsmInt32 EndId){
     if(StartId < 0) StartId = 0;
     if(EndId < 0) EndId = aComm->GetTotalSize() - 1;
