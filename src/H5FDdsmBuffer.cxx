@@ -94,6 +94,7 @@ H5FDdsmBuffer::H5FDdsmBuffer() {
     this->CommSwitchOnClose = true;
     this->IsServer = true;
     this->IsConnected = false;
+    this->IsSyncRequired = true;
     this->IsUpdateReady = false;
     this->IsReadOnly = true;
     this->Locks = new H5FDdsmInt64[H5FD_DSM_MAX_LOCKS];

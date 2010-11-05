@@ -280,6 +280,8 @@ DsmGetEntry(H5FD_dsm_t *file)
 
   addr = file->DsmBuffer->GetTotalLength() - sizeof(H5FDdsmMetaData);
 
+  // Get is done by every process so we can do independent reads (in parallel by blocks)
+  // using the driver as a serial driver
   if (file->DsmBuffer->Get(addr, sizeof(entry), &entry) != H5FD_DSM_SUCCESS) {
     PRINT_INFO("DsmGetEntry failed");
     return H5FD_DSM_FAIL;
@@ -524,9 +526,9 @@ H5FD_dsm_server_update(void *dsmBuffer)
       HGOTO_ERROR(H5E_VFL, H5E_NOTFOUND, NULL, "No DSM buffer found");
     }
   }
-  if (!buffer->GetCommSwitchOnClose()) {
-    buffer->RequestPipelineUpdate();
-  }
+  PRINT_DSM_INFO(buffer->GetComm()->GetId(), "SetIsSyncRequired(true)");
+  buffer->SetIsSyncRequired(true);
+  buffer->RequestPipelineUpdate();
 
 done:
   FUNC_LEAVE_NOAPI(ret_value);
@@ -727,35 +729,37 @@ H5FD_dsm_open(const char *name, unsigned UNUSED flags, hid_t fapl_id, haddr_t ma
   } else {
     file->DsmBuffer = fa->buffer;
 
-    if ((H5F_ACC_CREAT & flags) && !file->DsmBuffer->GetIsServer()) {
-      // Receive ready for write from DSM
+    if (file->DsmBuffer->GetIsSyncRequired() && !file->DsmBuffer->GetIsServer()) {
+      // Receive ready for remote operations from DSM
       file->DsmBuffer->GetComm()->RemoteCommRecvReady();
+      PRINT_INFO("SetIsSyncRequired(false)");
+      file->DsmBuffer->SetIsSyncRequired(false);
+    }
+    if ((H5F_ACC_CREAT & flags) && !file->DsmBuffer->GetIsServer()) {
       // TODO Probably do this somewhere else but here for now
       file->DsmBuffer->GetSteerer()->GetSteeringCommands();
     }
     //
-    if ((H5F_ACC_CREAT & flags) || (H5F_ACC_RDONLY == flags)) {
-      PRINT_INFO("Opening " << name);
-      if (DsmGetEntry(file) == H5FD_DSM_FAIL) {
-        if (file->name) H5MM_xfree(file->name);
-        H5MM_xfree(file);
-        HGOTO_ERROR(H5E_VFL, H5E_NOTFOUND, NULL, "Cannot get existing DSM buffer entries");
+    PRINT_INFO("Opening " << name);
+    if (DsmGetEntry(file) == H5FD_DSM_FAIL) {
+      if (file->name) H5MM_xfree(file->name);
+      H5MM_xfree(file);
+      HGOTO_ERROR(H5E_VFL, H5E_NOTFOUND, NULL, "Cannot get existing DSM buffer entries");
+    } else {
+      if (H5F_ACC_RDWR & flags) {
+        PRINT_INFO("SetIsReadOnly(false)");
+        file->DsmBuffer->SetIsReadOnly(false);
+      }
+      if (H5F_ACC_CREAT & flags) {
+        file->start = file->end = 0;
+        PRINT_INFO("Creating " << name);
+        DsmUpdateEntry(file);
+        PRINT_INFO("Created from Entry "
+            << name << " Start " << file->start << " End " << file->end);
       } else {
-        if (H5F_ACC_CREAT & flags) {
-          file->start = file->end = 0;
-          PRINT_INFO("Creating " << name);
-          PRINT_INFO("SetIsReadOnly(false)");
-          file->DsmBuffer->SetIsReadOnly(false);
-          DsmUpdateEntry(file);
-          PRINT_INFO("Created from Entry "
-               << name << " Start " << file->start << " End " << file->end);
-        } else { // Read-only
-          file->eof = file->end - file->start;
-          PRINT_INFO("SetIsReadOnly(true)");
-          file->DsmBuffer->SetIsReadOnly(true);
-          PRINT_INFO("Opened from Entry "
-              << name << " Start " << file->start << " End " << file->end);
-        }
+        file->eof = file->end - file->start;
+        PRINT_INFO("Opened from Entry "
+            << name << " Start " << file->start << " End " << file->end);
       }
     }
   }
@@ -834,7 +838,7 @@ H5FD_dsm_close(H5FD_t *_file)
     MPI_Allreduce(&file->dirty, &isSomeoneDirty, sizeof(hbool_t), MPI_UNSIGNED_CHAR, MPI_MAX, comm);
 
     if (isSomeoneDirty && file->DsmBuffer->GetCommSwitchOnClose()) {
-      file->DsmBuffer->RequestPipelineUpdate();
+      H5FD_dsm_server_update(file->DsmBuffer);
       file->dirty = FALSE;
     }
     PRINT_INFO("SetIsReadOnly(true)");
@@ -1049,7 +1053,7 @@ H5FD_dsm_read(H5FD_t *_file, H5FD_mem_t UNUSED type, hid_t UNUSED dxpl_id,
     HGOTO_ERROR(H5E_IO, H5E_OVERFLOW, FAIL, "file address overflowed");
 
   // Read the part which is before the EOF marker
-  PRINT_INFO("check addr ( " << addr << " )  < file->eof ( " << file->eof << " )");
+  PRINT_INFO("check addr (" << addr << ")  < file->eof (" << file->eof << ")");
 
   if (addr < file->eof) {
     size_t  nbytes;
