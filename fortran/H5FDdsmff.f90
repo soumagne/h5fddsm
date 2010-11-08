@@ -28,9 +28,6 @@
 !
      MODULE H5FDDSM
          USE H5FDDSM_GLOBAL
-         
-         IMPLICIT NONE
-
          CONTAINS
 
 !----------------------------------------------------------------------
