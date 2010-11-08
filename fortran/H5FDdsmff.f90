@@ -27,12 +27,10 @@
 ! This file contains Fortran90 interfaces for H5FDdsm functions.
 !
      MODULE H5FDDSM
-         USE H5GLOBAL
+         USE H5FDDSM_GLOBAL
          
          IMPLICIT NONE
-         
-         INTEGER(HID_T)  :: DSM_FileHandle = 0
-       
+
          CONTAINS
 
 !----------------------------------------------------------------------
@@ -86,5 +84,63 @@
            INTEGER, EXTERNAL :: h5pget_fapl_dsm_c
            hdferr = h5pget_fapl_dsm_c(prp_id, comm)
          END SUBROUTINE h5pget_fapl_dsm_f
+
+!----------------------------------------------------------------------
+! Name:     h5fd_dsm_set_mode_f
+!
+! Purpose:  Set the DSM operating mode
+!
+! Inputs:
+!       mode        - specific modes are:
+!                       - H5FD_DSM_MANUAL_SERVER_UPDATE_F
+! Outputs:
+!       hdferr:     - error code
+!                   Success:  0
+!                   Failure: -1
+! Optional parameters:
+!               NONE
+!
+!----------------------------------------------------------------------
+         SUBROUTINE h5fd_dsm_set_mode_f(mode, hdferr)
+            IMPLICIT NONE
+            INTEGER, INTENT(IN)  :: mode         ! DSM mode to use
+            INTEGER, INTENT(OUT) :: hdferr       ! Error code
+            INTEGER :: err_0, err_1
+
+            INTEGER, EXTERNAL :: h5fd_dsm_set_mode_c
+            INTERFACE
+              INTEGER FUNCTION h5fd_dsm_init_flags_c(i_H5FD_dsm_flags)
+                USE H5FDDSM_GLOBAL
+                INTEGER i_H5FD_dsm_flags(H5FD_DSM_FLAGS_LEN)
+              END FUNCTION h5fd_dsm_init_flags_c
+            END INTERFACE
+            err_0 = h5fd_dsm_init_flags_c(H5FD_dsm_flags)
+            err_1 = h5fd_dsm_set_mode_c(mode)
+            hdferr = err_0 + err_1
+          END SUBROUTINE h5fd_dsm_set_mode_f
+
+!----------------------------------------------------------------------
+! Name:     h5fd_dsm_server_update_f
+!
+! Purpose:  Force the DSM server to be updated
+!
+! Inputs:
+!               NONE
+! Outputs:
+!       hdferr:     - error code
+!                   Success:  0
+!                   Failure: -1
+! Optional parameters:
+!               NONE
+!
+!----------------------------------------------------------------------
+         SUBROUTINE h5fd_dsm_server_update_f(hdferr)
+            IMPLICIT NONE
+            INTEGER, INTENT(OUT) :: hdferr       ! Error code
+
+            INTEGER, EXTERNAL :: h5fd_dsm_server_update_c
+            hdferr = h5fd_dsm_server_update_c()
+          END SUBROUTINE h5fd_dsm_server_update_f
+
 
     END MODULE H5FDDSM
