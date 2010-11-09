@@ -1,5 +1,6 @@
 #include <hdf5.h>
 #include <H5FDdsmManager.h>
+#include <H5FDdsm.h>
 #include <mpi.h>
 
 #include <iostream>

@@ -53,7 +53,8 @@
 #define __H5FDdsmBuffer_h
 
 #include "H5FDdsmDriver.h"
-#include "H5FDdsmSteerer.h"
+
+class H5FDdsmSteerer;
 
 #define H5FD_DSM_MAX_LOCKS 32
 

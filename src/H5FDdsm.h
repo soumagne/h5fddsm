@@ -59,8 +59,8 @@
  *
  ========================================================================*/
 
-#ifndef H5FD_DSM_H
-#define H5FD_DSM_H
+#ifndef __H5FDdsm_h
+#define __H5FDdsm_h
 
 // HDF5
 #include "H5Ipublic.h"
@@ -114,4 +114,4 @@ H5FDdsm_EXPORT herr_t H5Pget_fapl_dsm(hid_t fapl_id, MPI_Comm *dsmComm, void **d
   }
 #endif
 
-#endif // H5FD_DSM_H
+#endif // __H5FDdsm_h

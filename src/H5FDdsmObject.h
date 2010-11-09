@@ -276,4 +276,4 @@ class H5FDdsm_EXPORT H5FDdsmObject {
   private:
 };
 
-#endif /* __H5FDdsmObject_h */
+#endif // __H5FDdsmObject_h

@@ -3,8 +3,7 @@
 #include <iostream>
 #include <mpi.h>
 #include <hdf5.h>
-
-#include "H5FDdsm.h"
+#include <H5FDdsm.h>
 
 using std::cerr;
 using std::cout;

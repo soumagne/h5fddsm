@@ -23,10 +23,9 @@
 
 =========================================================================*/
 
-#ifndef H5FDDSMSTEERING_H
-#define H5FDDSMSTEERING_H
+#ifndef __H5FDdsmSteering_h
+#define __H5FDdsmSteering_h
 
-#include <H5FDdsm.h>
 #include <mpi.h>
 
 // HDF5
@@ -43,4 +42,4 @@ extern "C" {
 }
 #endif
 
-#endif /* H5FDDSMSTEERING_H */
+#endif // __H5FDdsmSteering_h

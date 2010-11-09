@@ -49,8 +49,8 @@
 /*     for more information.                                       */
 /*                                                                 */
 /*******************************************************************/
-#ifndef __H5FD_DSM_DRIVER_h
-#define __H5FD_DSM_DRIVER_h
+#ifndef __H5FDdsmDriver_h
+#define __H5FDdsmDriver_h
 
 #include "H5FDdsmObject.h"
 
@@ -170,4 +170,4 @@ class H5FDdsm_EXPORT H5FDdsmDriver : public H5FDdsmObject {
     H5FDdsmByte    *DataPointer;
 };
 
-#endif // __H5FD_DSM_h
+#endif // __H5FDdsmDriver_h

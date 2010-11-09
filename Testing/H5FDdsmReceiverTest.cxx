@@ -1,8 +1,8 @@
-// Xdmf/DSM features 
-#include "H5FDdsm.h"
+// DSM features
 #include "H5FDdsmManager.h"
 
 // Sys
+#include <cstdlib>
 #include <sstream>
 #include <mpi.h>
 
@@ -17,8 +17,6 @@
   }
   #define sleep(a) mySleep(a)
 #endif
-
-typedef std::vector<double>::size_type itype;
 
 #ifdef MACHINE_AGNO
   #define server "agno.staff.cscs.ch"

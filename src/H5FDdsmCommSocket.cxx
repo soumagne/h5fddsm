@@ -23,6 +23,7 @@
 
 =========================================================================*/
 #include "H5FDdsmCommSocket.h"
+#include "H5FDdsmSocket.h"
 #include "H5FDdsmMsg.h"
 
 #include <cstring>

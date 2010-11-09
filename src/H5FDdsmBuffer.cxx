@@ -52,6 +52,7 @@
 #include "H5FDdsmBuffer.h"
 #include "H5FDdsmComm.h"
 #include "H5FDdsmMsg.h"
+#include "H5FDdsmSteerer.h"
 
 #ifndef NOMINMAX
 #ifndef min

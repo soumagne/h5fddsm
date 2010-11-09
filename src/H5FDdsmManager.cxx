@@ -21,10 +21,8 @@
 //
 #include "mpi.h"
 //
-#include "H5FDdsmCommSocket.h"
-#include "H5FDdsmCommMpi.h"
-#include "H5FDdsmMsg.h"
-//
+#include "H5FDdsmIniFile.h"
+#include "H5FDdsmSteerer.h"
 #include "H5FDdsmDump.h"
 //
 #ifdef _WIN32
@@ -156,7 +154,7 @@ bool H5FDdsmManager::CreateDSM()
   MPI_Comm_rank(this->Communicator, &this->UpdatePiece);
 
   //
-  // Create Xdmf DSM communicator
+  // Create DSM communicator
   //
   if ((this->GetDsmCommType() == H5FD_DSM_COMM_MPI) ||
       (this->GetDsmCommType() == H5FD_DSM_COMM_MPI_RMA)) {

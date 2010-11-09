@@ -69,7 +69,6 @@
 #define H5FD_DSM_GET_DATA_TAG   0x84 // 132
 #define H5FD_DSM_EXCHANGE_TAG   0x85 // 133
 #define H5FD_DSM_XML_TAG        0x86 // 134
-#define H5FD_DSM_STEERING_TAG   0x87 // 135
 
 #define H5FD_DSM_ANY_SOURCE     -1
 

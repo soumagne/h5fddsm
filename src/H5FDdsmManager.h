@@ -15,18 +15,16 @@
   implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 =========================================================================*/
-// .NAME H5FDdsmManager - Create/Expose an Xdmf DSM to an external application
+// .NAME H5FDdsmManager - Create/Expose a DSM buffer to an external application
 // .SECTION Description
-// Create/Expose an Xdmf DSM to an external application
+// Create/Expose a DSM buffer to an external application
 
 #ifndef __H5FDdsmManager_h
 #define __H5FDdsmManager_h
 
-#include "H5FDdsm.h"
 #include "H5FDdsmBuffer.h"
 #include "H5FDdsmCommSocket.h"
 #include "H5FDdsmCommMpi.h"
-#include "H5FDdsmIniFile.h"
 
 #ifdef _WIN32
   #include <windows.h>
@@ -164,4 +162,4 @@ private:
     void operator=(const H5FDdsmManager&);  // Not implemented.
 };
 
-#endif
+#endif // __H5FDdsmManager_h

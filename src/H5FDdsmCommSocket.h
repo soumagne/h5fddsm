@@ -22,13 +22,14 @@
   Framework Programme (FP7/2007-2013) under grant agreement 225967 “NextMuSE”
 
 =========================================================================*/
-#ifndef XDMFDSMCOMMSOCKET_H
-#define XDMFDSMCOMMSOCKET_H
+#ifndef __H5FDdsmCommSocket_h
+#define __H5FDdsmCommSocket_h
 
 #define H5FD_DSM_MAX_SOCKET 1024
 
 #include "H5FDdsmComm.h"
-#include "H5FDdsmSocket.h"
+
+class H5FDdsmSocket;
 
 #include <mpi.h>
 
@@ -86,4 +87,4 @@ protected:
   H5FDdsmInt32         DsmMasterPort;
 };
 
-#endif /* XDMFDSMCOMMSOCKET_H */
+#endif // __H5FDdsmCommSocket_h

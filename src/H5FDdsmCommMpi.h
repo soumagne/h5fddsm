@@ -53,13 +53,8 @@
 #define __H5FDdsmCommMpi_h
 
 #include "H5FDdsmComm.h"
-#ifndef XDMF_NO_MPI
-#ifndef SWIG
+
 #include <mpi.h>
-#endif // SWIG
-#else // XDMF_NO_MPI
-typedef int MPI_Comm;
-#endif // XDMF_NO_MPI
 
 //! Base comm object for Distributed Shared Memory implementation
 /*!

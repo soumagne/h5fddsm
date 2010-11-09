@@ -23,8 +23,8 @@
 
 =========================================================================*/
 
-#ifndef XDMFDSMSTORAGE_H
-#define XDMFDSMSTORAGE_H
+#ifndef __H5FDdsmStorage_h
+#define __H5FDdsmStorage_h
 
 #include "H5FDdsmObject.h"
 
@@ -53,4 +53,4 @@ protected:
   H5FDdsmComm    *Comm;
 };
 
-#endif /* XDMFDSMSTORAGE_H */
+#endif // __H5FDdsmStorage_h

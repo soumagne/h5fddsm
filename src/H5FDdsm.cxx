@@ -93,6 +93,7 @@ extern "C" {
 //--------------------------------------------------------------------------
 //
 #include "H5FDdsmManager.h"
+#include "H5FDdsmSteerer.h"
 //
 #ifdef H5_HAVE_PARALLEL
 

@@ -23,8 +23,8 @@
 
 =========================================================================*/
 
-#ifndef H5FDDSMSTEERER_H
-#define H5FDDSMSTEERER_H
+#ifndef __H5FDdsmSteerer_h
+#define __H5FDdsmSteerer_h
 
 #include <mpi.h>
 
@@ -61,4 +61,4 @@ protected:
   std::string   *SteerableObjects;
 };
 
-#endif /* H5FDDSMSTEERER_H */
+#endif // __H5FDdsmSteerer_h

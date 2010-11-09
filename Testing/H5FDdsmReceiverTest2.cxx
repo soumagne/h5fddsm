@@ -6,6 +6,7 @@
 #include <hdf5.h>
 //
 #include "H5FDdsmManager.h"
+#include "H5FDdsm.h"
 
 // Names of datasets and groups
 #define GROUPNAME       "Scalar"

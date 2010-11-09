@@ -44,8 +44,8 @@
 // This abstract class encapsulates a BSD socket. It provides an API for
 // basic socket operations.
 
-#ifndef XDMFDSMSOCKET_H
-#define XDMFDSMSOCKET_H
+#ifndef __H5FDdsmSocket_h
+#define __H5FDdsmSocket_h
 
 #include "H5FDdsmObject.h"
 
@@ -147,4 +147,4 @@ protected:
 };
 
 
-#endif /* XDMFDSMSOCKET_H */
+#endif // __H5FDdsmSocket_h
