@@ -43,7 +43,6 @@ H5FDdsmManager::H5FDdsmManager()
   this->ServiceThreadHandle     = NULL;
 #endif
   //
-  this->Communicator            = NULL;
   this->DSMBuffer               = NULL;
   this->DSMComm                 = NULL;
   this->DsmCommType             = H5FD_DSM_COMM_MPI;

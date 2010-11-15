@@ -24,7 +24,6 @@
 ! * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 !
      MODULE H5FDDSM_GLOBAL
-         USE H5GLOBAL
          !
          ! H5FD DSM flags declaration
          !

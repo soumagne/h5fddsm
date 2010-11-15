@@ -482,7 +482,7 @@ H5FD_dsm_set_mode(unsigned long flags, void *dsmBuffer)
     if (dsmManagerSingleton) {
       buffer = dsmManagerSingleton->GetDSMHandle();
     } else {
-      HGOTO_ERROR(H5E_VFL, H5E_NOTFOUND, NULL, "No DSM buffer found");
+      HGOTO_ERROR(H5E_VFL, H5E_NOTFOUND, FAIL, "No DSM buffer found");
     }
   }
 
@@ -524,7 +524,7 @@ H5FD_dsm_server_update(void *dsmBuffer)
     if (dsmManagerSingleton) {
       buffer = dsmManagerSingleton->GetDSMHandle();
     } else {
-      HGOTO_ERROR(H5E_VFL, H5E_NOTFOUND, NULL, "No DSM buffer found");
+      HGOTO_ERROR(H5E_VFL, H5E_NOTFOUND, FAIL, "No DSM buffer found");
     }
   }
   PRINT_DSM_INFO(buffer->GetComm()->GetId(), "SetIsSyncRequired(true)");
