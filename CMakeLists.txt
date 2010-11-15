@@ -27,19 +27,20 @@ SET (H5FDdsm_PACKAGE_TARNAME "h5fddsm")
 #-----------------------------------------------------------------------------
 # Setup output Directories
 #-----------------------------------------------------------------------------
-SET (CMAKE_RUNTIME_OUTPUT_DIRECTORY
-    ${PROJECT_BINARY_DIR}/bin CACHE PATH "Single Directory for all Executables."
-)
-SET (CMAKE_LIBRARY_OUTPUT_DIRECTORY
-    ${PROJECT_BINARY_DIR}/bin CACHE PATH "Single Directory for all Libraries"
-)
-SET (CMAKE_ARCHIVE_OUTPUT_DIRECTORY
-    ${PROJECT_BINARY_DIR}/bin CACHE PATH "Single Directory for all static libraries."
-)
-SET (CMAKE_Fortran_MODULE_DIRECTORY
-    ${PROJECT_BINARY_DIR}/bin/fortran CACHE PATH "Single Directory for all fortran modules."
-)
-
+IF (NOT H5FD_DSM_EXTERNALLY_CONFIGURED)
+  SET (CMAKE_RUNTIME_OUTPUT_DIRECTORY
+      ${PROJECT_BINARY_DIR}/bin CACHE PATH "Single Directory for all Executables."
+  )
+  SET (CMAKE_LIBRARY_OUTPUT_DIRECTORY
+      ${PROJECT_BINARY_DIR}/bin CACHE PATH "Single Directory for all Libraries"
+  )
+  SET (CMAKE_ARCHIVE_OUTPUT_DIRECTORY
+      ${PROJECT_BINARY_DIR}/bin CACHE PATH "Single Directory for all static libraries."
+  )
+  SET (CMAKE_Fortran_MODULE_DIRECTORY
+      ${PROJECT_BINARY_DIR}/bin/fortran CACHE PATH "Single Directory for all fortran modules."
+  )
+ENDIF (NOT H5FD_DSM_EXTERNALLY_CONFIGURED)
 #-----------------------------------------------------------------------------
 # Targets built within this project are exported at Install time for use
 # by other projects using FindH5FDdsm. 
