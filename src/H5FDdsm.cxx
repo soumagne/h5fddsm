@@ -527,8 +527,10 @@ H5FD_dsm_server_update(void *dsmBuffer)
       HGOTO_ERROR(H5E_VFL, H5E_NOTFOUND, FAIL, "No DSM buffer found");
     }
   }
-  PRINT_DSM_INFO(buffer->GetComm()->GetId(), "SetIsSyncRequired(true)");
-  buffer->SetIsSyncRequired(true);
+  if (buffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
+    PRINT_DSM_INFO(buffer->GetComm()->GetId(), "SetIsSyncRequired(true)");
+    buffer->SetIsSyncRequired(true);
+  }
   buffer->RequestPipelineUpdate();
 
 done:
@@ -730,9 +732,11 @@ H5FD_dsm_open(const char *name, unsigned UNUSED flags, hid_t fapl_id, haddr_t ma
   } else {
     file->DsmBuffer = fa->buffer;
 
-    if (file->DsmBuffer->GetIsSyncRequired() && !file->DsmBuffer->GetIsServer()) {
-      // Receive ready for remote operations from DSM
-      file->DsmBuffer->GetComm()->RemoteCommRecvReady();
+    if ((file->DsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI_RMA) &&
+        file->DsmBuffer->GetIsSyncRequired() && !file->DsmBuffer->GetIsServer()) {
+      // After possible RMA put / get from the server, need to sync windows before
+      // further operations
+      file->DsmBuffer->GetComm()->RemoteCommSync();
       PRINT_INFO("SetIsSyncRequired(false)");
       file->DsmBuffer->SetIsSyncRequired(false);
     }

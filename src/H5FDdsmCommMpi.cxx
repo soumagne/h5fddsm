@@ -349,6 +349,17 @@ H5FDdsmCommMpi::RemoteCommDisconnect() {
 }
 
 H5FDdsmInt32
+H5FDdsmCommMpi::RemoteCommSync() {
+
+  if (H5FDdsmComm::RemoteCommSync() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+
+  if (this->Win != MPI_WIN_NULL) {
+    MPI_Win_fence(0, this->Win);
+  }
+  return(H5FD_DSM_SUCCESS);
+}
+
+H5FDdsmInt32
 H5FDdsmCommMpi::RemoteCommRecvReady() {
 
   if (H5FDdsmComm::RemoteCommRecvReady() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);

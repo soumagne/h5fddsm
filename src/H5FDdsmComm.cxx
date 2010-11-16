@@ -161,6 +161,11 @@ H5FDdsmComm::RemoteCommDisconnect(){
 }
 
 H5FDdsmInt32
+H5FDdsmComm::RemoteCommSync(){
+  return(H5FD_DSM_SUCCESS);
+}
+
+H5FDdsmInt32
 H5FDdsmComm::RemoteCommRecvReady(){
   return(H5FD_DSM_SUCCESS);
 }

@@ -305,7 +305,9 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
             this->IsConnected = true;
           }
           this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_REMOTE);
-          this->Comm->RemoteCommSendReady();
+          if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
+            this->Comm->RemoteCommSync();
+          }
           H5FDdsmDebug("Switched to Remote channel");
           break;
         case H5FD_DSM_LOCAL_CHANNEL: // Should be used only when going back to remote after that
@@ -567,6 +569,10 @@ H5FDdsmInt32
 H5FDdsmBuffer::RequestDisconnection() {
 
   int commServerSize = this->GetEndServerId() - this->GetStartServerId() + 1;
+
+  if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
+    this->Comm->RemoteCommSync();
+  }
 
   if (this->Comm->GetId() == 0) {
     for (int i=0; i<commServerSize; i++) {

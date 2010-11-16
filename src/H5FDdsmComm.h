@@ -115,6 +115,7 @@ public:
     virtual H5FDdsmInt32   RemoteCommConnect();
     virtual H5FDdsmInt32   RemoteCommDisconnect();
 
+    virtual H5FDdsmInt32   RemoteCommSync();
     virtual H5FDdsmInt32   RemoteCommRecvReady();
     virtual H5FDdsmInt32   RemoteCommSendReady();
 
