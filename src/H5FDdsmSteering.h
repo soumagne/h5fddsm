@@ -31,6 +31,9 @@
 // HDF5
 #include "H5Ipublic.h"
 
+// H5FDdsm
+#include "H5FDdsmConfig.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
