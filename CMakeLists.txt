@@ -244,8 +244,8 @@ INSTALL (
     H5FDdsm
   EXPORT
     ${H5FD_DSM_EXPORTED_TARGETS}
-  LIBRARY DESTINATION lib 
-  ARCHIVE DESTINATION lib 
+  LIBRARY DESTINATION lib${LIB_SUFFIX}
+  ARCHIVE DESTINATION lib${LIB_SUFFIX}
   RUNTIME DESTINATION bin 
 )
 
@@ -256,7 +256,7 @@ INSTALL (
   EXPORT
     ${H5FD_DSM_EXPORTED_TARGETS}
   DESTINATION
-    lib/cmake/h5fddsm-${H5FDdsm_PACKAGE_VERSION}
+    lib${LIB_SUFFIX}/cmake/h5fddsm-${H5FDdsm_PACKAGE_VERSION}
   FILE
     h5fddsm-targets.cmake
 )
@@ -295,7 +295,7 @@ INSTALL (
   FILES
     ${H5FDdsm_BINARY_DIR}/CMakeFiles/h5fddsm-config.cmake
   DESTINATION
-    lib/cmake/h5fddsm-${H5FDdsm_PACKAGE_VERSION}
+    lib${LIB_SUFFIX}/cmake/h5fddsm-${H5FDdsm_PACKAGE_VERSION}
 )
 
 #-----------------------------------------------------------------------------
@@ -309,7 +309,7 @@ INSTALL (
   FILES
     ${H5FDdsm_BINARY_DIR}/CMakeFiles/h5fddsm-config-version.cmake
   DESTINATION
-    lib/cmake/h5fddsm-${H5FDdsm_PACKAGE_VERSION}
+    lib${LIB_SUFFIX}/cmake/h5fddsm-${H5FDdsm_PACKAGE_VERSION}
 )
 
 #-----------------------------------------------------------------------------
