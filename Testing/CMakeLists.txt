@@ -93,7 +93,7 @@ TARGET_LINK_LIBRARIES(H5FDdsmSenderTest4
 SET_LINK_OPTIONS(H5FDdsmSenderTest4)
 
 #-----------------------------------------------------------------------------
-# H5FDdsmReceiverTest4 : Receive data as a server and dumps the data
+# H5FDdsmReceiverTest4 : Receive data as a server and dump the data
 #-----------------------------------------------------------------------------
 ADD_EXECUTABLE(H5FDdsmReceiverTest4
   H5FDdsmReceiverTest4.cxx
@@ -115,7 +115,7 @@ TARGET_LINK_LIBRARIES(H5FDdsmSenderTest5
 SET_LINK_OPTIONS(H5FDdsmSenderTest5)
 
 #-----------------------------------------------------------------------------
-# H5FDdsmReceiverTest5 : Receive data as a server and dumps the data
+# H5FDdsmReceiverTest5 : Receive data as a server and dump the data
 #-----------------------------------------------------------------------------
 ADD_EXECUTABLE(H5FDdsmReceiverTest5
   H5FDdsmReceiverTest5.cxx
@@ -124,6 +124,30 @@ TARGET_LINK_LIBRARIES(H5FDdsmReceiverTest5
   H5FDdsm
 )
 SET_LINK_OPTIONS(H5FDdsmReceiverTest5)
+
+#-----------------------------------------------------------------------------
+# H5FDdsmSenderTest6 : Send data as a client, wait for the server to give
+#                      hand back and dump the data
+#-----------------------------------------------------------------------------
+ADD_EXECUTABLE(H5FDdsmSenderTest6
+  H5FDdsmSenderTest6.cxx
+)
+TARGET_LINK_LIBRARIES(H5FDdsmSenderTest6
+  H5FDdsm
+)
+SET_LINK_OPTIONS(H5FDdsmSenderTest6)
+
+#-----------------------------------------------------------------------------
+# H5FDdsmReceiverTest6 : Receive data as a server, dump the data, write back
+#                        an array into a newly created steering group
+#-----------------------------------------------------------------------------
+ADD_EXECUTABLE(H5FDdsmReceiverTest6
+  H5FDdsmReceiverTest6.cxx
+)
+TARGET_LINK_LIBRARIES(H5FDdsmReceiverTest6
+  H5FDdsm
+)
+SET_LINK_OPTIONS(H5FDdsmReceiverTest6)
 
 #-----------------------------------------------------------------------------
 # Add Target(s) to CMake Install
@@ -138,6 +162,8 @@ INSTALL (
     H5FDdsmReceiverTest4
     H5FDdsmSenderTest5
     H5FDdsmReceiverTest5
+    H5FDdsmSenderTest6
+    H5FDdsmReceiverTest6
   EXPORT
     ${H5FD_DSM_EXPORTED_TARGETS}
   LIBRARY DESTINATION lib${LIB_SUFFIX}

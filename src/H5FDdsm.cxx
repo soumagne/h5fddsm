@@ -828,23 +828,23 @@ H5FD_dsm_close(H5FD_t *_file)
     HGOTO_ERROR(H5E_VFL, H5E_CLOSEERROR, FAIL, "can't close DSM");
 
   if (!file->DsmBuffer->GetIsReadOnly()) {
-    PRINT_INFO("Gathering dirty info");
-    if (file->DsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_SOCKET) {
-      comm = dynamic_cast <H5FDdsmCommSocket*> (file->DsmBuffer->GetComm())->GetComm();
-    }
-    else if ((file->DsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI) ||
-        (file->DsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI_RMA)) {
-      comm = dynamic_cast <H5FDdsmCommMpi*> (file->DsmBuffer->GetComm())->GetComm();
-    }
-
-    // Be sure that everyone's here before releasing resources (done with collective op)
-    // We're now ready to read from the DSM
-    // Gather all the dirty flags because some processes may not have written yet
-    MPI_Allreduce(&file->dirty, &isSomeoneDirty, sizeof(hbool_t), MPI_UNSIGNED_CHAR, MPI_MAX, comm);
-
-    if (isSomeoneDirty && file->DsmBuffer->GetCommSwitchOnClose()) {
-      H5FD_dsm_server_update(file->DsmBuffer);
-      file->dirty = FALSE;
+    if (!file->DsmBuffer->GetIsServer()) {
+      PRINT_INFO("Gathering dirty info");
+      if (file->DsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_SOCKET) {
+        comm = dynamic_cast <H5FDdsmCommSocket*> (file->DsmBuffer->GetComm())->GetComm();
+      }
+      else if ((file->DsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI) ||
+          (file->DsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI_RMA)) {
+        comm = dynamic_cast <H5FDdsmCommMpi*> (file->DsmBuffer->GetComm())->GetComm();
+      }
+      // Be sure that everyone's here before releasing resources (done with collective op)
+      // We're now ready to read from the DSM
+      // Gather all the dirty flags because some processes may not have written yet
+      MPI_Allreduce(&file->dirty, &isSomeoneDirty, sizeof(hbool_t), MPI_UNSIGNED_CHAR, MPI_MAX, comm);
+      if (isSomeoneDirty && file->DsmBuffer->GetCommSwitchOnClose()) {
+        H5FD_dsm_server_update(file->DsmBuffer);
+        file->dirty = FALSE;
+      }
     }
     PRINT_INFO("SetIsReadOnly(true)");
     file->DsmBuffer->SetIsReadOnly(true);

@@ -30,7 +30,7 @@ main(int argc, char *argv[])
   int             dsm = 1;
   int             nread = 1;
   int             fail_count = 0;
-
+  // TODO MPI_Init_thread needed here
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &size);

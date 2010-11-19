@@ -63,26 +63,14 @@ main(int argc, char * argv[])
     sleep(1000);
   }
 
-  // H5FDdsmInt64   Counter = 0;
   bool connected = true;
   while (connected) {
     if (dsmManager->GetDsmUpdateReady()) {
-      if (rank == 0) {
-        // std::cout << "Receive count : " << ++Counter << std::endl;
-      }
-
       std::cout << "Server Handling" << std::endl;
 
       // H5Dump
       dsmManager->H5DumpLight();
 
-      //nremoteprocs = dsmManager->GetDSMHandle()->GetComm()->GetInterSize();
-      //numParticles = (1024*1024*((dsmManager->GetDSMHandle()->GetTotalLength()/(1024.0*1024.0))-1)/(sizeof(double)*nremoteprocs));
-      // Check data
-      if (rank == 0) {
-        // printf("Trying to read %d * %llu particles\n", nremoteprocs, numParticles);
-      }
-      sleep(1000);
       // Sync here
       MPI_Barrier(comm);
 

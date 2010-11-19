@@ -93,8 +93,6 @@ main(int argc, char * argv[])
 
   dsmManager->DisconnectDSM();
 
-  H5close();
-
   delete dsmManager;
 
   MPI_Finalize();
