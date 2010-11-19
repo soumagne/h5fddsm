@@ -24,6 +24,7 @@ main(int argc, char * argv[])
   MPI_Comm comm = MPI_COMM_WORLD;
 
   MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
+  MPI_Comm_rank(comm, &rank);
   if (rank == 0) {
     if (provided != MPI_THREAD_MULTIPLE) {
       std::cout << "MPI_THREAD_MULTIPLE not set, you may need to recompile your "
@@ -33,7 +34,6 @@ main(int argc, char * argv[])
       std::cout << "MPI_THREAD_MULTIPLE is OK" << std::endl;
     }
   }
-  MPI_Comm_rank(comm, &rank);
   MPI_Comm_size(comm, &size);
   std::cout << "Process number " << rank << " of " << size << std::endl;
 
