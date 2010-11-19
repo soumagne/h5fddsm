@@ -69,7 +69,6 @@
 #define H5FD_DSM_DISCONNECT          0x07
 #define H5FD_DSM_XML_EXCHANGE        0x08
 #define H5FD_DSM_CLEAR_STORAGE       0x09
-#define H5FD_DSM_PIPELINE_UPDATE     0x10
 
 extern "C"{
 #ifdef _WIN32
@@ -310,13 +309,17 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
           }
           H5FDdsmDebug("Switched to Remote channel");
           break;
-        case H5FD_DSM_LOCAL_CHANNEL: // Should be used only when going back to remote after that
-          H5FDdsmDebug("Switching to Local channel");
-          this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_LOCAL);
-          H5FDdsmDebug("Switched to Local channel");
+        case H5FD_DSM_LOCAL_CHANNEL:
+          if (!this->Comm->HasStillData() || !this->IsConnected) {
+            this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_LOCAL);
+            this->Comm->Barrier();
+            this->SetIsUpdateReady(true);
+            H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "IsUpdateReady, Switched to Local channel");
+          }
           break;
         case H5FD_DSM_DISCONNECT:
           H5FDdsmDebug("( " << this->Comm->GetId() << " ) Freeing now remote channel");
+          this->Comm->Barrier();
           this->Comm->RemoteCommDisconnect();
           this->SetIsConnected(false);
           H5FDdsmDebug("DSM disconnected on " << this->Comm->GetId() << ", Switched to Local channel");
@@ -330,14 +333,6 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
           this->Comm->Barrier();
           this->ClearStorage();
           this->Comm->Barrier();
-          break;
-        case H5FD_DSM_PIPELINE_UPDATE:
-          if (!this->Comm->HasStillData() || !this->IsConnected) {
-            this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_LOCAL);
-            this->Comm->Barrier();
-            this->SetIsUpdateReady(true);
-            H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "IsUpdateReady, Switched to Local channel");
-          }
           break;
         default :
             H5FDdsmError("Unknown Opcode " << Opcode);
@@ -555,11 +550,9 @@ H5FDdsmBuffer::RequestLocalChannel() {
 
   int commServerSize = this->GetEndServerId() - this->GetStartServerId() + 1;
 
-  if (this->Comm->GetId() == 0) {
-    for (int i=0; i<commServerSize; i++) {
-      H5FDdsmDebug("Send request local channel to " << i);
-      this->SendCommandHeader(H5FD_DSM_LOCAL_CHANNEL, i, 0, 0);
-    }
+  for (int i=0; i<commServerSize; i++) {
+    H5FDdsmDebug("Send request local channel to " << i);
+    this->SendCommandHeader(H5FD_DSM_LOCAL_CHANNEL, i, 0, 0);
   }
   this->Comm->Barrier();
   return H5FD_DSM_SUCCESS;
@@ -613,19 +606,6 @@ H5FDdsmBuffer::RequestClearStorage() {
       H5FDdsmDebug("Send request clear storage to " << i);
       this->SendCommandHeader(H5FD_DSM_CLEAR_STORAGE, i, 0, 0);
     }
-  }
-  this->Comm->Barrier();
-  return(H5FD_DSM_SUCCESS);
-}
-
-H5FDdsmInt32
-H5FDdsmBuffer::RequestPipelineUpdate() {
-
-  int commServerSize = this->GetEndServerId() - this->GetStartServerId() + 1;
-
-  for (int i=0; i<commServerSize; i++) {
-    H5FDdsmDebug("Send request pipeline update to " << i);
-    this->SendCommandHeader(H5FD_DSM_PIPELINE_UPDATE, i, 0, 0);
   }
   this->Comm->Barrier();
   return(H5FD_DSM_SUCCESS);

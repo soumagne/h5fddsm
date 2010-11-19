@@ -129,7 +129,6 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     H5FDdsmInt32   RequestDisconnection();
     H5FDdsmInt32   RequestXMLExchange();
     H5FDdsmInt32   RequestClearStorage();
-    H5FDdsmInt32   RequestPipelineUpdate();
 
     /*
     H5FDdsmInt32   Copy(H5FDdsmBuffer *Source);
@@ -139,7 +138,7 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     H5FDdsmInt32   ServiceUntilIdle(H5FDdsmInt32 *ReturnOpcode=0);
     H5FDdsmInt32   ServiceLoop(H5FDdsmInt32 *ReturnOpcode=0);
     H5FDdsmInt32   Service(H5FDdsmInt32 *ReturnOpcode=0);
-    void *      ServiceThread();
+    void *         ServiceThread();
 
     H5FDdsmSteerer *GetSteerer() { return(Steerer); }
 

@@ -531,7 +531,7 @@ H5FD_dsm_server_update(void *dsmBuffer)
     PRINT_DSM_INFO(buffer->GetComm()->GetId(), "SetIsSyncRequired(true)");
     buffer->SetIsSyncRequired(true);
   }
-  buffer->RequestPipelineUpdate();
+  buffer->RequestLocalChannel();
 
 done:
   FUNC_LEAVE_NOAPI(ret_value);
