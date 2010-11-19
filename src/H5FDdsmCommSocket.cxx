@@ -319,12 +319,32 @@ H5FDdsmCommSocket::RemoteCommDisconnect()
 {
   if (H5FDdsmComm::RemoteCommDisconnect() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
+  this->Barrier();
+  sleep(1000);
+  // TODO Synchronize better here otherwise program can exit before the disconnection
+  // of the remote side
   for (int i=0; i<H5FD_DSM_MAX_SOCKET; i++) {
     if (this->InterComm[i]) delete this->InterComm[i];
     this->InterComm[i] = NULL;
   }
   this->CommChannel = H5FD_DSM_COMM_CHANNEL_LOCAL;
   return(H5FD_DSM_SUCCESS);
+}
+//----------------------------------------------------------------------------
+H5FDdsmInt32
+H5FDdsmCommSocket::RemoteCommChannelSynced(H5FDdsmInt32 *sem)
+{
+  H5FDdsmInt32 ret = H5FD_DSM_FALSE;
+
+  if (H5FDdsmComm::RemoteCommChannelSynced(sem) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+
+  (*sem)++;
+  if (*sem == this->InterSize) {
+    H5FDdsmDebug("Channels cleared: " << *sem << "/" << this->InterSize);
+    *sem = 0;
+    ret = H5FD_DSM_TRUE;
+  }
+  return(ret);
 }
 //----------------------------------------------------------------------------
 H5FDdsmInt32
@@ -481,22 +501,6 @@ H5FDdsmCommSocket::RemoteCommRecvXML(H5FDdsmString *file)
   }
   H5FDdsmDebug("Recv DSM XML: " << *file);
   return(H5FD_DSM_SUCCESS);
-}
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmCommSocket::HasStillData()
-{
-  H5FDdsmInt32 ret = H5FD_DSM_TRUE;
-  static H5FDdsmInt32 chanCleared = 0;
-
-  chanCleared++;
-  if (chanCleared == this->InterSize) {
-    H5FDdsmDebug("Channels cleared: " << chanCleared << "/" << this->InterSize);
-    chanCleared = 0;
-    ret = H5FD_DSM_FALSE;
-  }
-
-  return(ret);
 }
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

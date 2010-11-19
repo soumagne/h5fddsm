@@ -67,6 +67,9 @@ main(int argc, char * argv[])
 
   H5Fclose(hdf5Handle);
 
+  // Sync here
+  MPI_Barrier(comm);
+
   dsmManager->H5DumpLight();
 
   // Sync here

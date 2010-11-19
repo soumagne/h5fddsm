@@ -127,8 +127,8 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     H5FDdsmInt32   RequestRemoteChannel();
     H5FDdsmInt32   RequestLocalChannel();
     H5FDdsmInt32   RequestDisconnection();
-    H5FDdsmInt32   RequestXMLExchange();
     H5FDdsmInt32   RequestClearStorage();
+    H5FDdsmInt32   RequestXMLExchange();
 
     /*
     H5FDdsmInt32   Copy(H5FDdsmBuffer *Source);

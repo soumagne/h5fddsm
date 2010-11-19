@@ -63,6 +63,7 @@ public:
   H5FDdsmInt32   RemoteCommConnect();
   H5FDdsmInt32   RemoteCommDisconnect();
 
+  H5FDdsmInt32   RemoteCommChannelSynced(H5FDdsmInt32 *sem);
   H5FDdsmInt32   RemoteCommRecvReady();
   H5FDdsmInt32   RemoteCommSendReady();
 
@@ -73,8 +74,6 @@ public:
 
   H5FDdsmInt32   RemoteCommSendXML(H5FDdsmString file, H5FDdsmInt32 dest);
   H5FDdsmInt32   RemoteCommRecvXML(H5FDdsmString *file);
-
-  H5FDdsmInt32   HasStillData();
 
 protected:
   H5FDdsmInt32   InterCommServerConnect();

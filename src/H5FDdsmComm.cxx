@@ -166,6 +166,11 @@ H5FDdsmComm::RemoteCommSync(){
 }
 
 H5FDdsmInt32
+H5FDdsmComm::RemoteCommChannelSynced(H5FDdsmInt32 *sem){
+  return(H5FD_DSM_SUCCESS);
+}
+
+H5FDdsmInt32
 H5FDdsmComm::RemoteCommRecvReady(){
   return(H5FD_DSM_SUCCESS);
 }
@@ -188,19 +193,11 @@ H5FDdsmComm::RemoteCommSendInfo(H5FDdsmInt64 *length, H5FDdsmInt64 *totalLength,
 }
 
 H5FDdsmInt32
-H5FDdsmComm::RemoteCommSendXML(H5FDdsmString file, H5FDdsmInt32 dest)
-{
+H5FDdsmComm::RemoteCommSendXML(H5FDdsmString file, H5FDdsmInt32 dest){
   return(H5FD_DSM_SUCCESS);
 }
 
 H5FDdsmInt32
-H5FDdsmComm::RemoteCommRecvXML(H5FDdsmString *file)
-{
+H5FDdsmComm::RemoteCommRecvXML(H5FDdsmString *file){
   return(H5FD_DSM_SUCCESS);
-}
-
-H5FDdsmInt32
-H5FDdsmComm::HasStillData()
-{
-  return(H5FD_DSM_FALSE);
 }

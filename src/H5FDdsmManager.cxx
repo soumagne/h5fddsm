@@ -100,15 +100,12 @@ void H5FDdsmManager::ClearDsmUpdateReady()
 //----------------------------------------------------------------------------
 bool H5FDdsmManager::DestroyDSM()
 {
+  // Watch out that all processes have empty message queues
+  // Should be already done during the disconnection
   if (this->DSMBuffer && this->DSMBuffer->GetIsServer() && this->UpdatePiece == 0) {
     this->DSMBuffer->SendDone();
   }
-/* @TODO, client doesn't need to call SendDone, but can if it wants to 
-  if (this->DSMBuffer && this->DSMBuffer->GetIsConnected() && this->UpdatePiece == 0) {
-    // @TODO watch out that all processes have empty message queues
-    this->DSMBuffer->SendDone();
-  }
-*/
+
 #ifdef _WIN32
   if (this->ServiceThread) {
 	  WaitForSingleObject(this->ServiceThreadHandle, INFINITE);

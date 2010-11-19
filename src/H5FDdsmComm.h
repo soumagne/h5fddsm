@@ -105,10 +105,6 @@ public:
     virtual H5FDdsmInt32   Check(H5FDdsmMsg *Msg);
     virtual H5FDdsmInt32   Barrier();
 
-    // H5FDdsmInt32   Send() { return(this->Send(this->Msg)); };
-    // H5FDdsmInt32   Receive() { return(this->Receive(this->Msg)); };
-    // H5FDdsmInt32   Check() { return(this->Check(this->Msg)); };
-
     virtual H5FDdsmInt32   OpenPort();
     virtual H5FDdsmInt32   ClosePort();
     virtual H5FDdsmInt32   RemoteCommAccept(void *storagePointer, H5FDdsmInt64 storageSize);
@@ -116,6 +112,7 @@ public:
     virtual H5FDdsmInt32   RemoteCommDisconnect();
 
     virtual H5FDdsmInt32   RemoteCommSync();
+    virtual H5FDdsmInt32   RemoteCommChannelSynced(H5FDdsmInt32 *sem);
     virtual H5FDdsmInt32   RemoteCommRecvReady();
     virtual H5FDdsmInt32   RemoteCommSendReady();
 
@@ -126,8 +123,6 @@ public:
 
     virtual H5FDdsmInt32   RemoteCommSendXML(H5FDdsmString file, H5FDdsmInt32 dest);
     virtual H5FDdsmInt32   RemoteCommRecvXML(H5FDdsmString *file);
-
-    virtual H5FDdsmInt32   HasStillData();
 
 protected:
     H5FDdsmInt32       Id;

@@ -357,6 +357,22 @@ H5FDdsmCommMpi::RemoteCommSync() {
 }
 
 H5FDdsmInt32
+H5FDdsmCommMpi::RemoteCommChannelSynced(H5FDdsmInt32 *sem) {
+
+  H5FDdsmInt32 ret = H5FD_DSM_FALSE;
+
+  if (H5FDdsmComm::RemoteCommChannelSynced(sem) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+
+  (*sem)++;
+  if (*sem == this->InterSize) {
+    H5FDdsmDebug("Channels cleared: " << *sem << "/" << this->InterSize);
+    *sem = 0;
+    ret = H5FD_DSM_TRUE;
+  }
+  return(ret);
+}
+
+H5FDdsmInt32
 H5FDdsmCommMpi::RemoteCommRecvReady() {
 
   if (H5FDdsmComm::RemoteCommRecvReady() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
@@ -546,20 +562,4 @@ H5FDdsmCommMpi::RemoteCommRecvXML(H5FDdsmString *file)
   }
   H5FDdsmDebug("Recv DSM XML: " << *file);
   return(H5FD_DSM_SUCCESS);
-}
-
-H5FDdsmInt32
-H5FDdsmCommMpi::HasStillData()
-{
-  H5FDdsmInt32 ret = H5FD_DSM_TRUE;
-  static H5FDdsmInt32 chanCleared = 0;
-
-  chanCleared++;
-  if (chanCleared == this->InterSize) {
-    H5FDdsmDebug("Channels cleared: " << chanCleared << "/" << this->InterSize);
-    chanCleared = 0;
-    ret = H5FD_DSM_FALSE;
-  }
-
-  return(ret);
 }

@@ -219,7 +219,7 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
         return(H5FD_DSM_FAIL);
     }
     switch(Opcode){
-        case H5FD_DSM_OPCODE_PUT :
+        case H5FD_DSM_OPCODE_PUT:
             H5FDdsmDebug("PUT request from " << who << " for " << aLength << " bytes @ " << Address);
             if (aLength > (this->EndAddress - Address + 1)){
                 H5FDdsmError("Length too long");
@@ -234,7 +234,7 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
             }
             H5FDdsmDebug("Serviced PUT request from " << who << " for " << aLength << " bytes @ " << Address);
             break;
-        case H5FD_DSM_OPCODE_GET :
+        case H5FD_DSM_OPCODE_GET:
             H5FDdsmDebug("(Server " << this->Comm->GetId() << ") Get request from " << who << " for " << aLength << " bytes @ " << Address);
             if (aLength > (this->EndAddress - Address + 1)){
                 H5FDdsmError("Length " << aLength << " too long for address of len " << this->EndAddress - Address);
@@ -250,7 +250,7 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
             }
             H5FDdsmDebug("(Server " << this->Comm->GetId() << ") Serviced GET request from " << who << " for " << aLength << " bytes @ " << Address);
             break;
-        case H5FD_DSM_SEMA_AQUIRE :
+        case H5FD_DSM_SEMA_AQUIRE:
             H5FDdsmDebug("Sema " << Address << " Aquire");
             if ((Address < 0) || (Address >= H5FD_DSM_MAX_LOCKS)){
                 H5FDdsmError("Invalid Sema Request " << Address);
@@ -272,7 +272,7 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
                 return(H5FD_DSM_FAIL);
             }
             break;
-        case H5FD_DSM_SEMA_RELEASE :
+        case H5FD_DSM_SEMA_RELEASE:
             H5FDdsmDebug("Sema " << Address << " Release");
             if ((Address < 0) || (Address >= H5FD_DSM_MAX_LOCKS)){
                 H5FDdsmError("Invalid Sema Request " << Address);
@@ -293,7 +293,7 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
                 return(H5FD_DSM_FAIL);
             }
             break;
-        case H5FD_DSM_OPCODE_DONE :
+        case H5FD_DSM_OPCODE_DONE:
             break;
         case H5FD_DSM_REMOTE_CHANNEL:
           H5FDdsmDebug("Switching to Remote channel");
@@ -310,7 +310,8 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
           H5FDdsmDebug("Switched to Remote channel");
           break;
         case H5FD_DSM_LOCAL_CHANNEL:
-          if (!this->Comm->HasStillData() || !this->IsConnected) {
+          static H5FDdsmInt32 localSync = 0;
+          if (this->Comm->RemoteCommChannelSynced(&localSync) || !this->IsConnected) {
             this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_LOCAL);
             this->Comm->Barrier();
             this->SetIsUpdateReady(true);
@@ -318,21 +319,23 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
           }
           break;
         case H5FD_DSM_DISCONNECT:
-          H5FDdsmDebug("( " << this->Comm->GetId() << " ) Freeing now remote channel");
-          this->Comm->Barrier();
-          this->Comm->RemoteCommDisconnect();
-          this->SetIsConnected(false);
-          H5FDdsmDebug("DSM disconnected on " << this->Comm->GetId() << ", Switched to Local channel");
+          static H5FDdsmInt32 disconnectSync = 0;
+          if (this->Comm->RemoteCommChannelSynced(&disconnectSync)) {
+            H5FDdsmDebug("( " << this->Comm->GetId() << " ) Freeing now remote channel");
+            this->Comm->RemoteCommDisconnect();
+            this->SetIsConnected(false);
+            H5FDdsmDebug("DSM disconnected on " << this->Comm->GetId() << ", Switched to Local channel");
+          }
+          break;
+        case H5FD_DSM_CLEAR_STORAGE:
+          static H5FDdsmInt32 clearStorageSync = 0;
+          if (this->Comm->RemoteCommChannelSynced(&clearStorageSync)) {
+            this->ClearStorage();
+          }
           break;
         case H5FD_DSM_XML_EXCHANGE:
           // Receive XML File and put it in a DSM buffer field for further reading
           this->Comm->RemoteCommRecvXML(&this->XMLDescription);
-          break;
-        case H5FD_DSM_CLEAR_STORAGE:
-          H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "Clearing DSM");
-          this->Comm->Barrier();
-          this->ClearStorage();
-          this->Comm->Barrier();
           break;
         default :
             H5FDdsmError("Unknown Opcode " << Opcode);
@@ -539,74 +542,68 @@ H5FDdsmBuffer::Get(H5FDdsmInt64 Address, H5FDdsmInt64 aLength, void *Data){
 
 H5FDdsmInt32
 H5FDdsmBuffer::RequestRemoteChannel() {
+  H5FDdsmInt32 who = this->Comm->GetId(), status = H5FD_DSM_SUCCESS;
 
-  H5FDdsmDebug("Send request remote channel to " << this->Comm->GetId());
-  this->SendCommandHeader(H5FD_DSM_REMOTE_CHANNEL, this->Comm->GetId(), 0, 0);
-  return H5FD_DSM_SUCCESS;
+  H5FDdsmDebug("Send request remote channel to " << who);
+  status = this->SendCommandHeader(H5FD_DSM_REMOTE_CHANNEL, who, 0, 0);
+  return(status);
 }
 
 H5FDdsmInt32
 H5FDdsmBuffer::RequestLocalChannel() {
+  H5FDdsmInt32 who, status = H5FD_DSM_SUCCESS;
 
-  int commServerSize = this->GetEndServerId() - this->GetStartServerId() + 1;
-
-  for (int i=0; i<commServerSize; i++) {
-    H5FDdsmDebug("Send request local channel to " << i);
-    this->SendCommandHeader(H5FD_DSM_LOCAL_CHANNEL, i, 0, 0);
+  for (who = this->StartServerId ; who <= this->EndServerId ; who++) {
+    H5FDdsmDebug("Send request local channel to " << who);
+    status = this->SendCommandHeader(H5FD_DSM_LOCAL_CHANNEL, who, 0, 0);
   }
   this->Comm->Barrier();
-  return H5FD_DSM_SUCCESS;
+  return(status);
 }
 
 H5FDdsmInt32
 H5FDdsmBuffer::RequestDisconnection() {
+  H5FDdsmInt32 who, status = H5FD_DSM_SUCCESS;
 
-  int commServerSize = this->GetEndServerId() - this->GetStartServerId() + 1;
-
-  if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
+  if ((this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) &&
+      this->IsSyncRequired) {
     this->Comm->RemoteCommSync();
+    this->IsSyncRequired = false;
   }
 
-  if (this->Comm->GetId() == 0) {
-    for (int i=0; i<commServerSize; i++) {
-      H5FDdsmDebug("Send disconnection request to " << i);
-      this->SendCommandHeader(H5FD_DSM_DISCONNECT, i, 0, 0);
-    }
+  for (who = this->StartServerId ; who <= this->EndServerId ; who++) {
+    H5FDdsmDebug("Send disconnection request to " << who);
+    status = this->SendCommandHeader(H5FD_DSM_DISCONNECT, who, 0, 0);
   }
-  this->Comm->RemoteCommDisconnect();
+  status = this->Comm->RemoteCommDisconnect();
   this->SetIsConnected(false);
   H5FDdsmDebug("DSM disconnected on " << this->Comm->GetId());
-  this->Comm->Barrier();
-  return H5FD_DSM_SUCCESS;
-}
-
-H5FDdsmInt32
-H5FDdsmBuffer::RequestXMLExchange() {
-
-  int commServerSize = this->GetEndServerId() - this->GetStartServerId() + 1;
-  // Send XML Command header and send then effective data using
-  // the same communicator as the one used for data transmission
-  if (this->Comm->GetId() == 0) {
-    for (int i=0; i<commServerSize; i++) {
-      H5FDdsmDebug("Send request xml channel to " << i);
-      this->SendCommandHeader(H5FD_DSM_XML_EXCHANGE, i, 0, 0);
-    }
-  }
-  this->Comm->Barrier();
-  return(H5FD_DSM_SUCCESS);
+  return(status);
 }
 
 H5FDdsmInt32
 H5FDdsmBuffer::RequestClearStorage() {
+  H5FDdsmInt32 who, status = H5FD_DSM_SUCCESS;
 
-  int commServerSize = this->GetEndServerId() - this->GetStartServerId() + 1;
+  for (who = this->StartServerId ; who <= this->EndServerId ; who++) {
+    H5FDdsmDebug("Send request clear storage to " << who);
+    status = this->SendCommandHeader(H5FD_DSM_CLEAR_STORAGE, who, 0, 0);
+  }
+
+  this->Comm->Barrier();
+  return(status);
+}
+
+H5FDdsmInt32
+H5FDdsmBuffer::RequestXMLExchange() {
+  H5FDdsmInt32 who, status = H5FD_DSM_SUCCESS;
 
   if (this->Comm->GetId() == 0) {
-    for (int i=0; i<commServerSize; i++) {
-      H5FDdsmDebug("Send request clear storage to " << i);
-      this->SendCommandHeader(H5FD_DSM_CLEAR_STORAGE, i, 0, 0);
+    for (who = this->StartServerId ; who <= this->EndServerId ; who++) {
+      H5FDdsmDebug("Send request xml channel to " << who);
+      status = this->SendCommandHeader(H5FD_DSM_XML_EXCHANGE, who, 0, 0);
     }
   }
   this->Comm->Barrier();
-  return(H5FD_DSM_SUCCESS);
+  return(status);
 }
