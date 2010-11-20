@@ -320,9 +320,13 @@ H5FDdsmCommSocket::RemoteCommDisconnect()
   if (H5FDdsmComm::RemoteCommDisconnect() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
   this->Barrier();
-  sleep(1000);
-  // TODO Synchronize better here otherwise program can exit before the disconnection
-  // of the remote side
+  if (this->InterComm[0]->GetClientSocketDescriptor() < 0) {
+      H5FDdsmDebug("Client is now disconnecting");
+      this->RemoteCommRecvReady();
+  } else {
+      H5FDdsmDebug("Server is now disconnecting");
+      this->RemoteCommSendReady();
+  }
   for (int i=0; i<H5FD_DSM_MAX_SOCKET; i++) {
     if (this->InterComm[i]) delete this->InterComm[i];
     this->InterComm[i] = NULL;
