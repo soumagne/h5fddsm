@@ -207,11 +207,14 @@ H5FDdsmBuffer::ServiceLoop(H5FDdsmInt32 *ReturnOpcode){
 
 H5FDdsmInt32
 H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
-    H5FDdsmInt32   Opcode, who, value, status = H5FD_DSM_FAIL;
-    H5FDdsmInt64         aLength;
-    H5FDdsmInt64       Address;
-    H5FDdsmByte   *datap;
-    H5FDdsmInt32   IsService = 1;
+    H5FDdsmInt32        Opcode, who, value, status = H5FD_DSM_FAIL;
+    H5FDdsmInt64        aLength;
+    H5FDdsmInt64        Address;
+    H5FDdsmByte        *datap;
+    H5FDdsmInt32        IsService = 1;
+    static H5FDdsmInt32 localSync = 0;
+	static H5FDdsmInt32 disconnectSync = 0;
+    static H5FDdsmInt32 clearStorageSync = 0;
 
     status = this->ReceiveCommandHeader(&Opcode, &who, &Address, &aLength);
     if (status == H5FD_DSM_FAIL){
@@ -310,7 +313,6 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
           H5FDdsmDebug("Switched to Remote channel");
           break;
         case H5FD_DSM_LOCAL_CHANNEL:
-          static H5FDdsmInt32 localSync = 0;
           if (this->Comm->RemoteCommChannelSynced(&localSync) || !this->IsConnected) {
             this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_LOCAL);
             this->Comm->Barrier();
@@ -319,7 +321,6 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
           }
           break;
         case H5FD_DSM_DISCONNECT:
-          static H5FDdsmInt32 disconnectSync = 0;
           if (this->Comm->RemoteCommChannelSynced(&disconnectSync)) {
             H5FDdsmDebug("( " << this->Comm->GetId() << " ) Freeing now remote channel");
             this->Comm->RemoteCommDisconnect();
@@ -328,7 +329,6 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
           }
           break;
         case H5FD_DSM_CLEAR_STORAGE:
-          static H5FDdsmInt32 clearStorageSync = 0;
           if (this->Comm->RemoteCommChannelSynced(&clearStorageSync)) {
             this->ClearStorage();
           }
