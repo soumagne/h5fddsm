@@ -127,7 +127,7 @@ INSTALL (
   FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/H5f90dsmproto.h
   DESTINATION
-    include/fortran
+    include${INCLUDE_SUFFIX}/fortran
   COMPONENT
     fortheaders
 )
@@ -136,7 +136,7 @@ INSTALL (
   DIRECTORY
     ${CMAKE_Fortran_MODULE_DIRECTORY}/\${BUILD_TYPE}/
   DESTINATION
-    include/fortran
+    include${INCLUDE_SUFFIX}/fortran
   COMPONENT
     fortheaders
 )

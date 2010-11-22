@@ -231,7 +231,7 @@ INSTALL (
     ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmCommMpi.h
     ${H5FDdsm_BINARY_DIR}/src/H5FDdsmConfig.h
   DESTINATION
-    include
+    include${INCLUDE_SUFFIX}
   COMPONENT
     headers
 )
@@ -256,7 +256,7 @@ INSTALL (
   EXPORT
     ${H5FD_DSM_EXPORTED_TARGETS}
   DESTINATION
-    lib${LIB_SUFFIX}/cmake/h5fddsm-${H5FDdsm_PACKAGE_VERSION}
+    share/cmake/h5fddsm
   FILE
     h5fddsm-targets.cmake
 )
@@ -295,7 +295,7 @@ INSTALL (
   FILES
     ${H5FDdsm_BINARY_DIR}/CMakeFiles/h5fddsm-config.cmake
   DESTINATION
-    lib${LIB_SUFFIX}/cmake/h5fddsm-${H5FDdsm_PACKAGE_VERSION}
+    share/cmake/h5fddsm
 )
 
 #-----------------------------------------------------------------------------
@@ -309,7 +309,7 @@ INSTALL (
   FILES
     ${H5FDdsm_BINARY_DIR}/CMakeFiles/h5fddsm-config-version.cmake
   DESTINATION
-    lib${LIB_SUFFIX}/cmake/h5fddsm-${H5FDdsm_PACKAGE_VERSION}
+    share/cmake/h5fddsm
 )
 
 #-----------------------------------------------------------------------------

@@ -11,10 +11,10 @@ SET (H5FD_DSM_BUILD_FORTRAN @H5FD_DSM_BUILD_FORTRAN@)
 #-----------------------------------------------------------------------------
 # Directories
 #-----------------------------------------------------------------------------
-SET (H5FD_DSM_INCLUDE_DIR "@CMAKE_INSTALL_PREFIX@/include" )
+SET (H5FD_DSM_INCLUDE_DIR "@CMAKE_INSTALL_PREFIX@/include@INCLUDE_SUFFIX@" )
 
 IF (H5FD_DSM_BUILD_FORTRAN)
-  SET (H5FD_DSM_INCLUDE_DIR_FORTRAN "@CMAKE_INSTALL_PREFIX@/include/fortran" )
+  SET (H5FD_DSM_INCLUDE_DIR_FORTRAN "@CMAKE_INSTALL_PREFIX@/include@INCLUDE_SUFFIX@/fortran" )
 ENDIF (H5FD_DSM_BUILD_FORTRAN)
 
 #-----------------------------------------------------------------------------
