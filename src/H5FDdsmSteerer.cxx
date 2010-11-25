@@ -28,7 +28,9 @@
 #include "H5FDdsmComm.h"
 #include "H5FDdsmCommMpi.h"
 #include "H5FDdsmCommSocket.h"
-
+//
+#include "H5FDdsmDump.h"
+//
 #include <string>
 //----------------------------------------------------------------------------
 H5FDdsmSteerer::H5FDdsmSteerer(H5FDdsmBuffer *buffer)
@@ -111,8 +113,46 @@ H5FDdsmInt32 H5FDdsmSteerer::GetSteeringCommands()
   return(H5FD_DSM_SUCCESS);
 }
 //----------------------------------------------------------------------------
-H5FDdsmInt32 H5FDdsmSteerer::IsSteerable(H5FDdsmConstString parentName, H5FDdsmConstString name) {
-  std::cout << "IsSteerable: " << parentName << ", " << name << std::endl;
+H5FDdsmInt32 H5FDdsmSteerer::IsSteerable(H5FDdsmConstString hdfPath)
+{
+  std::cout << "IsSteerable: " << hdfPath << std::endl;
+
+  return(H5FD_DSM_SUCCESS);
+}
+//----------------------------------------------------------------------------
+H5FDdsmInt32 H5FDdsmSteerer::GetBoolean(H5FDdsmConstString name, void *data)
+{
+  H5FDdsmDump *myDsmDump = new H5FDdsmDump();
+  myDsmDump->SetDsmBuffer(this->DsmBuffer);
+  myDsmDump->SetFileName("DSM.h5");
+  myDsmDump->DumpLight();
+  delete myDsmDump;
+  return(H5FD_DSM_SUCCESS);
+}
+//----------------------------------------------------------------------------
+H5FDdsmInt32 H5FDdsmSteerer::GetScalar(H5FDdsmConstString name, void *data)
+{
+  H5FDdsmDump *myDsmDump = new H5FDdsmDump();
+  myDsmDump->SetDsmBuffer(this->DsmBuffer);
+  myDsmDump->SetFileName("DSM.h5");
+  myDsmDump->DumpLight();
+  delete myDsmDump;
+  return(H5FD_DSM_SUCCESS);
+}
+//----------------------------------------------------------------------------
+H5FDdsmInt32 H5FDdsmSteerer::GetVector(H5FDdsmConstString name, void *data)
+{
+  H5FDdsmDump *myDsmDump = new H5FDdsmDump();
+  myDsmDump->SetDsmBuffer(this->DsmBuffer);
+  myDsmDump->SetFileName("DSM.h5");
+  myDsmDump->DumpLight();
+  delete myDsmDump;
+  return(H5FD_DSM_SUCCESS);
+}
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+H5FDdsmInt32 H5FDdsmSteerer::WriteInteractions(H5FDdsmConstString name, H5FDdsmInteractionType type, void *data)
+{
 
   return(H5FD_DSM_SUCCESS);
 }

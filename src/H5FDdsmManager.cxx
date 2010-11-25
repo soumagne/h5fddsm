@@ -220,6 +220,11 @@ void H5FDdsmManager::ClearDSM()
 void H5FDdsmManager::RequestRemoteChannel()
 {
   // TODO Update steering orders here for now
+  for (unsigned int i = 0; i < this->IntScalarInteractionNames.size(); i++) {
+    this->DSMBuffer->GetSteerer()->WriteInteractions(this->IntScalarInteractionNames[i],
+        H5FD_DSM_INT_SCALAR,
+        (void*)&this->IntScalarInteractions[i]);
+  }
   this->DSMBuffer->GetSteerer()->UpdateSteeringCommands();
   this->DSMBuffer->RequestRemoteChannel();
 }
@@ -502,7 +507,7 @@ bool H5FDdsmManager::ReadDSMConfigFile()
   return false;
 }
 //----------------------------------------------------------------------------
-void H5FDdsmManager::SetSteeringCommand(char *cmd)
+void H5FDdsmManager::SetSteeringCommand(H5FDdsmString cmd)
 {
   H5FDdsmDebug(<< "cmd: " << cmd);
   if (cmd) {
@@ -512,3 +517,12 @@ void H5FDdsmManager::SetSteeringCommand(char *cmd)
   }
 }
 //----------------------------------------------------------------------------
+void H5FDdsmManager::SetIntScalarInteraction(H5FDdsmInt32 value)
+{
+  this->IntScalarInteractions.push_back(value);
+}
+//----------------------------------------------------------------------------
+void H5FDdsmManager::SetIntScalarInteractionName(H5FDdsmString name)
+{
+  this->IntScalarInteractionNames.push_back(name);
+}

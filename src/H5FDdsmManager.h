@@ -34,6 +34,8 @@
   }
 #endif
 
+#include <vector>
+
 class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
 {
   public:
@@ -95,7 +97,15 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     // Description:
     // Set/Get the current given steering command.
     // The command is then passed to the simulation.
-    void SetSteeringCommand(char *cmd);
+    void SetSteeringCommand(H5FDdsmString cmd);
+
+    // Description:
+    // Set the current given IntScalar interaction.
+    void SetIntScalarInteraction(H5FDdsmInt32 value);
+
+    // Description:
+    // Set the current given name for the corresponding IntScalar interaction.
+    void SetIntScalarInteractionName(H5FDdsmString name);
 
     // Description:
     // When sending, the writer can SetXMLDescriptionSend and it will be transmitted
@@ -156,6 +166,9 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     int             DsmUpdateReady;
     //
     char           *XMLStringSend;
+    //
+    std::vector<H5FDdsmString> IntScalarInteractionNames;
+    std::vector<H5FDdsmInt32>  IntScalarInteractions;
 
 private:
     H5FDdsmManager(const H5FDdsmManager&);  // Not implemented.

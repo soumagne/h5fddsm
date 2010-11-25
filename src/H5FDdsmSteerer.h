@@ -30,6 +30,14 @@
 
 #include "H5FDdsmObject.h"
 
+enum H5FDdsmInteractionType
+{
+  H5FD_DSM_INT_SCALAR = 0,
+  H5FD_DSM_DOUBLE_SCALAR,
+  H5FD_DSM_INT_VECTOR,
+  H5FD_DSM_DOUBLE_VECTOR
+};
+
 class H5FDdsmBuffer;
 
 class H5FDdsm_EXPORT H5FDdsmSteerer : public H5FDdsmObject {
@@ -50,9 +58,16 @@ public:
   H5FDdsmInt32 UpdateSteeringCommands();
   H5FDdsmInt32 GetSteeringCommands();
 
-  H5FDdsmInt32 IsSteerable(H5FDdsmConstString parentName, H5FDdsmConstString name);
+  H5FDdsmInt32 IsSteerable(H5FDdsmConstString hdfPath);
+  H5FDdsmInt32 GetBoolean(H5FDdsmConstString name, void *data);
+  H5FDdsmInt32 GetScalar(H5FDdsmConstString name, void *data);
+  H5FDdsmInt32 GetVector(H5FDdsmConstString name, void *data);
 
 protected:
+  friend class H5FDdsmManager;
+
+  H5FDdsmInt32 WriteInteractions(H5FDdsmConstString name, H5FDdsmInteractionType type, void *data);
+
   H5FDdsmInt32 CheckCommand(H5FDdsmConstString command);
 
   H5FDdsmBuffer  *DsmBuffer;

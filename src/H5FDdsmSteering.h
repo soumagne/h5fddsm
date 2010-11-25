@@ -38,9 +38,15 @@
 extern "C" {
 #endif
   H5FDdsm_EXPORT herr_t H5FD_dsm_steering_init(MPI_Comm comm);
+
   H5FDdsm_EXPORT herr_t H5FD_dsm_begin_loop(const char *name);
   H5FDdsm_EXPORT herr_t H5FD_dsm_end_loop(const char *name);
-  H5FDdsm_EXPORT herr_t H5FD_dsm_is_steerable(const char *parent_name, const char *name);
+
+  H5FDdsm_EXPORT herr_t H5FD_dsm_is_steerable(const char *hdf_path);
+
+  H5FDdsm_EXPORT herr_t H5FD_dsm_boolean_get(const char *name, void *data);
+  H5FDdsm_EXPORT herr_t H5FD_dsm_scalar_get(const char *name, void *data);
+  H5FDdsm_EXPORT herr_t H5FD_dsm_vector_get(const char *name, void *data);
 #ifdef __cplusplus
 }
 #endif
