@@ -170,7 +170,7 @@ H5FDdsmCommMpi::GetData(H5FDdsmMsg *DataMsg){
 
     if (H5FDdsmComm::GetData(DataMsg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
-    MPI_Win_lock(MPI_LOCK_EXCLUSIVE, DataMsg->Source, 0, this->Win);
+    MPI_Win_lock(MPI_LOCK_SHARED, DataMsg->Source, 0, this->Win);
 
     H5FDdsmDebug("Getting " << DataMsg->Length << " Bytes from Address " << DataMsg->Address << " from Id = " << DataMsg->Source);
     status = MPI_Get(DataMsg->Data, DataMsg->Length, MPI_UNSIGNED_CHAR, DataMsg->Source, DataMsg->Address, DataMsg->Length, MPI_UNSIGNED_CHAR, this->Win);
@@ -265,7 +265,6 @@ H5FDdsmCommMpi::RemoteCommAccept(void *storagePointer, H5FDdsmInt64 storageSize)
       H5FDdsmError("Id = " << this->Id << " MPI_Win_create failed");
       return(H5FD_DSM_FAIL);
     }
-    MPI_Win_fence(0, this->Win);
   }
   return(H5FD_DSM_SUCCESS);
 }
@@ -320,7 +319,6 @@ H5FDdsmCommMpi::RemoteCommConnect() {
         H5FDdsmError("Id = " << this->Id << " MPI_Win_create failed");
         return(H5FD_DSM_FAIL);
       }
-      MPI_Win_fence(0, this->Win);
     }
     return(H5FD_DSM_SUCCESS);
   } else {

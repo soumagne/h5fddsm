@@ -39,7 +39,6 @@ TARGET_LINK_LIBRARIES(H5FDdsm_f90CStub
   H5FDdsm
   hdf5_fortran
   hdf5_f90cstub
-  ${MPI_LIBRARY}
 )
 
 #-----------------------------------------------------------------------------
@@ -74,7 +73,7 @@ SET_TARGET_PROPERTIES (H5FDdsm_fortran
 #-----------------------------------------------------------------------------
 # Build the Fortran Tests
 #-----------------------------------------------------------------------------
-IF (BUILD_TESTING)
+IF(H5FD_DSM_BUILD_TESTING)
   SET(H5FDdsm_FORTRAN_TEST_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/Testing/dsmexample.f90
   )
@@ -101,10 +100,9 @@ IF (BUILD_TESTING)
 
   TARGET_LINK_LIBRARIES(H5FDdsmFortranTest
     H5FDdsm_fortran
-    ${MPI_FORTRAN_LIBRARY}
  )
 
-ENDIF (BUILD_TESTING)
+ENDIF(H5FD_DSM_BUILD_TESTING)
 
 #-----------------------------------------------------------------------------
 # Add Target(s) to CMake Install for import into other projects

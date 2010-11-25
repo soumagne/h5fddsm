@@ -84,8 +84,9 @@ INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
 #-----------------------------------------------------------------------------
 # Find MPI
 #-----------------------------------------------------------------------------
-INCLUDE( ${CMAKE_CURRENT_SOURCE_DIR}/CMake/FindMPI.cmake)
+FIND_PACKAGE(MPI REQUIRED)
 INCLUDE_DIRECTORIES(${MPI_INCLUDE_PATH})
+# MPI libraries are imported with HDF5
 
 #-----------------------------------------------------------------------------
 # Configure our module header file
@@ -186,7 +187,6 @@ ADD_LIBRARY(H5FDdsm ${H5FDdsmSources})
 
 TARGET_LINK_LIBRARIES(H5FDdsm
   hdf5
-  ${MPI_LIBRARY}
 ) 
 
 IF(WIN32)
@@ -212,7 +212,9 @@ ENDIF (H5FD_DSM_BUILD_FORTRAN)
 OPTION(H5FD_DSM_BUILD_TESTING "Build Testing code" ON)
 
 IF(H5FD_DSM_BUILD_TESTING)
- ADD_SUBDIRECTORY(Testing)
+  ADD_SUBDIRECTORY(Testing)
+  ENABLE_TESTING()
+  INCLUDE(CTest)
 ENDIF(H5FD_DSM_BUILD_TESTING)
 
 #-----------------------------------------------------------------------------

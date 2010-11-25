@@ -32,7 +32,7 @@
      CHARACTER(LEN=8), PARAMETER :: dsetname = "IntArray" ! Dataset name
 
      CHARACTER(LEN=100) :: filename  ! File name
-     INTEGER        :: fnamelen	     ! File name length
+     INTEGER        :: fnamelen      ! File name length
      INTEGER(HID_T) :: file_id       ! File identifier
      INTEGER(HID_T) :: dset_id       ! Dataset identifier
      INTEGER(HID_T) :: filespace     ! Dataspace identifier in file
@@ -44,7 +44,7 @@
      INTEGER, ALLOCATABLE :: data(:,:)   ! Data to write
      INTEGER :: rank = 2 ! Dataset rank
 
-     INTEGER :: error, error_n  ! Error flags
+     INTEGER :: error    ! Error flags
      INTEGER :: i, j
      !
      ! MPI definitions and calls.
@@ -88,7 +88,7 @@
      if ( fnamelen == 0 ) then
        filename = default_fname
      else
-	   filename = filename(1:fnamelen) // "/" // default_fname
+       filename = filename(1:fnamelen) // "/" // default_fname
      endif
      print *, "Using filename = ", filename
 
