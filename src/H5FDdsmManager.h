@@ -108,6 +108,14 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     void SetIntScalarInteractionName(H5FDdsmString name);
 
     // Description:
+    // Set the current given DoubleScalar interaction.
+    void SetDoubleScalarInteraction(H5FDdsmFloat64 value);
+
+    // Description:
+    // Set the current given name for the corresponding DoubleScalar interaction.
+    void SetDoubleScalarInteractionName(H5FDdsmString name);
+
+    // Description:
     // When sending, the writer can SetXMLDescriptionSend and it will be transmitted
     // to the receiver. When receiving, GetXMLDescriptionReceive queries the internal DSMBuffer
     // object to see if a string is present
@@ -167,8 +175,10 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     //
     char           *XMLStringSend;
     //
-    std::vector<H5FDdsmString> IntScalarInteractionNames;
-    std::vector<H5FDdsmInt32>  IntScalarInteractions;
+    std::vector<H5FDdsmString>   IntScalarInteractionNames;
+    std::vector<H5FDdsmInt32>    IntScalarInteractions;
+    std::vector<H5FDdsmString>   DoubleScalarInteractionNames;
+    std::vector<H5FDdsmFloat64>  DoubleScalarInteractions;
 
 private:
     H5FDdsmManager(const H5FDdsmManager&);  // Not implemented.

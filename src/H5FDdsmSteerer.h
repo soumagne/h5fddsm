@@ -27,6 +27,7 @@
 #define __H5FDdsmSteerer_h
 
 #include <mpi.h>
+#include <hdf5.h>
 
 #include "H5FDdsmObject.h"
 
@@ -60,7 +61,7 @@ public:
 
   H5FDdsmInt32 IsSteerable(H5FDdsmConstString hdfPath);
   H5FDdsmInt32 GetBoolean(H5FDdsmConstString name, void *data);
-  H5FDdsmInt32 GetScalar(H5FDdsmConstString name, void *data);
+  H5FDdsmInt32 GetScalar(H5FDdsmConstString name, H5FDdsmInt32 memType, void *data);
   H5FDdsmInt32 GetVector(H5FDdsmConstString name, void *data);
 
 protected:

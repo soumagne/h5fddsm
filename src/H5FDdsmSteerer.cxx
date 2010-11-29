@@ -134,7 +134,7 @@ H5FDdsmInt32 H5FDdsmSteerer::GetBoolean(H5FDdsmConstString name, void *data)
   return(H5FD_DSM_SUCCESS);
 }
 //----------------------------------------------------------------------------
-H5FDdsmInt32 H5FDdsmSteerer::GetScalar(H5FDdsmConstString name, void *data)
+H5FDdsmInt32 H5FDdsmSteerer::GetScalar(H5FDdsmConstString name, H5FDdsmInt32 memType, void *data)
 {
   H5FDdsmInt32 ret = H5FD_DSM_SUCCESS;
   hid_t fapl, fileId, interactionGroupId, attributeId;
@@ -163,7 +163,7 @@ H5FDdsmInt32 H5FDdsmSteerer::GetScalar(H5FDdsmConstString name, void *data)
       if (attributeId < 0) {
         ret = H5FD_DSM_FAIL;
       } else {
-        if (H5Aread(attributeId, H5T_NATIVE_INT, data) < 0) {
+        if (H5Aread(attributeId, memType, data) < 0) {
           H5Eprint(errorStack, stderr);
           ret = H5FD_DSM_FAIL;
         }
@@ -213,6 +213,18 @@ H5FDdsmInt32 H5FDdsmSteerer::WriteInteractions(H5FDdsmConstString name, H5FDdsmI
         memspace, H5P_DEFAULT, H5P_DEFAULT);
     if (this->DsmBuffer->GetComm()->GetId() == 0) {
       if (H5Awrite(attribute, H5T_NATIVE_INT, data) < 0) {
+        return(H5FD_DSM_FAIL);
+      }
+    }
+    H5Aclose(attribute);
+    H5Sclose(memspace);
+  }
+  else if (type == H5FD_DSM_DOUBLE_SCALAR) {
+    hid_t memspace = H5Screate(H5S_SCALAR);
+    hid_t attribute = H5Acreate(this->InteractionGroupId, name, H5T_NATIVE_DOUBLE,
+        memspace, H5P_DEFAULT, H5P_DEFAULT);
+    if (this->DsmBuffer->GetComm()->GetId() == 0) {
+      if (H5Awrite(attribute, H5T_NATIVE_DOUBLE, data) < 0) {
         return(H5FD_DSM_FAIL);
       }
     }

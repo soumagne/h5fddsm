@@ -131,7 +131,7 @@ done:
   FUNC_LEAVE_NOAPI(ret_value);
 }
 //----------------------------------------------------------------------------
-herr_t H5FD_dsm_boolean_get(const char *name, void *data)
+herr_t H5FD_dsm_boolean_get(const char *name, int type, void *data)
 {
   herr_t ret_value = SUCCEED;
   H5FDdsmBuffer *dsmBuffer;
@@ -150,7 +150,7 @@ done:
   FUNC_LEAVE_NOAPI(ret_value);
 }
 //----------------------------------------------------------------------------
-herr_t H5FD_dsm_scalar_get(const char *name, void *data)
+herr_t H5FD_dsm_scalar_get(const char *name, int type, void *data)
 {
   herr_t ret_value = SUCCEED;
   H5FDdsmBuffer *dsmBuffer;
@@ -161,15 +161,19 @@ herr_t H5FD_dsm_scalar_get(const char *name, void *data)
   }
 
   dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
-  if (!dsmBuffer->GetSteerer()->GetScalar(name, data)) {
-    ret_value = FAIL;
+  if ((type == H5T_NATIVE_INT) || (type == H5T_NATIVE_FLOAT) || (type == H5T_NATIVE_DOUBLE)) {
+    if (!dsmBuffer->GetSteerer()->GetScalar(name, type, data)) {
+      ret_value = FAIL;
+    }
+  } else {
+    DSM_STEERING_GOTO_ERROR("Type not supported, please use H5T_NATIVE_INT, H5T_NATIVE_FLOAT or H5T_NATIVE_DOUBLE", FAIL)
   }
 
 done:
   FUNC_LEAVE_NOAPI(ret_value);
 }
 //----------------------------------------------------------------------------
-herr_t H5FD_dsm_vector_get(const char *name, void *data)
+herr_t H5FD_dsm_vector_get(const char *name, int type, void *data)
 {
   herr_t ret_value = SUCCEED;
   H5FDdsmBuffer *dsmBuffer;
