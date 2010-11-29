@@ -32,7 +32,8 @@
 //
 #include "H5FDdsmSteering.h"
 #include "H5FDdsmSteerer.h"
-#include "H5FDdsmBuffer.h"
+#include "H5FDdsmManager.h"
+
 
 #define DSM_STEERING_GOTO_ERROR(x, ret_val) \
 {                                           \
@@ -43,21 +44,34 @@
 
 extern H5FDdsmInt32 DsmAutoAlloc(MPI_Comm comm);
 extern void* DsmGetAutoAllocatedBuffer();
+extern void* DsmGetAutoAllocatedManager();
 //----------------------------------------------------------------------------
 // C steering bindings
 
 void *dsm_buffer = NULL; // pointer to internal dsm buffer reference
 //----------------------------------------------------------------------------
-herr_t H5FD_dsm_steering_init(MPI_Comm comm)
+herr_t H5FD_dsm_steering_init(MPI_Comm comm, void *buffer)
 {
   herr_t ret_value = SUCCEED;
+  H5FDdsmBuffer *dsmBuffer;
   FUNC_ENTER_NOAPI(H5FD_dsm_steering_init, FAIL)
 
-  DsmAutoAlloc(comm);
-  dsm_buffer = DsmGetAutoAllocatedBuffer();
+  if (!buffer) {
+    DsmAutoAlloc(comm);
+    dsm_buffer = DsmGetAutoAllocatedBuffer();
+  } else {
+    dsm_buffer = buffer;
+  }
 
   if (!dsm_buffer) {
     DSM_STEERING_GOTO_ERROR("Error during initialization of the DSM Steering library", FAIL)
+  }
+
+  dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
+  if (dsmBuffer->GetIsAutoAllocated() && !dsmBuffer->GetIsConnected()) {
+    H5FDdsmManager *dsmManager = (H5FDdsmManager *)DsmGetAutoAllocatedManager();
+    dsmManager->ReadDSMConfigFile();
+    dsmManager->ConnectDSM();
   }
 
 done:
@@ -76,10 +90,6 @@ herr_t H5FD_dsm_begin_loop(const char *name)
 
   dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
   // Do stuff here
-//  if (dsmBuffer) fprintf(stderr, "dsmBuffer is not NULL\n");
-//  if (dsmBuffer && dsmBuffer->GetSteerer()) {
-//    fprintf(stderr, "dsmBuffer steerer is not NULL\n");
-//  }
 
 done:
   FUNC_LEAVE_NOAPI(ret_value);

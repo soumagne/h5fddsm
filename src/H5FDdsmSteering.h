@@ -37,7 +37,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-  H5FDdsm_EXPORT herr_t H5FD_dsm_steering_init(MPI_Comm comm);
+  H5FDdsm_EXPORT herr_t H5FD_dsm_steering_init(MPI_Comm comm, void *buffer);
 
   H5FDdsm_EXPORT herr_t H5FD_dsm_begin_loop(const char *name);
   H5FDdsm_EXPORT herr_t H5FD_dsm_end_loop(const char *name);

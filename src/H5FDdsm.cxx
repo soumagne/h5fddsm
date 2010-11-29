@@ -336,13 +336,25 @@ DsmAutoDealloc()
 }
 //--------------------------------------------------------------------------
 void *
-DsmGetAutoAllocatedBuffer() {
+DsmGetAutoAllocatedBuffer()
+{
   void *buffer = NULL;
 
   if (dsmManagerSingleton) {
     buffer = (void*)dsmManagerSingleton->GetDSMHandle();
   }
   return(buffer);
+}
+//--------------------------------------------------------------------------
+void *
+DsmGetAutoAllocatedManager()
+{
+  void *manager = NULL;
+
+  if (dsmManagerSingleton) {
+    manager = (void*)dsmManagerSingleton;;
+  }
+  return(manager);
 }
 //--------------------------------------------------------------------------
 H5FDdsmInt32

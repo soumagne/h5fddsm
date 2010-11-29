@@ -58,6 +58,13 @@ H5FDdsmManager::~H5FDdsmManager()
 { 
   this->DestroyDSM();
 
+  while (!this->IntScalarInteractionNames.empty()) {
+    H5FDdsmString interactIntScalarName = this->IntScalarInteractionNames.back();
+    this->IntScalarInteractionNames.pop_back();
+    if (interactIntScalarName) delete interactIntScalarName;
+    interactIntScalarName = NULL;
+  }
+
   this->SetDsmConfigFilePath(NULL);
   this->SetXMLStringSend(NULL);
 }
@@ -220,10 +227,20 @@ void H5FDdsmManager::ClearDSM()
 void H5FDdsmManager::RequestRemoteChannel()
 {
   // TODO Update steering orders here for now
-  for (unsigned int i = 0; i < this->IntScalarInteractionNames.size(); i++) {
-    this->DSMBuffer->GetSteerer()->WriteInteractions(this->IntScalarInteractionNames[i],
-        H5FD_DSM_INT_SCALAR,
-        (void*)&this->IntScalarInteractions[i]);
+  // TODO Watch out that everything from the GUI is received before sending the steering
+  // may create an invalid state otherwise
+  if (this->IntScalarInteractionNames.size()) {
+    this->DSMBuffer->GetSteerer()->CreateInteractionGroup();
+    while (!this->IntScalarInteractionNames.empty()) {
+      H5FDdsmString interactIntScalarName = this->IntScalarInteractionNames.back();
+      H5FDdsmInt32 interactIntScalar = this->IntScalarInteractions.back();
+      this->DSMBuffer->GetSteerer()->WriteInteractions(interactIntScalarName, H5FD_DSM_INT_SCALAR, &interactIntScalar);
+      this->IntScalarInteractionNames.pop_back();
+      this->IntScalarInteractions.pop_back();
+      if (interactIntScalarName) delete interactIntScalarName;
+      interactIntScalarName = NULL;
+    }
+    this->DSMBuffer->GetSteerer()->CloseInteractionGroup();
   }
   this->DSMBuffer->GetSteerer()->UpdateSteeringCommands();
   this->DSMBuffer->RequestRemoteChannel();
@@ -524,5 +541,7 @@ void H5FDdsmManager::SetIntScalarInteraction(H5FDdsmInt32 value)
 //----------------------------------------------------------------------------
 void H5FDdsmManager::SetIntScalarInteractionName(H5FDdsmString name)
 {
-  this->IntScalarInteractionNames.push_back(name);
+  H5FDdsmString tmpName = new char[strlen(name)+1];
+  strcpy(tmpName, name);
+  this->IntScalarInteractionNames.push_back(tmpName);
 }
