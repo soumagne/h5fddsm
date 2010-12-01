@@ -25,8 +25,21 @@ SET (H5FDdsm_PACKAGE_STRING "${H5FDdsm_PACKAGE_NAME} ${H5FDdsm_PACKAGE_VERSION}"
 SET (H5FDdsm_PACKAGE_TARNAME "h5fddsm")
 
 #-----------------------------------------------------------------------------
-# Setup output Directories
+# Setup install and output Directories
 #-----------------------------------------------------------------------------
+IF (NOT H5FD_DSM_INSTALL_BIN_DIR)
+  SET (H5FD_DSM_INSTALL_BIN_DIR bin)
+ENDIF (NOT H5FD_DSM_INSTALL_BIN_DIR)
+IF (NOT H5FD_DSM_INSTALL_LIB_DIR)
+  SET (H5FD_DSM_INSTALL_LIB_DIR lib)
+ENDIF (NOT H5FD_DSM_INSTALL_LIB_DIR)
+IF (NOT H5FD_DSM_INSTALL_INCLUDE_DIR)
+  SET (H5FD_DSM_INSTALL_INCLUDE_DIR include)
+ENDIF (NOT H5FD_DSM_INSTALL_INCLUDE_DIR)
+IF (NOT H5FD_DSM_INSTALL_DATA_DIR)
+  SET (H5FD_DSM_INSTALL_DATA_DIR share)
+ENDIF (NOT H5FD_DSM_INSTALL_DATA_DIR)
+
 IF (NOT H5FD_DSM_EXTERNALLY_CONFIGURED)
   SET (CMAKE_RUNTIME_OUTPUT_DIRECTORY
       ${PROJECT_BINARY_DIR}/bin CACHE PATH "Single Directory for all Executables."
@@ -241,7 +254,7 @@ INSTALL (
     ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmCommMpi.h
     ${H5FDdsm_BINARY_DIR}/src/H5FDdsmConfig.h
   DESTINATION
-    include${INCLUDE_SUFFIX}
+    ${H5FD_DSM_INSTALL_INCLUDE_DIR}
   COMPONENT
     headers
 )
@@ -254,9 +267,9 @@ INSTALL (
     H5FDdsm
   EXPORT
     ${H5FD_DSM_EXPORTED_TARGETS}
-  LIBRARY DESTINATION lib${LIB_SUFFIX}
-  ARCHIVE DESTINATION lib${LIB_SUFFIX}
-  RUNTIME DESTINATION bin 
+  LIBRARY DESTINATION ${H5FD_DSM_INSTALL_LIB_DIR}
+  ARCHIVE DESTINATION ${H5FD_DSM_INSTALL_LIB_DIR}
+  RUNTIME DESTINATION ${H5FD_DSM_INSTALL_BIN_DIR}
 )
 
 #-----------------------------------------------------------------------------
@@ -266,7 +279,7 @@ INSTALL (
   EXPORT
     ${H5FD_DSM_EXPORTED_TARGETS}
   DESTINATION
-    share/cmake/h5fddsm
+    ${H5FD_DSM_INSTALL_DATA_DIR}/cmake/h5fddsm
   FILE
     h5fddsm-targets.cmake
 )
@@ -305,7 +318,7 @@ INSTALL (
   FILES
     ${H5FDdsm_BINARY_DIR}/CMakeFiles/h5fddsm-config.cmake
   DESTINATION
-    share/cmake/h5fddsm
+    ${H5FD_DSM_INSTALL_DATA_DIR}/cmake/h5fddsm
 )
 
 #-----------------------------------------------------------------------------
@@ -319,7 +332,7 @@ INSTALL (
   FILES
     ${H5FDdsm_BINARY_DIR}/CMakeFiles/h5fddsm-config-version.cmake
   DESTINATION
-    share/cmake/h5fddsm
+    ${H5FD_DSM_INSTALL_DATA_DIR}/cmake/h5fddsm
 )
 
 #-----------------------------------------------------------------------------

@@ -27,12 +27,13 @@
 #define __H5FDdsmSteerer_h
 
 #include <mpi.h>
+#include <hdf5.h>
 
 #include "H5FDdsmObject.h"
 
 enum H5FDdsmInteractionType
 {
-  H5FD_DSM_INT_SCALAR = 0,
+  H5FD_DSM_INT_SCALAR,
   H5FD_DSM_DOUBLE_SCALAR,
   H5FD_DSM_INT_VECTOR,
   H5FD_DSM_DOUBLE_VECTOR
@@ -60,20 +61,24 @@ public:
 
   H5FDdsmInt32 IsSteerable(H5FDdsmConstString hdfPath);
   H5FDdsmInt32 GetBoolean(H5FDdsmConstString name, void *data);
-  H5FDdsmInt32 GetScalar(H5FDdsmConstString name, void *data);
+  H5FDdsmInt32 GetScalar(H5FDdsmConstString name, H5FDdsmInt32 memType, void *data);
   H5FDdsmInt32 GetVector(H5FDdsmConstString name, void *data);
 
 protected:
   friend class H5FDdsmManager;
 
+  H5FDdsmInt32 CreateInteractionGroup();
   H5FDdsmInt32 WriteInteractions(H5FDdsmConstString name, H5FDdsmInteractionType type, void *data);
+  H5FDdsmInt32 CloseInteractionGroup();
 
   H5FDdsmInt32 CheckCommand(H5FDdsmConstString command);
 
-  H5FDdsmBuffer  *DsmBuffer;
-  H5FDdsmString CurrentCommand;
-  H5FDdsmInt32  WriteToDSM;
+  H5FDdsmBuffer *DsmBuffer;
+  H5FDdsmString  CurrentCommand;
+  H5FDdsmInt32   WriteToDSM;
   std::string   *SteerableObjects;
+  H5FDdsmInt32   FileId;
+  H5FDdsmInt32   InteractionGroupId;
 };
 
 #endif // __H5FDdsmSteerer_h

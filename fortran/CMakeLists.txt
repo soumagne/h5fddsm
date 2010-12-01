@@ -99,9 +99,9 @@ INSTALL (
     H5FDdsm_f90CStub
   EXPORT
     ${H5FD_DSM_EXPORTED_TARGETS}
-  LIBRARY DESTINATION lib${LIB_SUFFIX} COMPONENT fortlibraries
-  ARCHIVE DESTINATION lib${LIB_SUFFIX} COMPONENT fortlibraries
-  RUNTIME DESTINATION bin COMPONENT fortlibraries
+  LIBRARY DESTINATION ${H5FD_DSM_INSTALL_LIB_DIR} COMPONENT fortlibraries
+  ARCHIVE DESTINATION ${H5FD_DSM_INSTALL_LIB_DIR} COMPONENT fortlibraries
+  RUNTIME DESTINATION ${H5FD_DSM_INSTALL_BIN_DIR} COMPONENT fortlibraries
 )
 
 #-----------------------------------------------------------------------------
@@ -111,7 +111,7 @@ INSTALL (
   FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/H5f90dsmproto.h
   DESTINATION
-    include${INCLUDE_SUFFIX}/fortran
+    ${H5FD_DSM_INSTALL_INCLUDE_DIR}/fortran
   COMPONENT
     fortheaders
 )
@@ -120,7 +120,7 @@ INSTALL (
   DIRECTORY
     ${CMAKE_Fortran_MODULE_DIRECTORY}/\${BUILD_TYPE}/
   DESTINATION
-    include${INCLUDE_SUFFIX}/fortran
+    ${H5FD_DSM_INSTALL_INCLUDE_DIR}/fortran
   COMPONENT
     fortheaders
 )
