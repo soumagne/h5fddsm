@@ -590,7 +590,9 @@ H5Pset_fapl_dsm(hid_t fapl_id, MPI_Comm dsmComm, void *dsmBuffer)
     }
   }
 
-  if (!fa.buffer->GetSteerer()->GetWriteToDSM() || (fa.buffer && !fa.buffer->GetIsConnected())) {
+  if (!fa.buffer->GetSteerer()->GetWriteToDSM() || 
+      (fa.buffer && !fa.buffer->GetIsConnected() && !fa.buffer->GetIsServer())) 
+  {
     // next time step will go back to the DSM if a steering asked for writing to the disk
     if (fa.buffer->GetSteerer()) fa.buffer->GetSteerer()->SetWriteToDSM(1);
     // When the set_fapl_dsm is called with a NULL dsmBuffer argument and no connection can be established
@@ -840,7 +842,7 @@ H5FD_dsm_close(H5FD_t *_file)
     HGOTO_ERROR(H5E_VFL, H5E_CLOSEERROR, FAIL, "can't close DSM");
 
   if (!file->DsmBuffer->GetIsReadOnly()) {
-    if (!file->DsmBuffer->GetIsServer()) {
+    if (!file->DsmBuffer->GetIsServer() || (file->DsmBuffer->GetIsServer() && !file->DsmBuffer->GetIsConnected())) {
       PRINT_INFO("Gathering dirty info");
       if (file->DsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_SOCKET) {
         comm = dynamic_cast <H5FDdsmCommSocket*> (file->DsmBuffer->GetComm())->GetComm();
