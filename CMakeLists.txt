@@ -34,7 +34,7 @@ IF (NOT H5FD_DSM_INSTALL_LIB_DIR)
   SET (H5FD_DSM_INSTALL_LIB_DIR lib)
 ENDIF (NOT H5FD_DSM_INSTALL_LIB_DIR)
 IF (NOT H5FD_DSM_INSTALL_INCLUDE_DIR)
-  SET (H5FD_DSM_INSTALL_INCLUDE_DIR include)
+  SET (H5FD_DSM_INSTALL_INCLUDE_DIR ${CMAKE_INSTALL_PREFIX}/include)
 ENDIF (NOT H5FD_DSM_INSTALL_INCLUDE_DIR)
 IF (NOT H5FD_DSM_INSTALL_DATA_DIR)
   SET (H5FD_DSM_INSTALL_DATA_DIR share)
@@ -54,6 +54,7 @@ IF (NOT H5FD_DSM_EXTERNALLY_CONFIGURED)
       ${PROJECT_BINARY_DIR}/bin/fortran CACHE PATH "Single Directory for all fortran modules."
   )
 ENDIF (NOT H5FD_DSM_EXTERNALLY_CONFIGURED)
+
 #-----------------------------------------------------------------------------
 # Targets built within this project are exported at Install time for use
 # by other projects using FindH5FDdsm. 
@@ -73,6 +74,19 @@ IF(BUILD_SHARED_LIBS)
 ELSE(BUILD_SHARED_LIBS)
   SET(H5FDdsm_BUILD_SHARED_LIBS 0)
 ENDIF(BUILD_SHARED_LIBS)
+
+#-------------------------------------------------------------------------------
+MACRO (SET_LIB_OPTIONS libtarget)
+  IF (BUILD_SHARED_LIBS)
+    IF (WIN32)
+      SET (LIBH5FD_DSM_VERSION ${H5FDdsm_PACKAGE_VERSION_MAJOR})
+    ELSE (WIN32)
+      SET (LIBH5FD_DSM_VERSION ${H5FDdsm_PACKAGE_VERSION})
+    ENDIF (WIN32)
+    SET_TARGET_PROPERTIES (${libtarget} PROPERTIES VERSION ${LIBH5FD_DSM_VERSION})
+    SET_TARGET_PROPERTIES (${libtarget} PROPERTIES SOVERSION ${LIBH5FD_DSM_VERSION})
+  ENDIF (BUILD_SHARED_LIBS)
+ENDMACRO (SET_LIB_OPTIONS)
 
 #-----------------------------------------------------------------------------
 # To fix potential linker problems with mixed static/shared on linux
@@ -208,14 +222,16 @@ ADD_LIBRARY(H5FDdsm ${H5FDdsmSources})
 
 TARGET_LINK_LIBRARIES(H5FDdsm
   hdf5
-) 
+)
 
 IF(WIN32)
   TARGET_LINK_LIBRARIES(H5FDdsm
     wsock32
-  )  
+  )
   ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS)
 ENDIF(WIN32)
+
+SET_LIB_OPTIONS(H5FDdsm)
 
 #-----------------------------------------------------------------------------
 # Option to build Fortran bindings
@@ -233,9 +249,9 @@ ENDIF (H5FD_DSM_BUILD_FORTRAN)
 OPTION(H5FD_DSM_BUILD_TESTING "Build Testing code" ON)
 
 IF(H5FD_DSM_BUILD_TESTING)
-  ADD_SUBDIRECTORY(Testing)
   ENABLE_TESTING()
   INCLUDE(CTest)
+  ADD_SUBDIRECTORY(Testing)
 ENDIF(H5FD_DSM_BUILD_TESTING)
 
 #-----------------------------------------------------------------------------

@@ -41,6 +41,8 @@ TARGET_LINK_LIBRARIES(H5FDdsm_f90CStub
   hdf5_f90cstub
 )
 
+SET_LIB_OPTIONS(H5FDdsm_f90CStub)
+
 #-----------------------------------------------------------------------------
 # Build the Fortran library
 #-----------------------------------------------------------------------------
@@ -56,6 +58,8 @@ ADD_LIBRARY(H5FDdsm_fortran
 TARGET_LINK_LIBRARIES(H5FDdsm_fortran
   H5FDdsm_f90CStub
 )
+
+SET_LIB_OPTIONS(H5FDdsm_fortran)
 
 IF (WIN32 AND MSVC)
   SET_TARGET_PROPERTIES (H5FDdsm_fortran
