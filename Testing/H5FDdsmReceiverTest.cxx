@@ -38,7 +38,6 @@
   #define PORT 22000
 #endif
 
-#define COMM_TYPE H5FD_DSM_COMM_SOCKET
 std::string server_name = server;
 int default_port_number = PORT;
 
@@ -56,11 +55,26 @@ int main (int argc, char* argv[])
 {
   int provided, rank, size;
   MPI_Comm dcomm = MPI_COMM_WORLD;
+  double DSMSize = 16;
+  int commType = H5FD_DSM_COMM_SOCKET;
 
-  // default GB
-  double DSMSize = 40;
   if (argv[1]) {
     DSMSize = atof(argv[1]);
+  }
+
+  if (argv[2]) {
+    if (!strcmp(argv[2], "Socket")) {
+      commType = H5FD_DSM_COMM_SOCKET;
+      std::cout << "SOCKET Inter-Communicator selected" << std::endl;
+    }
+    else if (!strcmp(argv[2], "MPI")) {
+      commType = H5FD_DSM_COMM_MPI;
+      std::cout << "MPI Inter-Communicator selected" << std::endl;
+    }
+    else if (!strcmp(argv[2], "MPI_RMA")) {
+      commType = H5FD_DSM_COMM_MPI_RMA;
+      std::cout << "MPI_RMA Inter-Communicator selected" << std::endl;
+    }
   }
 
   //
@@ -104,7 +118,7 @@ int main (int argc, char* argv[])
   H5FDdsmManager *dsmManager = new H5FDdsmManager();
   dsmManager->SetCommunicator(dcomm);
   dsmManager->SetLocalBufferSizeMBytes(DSMSize/size);
-  dsmManager->SetDsmCommType(COMM_TYPE);
+  dsmManager->SetDsmCommType(commType);
   dsmManager->SetDsmIsServer(1);
   dsmManager->SetServerHostName(server_name.c_str());
   dsmManager->SetServerPort(default_port_number);
@@ -120,6 +134,8 @@ int main (int argc, char* argv[])
     std::cout << "DSM server process count  : " <<  (serversize+1) << std::endl;
   }
 
+  sleep(100);
+  std::cout << "Waiting for client..." << std::endl;
   while (!dsmManager->GetDSMHandle()->GetIsConnected()) {
     sleep(1000);
   }

@@ -167,16 +167,13 @@ void TestParticleClose()
 //----------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------
-//#define MAX_LENGTH  3
 #define LOOPS       10
-#define AVERAGE     100
+#define AVERAGE     10
 #define TYPES       1 // 2 if disk output test required
 
 int main(int argc, char **argv)
 {
   int            nlocalprocs, rank;
-  // int            Lengths[MAX_LENGTH] = { 1000, 5000, 10000, 50000, 100000, 500000, 1000000, 5000000, 10000000, 50000000 };
-  // int            Lengths[MAX_LENGTH] = { 50000, 500000, 50000000 };
   MPI_Comm       dcomm = MPI_COMM_WORLD;
   double         remoteMB, MBytes, GBytes, Bytes, SendBytes, bandwidth;
   double         totaltime;
@@ -240,8 +237,6 @@ int main(int argc, char **argv)
     std::cout << "DSM server memory size is : " << (int)remoteMB << " MB" << std::endl;
     std::cout << "DSM server process count  : " <<  (int)numServers << std::endl;
   }
-
-//  for (length=0; length<MAX_LENGTH; length++) {
 
   for (int type=0; type<TYPES; type++) {
     if (type==0 && rank == 0) {

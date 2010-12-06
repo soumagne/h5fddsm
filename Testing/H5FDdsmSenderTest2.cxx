@@ -149,7 +149,7 @@ void TestParticleClose()
 }
 //----------------------------------------------------------------------------
 #define LOOPS       10
-#define AVERAGE     100
+#define AVERAGE     10
 #define TYPES       1 // 2 if disk output test required
 
 int main(int argc, char **argv)

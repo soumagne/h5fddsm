@@ -14,6 +14,37 @@ IF (WIN32)
   ADD_DEFINITIONS(-DH5FD_TEST_WAIT) # For debug
 ENDIF(WIN32)
 
+#-----------------------------------------------
+# Compile kwsys library and setup TestDriver
+#-----------------------------------------------
+SET(KWSYS_NAMESPACE H5FDdsm_sys)
+SET(KWSYS_USE_SystemTools 1)
+SET(KWSYS_USE_Process 1)
+SET(KWSYS_USE_RegularExpression 1)
+ADD_SUBDIRECTORY(kwsys)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR}/kwsys)
+
+CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/H5FDdsmTestDriverConfig.h.in
+  ${CMAKE_CURRENT_BINARY_DIR}/H5FDdsmTestDriverConfig.h @ONLY ESCAPE_QUOTES)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+
+ADD_EXECUTABLE(H5FDdsmTestDriver
+  ${CMAKE_CURRENT_SOURCE_DIR}/H5FDdsmTestDriver.cxx
+)
+TARGET_LINK_LIBRARIES(H5FDdsmTestDriver H5FDdsm_sys)
+
+SET(COMM_LIST Socket MPI MPI_RMA)
+FUNCTION(ADD_REMOTE_DSM_TEST full_test_name server client)
+  FOREACH(comm ${COMM_LIST})
+    ADD_TEST("${full_test_name}_${comm}"
+      ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/H5FDdsmTestDriver
+      --server ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${server}
+      --client ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${client}
+      16 ${comm}
+      )
+  ENDFOREACH(comm)
+ENDFUNCTION (ADD_REMOTE_DSM_TEST)
+
 #-----------------------------------------------------------------------------
 # H5FDdsmSenderTest : Bandwidth test of DSM write operations
 #-----------------------------------------------------------------------------
@@ -149,3 +180,11 @@ TARGET_LINK_LIBRARIES(H5FDdsmReceiverTest6
 )
 SET_LINK_OPTIONS(H5FDdsmReceiverTest6)
 
+#-----------------------------------------------------------------------------
+IF (MPIEXEC)
+  ADD_REMOTE_DSM_TEST(H5FDdsmTest H5FDdsmReceiverTest H5FDdsmSenderTest)
+  ADD_REMOTE_DSM_TEST(H5FDdsmTest2 H5FDdsmReceiverTest2 H5FDdsmSenderTest2)
+  ADD_REMOTE_DSM_TEST(H5FDdsmTest4 H5FDdsmReceiverTest4 H5FDdsmSenderTest4)
+  ADD_REMOTE_DSM_TEST(H5FDdsmTest5 H5FDdsmReceiverTest5 H5FDdsmSenderTest5)
+  ADD_REMOTE_DSM_TEST(H5FDdsmTest6 H5FDdsmReceiverTest6 H5FDdsmSenderTest6)
+ENDIF (MPIEXEC)

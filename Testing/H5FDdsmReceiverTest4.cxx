@@ -3,6 +3,7 @@
 #include <mpi.h>
 
 #include <iostream>
+#include <cstdlib>
 
 // Sleep  in milliseconds
 #ifdef _WIN32
@@ -21,6 +22,27 @@ main(int argc, char * argv[])
 {
   int rank, size, provided;
   MPI_Comm comm = MPI_COMM_WORLD;
+  double DSMSize = 16; // default MB
+  int commType = H5FD_DSM_COMM_SOCKET;
+
+  if (argv[1]) {
+    DSMSize = atof(argv[1]);
+  }
+
+  if (argv[2]) {
+    if (!strcmp(argv[2], "Socket")) {
+      commType = H5FD_DSM_COMM_SOCKET;
+      std::cout << "SOCKET Inter-Communicator selected" << std::endl;
+    }
+    else if (!strcmp(argv[2], "MPI")) {
+      commType = H5FD_DSM_COMM_MPI;
+      std::cout << "MPI Inter-Communicator selected" << std::endl;
+    }
+    else if (!strcmp(argv[2], "MPI_RMA")) {
+      commType = H5FD_DSM_COMM_MPI_RMA;
+      std::cout << "MPI_RMA Inter-Communicator selected" << std::endl;
+    }
+  }
 
   MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
   MPI_Comm_rank(comm, &rank);
@@ -40,8 +62,8 @@ main(int argc, char * argv[])
   H5FDdsmManager * dsmManager = new H5FDdsmManager();
   dsmManager->SetGlobalDebug(0);
   dsmManager->SetCommunicator(comm);
-  dsmManager->SetLocalBufferSizeMBytes(16);
-  dsmManager->SetDsmCommType(H5FD_DSM_COMM_SOCKET);
+  dsmManager->SetLocalBufferSizeMBytes(DSMSize);
+  dsmManager->SetDsmCommType(commType);
   dsmManager->SetDsmIsServer(1);
   dsmManager->SetServerHostName("default");
   dsmManager->SetServerPort(22000);
@@ -58,15 +80,15 @@ main(int argc, char * argv[])
               << std::endl;
   }
 
+  sleep(100);
+  std::cout << "Waiting for client..." << std::endl;
   while (!dsmManager->GetDSMHandle()->GetIsConnected()) {
-    std::cout << "HERE1" << std::endl;
     sleep(1000);
   }
 
   bool connected = true;
   while (connected) {
     if (dsmManager->GetDsmUpdateReady()) {
-      std::cout << "Server Handling" << std::endl;
 
       // H5Dump
       dsmManager->H5DumpLight();
