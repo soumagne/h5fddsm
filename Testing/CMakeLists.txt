@@ -46,26 +46,26 @@ FUNCTION(ADD_REMOTE_DSM_TEST full_test_name server client)
 ENDFUNCTION (ADD_REMOTE_DSM_TEST)
 
 #-----------------------------------------------------------------------------
-# H5FDdsmSenderTest : Bandwidth test of DSM write operations
+# H5FDdsmSenderTest1 : Bandwidth test of DSM write operations
 #-----------------------------------------------------------------------------
-ADD_EXECUTABLE(H5FDdsmSenderTest
-  H5FDdsmSenderTest.cxx
+ADD_EXECUTABLE(H5FDdsmSenderTest1
+  H5FDdsmSenderTest1.cxx
 )
-TARGET_LINK_LIBRARIES(H5FDdsmSenderTest
+TARGET_LINK_LIBRARIES(H5FDdsmSenderTest1
   H5FDdsm
 )
-SET_LINK_OPTIONS(H5FDdsmSenderTest)
+SET_LINK_OPTIONS(H5FDdsmSenderTest1)
 
 #-----------------------------------------------------------------------------
-# H5FDdsmReceiverTest : Bandwidth test receiver (does not do anything except hosting data)
+# H5FDdsmReceiverTest1 : Bandwidth test receiver (does not do anything except hosting data)
 #-----------------------------------------------------------------------------
-ADD_EXECUTABLE(H5FDdsmReceiverTest
-  H5FDdsmReceiverTest.cxx
+ADD_EXECUTABLE(H5FDdsmReceiverTest1
+  H5FDdsmReceiverTest1.cxx
 )
-TARGET_LINK_LIBRARIES(H5FDdsmReceiverTest
+TARGET_LINK_LIBRARIES(H5FDdsmReceiverTest1
   H5FDdsm
 )
-SET_LINK_OPTIONS(H5FDdsmReceiverTest)
+SET_LINK_OPTIONS(H5FDdsmReceiverTest1)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmSenderTest2 : Data validity test of DSM write operations
@@ -182,7 +182,7 @@ SET_LINK_OPTIONS(H5FDdsmReceiverTest6)
 
 #-----------------------------------------------------------------------------
 IF (MPIEXEC)
-  ADD_REMOTE_DSM_TEST(H5FDdsmTest H5FDdsmReceiverTest H5FDdsmSenderTest)
+  ADD_REMOTE_DSM_TEST(H5FDdsmTest1 H5FDdsmReceiverTest1 H5FDdsmSenderTest1)
   ADD_REMOTE_DSM_TEST(H5FDdsmTest2 H5FDdsmReceiverTest2 H5FDdsmSenderTest2)
   ADD_REMOTE_DSM_TEST(H5FDdsmTest4 H5FDdsmReceiverTest4 H5FDdsmSenderTest4)
   ADD_REMOTE_DSM_TEST(H5FDdsmTest5 H5FDdsmReceiverTest5 H5FDdsmSenderTest5)

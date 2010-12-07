@@ -494,7 +494,7 @@ int H5FDdsmTestDriver::Main(int argc, char* argv[])
 //----------------------------------------------------------------------------
 void H5FDdsmTestDriver::ReportCommand(const char* const* command, const char* name)
 {
-  cerr << "vtkSMTestDriver: " << name << " command is:\n";
+  cerr << "H5FDdsmTestDriver: " << name << " command is:\n";
   for(const char* const * c = command; *c; ++c)
     {
     cerr << " \"" << *c << "\"";
@@ -510,17 +510,17 @@ int H5FDdsmTestDriver::ReportStatus(H5FDdsm_sysProcess* process, const char* nam
     {
     case H5FDdsm_sysProcess_State_Starting:
       {
-      cerr << "vtkSMTestDriver: Never started " << name << " process.\n";
+      cerr << "H5FDdsmTestDriver: Never started " << name << " process.\n";
       } break;
     case H5FDdsm_sysProcess_State_Error:
       {
-      cerr << "vtkSMTestDriver: Error executing " << name << " process: "
+      cerr << "H5FDdsmTestDriver: Error executing " << name << " process: "
            << H5FDdsm_sysProcess_GetErrorString(process)
            << "\n";
       } break;
     case H5FDdsm_sysProcess_State_Exception:
       {
-      cerr << "vtkSMTestDriver: " << name
+      cerr << "H5FDdsmTestDriver: " << name
                       << " process exited with an exception: ";
       switch(H5FDdsm_sysProcess_GetExitException(process))
         {
@@ -553,21 +553,21 @@ int H5FDdsmTestDriver::ReportStatus(H5FDdsm_sysProcess* process, const char* nam
       } break;
     case H5FDdsm_sysProcess_State_Executing:
       {
-      cerr << "vtkSMTestDriver: Never terminated " << name << " process.\n";
+      cerr << "H5FDdsmTestDriver: Never terminated " << name << " process.\n";
       } break;
     case H5FDdsm_sysProcess_State_Exited:
       {
       result = H5FDdsm_sysProcess_GetExitValue(process);
-      cerr << "vtkSMTestDriver: " << name << " process exited with code "
+      cerr << "H5FDdsmTestDriver: " << name << " process exited with code "
                       << result << "\n";
       } break;
     case H5FDdsm_sysProcess_State_Expired:
       {
-      cerr << "vtkSMTestDriver: killed " << name << " process due to timeout.\n";
+      cerr << "H5FDdsmTestDriver: killed " << name << " process due to timeout.\n";
       } break;
     case H5FDdsm_sysProcess_State_Killed:
       {
-      cerr << "vtkSMTestDriver: killed " << name << " process.\n";
+      cerr << "H5FDdsmTestDriver: killed " << name << " process.\n";
       } break;
     }
   return result;
