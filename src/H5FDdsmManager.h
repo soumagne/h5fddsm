@@ -36,6 +36,8 @@
 
 #include <vector>
 
+struct H5FDdsmManagerInternals;
+
 class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
 {
   public:
@@ -100,20 +102,12 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     void SetSteeringCommand(H5FDdsmString cmd);
 
     // Description:
-    // Set the current given IntScalar interaction.
-    void SetIntScalarInteraction(H5FDdsmInt32 value);
+    // Set values and associated name for the corresponding int interaction.
+    void SetSteeringValues(const char *name, int numberOfElements, int *values);
 
     // Description:
-    // Set the current given name for the corresponding IntScalar interaction.
-    void SetIntScalarInteractionName(H5FDdsmString name);
-
-    // Description:
-    // Set the current given DoubleScalar interaction.
-    void SetDoubleScalarInteraction(H5FDdsmFloat64 value);
-
-    // Description:
-    // Set the current given name for the corresponding DoubleScalar interaction.
-    void SetDoubleScalarInteractionName(H5FDdsmString name);
+    // Set values and associated name for the corresponding int interaction.
+    void SetSteeringValues(const char *name, int numberOfElements, double *values);
 
     // Description:
     // When sending, the writer can SetXMLDescriptionSend and it will be transmitted
@@ -175,10 +169,12 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     //
     char           *XMLStringSend;
     //
-    std::vector<H5FDdsmString>   IntScalarInteractionNames;
-    std::vector<H5FDdsmInt32>    IntScalarInteractions;
-    std::vector<H5FDdsmString>   DoubleScalarInteractionNames;
-    std::vector<H5FDdsmFloat64>  DoubleScalarInteractions;
+//    std::vector<H5FDdsmString>   IntScalarInteractionNames;
+//    std::vector<H5FDdsmInt32>    IntScalarInteractions;
+//    std::vector<H5FDdsmString>   DoubleScalarInteractionNames;
+//    std::vector<H5FDdsmFloat64>  DoubleScalarInteractions;
+    H5FDdsmManagerInternals *ManagerInternals;
+
 
 private:
     H5FDdsmManager(const H5FDdsmManager&);  // Not implemented.

@@ -205,42 +205,60 @@ H5FDdsmInt32 H5FDdsmSteerer::CreateInteractionGroup()
   }
 }
 //----------------------------------------------------------------------------
-H5FDdsmInt32 H5FDdsmSteerer::WriteInteractions(H5FDdsmConstString name, H5FDdsmInteractionType type, void *data)
+H5FDdsmInt32 H5FDdsmSteerer::WriteInteractions(H5FDdsmConstString name, H5FDdsmInt32 numberOfElements, int *data)
 {
-  if (type == H5FD_DSM_INT_SCALAR) {
-    hid_t memspace = H5Screate(H5S_SCALAR);
-    hid_t attribute = H5Acreate(this->InteractionGroupId, name, H5T_NATIVE_INT,
-        memspace, H5P_DEFAULT, H5P_DEFAULT);
-    if (this->DsmBuffer->GetComm()->GetId() == 0) {
-      if (H5Awrite(attribute, H5T_NATIVE_INT, data) < 0) {
-        return(H5FD_DSM_FAIL);
-      }
+  if (numberOfElements > 1) {
+    hsize_t arraySize = numberOfElements;
+    hid_t memspace = H5Screate_simple(1, &arraySize, NULL);
+    hid_t dataset = H5Dcreate(this->InteractionGroupId, name, H5T_NATIVE_INT, memspace,
+        H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    if (H5Dwrite(dataset, H5T_NATIVE_INT, memspace, H5S_ALL, H5P_DEFAULT, data) < 0) {
+      return(H5FD_DSM_FAIL);
     }
-    H5Aclose(attribute);
     H5Sclose(memspace);
-  }
-  else if (type == H5FD_DSM_DOUBLE_SCALAR) {
-    hid_t memspace = H5Screate(H5S_SCALAR);
-    hid_t attribute = H5Acreate(this->InteractionGroupId, name, H5T_NATIVE_DOUBLE,
-        memspace, H5P_DEFAULT, H5P_DEFAULT);
-    if (this->DsmBuffer->GetComm()->GetId() == 0) {
-      if (H5Awrite(attribute, H5T_NATIVE_DOUBLE, data) < 0) {
-        return(H5FD_DSM_FAIL);
+    H5Dclose(dataset);
+  } else {
+    if (numberOfElements) {
+      hid_t memspace = H5Screate(H5S_SCALAR);
+      hid_t attribute = H5Acreate(this->InteractionGroupId, name, H5T_NATIVE_INT,
+          memspace, H5P_DEFAULT, H5P_DEFAULT);
+      if (this->DsmBuffer->GetComm()->GetId() == 0) {
+        if (H5Awrite(attribute, H5T_NATIVE_INT, data) < 0) {
+          return(H5FD_DSM_FAIL);
+        }
       }
+      H5Aclose(attribute);
+      H5Sclose(memspace);
     }
-    H5Aclose(attribute);
-    H5Sclose(memspace);
   }
-  else if (type == H5FD_DSM_INT_VECTOR) {
-    //    hsize_t arraySize1 = 1;
-    //    hid_t memspace = H5Screate_simple(1, &arraySize1, NULL);
-    //    hid_t dataset = H5Dcreate(this->InteractionGroupId, name, H5T_NATIVE_INT, memspace,
-    //        H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    //    if (H5Dwrite(dataset, H5T_NATIVE_INT, memspace, H5S_ALL, H5P_DEFAULT, data) < 0) {
-    //      return(H5FD_DSM_FAIL);
-    //    }
-    //    H5Sclose(memspace);
-    //    H5Dclose(dataset);
+  return(H5FD_DSM_SUCCESS);
+}
+//----------------------------------------------------------------------------
+H5FDdsmInt32 H5FDdsmSteerer::WriteInteractions(H5FDdsmConstString name, H5FDdsmInt32 numberOfElements, double *data)
+{
+  if (numberOfElements > 1) {
+    hsize_t arraySize = numberOfElements;
+    hid_t memspace = H5Screate_simple(1, &arraySize, NULL);
+    hid_t dataset = H5Dcreate(this->InteractionGroupId, name, H5T_NATIVE_DOUBLE, memspace,
+        H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    if (H5Dwrite(dataset, H5T_NATIVE_DOUBLE, memspace, H5S_ALL, H5P_DEFAULT, data) < 0) {
+      return(H5FD_DSM_FAIL);
+    }
+    H5Sclose(memspace);
+    H5Dclose(dataset);
+  } else {
+    if (numberOfElements) {
+      hid_t memspace = H5Screate(H5S_SCALAR);
+      hid_t attribute = H5Acreate(this->InteractionGroupId, name, H5T_NATIVE_DOUBLE,
+          memspace, H5P_DEFAULT, H5P_DEFAULT);
+      if (this->DsmBuffer->GetComm()->GetId() == 0) {
+        if (H5Awrite(attribute, H5T_NATIVE_DOUBLE, data) < 0) {
+          return(H5FD_DSM_FAIL);
+        }
+      }
+      H5Aclose(attribute);
+      H5Sclose(memspace);
+    }
   }
   return(H5FD_DSM_SUCCESS);
 }
