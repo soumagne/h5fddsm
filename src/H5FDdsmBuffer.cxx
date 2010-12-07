@@ -64,11 +64,12 @@
 #define H5FD_DSM_OPCODE_GET          0x02
 #define H5FD_DSM_SEMA_AQUIRE         0x03
 #define H5FD_DSM_SEMA_RELEASE        0x04
-#define H5FD_DSM_REMOTE_CHANNEL      0x05
-#define H5FD_DSM_LOCAL_CHANNEL       0x06
-#define H5FD_DSM_DISCONNECT          0x07
-#define H5FD_DSM_XML_EXCHANGE        0x08
-#define H5FD_DSM_CLEAR_STORAGE       0x09
+#define H5FD_DSM_UPDATE_DISPLAY      0x05
+#define H5FD_DSM_REMOTE_CHANNEL      0x06
+#define H5FD_DSM_LOCAL_CHANNEL       0x07
+#define H5FD_DSM_DISCONNECT          0x08
+#define H5FD_DSM_XML_EXCHANGE        0x09
+#define H5FD_DSM_CLEAR_STORAGE       0x10
 
 extern "C"{
 #ifdef _WIN32
@@ -96,6 +97,7 @@ H5FDdsmBuffer::H5FDdsmBuffer() {
     this->IsConnected = false;
     this->IsSyncRequired = true;
     this->IsUpdateReady = false;
+    this->UpdateDisplay = false;
     this->IsReadOnly = true;
     this->Locks = new H5FDdsmInt64[H5FD_DSM_MAX_LOCKS];
     for(i=0;i < H5FD_DSM_MAX_LOCKS;i++) this->Locks[i] = -1;
@@ -298,6 +300,10 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
             break;
         case H5FD_DSM_OPCODE_DONE:
             break;
+        case H5FD_DSM_UPDATE_DISPLAY:
+          H5FDdsmDebug("Update of display requested");
+          this->SetUpdateDisplay(true);
+          break;
         case H5FD_DSM_REMOTE_CHANNEL:
           H5FDdsmDebug("Switching to Remote channel");
           if (!this->IsConnected) {
@@ -538,6 +544,18 @@ H5FDdsmBuffer::Get(H5FDdsmInt64 Address, H5FDdsmInt64 aLength, void *Data){
         datap += len;
     }
     return(H5FD_DSM_SUCCESS);
+}
+
+H5FDdsmInt32
+H5FDdsmBuffer::RequestUpdateDisplay() {
+  H5FDdsmInt32 who, status = H5FD_DSM_SUCCESS;
+//TODO Do this a bit cleaner
+  for (who = this->StartServerId ; who <= this->EndServerId ; who++) {
+    H5FDdsmDebug("Send request update display to " << who);
+    status = this->SendCommandHeader(H5FD_DSM_UPDATE_DISPLAY, who, 0, 0);
+  }
+  this->Comm->Barrier();
+  return(status);
 }
 
 H5FDdsmInt32

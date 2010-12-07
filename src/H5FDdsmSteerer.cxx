@@ -124,13 +124,13 @@ H5FDdsmInt32 H5FDdsmSteerer::IsSteerable(H5FDdsmConstString hdfPath)
   return(H5FD_DSM_SUCCESS);
 }
 //----------------------------------------------------------------------------
-H5FDdsmInt32 H5FDdsmSteerer::GetBoolean(H5FDdsmConstString name, void *data)
+H5FDdsmInt32 H5FDdsmSteerer::DsmDump()
 {
-  H5FDdsmDump *myDsmDump = new H5FDdsmDump();
-  myDsmDump->SetDsmBuffer(this->DsmBuffer);
-  myDsmDump->SetFileName("DSM.h5");
-  myDsmDump->DumpLight();
-  delete myDsmDump;
+  H5FDdsmDump *dsmDump = new H5FDdsmDump();
+  dsmDump->SetDsmBuffer(this->DsmBuffer);
+  dsmDump->SetFileName("DSM.h5");
+  dsmDump->DumpLight();
+  delete dsmDump;
   return(H5FD_DSM_SUCCESS);
 }
 //----------------------------------------------------------------------------
@@ -179,14 +179,52 @@ H5FDdsmInt32 H5FDdsmSteerer::GetScalar(H5FDdsmConstString name, H5FDdsmInt32 mem
   return(ret);
 }
 //----------------------------------------------------------------------------
-H5FDdsmInt32 H5FDdsmSteerer::GetVector(H5FDdsmConstString name, void *data)
+H5FDdsmInt32 H5FDdsmSteerer::GetVector(H5FDdsmConstString name, H5FDdsmInt32 memType, H5FDdsmInt32 numberOfElements, void *data)
 {
-  H5FDdsmDump *myDsmDump = new H5FDdsmDump();
-  myDsmDump->SetDsmBuffer(this->DsmBuffer);
-  myDsmDump->SetFileName("DSM.h5");
-  myDsmDump->DumpLight();
-  delete myDsmDump;
-  return(H5FD_DSM_SUCCESS);
+  H5FDdsmInt32 ret = H5FD_DSM_SUCCESS;
+  hid_t fapl, fileId, interactionGroupId, memspaceId, datasetId;
+  hsize_t arraySize = numberOfElements;
+  hid_t errorStack = H5E_DEFAULT;
+  herr_t (*old_func)(hid_t, void*);
+  void *old_client_data;
+
+  // Prevent HDF5 to print out handled errors, first save old error handler
+  H5Eget_auto(errorStack, &old_func, &old_client_data);
+
+  // Turn off error handling
+  H5Eset_auto(errorStack, NULL, NULL);
+
+  fapl = H5Pcreate(H5P_FILE_ACCESS);
+  H5Pset_fapl_dsm(fapl, MPI_COMM_WORLD, this->DsmBuffer);
+  fileId = H5Fopen("dsm", H5F_ACC_RDONLY, fapl);
+  H5Pclose(fapl);
+  if (fileId < 0) {
+    ret = H5FD_DSM_FAIL;
+  } else {
+    interactionGroupId = H5Gopen(fileId, "Interactions", H5P_DEFAULT);
+    if (interactionGroupId < 0) {
+      ret = H5FD_DSM_FAIL;
+    } else {
+      memspaceId = H5Screate_simple(1, &arraySize, NULL);
+      datasetId = H5Dopen(interactionGroupId, name, H5P_DEFAULT);
+      if (datasetId < 0) {
+        ret = H5FD_DSM_FAIL;
+      } else {
+        if (H5Dread(datasetId, memType, memspaceId, H5S_ALL, H5P_DEFAULT, data) < 0) {
+          H5Eprint(errorStack, stderr);
+          ret = H5FD_DSM_FAIL;
+        }
+      }
+      H5Dclose(datasetId);
+      H5Sclose(memspaceId);
+    }
+    H5Gclose(interactionGroupId);
+  }
+  H5Fclose(fileId);
+  // Restore previous error handler
+  H5Eset_auto(errorStack, old_func, old_client_data);
+
+  return(ret);
 }
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

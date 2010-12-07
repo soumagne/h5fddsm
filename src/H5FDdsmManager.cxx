@@ -37,7 +37,6 @@ struct H5FDdsmManagerInternals
   {
     SteeringEntryInt(std::string text, int nelements, int *values) : Text(text),
         NumberOfElements(nelements), Values(values) {}
-    ~SteeringEntryInt() { if (Values) delete[] Values; }
     std::string Text;
     int  NumberOfElements;
     int *Values;
@@ -46,7 +45,6 @@ struct H5FDdsmManagerInternals
   {
     SteeringEntryDouble(std::string text, int nelements, double *values) : Text(text),
         NumberOfElements(nelements), Values(values) {}
-    ~SteeringEntryDouble() { if (Values) delete[] Values; }
     std::string Text;
     int     NumberOfElements;
     double *Values;
@@ -76,7 +74,6 @@ H5FDdsmManager::H5FDdsmManager()
   this->ServerHostName          = NULL;
   this->ServerPort              = 0;
   this->DsmConfigFilePath       = NULL;
-  this->DsmUpdateReady          = 0;
   this->XMLStringSend           = NULL;
   this->ManagerInternals        = new H5FDdsmManagerInternals;
 }
@@ -123,6 +120,22 @@ void H5FDdsmManager::ClearDsmUpdateReady()
 {
   if (this->DSMBuffer) {
     this->DSMBuffer->SetIsUpdateReady(0);
+  }
+}
+//----------------------------------------------------------------------------
+int H5FDdsmManager::GetDsmUpdateDisplay()
+{
+  int ret = 0;
+  if (this->DSMBuffer) {
+    if (this->DSMBuffer->GetUpdateDisplay()) ret = 1;
+  }
+  return ret;
+}
+//----------------------------------------------------------------------------
+void H5FDdsmManager::ClearDsmUpdateDisplay()
+{
+  if (this->DSMBuffer) {
+    this->DSMBuffer->SetUpdateDisplay(0);
   }
 }
 //----------------------------------------------------------------------------
@@ -247,7 +260,6 @@ void H5FDdsmManager::ClearDSM()
 //----------------------------------------------------------------------------
 void H5FDdsmManager::RequestRemoteChannel()
 {
-  // TODO Update steering orders here for now
   if (this->ManagerInternals->SteeringValuesInt.size() ||
       this->ManagerInternals->SteeringValuesDouble.size()) {
     this->DSMBuffer->GetSteerer()->CreateInteractionGroup();
@@ -561,32 +573,56 @@ void H5FDdsmManager::SetSteeringCommand(H5FDdsmString cmd)
 //----------------------------------------------------------------------------
 void H5FDdsmManager::SetSteeringValues(const char *name, int numberOfElements, int *values)
 {
-  cerr << "Received int: " << name;
-  for (int i=0; i<numberOfElements; i++) {
-    cerr << ":" << values[i] << endl;
-  }
   if (numberOfElements) {
-    int *entryValues = new int[numberOfElements];
-    for (int i=0; i<numberOfElements; i++) {
-      entryValues[i] = values[i];
+    bool entryExists = false;
+    // Check if the entry already exists
+    H5FDdsmManagerInternals::SteeringEntriesInt::iterator iter =
+        this->ManagerInternals->SteeringValuesInt.begin();
+    for (; iter < this->ManagerInternals->SteeringValuesInt.end(); iter++) {
+      if (iter->Text == std::string(name)) {
+        entryExists = true;
+        break;
+      }
     }
-    this->ManagerInternals->SteeringValuesInt.push_back(
-        H5FDdsmManagerInternals::SteeringEntryInt(name, numberOfElements, entryValues));
+    if (entryExists) {
+      for (int i = 0; i < numberOfElements; i++) {
+        iter->Values[i] = values[i];
+      }
+    } else {
+      int *entryValues = new int[numberOfElements];
+      for (int i=0; i<numberOfElements; i++) {
+        entryValues[i] = values[i];
+      }
+      this->ManagerInternals->SteeringValuesInt.push_back(
+          H5FDdsmManagerInternals::SteeringEntryInt(name, numberOfElements, entryValues));
+    }
   }
 }
 //----------------------------------------------------------------------------
 void H5FDdsmManager::SetSteeringValues(const char *name, int numberOfElements, double *values)
 {
-  cerr << "Received double: " << name;
-  for (int i=0; i<numberOfElements; i++) {
-    cerr << ":" << values[i] << endl;
-  }
   if (numberOfElements) {
-    double *entryValues = new double[numberOfElements];
-    for (int i=0; i<numberOfElements; i++) {
-      entryValues[i] = values[i];
+    bool entryExists = false;
+    // Check if the entry already exists
+    H5FDdsmManagerInternals::SteeringEntriesDouble::iterator iter =
+        this->ManagerInternals->SteeringValuesDouble.begin();
+    for (; iter != this->ManagerInternals->SteeringValuesDouble.end(); iter++) {
+      if (iter->Text == std::string(name)) {
+        entryExists = true;
+        break;
+      }
     }
-    this->ManagerInternals->SteeringValuesDouble.push_back(
-        H5FDdsmManagerInternals::SteeringEntryDouble(name, numberOfElements, entryValues));
+    if (entryExists) {
+      for (int i = 0; i < numberOfElements; i++) {
+        iter->Values[i] = values[i];
+      }
+    } else {
+      double *entryValues = new double[numberOfElements];
+      for (int i = 0; i < numberOfElements; i++) {
+        entryValues[i] = values[i];
+      }
+      this->ManagerInternals->SteeringValuesDouble.push_back(
+          H5FDdsmManagerInternals::SteeringEntryDouble(name, numberOfElements, entryValues));
+    }
   }
 }

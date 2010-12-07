@@ -52,9 +52,9 @@ public:
   H5FDdsmInt32 GetSteeringCommands();
 
   H5FDdsmInt32 IsSteerable(H5FDdsmConstString hdfPath);
-  H5FDdsmInt32 GetBoolean(H5FDdsmConstString name, void *data);
+  H5FDdsmInt32 DsmDump();
   H5FDdsmInt32 GetScalar(H5FDdsmConstString name, H5FDdsmInt32 memType, void *data);
-  H5FDdsmInt32 GetVector(H5FDdsmConstString name, void *data);
+  H5FDdsmInt32 GetVector(H5FDdsmConstString name, H5FDdsmInt32 memType, H5FDdsmInt32 numberOfElements, void *data);
 
 protected:
   friend class H5FDdsmManager;

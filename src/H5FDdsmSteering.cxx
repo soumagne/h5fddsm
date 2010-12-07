@@ -33,6 +33,7 @@
 #include "H5FDdsmSteering.h"
 #include "H5FDdsmSteerer.h"
 #include "H5FDdsmManager.h"
+#include "H5FDdsm.h"
 
 
 #define DSM_STEERING_GOTO_ERROR(x, ret_val) \
@@ -89,7 +90,8 @@ herr_t H5FD_dsm_begin_loop(const char *name)
   }
 
   dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
-  // Do stuff here
+  // Automatically triggers an update of steering objects during the begin loop function
+  H5FD_dsm_server_update(dsmBuffer);
 
 done:
   FUNC_LEAVE_NOAPI(ret_value);
@@ -103,9 +105,6 @@ herr_t H5FD_dsm_end_loop(const char *name)
   if (!dsm_buffer) {
     DSM_STEERING_GOTO_ERROR("Attempting to use the DSM Steering library before calling H5FD_dsm_steering_init", FAIL)
   }
-
-  // finish to build - close the HTM loop section
-  // for later
 
 done:
   FUNC_LEAVE_NOAPI(ret_value);
@@ -131,18 +130,18 @@ done:
   FUNC_LEAVE_NOAPI(ret_value);
 }
 //----------------------------------------------------------------------------
-herr_t H5FD_dsm_boolean_get(const char *name, int type, void *data)
+herr_t H5FD_dsm_dump()
 {
   herr_t ret_value = SUCCEED;
   H5FDdsmBuffer *dsmBuffer;
-  FUNC_ENTER_NOAPI(H5FD_dsm_boolean_get, FAIL)
+  FUNC_ENTER_NOAPI(H5FD_dsm_dump, FAIL)
 
   if (!dsm_buffer) {
     DSM_STEERING_GOTO_ERROR("Attempting to use the DSM Steering library before calling H5FD_dsm_steering_init", FAIL)
   }
 
   dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
-  if (!dsmBuffer->GetSteerer()->GetBoolean(name, data)) {
+  if (!dsmBuffer->GetSteerer()->DsmDump()) {
     ret_value = FAIL;
   }
 
@@ -161,19 +160,19 @@ herr_t H5FD_dsm_scalar_get(const char *name, int type, void *data)
   }
 
   dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
-  if ((type == H5T_NATIVE_INT) || (type == H5T_NATIVE_FLOAT) || (type == H5T_NATIVE_DOUBLE)) {
+  if ((type == H5T_NATIVE_INT) || (type == H5T_NATIVE_DOUBLE)) {
     if (!dsmBuffer->GetSteerer()->GetScalar(name, type, data)) {
       ret_value = FAIL;
     }
   } else {
-    DSM_STEERING_GOTO_ERROR("Type not supported, please use H5T_NATIVE_INT, H5T_NATIVE_FLOAT or H5T_NATIVE_DOUBLE", FAIL)
+    DSM_STEERING_GOTO_ERROR("Type not supported, please use H5T_NATIVE_INT or H5T_NATIVE_DOUBLE", FAIL)
   }
 
 done:
   FUNC_LEAVE_NOAPI(ret_value);
 }
 //----------------------------------------------------------------------------
-herr_t H5FD_dsm_vector_get(const char *name, int type, void *data)
+herr_t H5FD_dsm_vector_get(const char *name, int type, int number_of_elements, void *data)
 {
   herr_t ret_value = SUCCEED;
   H5FDdsmBuffer *dsmBuffer;
@@ -184,8 +183,12 @@ herr_t H5FD_dsm_vector_get(const char *name, int type, void *data)
   }
 
   dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
-  if (!dsmBuffer->GetSteerer()->GetVector(name, data)) {
-    ret_value = FAIL;
+  if ((type == H5T_NATIVE_INT) || (type == H5T_NATIVE_DOUBLE)) {
+    if (!dsmBuffer->GetSteerer()->GetVector(name, type, number_of_elements, data)) {
+      ret_value = FAIL;
+    }
+  } else {
+    DSM_STEERING_GOTO_ERROR("Type not supported, please use H5T_NATIVE_INT or H5T_NATIVE_DOUBLE", FAIL)
   }
 
 done:

@@ -99,6 +99,10 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     H5FDdsmGetValueMacro(IsUpdateReady, H5FDdsmBoolean);
     H5FDdsmSetValueMacro(IsUpdateReady, H5FDdsmBoolean);
 
+    // Is the refresh of the display requested (only used for ParaView interfacing)
+    H5FDdsmGetValueMacro(UpdateDisplay, H5FDdsmBoolean);
+    H5FDdsmSetValueMacro(UpdateDisplay, H5FDdsmBoolean);
+
     // Is the DSMBuffer auto allocated within the driver or not
     H5FDdsmGetValueMacro(IsAutoAllocated, bool);
     H5FDdsmSetValueMacro(IsAutoAllocated, bool);
@@ -124,6 +128,7 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     H5FDdsmInt32   Aquire(H5FDdsmInt64 Index);
     H5FDdsmInt32   Release(H5FDdsmInt64 Index);
 
+    H5FDdsmInt32   RequestUpdateDisplay();
     H5FDdsmInt32   RequestRemoteChannel();
     H5FDdsmInt32   RequestLocalChannel();
     H5FDdsmInt32   RequestDisconnection();
@@ -147,6 +152,7 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     volatile H5FDdsmBoolean IsConnected;
     volatile H5FDdsmBoolean IsSyncRequired;
     volatile H5FDdsmBoolean IsUpdateReady;
+    volatile H5FDdsmBoolean UpdateDisplay;
     bool                    IsAutoAllocated;
     bool                    IsServer;
     bool                    CommSwitchOnClose;

@@ -90,11 +90,14 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     int GetAcceptedConnection();
 
     // Description:
-    // Get/Set the update ready flag which triggers the pipeline update and
-    // possibly the display of DSM objects.
-    H5FDdsmSetValueMacro(DsmUpdateReady, int);
+    // Get/Set the update ready flag which triggers the pipeline update.
     int  GetDsmUpdateReady();
     void ClearDsmUpdateReady();
+
+    // Description:
+    // Get/Set the display update flag which triggers the update the view
+    int  GetDsmUpdateDisplay();
+    void ClearDsmUpdateDisplay();
 
     // Description:
     // Set/Get the current given steering command.
@@ -165,14 +168,8 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     int             ServerPort;
     char           *DsmConfigFilePath;
     //
-    int             DsmUpdateReady;
-    //
     char           *XMLStringSend;
     //
-//    std::vector<H5FDdsmString>   IntScalarInteractionNames;
-//    std::vector<H5FDdsmInt32>    IntScalarInteractions;
-//    std::vector<H5FDdsmString>   DoubleScalarInteractionNames;
-//    std::vector<H5FDdsmFloat64>  DoubleScalarInteractions;
     H5FDdsmManagerInternals *ManagerInternals;
 
 
