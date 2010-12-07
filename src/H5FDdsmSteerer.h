@@ -31,14 +31,6 @@
 
 #include "H5FDdsmObject.h"
 
-enum H5FDdsmInteractionType
-{
-  H5FD_DSM_INT_SCALAR,
-  H5FD_DSM_DOUBLE_SCALAR,
-  H5FD_DSM_INT_VECTOR,
-  H5FD_DSM_DOUBLE_VECTOR
-};
-
 class H5FDdsmBuffer;
 
 class H5FDdsm_EXPORT H5FDdsmSteerer : public H5FDdsmObject {
@@ -68,7 +60,8 @@ protected:
   friend class H5FDdsmManager;
 
   H5FDdsmInt32 CreateInteractionGroup();
-  H5FDdsmInt32 WriteInteractions(H5FDdsmConstString name, H5FDdsmInteractionType type, void *data);
+  H5FDdsmInt32 WriteInteractions(H5FDdsmConstString name, H5FDdsmInt32 numberOfElements, int *data);
+  H5FDdsmInt32 WriteInteractions(H5FDdsmConstString name, H5FDdsmInt32 numberOfElements, double *data);
   H5FDdsmInt32 CloseInteractionGroup();
 
   H5FDdsmInt32 CheckCommand(H5FDdsmConstString command);

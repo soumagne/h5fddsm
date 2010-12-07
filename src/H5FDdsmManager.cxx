@@ -31,6 +31,32 @@
   #define atoll _atoi64 
 #endif
 
+struct H5FDdsmManagerInternals
+{
+  struct SteeringEntryInt
+  {
+    SteeringEntryInt(std::string text, int nelements, int *values) : Text(text),
+        NumberOfElements(nelements), Values(values) {}
+    ~SteeringEntryInt() { if (Values) delete[] Values; }
+    std::string Text;
+    int  NumberOfElements;
+    int *Values;
+  };
+  struct SteeringEntryDouble
+  {
+    SteeringEntryDouble(std::string text, int nelements, double *values) : Text(text),
+        NumberOfElements(nelements), Values(values) {}
+    ~SteeringEntryDouble() { if (Values) delete[] Values; }
+    std::string Text;
+    int     NumberOfElements;
+    double *Values;
+  };
+
+  typedef std::vector<SteeringEntryInt>    SteeringEntriesInt;
+  typedef std::vector<SteeringEntryDouble> SteeringEntriesDouble;
+  SteeringEntriesInt     SteeringValuesInt;
+  SteeringEntriesDouble  SteeringValuesDouble;
+};
 //----------------------------------------------------------------------------
 H5FDdsmManager::H5FDdsmManager() 
 {
@@ -52,27 +78,16 @@ H5FDdsmManager::H5FDdsmManager()
   this->DsmConfigFilePath       = NULL;
   this->DsmUpdateReady          = 0;
   this->XMLStringSend           = NULL;
+  this->ManagerInternals        = new H5FDdsmManagerInternals;
 }
 //----------------------------------------------------------------------------
 H5FDdsmManager::~H5FDdsmManager()
 { 
   this->DestroyDSM();
 
-//  while (!this->IntScalarInteractionNames.empty()) {
-//    H5FDdsmString interactIntScalarName = this->IntScalarInteractionNames.back();
-//    this->IntScalarInteractionNames.pop_back();
-//    if (interactIntScalarName) delete interactIntScalarName;
-//    interactIntScalarName = NULL;
-//  }
-//  while (!this->DoubleScalarInteractionNames.empty()) {
-//    H5FDdsmString interactDoubleScalarName = this->DoubleScalarInteractionNames.back();
-//    this->DoubleScalarInteractionNames.pop_back();
-//    if (interactDoubleScalarName) delete interactDoubleScalarName;
-//    interactDoubleScalarName = NULL;
-//  }
-
   this->SetDsmConfigFilePath(NULL);
   this->SetXMLStringSend(NULL);
+  delete this->ManagerInternals;
 }
 //----------------------------------------------------------------------------
 void H5FDdsmManager::SetCommunicator(MPI_Comm comm)
@@ -233,31 +248,25 @@ void H5FDdsmManager::ClearDSM()
 void H5FDdsmManager::RequestRemoteChannel()
 {
   // TODO Update steering orders here for now
-  // TODO Watch out that everything from the GUI is received before sending the steering
-  // may create an invalid state otherwise
-//  if (this->IntScalarInteractionNames.size() || this->DoubleScalarInteractionNames.size()) {
-//    this->DSMBuffer->GetSteerer()->CreateInteractionGroup();
-//    while (!this->IntScalarInteractionNames.empty()) {
-//      H5FDdsmString interactIntScalarName = this->IntScalarInteractionNames.back();
-//      H5FDdsmInt32 interactIntScalar = this->IntScalarInteractions.back();
-//      this->DSMBuffer->GetSteerer()->WriteInteractions(interactIntScalarName, H5FD_DSM_INT_SCALAR, &interactIntScalar);
-//      cerr << "Writing: " << interactIntScalarName << ":" << interactIntScalar << endl;
-//      this->IntScalarInteractionNames.pop_back();
-//      this->IntScalarInteractions.pop_back();
-//      if (interactIntScalarName) delete interactIntScalarName;
-//      interactIntScalarName = NULL;
-//    }
-//    while (!this->DoubleScalarInteractionNames.empty()) {
-//      H5FDdsmString interactDoubleScalarName = this->DoubleScalarInteractionNames.back();
-//      H5FDdsmFloat64 interactDoubleScalar = this->DoubleScalarInteractions.back();
-//      this->DSMBuffer->GetSteerer()->WriteInteractions(interactDoubleScalarName, H5FD_DSM_DOUBLE_SCALAR, &interactDoubleScalar);
-//      this->DoubleScalarInteractionNames.pop_back();
-//      this->DoubleScalarInteractions.pop_back();
-//      if (interactDoubleScalarName) delete interactDoubleScalarName;
-//      interactDoubleScalarName = NULL;
-//    }
-//    this->DSMBuffer->GetSteerer()->CloseInteractionGroup();
-//  }
+  if (this->ManagerInternals->SteeringValuesInt.size() ||
+      this->ManagerInternals->SteeringValuesDouble.size()) {
+    this->DSMBuffer->GetSteerer()->CreateInteractionGroup();
+    while (!this->ManagerInternals->SteeringValuesInt.empty()) {
+      H5FDdsmManagerInternals::SteeringEntryInt entryInt =
+          this->ManagerInternals->SteeringValuesInt.back();
+      this->DSMBuffer->GetSteerer()->WriteInteractions(entryInt.Text.c_str(),
+          entryInt.NumberOfElements, entryInt.Values);
+      this->ManagerInternals->SteeringValuesInt.pop_back();
+    }
+    while (!this->ManagerInternals->SteeringValuesDouble.empty()) {
+      H5FDdsmManagerInternals::SteeringEntryDouble entryDouble =
+          this->ManagerInternals->SteeringValuesDouble.back();
+      this->DSMBuffer->GetSteerer()->WriteInteractions(entryDouble.Text.c_str(),
+          entryDouble.NumberOfElements, entryDouble.Values);
+      this->ManagerInternals->SteeringValuesDouble.pop_back();
+    }
+    this->DSMBuffer->GetSteerer()->CloseInteractionGroup();
+  }
   this->DSMBuffer->GetSteerer()->UpdateSteeringCommands();
   this->DSMBuffer->RequestRemoteChannel();
 }
@@ -556,7 +565,14 @@ void H5FDdsmManager::SetSteeringValues(const char *name, int numberOfElements, i
   for (int i=0; i<numberOfElements; i++) {
     cerr << ":" << values[i] << endl;
   }
-
+  if (numberOfElements) {
+    int *entryValues = new int[numberOfElements];
+    for (int i=0; i<numberOfElements; i++) {
+      entryValues[i] = values[i];
+    }
+    this->ManagerInternals->SteeringValuesInt.push_back(
+        H5FDdsmManagerInternals::SteeringEntryInt(name, numberOfElements, entryValues));
+  }
 }
 //----------------------------------------------------------------------------
 void H5FDdsmManager::SetSteeringValues(const char *name, int numberOfElements, double *values)
@@ -564,5 +580,13 @@ void H5FDdsmManager::SetSteeringValues(const char *name, int numberOfElements, d
   cerr << "Received double: " << name;
   for (int i=0; i<numberOfElements; i++) {
     cerr << ":" << values[i] << endl;
+  }
+  if (numberOfElements) {
+    double *entryValues = new double[numberOfElements];
+    for (int i=0; i<numberOfElements; i++) {
+      entryValues[i] = values[i];
+    }
+    this->ManagerInternals->SteeringValuesDouble.push_back(
+        H5FDdsmManagerInternals::SteeringEntryDouble(name, numberOfElements, entryValues));
   }
 }
