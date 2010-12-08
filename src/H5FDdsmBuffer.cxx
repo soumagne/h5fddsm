@@ -64,7 +64,7 @@
 #define H5FD_DSM_OPCODE_GET          0x02
 #define H5FD_DSM_SEMA_AQUIRE         0x03
 #define H5FD_DSM_SEMA_RELEASE        0x04
-#define H5FD_DSM_UPDATE_DISPLAY      0x05
+#define H5FD_DSM_MARK_MODIFIED       0x05
 #define H5FD_DSM_REMOTE_CHANNEL      0x06
 #define H5FD_DSM_LOCAL_CHANNEL       0x07
 #define H5FD_DSM_DISCONNECT          0x08
@@ -97,7 +97,7 @@ H5FDdsmBuffer::H5FDdsmBuffer() {
     this->IsConnected = false;
     this->IsSyncRequired = true;
     this->IsUpdateReady = false;
-    this->UpdateDisplay = false;
+    this->IsDataModified = false;
     this->IsReadOnly = true;
     this->Locks = new H5FDdsmInt64[H5FD_DSM_MAX_LOCKS];
     for(i=0;i < H5FD_DSM_MAX_LOCKS;i++) this->Locks[i] = -1;
@@ -214,8 +214,9 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
     H5FDdsmInt64        Address;
     H5FDdsmByte        *datap;
     H5FDdsmInt32        IsService = 1;
+    static H5FDdsmInt32 modifiedSync = 0;
     static H5FDdsmInt32 localSync = 0;
-	static H5FDdsmInt32 disconnectSync = 0;
+    static H5FDdsmInt32 disconnectSync = 0;
     static H5FDdsmInt32 clearStorageSync = 0;
 
     status = this->ReceiveCommandHeader(&Opcode, &who, &Address, &aLength);
@@ -300,9 +301,11 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
             break;
         case H5FD_DSM_OPCODE_DONE:
             break;
-        case H5FD_DSM_UPDATE_DISPLAY:
-          H5FDdsmDebug("Update of display requested");
-          this->SetUpdateDisplay(true);
+        case H5FD_DSM_MARK_MODIFIED:
+          if (this->Comm->RemoteCommChannelSynced(&modifiedSync)) {
+              H5FDdsmDebug("Mark data as modified");
+              this->SetIsDataModified(true);
+          }
           break;
         case H5FD_DSM_REMOTE_CHANNEL:
           H5FDdsmDebug("Switching to Remote channel");
@@ -547,12 +550,12 @@ H5FDdsmBuffer::Get(H5FDdsmInt64 Address, H5FDdsmInt64 aLength, void *Data){
 }
 
 H5FDdsmInt32
-H5FDdsmBuffer::RequestUpdateDisplay() {
+H5FDdsmBuffer::RequestMarkModified() {
   H5FDdsmInt32 who, status = H5FD_DSM_SUCCESS;
-//TODO Do this a bit cleaner
+
   for (who = this->StartServerId ; who <= this->EndServerId ; who++) {
     H5FDdsmDebug("Send request update display to " << who);
-    status = this->SendCommandHeader(H5FD_DSM_UPDATE_DISPLAY, who, 0, 0);
+    status = this->SendCommandHeader(H5FD_DSM_MARK_MODIFIED, who, 0, 0);
   }
   this->Comm->Barrier();
   return(status);

@@ -95,9 +95,9 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     void ClearDsmUpdateReady();
 
     // Description:
-    // Get/Set the display update flag which triggers the update the view
-    int  GetDsmUpdateDisplay();
-    void ClearDsmUpdateDisplay();
+    // Get/Set the data modified flag
+    int  GetDsmIsDataModified();
+    void ClearDsmIsDataModified();
 
     // Description:
     // Set/Get the current given steering command.

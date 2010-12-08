@@ -856,7 +856,7 @@ H5FD_dsm_close(H5FD_t *_file)
       // Gather all the dirty flags because some processes may not have written yet
       MPI_Allreduce(&file->dirty, &isSomeoneDirty, sizeof(hbool_t), MPI_UNSIGNED_CHAR, MPI_MAX, comm);
       if (isSomeoneDirty && file->DsmBuffer->GetCommSwitchOnClose()) {
-        file->DsmBuffer->RequestUpdateDisplay();
+        file->DsmBuffer->RequestMarkModified();
         H5FD_dsm_server_update(file->DsmBuffer);
         file->dirty = FALSE;
       }

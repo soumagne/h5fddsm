@@ -123,19 +123,19 @@ void H5FDdsmManager::ClearDsmUpdateReady()
   }
 }
 //----------------------------------------------------------------------------
-int H5FDdsmManager::GetDsmUpdateDisplay()
+int H5FDdsmManager::GetDsmIsDataModified()
 {
   int ret = 0;
   if (this->DSMBuffer) {
-    if (this->DSMBuffer->GetUpdateDisplay()) ret = 1;
+    if (this->DSMBuffer->GetIsDataModified()) ret = 1;
   }
   return ret;
 }
 //----------------------------------------------------------------------------
-void H5FDdsmManager::ClearDsmUpdateDisplay()
+void H5FDdsmManager::ClearDsmIsDataModified()
 {
   if (this->DSMBuffer) {
-    this->DSMBuffer->SetUpdateDisplay(0);
+    this->DSMBuffer->SetIsDataModified(0);
   }
 }
 //----------------------------------------------------------------------------
