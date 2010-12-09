@@ -58,16 +58,16 @@
 extern "C" {
 #endif
 
-#include "H5private.h"    // Generic Functions
-#include "H5ACprivate.h"  // Metadata cache
-#include "H5Dprivate.h"   // Dataset functions
-#include "H5Eprivate.h"   // Error handling
-#include "H5Fprivate.h"   // File access
-#include "H5FDprivate.h"  // File drivers
-#include "H5FDdsm.h"      // MPI-based file drivers
-#include "H5Iprivate.h"   // IDs
-#include "H5MMprivate.h"  // Memory management
-#include "H5Pprivate.h"   // Property lists
+#include "H5private.h"    /* Generic Functions */
+#include "H5ACprivate.h"  /* Metadata cache */
+#include "H5Dprivate.h"   /* Dataset functions */
+#include "H5Eprivate.h"   /* Error handling */
+#include "H5Fprivate.h"   /* File access */
+#include "H5FDprivate.h"  /* File drivers */
+#include "H5FDdsm.h"      /* MPI-based file drivers */
+#include "H5Iprivate.h"   /* IDs */
+#include "H5MMprivate.h"  /* Memory management */
+#include "H5Pprivate.h"   /* Property lists */
 
 #include "H5FDmpio.h"
 
@@ -553,8 +553,8 @@ done:
  * Function:  H5Pset_fapl_dsm
  *
  * Purpose:  Modify the file access property list to use the H5FDdsm
- *    driver defined in this source file.  The INCREMENT specifies
- *    how much to grow the memory each time we need more.
+ *    driver defined in this source file.
+ *    dsmBuffer must be NULL or a pointer to an H5FDdsmBuffer object.
  *
  * Return:  Non-negative on success/Negative on failure
  *
