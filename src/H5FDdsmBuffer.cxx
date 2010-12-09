@@ -302,7 +302,7 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
         case H5FD_DSM_OPCODE_DONE:
             break;
         case H5FD_DSM_MARK_MODIFIED:
-          if (this->Comm->RemoteCommChannelSynced(&modifiedSync)) {
+          if (this->Comm->RemoteCommChannelSynced(&modifiedSync) || !this->IsConnected) {
               H5FDdsmDebug("Mark data as modified");
               this->SetIsDataModified(true);
           }
