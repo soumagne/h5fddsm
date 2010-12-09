@@ -50,6 +50,17 @@ extern void* DsmGetAutoAllocatedManager();
 // C steering bindings
 
 void *dsm_buffer = NULL; // pointer to internal dsm buffer reference
+
+
+//----------------------------------------------------------------------------
+// Function:    H5FD_dsm_steering_init
+//
+// Purpose:     Initialize the steering interface. This must be called before using
+//              the other steering functions.
+//
+// Return:      Success:        non-negative
+//              Failure:        negative
+//
 //----------------------------------------------------------------------------
 herr_t H5FD_dsm_steering_init(MPI_Comm comm, void *buffer)
 {
@@ -78,37 +89,81 @@ herr_t H5FD_dsm_steering_init(MPI_Comm comm, void *buffer)
 done:
   FUNC_LEAVE_NOAPI(ret_value);
 }
+
+
 //----------------------------------------------------------------------------
-herr_t H5FD_dsm_begin_loop(const char *name)
+// Function:    H5FD_dsm_steering_update
+//
+// Purpose:     Update the steering orders and get from the GUI newly modified parameters.
+//
+// Return:      Success:        non-negative
+//              Failure:        negative
+//
+//----------------------------------------------------------------------------
+herr_t H5FD_dsm_steering_update()
 {
   herr_t ret_value = SUCCEED;
   H5FDdsmBuffer *dsmBuffer;
-  FUNC_ENTER_NOAPI(H5FD_dsm_begin_loop, FAIL)
+  FUNC_ENTER_NOAPI(H5FD_dsm_steering_update, FAIL)
 
   if (!dsm_buffer) {
     DSM_STEERING_GOTO_ERROR("Attempting to use the DSM Steering library before calling H5FD_dsm_steering_init", FAIL)
   }
 
   dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
+  if ((dsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI_RMA) &&
+      dsmBuffer->GetIsSyncRequired() && !dsmBuffer->GetIsServer()) {
+    // After possible RMA put / get from the server, need to sync windows before
+    // further operations
+    dsmBuffer->GetComm()->RemoteCommSync();
+    dsmBuffer->SetIsSyncRequired(false);
+  }
+  dsmBuffer->GetSteerer()->GetSteeringCommands();
   // Automatically triggers an update of steering objects during the begin loop function
   H5FD_dsm_server_update(dsmBuffer);
 
 done:
   FUNC_LEAVE_NOAPI(ret_value);
 }
+
+
 //----------------------------------------------------------------------------
-herr_t H5FD_dsm_end_loop(const char *name)
+// Function:    H5FD_dsm_dump
+//
+// Purpose:     Display the content of the DSM (Debug only).
+//
+// Return:      Success:        non-negative
+//              Failure:        negative
+//
+//----------------------------------------------------------------------------
+herr_t H5FD_dsm_dump()
 {
   herr_t ret_value = SUCCEED;
-  FUNC_ENTER_NOAPI(H5FD_dsm_end_loop, FAIL)
+  H5FDdsmBuffer *dsmBuffer;
+  FUNC_ENTER_NOAPI(H5FD_dsm_dump, FAIL)
 
   if (!dsm_buffer) {
     DSM_STEERING_GOTO_ERROR("Attempting to use the DSM Steering library before calling H5FD_dsm_steering_init", FAIL)
   }
 
+  dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
+  if (!dsmBuffer->GetSteerer()->DsmDump()) {
+    ret_value = FAIL;
+  }
+
 done:
   FUNC_LEAVE_NOAPI(ret_value);
 }
+
+
+//----------------------------------------------------------------------------
+// Function:    H5FD_dsm_is_steerable
+//
+// Purpose:     Test if a given dataset is enabled or not in the GUI.
+//
+// Return:      Success:        non-negative
+//              Failure:        negative
+//
 //----------------------------------------------------------------------------
 herr_t H5FD_dsm_is_steerable(const char *hdf_path)
 {
@@ -129,25 +184,16 @@ herr_t H5FD_dsm_is_steerable(const char *hdf_path)
 done:
   FUNC_LEAVE_NOAPI(ret_value);
 }
+
+
 //----------------------------------------------------------------------------
-herr_t H5FD_dsm_dump()
-{
-  herr_t ret_value = SUCCEED;
-  H5FDdsmBuffer *dsmBuffer;
-  FUNC_ENTER_NOAPI(H5FD_dsm_dump, FAIL)
-
-  if (!dsm_buffer) {
-    DSM_STEERING_GOTO_ERROR("Attempting to use the DSM Steering library before calling H5FD_dsm_steering_init", FAIL)
-  }
-
-  dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
-  if (!dsmBuffer->GetSteerer()->DsmDump()) {
-    ret_value = FAIL;
-  }
-
-done:
-  FUNC_LEAVE_NOAPI(ret_value);
-}
+// Function:    H5FD_dsm_scalar_get
+//
+// Purpose:     Get the scalar value corresponding to the property name given in the template.
+//
+// Return:      Success:        non-negative
+//              Failure:        negative
+//
 //----------------------------------------------------------------------------
 herr_t H5FD_dsm_scalar_get(const char *name, int type, void *data)
 {
@@ -171,6 +217,16 @@ herr_t H5FD_dsm_scalar_get(const char *name, int type, void *data)
 done:
   FUNC_LEAVE_NOAPI(ret_value);
 }
+
+
+//----------------------------------------------------------------------------
+// Function:    H5FD_dsm_vector_get
+//
+// Purpose:     Get the vector valued corresponding to the property name given in the template.
+//
+// Return:      Success:        non-negative
+//              Failure:        negative
+//
 //----------------------------------------------------------------------------
 herr_t H5FD_dsm_vector_get(const char *name, int type, int number_of_elements, void *data)
 {
@@ -194,4 +250,3 @@ herr_t H5FD_dsm_vector_get(const char *name, int type, int number_of_elements, v
 done:
   FUNC_LEAVE_NOAPI(ret_value);
 }
-//----------------------------------------------------------------------------

@@ -27,29 +27,44 @@
 #define __H5FDdsmSteering_h
 
 #include <mpi.h>
-
-// HDF5
 #include "H5Ipublic.h"
-
-// H5FDdsm
 #include "H5FDdsmConfig.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+  /* Description:
+   * Initialize the steering interface. This must be called before using
+   * the other steering functions.
+   */
   H5FDdsm_EXPORT herr_t H5FD_dsm_steering_init(MPI_Comm comm, void *buffer);
 
-  H5FDdsm_EXPORT herr_t H5FD_dsm_begin_loop(const char *name);
-  H5FDdsm_EXPORT herr_t H5FD_dsm_end_loop(const char *name);
+  /* Description:
+   * Update the steering orders and get from the GUI newly modified parameters.
+   */
+  H5FDdsm_EXPORT herr_t H5FD_dsm_steering_update();
 
-  H5FDdsm_EXPORT herr_t H5FD_dsm_is_steerable(const char *hdf_path);
-
+  /* Description:
+   * Display the content of the DSM (Debug only).
+   */
   H5FDdsm_EXPORT herr_t H5FD_dsm_dump();
 
+  /* Description:
+   * Test if a given dataset is enabled or not in the GUI.
+   */
+  H5FDdsm_EXPORT herr_t H5FD_dsm_is_steerable(const char *hdf_path);
+
+  /* Description:
+   * Get the scalar value corresponding to the property name given in the template.
+   */
   H5FDdsm_EXPORT herr_t H5FD_dsm_scalar_get(const char *name, int type, void *data);
+
+  /* Description:
+   * Get the vector valued corresponding to the property name given in the template.
+   */
   H5FDdsm_EXPORT herr_t H5FD_dsm_vector_get(const char *name, int type, int number_of_elements, void *data);
 #ifdef __cplusplus
 }
 #endif
 
-#endif // __H5FDdsmSteering_h
+#endif /* __H5FDdsmSteering_h */
