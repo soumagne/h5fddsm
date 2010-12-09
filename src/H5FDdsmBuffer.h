@@ -128,7 +128,6 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     H5FDdsmInt32   Aquire(H5FDdsmInt64 Index);
     H5FDdsmInt32   Release(H5FDdsmInt64 Index);
 
-    H5FDdsmInt32   RequestMarkModified();
     H5FDdsmInt32   RequestRemoteChannel();
     H5FDdsmInt32   RequestLocalChannel();
     H5FDdsmInt32   RequestDisconnection();

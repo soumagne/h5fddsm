@@ -64,12 +64,11 @@
 #define H5FD_DSM_OPCODE_GET          0x02
 #define H5FD_DSM_SEMA_AQUIRE         0x03
 #define H5FD_DSM_SEMA_RELEASE        0x04
-#define H5FD_DSM_MARK_MODIFIED       0x05
-#define H5FD_DSM_REMOTE_CHANNEL      0x06
-#define H5FD_DSM_LOCAL_CHANNEL       0x07
-#define H5FD_DSM_DISCONNECT          0x08
-#define H5FD_DSM_XML_EXCHANGE        0x09
-#define H5FD_DSM_CLEAR_STORAGE       0x10
+#define H5FD_DSM_REMOTE_CHANNEL      0x05
+#define H5FD_DSM_LOCAL_CHANNEL       0x06
+#define H5FD_DSM_DISCONNECT          0x07
+#define H5FD_DSM_XML_EXCHANGE        0x08
+#define H5FD_DSM_CLEAR_STORAGE       0x09
 
 extern "C"{
 #ifdef _WIN32
@@ -214,7 +213,6 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
     H5FDdsmInt64        Address;
     H5FDdsmByte        *datap;
     H5FDdsmInt32        IsService = 1;
-    static H5FDdsmInt32 modifiedSync = 0;
     static H5FDdsmInt32 localSync = 0;
     static H5FDdsmInt32 disconnectSync = 0;
     static H5FDdsmInt32 clearStorageSync = 0;
@@ -301,12 +299,6 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
             break;
         case H5FD_DSM_OPCODE_DONE:
             break;
-        case H5FD_DSM_MARK_MODIFIED:
-          if (this->Comm->RemoteCommChannelSynced(&modifiedSync) || !this->IsConnected) {
-              H5FDdsmDebug("Mark data as modified");
-              this->SetIsDataModified(true);
-          }
-          break;
         case H5FD_DSM_REMOTE_CHANNEL:
           H5FDdsmDebug("Switching to Remote channel");
           if (!this->IsConnected) {
@@ -325,6 +317,7 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
           if (this->Comm->RemoteCommChannelSynced(&localSync) || !this->IsConnected) {
             this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_LOCAL);
             this->Comm->Barrier();
+            if (Address) this->SetIsDataModified(true); // Work-around to avoid to have to send two different messages
             this->SetIsUpdateReady(true);
             H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "IsUpdateReady, Switched to Local channel");
           }
@@ -550,18 +543,6 @@ H5FDdsmBuffer::Get(H5FDdsmInt64 Address, H5FDdsmInt64 aLength, void *Data){
 }
 
 H5FDdsmInt32
-H5FDdsmBuffer::RequestMarkModified() {
-  H5FDdsmInt32 who, status = H5FD_DSM_SUCCESS;
-
-  for (who = this->StartServerId ; who <= this->EndServerId ; who++) {
-    H5FDdsmDebug("Send request update display to " << who);
-    status = this->SendCommandHeader(H5FD_DSM_MARK_MODIFIED, who, 0, 0);
-  }
-  this->Comm->Barrier();
-  return(status);
-}
-
-H5FDdsmInt32
 H5FDdsmBuffer::RequestRemoteChannel() {
   H5FDdsmInt32 who = this->Comm->GetId(), status = H5FD_DSM_SUCCESS;
 
@@ -576,8 +557,9 @@ H5FDdsmBuffer::RequestLocalChannel() {
 
   for (who = this->StartServerId ; who <= this->EndServerId ; who++) {
     H5FDdsmDebug("Send request local channel to " << who);
-    status = this->SendCommandHeader(H5FD_DSM_LOCAL_CHANNEL, who, 0, 0);
+    status = this->SendCommandHeader(H5FD_DSM_LOCAL_CHANNEL, who, this->GetIsDataModified(), 0);
   }
+  if (this->GetIsDataModified()) this->SetIsDataModified(false);
   this->Comm->Barrier();
   return(status);
 }
