@@ -124,7 +124,7 @@ H5FDdsmInt32 H5FDdsmSteerer::GetSteeringCommands()
   return(H5FD_DSM_SUCCESS);
 }
 //----------------------------------------------------------------------------
-void H5FDdsmSteerer::SetDisabledObject(H5FDdsmString objectName)
+void H5FDdsmSteerer::SetDisabledObject(H5FDdsmConstString objectName)
 {
   this->SteererInternals->DisabledObjects[objectName] =
       (this->SteererInternals->DisabledObjects[objectName]) ? false : true;

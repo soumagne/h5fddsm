@@ -34,8 +34,6 @@
   }
 #endif
 
-#include <vector>
-
 struct H5FDdsmManagerInternals;
 
 class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject

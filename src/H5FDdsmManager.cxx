@@ -18,6 +18,7 @@
 #include "H5FDdsmManager.h"
 //
 #include <vector>
+#include <string>
 //
 #include "mpi.h"
 //
@@ -52,9 +53,11 @@ struct H5FDdsmManagerInternals
 
   typedef std::vector<SteeringEntryInt>    SteeringEntriesInt;
   typedef std::vector<SteeringEntryDouble> SteeringEntriesDouble;
+  typedef std::vector<std::string>         SteeringEntriesString;
 
   SteeringEntriesInt    SteeringValuesInt;
   SteeringEntriesDouble SteeringValuesDouble;
+  SteeringEntriesString RequestedDisabledObjects;
 };
 //----------------------------------------------------------------------------
 H5FDdsmManager::H5FDdsmManager() 
@@ -280,6 +283,13 @@ void H5FDdsmManager::RequestRemoteChannel()
     }
     this->DSMBuffer->GetSteerer()->CloseInteractionGroup();
   }
+
+  while (!this->ManagerInternals->RequestedDisabledObjects.empty()) {
+    this->DSMBuffer->GetSteerer()->SetDisabledObject(
+        this->ManagerInternals->RequestedDisabledObjects.back().c_str());
+    this->ManagerInternals->RequestedDisabledObjects.pop_back();
+  }
+
   this->DSMBuffer->GetSteerer()->UpdateSteeringCommands();
   this->DSMBuffer->GetSteerer()->UpdateDisabledObjects();
   this->DSMBuffer->RequestRemoteChannel();
@@ -631,5 +641,5 @@ void H5FDdsmManager::SetSteeringValues(const char *name, int numberOfElements, d
 //----------------------------------------------------------------------------
 void H5FDdsmManager::SetDisabledObject(char *objectName)
 {
-  this->DSMBuffer->GetSteerer()->SetDisabledObject(objectName);
+  this->ManagerInternals->RequestedDisabledObjects.push_back(objectName);
 }

@@ -70,7 +70,7 @@ protected:
   H5FDdsmInt32 WriteInteractions(H5FDdsmConstString name, H5FDdsmInt32 numberOfElements, double *data);
   H5FDdsmInt32 CloseInteractionGroup();
 
-  void SetDisabledObject(H5FDdsmString objectName);
+  void SetDisabledObject(H5FDdsmConstString objectName);
 
   H5FDdsmInt32 CheckCommand(H5FDdsmConstString command);
 
