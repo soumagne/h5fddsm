@@ -45,14 +45,11 @@ extern "C" {
   H5FDdsm_EXPORT herr_t H5FD_dsm_steering_update();
 
   /* Description:
-   * Display the content of the DSM (Debug only).
-   */
-  H5FDdsm_EXPORT herr_t H5FD_dsm_dump();
-
-  /* Description:
    * Test if a given dataset is enabled or not in the GUI.
+   * Either the HDF path of a particular dataset or the grid object name
+   * can bee given (In this last case, it has to match the name given in the template).
    */
-  H5FDdsm_EXPORT herr_t H5FD_dsm_is_steerable(const char *hdf_path);
+  H5FDdsm_EXPORT herr_t H5FD_dsm_is_enabled(const char *name);
 
   /* Description:
    * Get the scalar value corresponding to the property name given in the template.
@@ -63,6 +60,11 @@ extern "C" {
    * Get the vector valued corresponding to the property name given in the template.
    */
   H5FDdsm_EXPORT herr_t H5FD_dsm_vector_get(const char *name, int type, int number_of_elements, void *data);
+
+  /* Description:
+   * Display the content of the DSM (Debug only).
+   */
+  H5FDdsm_EXPORT herr_t H5FD_dsm_dump();
 #ifdef __cplusplus
 }
 #endif

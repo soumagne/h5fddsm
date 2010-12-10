@@ -79,10 +79,17 @@ typedef struct
 
 typedef struct
 {
+  H5FDdsmByte  object_names[64*64]; // TODO Size to be better handled
+  H5FDdsmInt32 number_of_objects;
+} H5FDdsmDisabledObjectEntries;
+
+typedef struct
+{
   H5FDdsmEntry     entry;
   H5FDdsmByte  steering_cmd[40];
+  H5FDdsmDisabledObjectEntries disabled_objects;
   H5FDdsmInt64 unused;
-} H5FDdsmMetaData; // 64
+} H5FDdsmMetaData; // 64 // not really now wit this crap
 
 class H5FDdsm_EXPORT H5FDdsmDriver : public H5FDdsmObject {
 

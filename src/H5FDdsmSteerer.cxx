@@ -34,6 +34,12 @@
 #include <hdf5.h>
 #include <H5FDdsm.h>
 #include <string>
+#include <map>
+
+struct H5FDdsmSteererInternals {
+  typedef std::map<std::string, bool> SteeringEntriesString;
+  SteeringEntriesString DisabledObjects;
+};
 //----------------------------------------------------------------------------
 H5FDdsmSteerer::H5FDdsmSteerer(H5FDdsmBuffer *buffer)
 {
@@ -41,14 +47,15 @@ H5FDdsmSteerer::H5FDdsmSteerer(H5FDdsmBuffer *buffer)
   this->CurrentCommand = NULL;
   this->SetCurrentCommand("none");
   this->DsmBuffer = buffer;
-  this->SteerableObjects = NULL;
   this->FileId = H5I_BADID;
   this->InteractionGroupId = H5I_BADID;
+  this->SteererInternals = new H5FDdsmSteererInternals;
 }
 //----------------------------------------------------------------------------
 H5FDdsmSteerer::~H5FDdsmSteerer()
 {
   this->SetCurrentCommand(NULL);
+  delete this->SteererInternals;
 }
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmSteerer::SetCurrentCommand(H5FDdsmConstString cmd)
@@ -117,21 +124,97 @@ H5FDdsmInt32 H5FDdsmSteerer::GetSteeringCommands()
   return(H5FD_DSM_SUCCESS);
 }
 //----------------------------------------------------------------------------
-H5FDdsmInt32 H5FDdsmSteerer::IsSteerable(H5FDdsmConstString hdfPath)
+void H5FDdsmSteerer::SetDisabledObject(H5FDdsmString objectName)
 {
-  std::cout << "IsSteerable: " << hdfPath << std::endl;
+  this->SteererInternals->DisabledObjects[objectName] =
+      (this->SteererInternals->DisabledObjects[objectName]) ? false : true;
+}
+//----------------------------------------------------------------------------
+H5FDdsmInt32 H5FDdsmSteerer::UpdateDisabledObjects()
+{
+  H5FDdsmInt64 addr;
+  H5FDdsmMetaData metadata;
+  int index = 0;
 
+  for (H5FDdsmSteererInternals::SteeringEntriesString::iterator iter =
+      this->SteererInternals->DisabledObjects.begin();
+      iter != this->SteererInternals->DisabledObjects.end(); iter++) {
+    if (iter->second) {
+      strcpy(&metadata.disabled_objects.object_names[index*64], iter->first.c_str());
+      index++;
+    }
+  }
+  metadata.disabled_objects.number_of_objects = index;
+
+  addr = this->DsmBuffer->GetTotalLength() - sizeof(metadata) + sizeof(metadata.entry)
+      + sizeof(metadata.steering_cmd);
+  // Only one of the processes writing to the DSM needs to write file metadata
+  // but we must be careful that all the processes keep the metadata synchronized
+  if (this->DsmBuffer->GetComm()->GetId() == 0) {
+    if (this->DsmBuffer->Put(addr, sizeof(metadata.disabled_objects.number_of_objects),
+        &metadata.disabled_objects.number_of_objects) != H5FD_DSM_SUCCESS) {
+      return H5FD_DSM_FAIL;
+    }
+    if (this->DsmBuffer->Put(addr+sizeof(metadata.disabled_objects.number_of_objects),
+        sizeof(metadata.disabled_objects.object_names),
+        metadata.disabled_objects.object_names) != H5FD_DSM_SUCCESS) {
+      return H5FD_DSM_FAIL;
+    }
+  }
+  this->DsmBuffer->GetComm()->Barrier();
   return(H5FD_DSM_SUCCESS);
 }
 //----------------------------------------------------------------------------
-H5FDdsmInt32 H5FDdsmSteerer::DsmDump()
+H5FDdsmInt32 H5FDdsmSteerer::GetDisabledObjects()
 {
-  H5FDdsmDump *dsmDump = new H5FDdsmDump();
-  dsmDump->SetDsmBuffer(this->DsmBuffer);
-  dsmDump->SetFileName("DSM.h5");
-  dsmDump->DumpLight();
-  delete dsmDump;
+  H5FDdsmInt64 addr;
+  H5FDdsmMetaData metadata;
+  MPI_Comm comm = MPI_COMM_NULL;
+
+  addr = this->DsmBuffer->GetTotalLength() - sizeof(metadata) + sizeof(metadata.entry)
+      + sizeof(metadata.steering_cmd);
+
+  if (this->DsmBuffer->GetComm()->GetId() == 0) {
+    if (this->DsmBuffer->Get(addr, sizeof(metadata.disabled_objects.number_of_objects),
+        &metadata.disabled_objects.number_of_objects) != H5FD_DSM_SUCCESS) {
+      return H5FD_DSM_FAIL;
+    }
+    if (this->DsmBuffer->Get(addr+sizeof(metadata.disabled_objects.number_of_objects),
+        sizeof(metadata.disabled_objects.object_names),
+        metadata.disabled_objects.object_names) != H5FD_DSM_SUCCESS) {
+      return H5FD_DSM_FAIL;
+    }
+  }
+  if (this->DsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_SOCKET) {
+    comm = dynamic_cast <H5FDdsmCommSocket*> (this->DsmBuffer->GetComm())->GetComm();
+  }
+  else if ((this->DsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI) ||
+      (this->DsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI_RMA)) {
+    comm = dynamic_cast <H5FDdsmCommMpi*> (this->DsmBuffer->GetComm())->GetComm();
+  }
+  MPI_Bcast(&metadata.disabled_objects.number_of_objects, sizeof(metadata.disabled_objects.number_of_objects), MPI_UNSIGNED_CHAR, 0, comm);
+  MPI_Bcast(metadata.disabled_objects.object_names, sizeof(metadata.disabled_objects.object_names), MPI_UNSIGNED_CHAR, 0, comm);
+
+  H5FDdsmDebug("Received nb of Disabled objects: " << metadata.disabled_objects.number_of_objects);
+
+  this->SteererInternals->DisabledObjects.clear();
+  for (int i = 0; i < metadata.disabled_objects.number_of_objects; i++) {
+    char tmp[64];
+    strcpy(tmp, &metadata.disabled_objects.object_names[i*64]);
+    this->SetDisabledObject(tmp);
+    H5FDdsmDebug("Received disabled object: " << tmp);
+  }
   return(H5FD_DSM_SUCCESS);
+}
+//----------------------------------------------------------------------------
+H5FDdsmInt32 H5FDdsmSteerer::IsObjectEnabled(H5FDdsmConstString name)
+{
+  H5FDdsmInt32 ret = H5FD_DSM_FAIL;
+  // if the object is found and set to true, it has been disabled in the GUI
+  if (!this->SteererInternals->DisabledObjects[name]) {
+    ret = H5FD_DSM_SUCCESS;
+  }
+  return(ret);
 }
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmSteerer::GetScalar(H5FDdsmConstString name, H5FDdsmInt32 memType, void *data)
@@ -227,6 +310,15 @@ H5FDdsmInt32 H5FDdsmSteerer::GetVector(H5FDdsmConstString name, H5FDdsmInt32 mem
   return(ret);
 }
 //----------------------------------------------------------------------------
+H5FDdsmInt32 H5FDdsmSteerer::DsmDump()
+{
+  H5FDdsmDump *dsmDump = new H5FDdsmDump();
+  dsmDump->SetDsmBuffer(this->DsmBuffer);
+  dsmDump->SetFileName("DSM.h5");
+  dsmDump->DumpLight();
+  delete dsmDump;
+  return(H5FD_DSM_SUCCESS);
+}
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmSteerer::CreateInteractionGroup()
 {

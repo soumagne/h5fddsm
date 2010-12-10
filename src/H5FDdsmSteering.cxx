@@ -119,6 +119,7 @@ herr_t H5FD_dsm_steering_update()
     dsmBuffer->SetIsSyncRequired(false);
   }
   dsmBuffer->GetSteerer()->GetSteeringCommands();
+  dsmBuffer->GetSteerer()->GetDisabledObjects();
   // Automatically triggers an update of steering objects during the begin loop function
   H5FD_dsm_server_update(dsmBuffer);
 
@@ -128,56 +129,29 @@ done:
 
 
 //----------------------------------------------------------------------------
-// Function:    H5FD_dsm_dump
-//
-// Purpose:     Display the content of the DSM (Debug only).
-//
-// Return:      Success:        non-negative
-//              Failure:        negative
-//
-//----------------------------------------------------------------------------
-herr_t H5FD_dsm_dump()
-{
-  herr_t ret_value = SUCCEED;
-  H5FDdsmBuffer *dsmBuffer;
-  FUNC_ENTER_NOAPI(H5FD_dsm_dump, FAIL)
-
-  if (!dsm_buffer) {
-    DSM_STEERING_GOTO_ERROR("Attempting to use the DSM Steering library before calling H5FD_dsm_steering_init", FAIL)
-  }
-
-  dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
-  if (!dsmBuffer->GetSteerer()->DsmDump()) {
-    ret_value = FAIL;
-  }
-
-done:
-  FUNC_LEAVE_NOAPI(ret_value);
-}
-
-
-//----------------------------------------------------------------------------
-// Function:    H5FD_dsm_is_steerable
+// Function:    H5FD_dsm_is_enabled
 //
 // Purpose:     Test if a given dataset is enabled or not in the GUI.
+//              Either the HDF path of a particular dataset or the grid object name
+//              can be given (In this last case, it has to match the name given in the template).
 //
 // Return:      Success:        non-negative
 //              Failure:        negative
 //
 //----------------------------------------------------------------------------
-herr_t H5FD_dsm_is_steerable(const char *hdf_path)
+herr_t H5FD_dsm_is_enabled(const char *name)
 {
   herr_t ret_value = SUCCEED;
   H5FDdsmBuffer *dsmBuffer;
-  FUNC_ENTER_NOAPI(H5FD_dsm_is_steerable, FAIL)
+  FUNC_ENTER_NOAPI(H5FD_dsm_is_enabled, FAIL)
 
   if (!dsm_buffer) {
     DSM_STEERING_GOTO_ERROR("Attempting to use the DSM Steering library before calling H5FD_dsm_steering_init", FAIL)
   }
 
   dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
-  if (!dsmBuffer->GetSteerer()->IsSteerable(hdf_path)) {
-    fprintf(stderr, "%s is not steerable\n", hdf_path);
+
+  if (dsmBuffer->GetSteerer()->IsObjectEnabled(name) < 0) {
     ret_value = FAIL;
   }
 
@@ -245,6 +219,35 @@ herr_t H5FD_dsm_vector_get(const char *name, int type, int number_of_elements, v
     }
   } else {
     DSM_STEERING_GOTO_ERROR("Type not supported, please use H5T_NATIVE_INT or H5T_NATIVE_DOUBLE", FAIL)
+  }
+
+done:
+  FUNC_LEAVE_NOAPI(ret_value);
+}
+
+
+//----------------------------------------------------------------------------
+// Function:    H5FD_dsm_dump
+//
+// Purpose:     Display the content of the DSM (Debug only).
+//
+// Return:      Success:        non-negative
+//              Failure:        negative
+//
+//----------------------------------------------------------------------------
+herr_t H5FD_dsm_dump()
+{
+  herr_t ret_value = SUCCEED;
+  H5FDdsmBuffer *dsmBuffer;
+  FUNC_ENTER_NOAPI(H5FD_dsm_dump, FAIL)
+
+  if (!dsm_buffer) {
+    DSM_STEERING_GOTO_ERROR("Attempting to use the DSM Steering library before calling H5FD_dsm_steering_init", FAIL)
+  }
+
+  dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
+  if (!dsmBuffer->GetSteerer()->DsmDump()) {
+    ret_value = FAIL;
   }
 
 done:

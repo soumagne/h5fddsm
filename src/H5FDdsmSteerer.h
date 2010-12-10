@@ -33,6 +33,8 @@
 
 class H5FDdsmBuffer;
 
+struct H5FDdsmSteererInternals;
+
 class H5FDdsm_EXPORT H5FDdsmSteerer : public H5FDdsmObject {
 
 public:
@@ -51,10 +53,14 @@ public:
   H5FDdsmInt32 UpdateSteeringCommands();
   H5FDdsmInt32 GetSteeringCommands();
 
-  H5FDdsmInt32 IsSteerable(H5FDdsmConstString hdfPath);
-  H5FDdsmInt32 DsmDump();
+  H5FDdsmInt32 UpdateDisabledObjects();
+  H5FDdsmInt32 GetDisabledObjects();
+
+  H5FDdsmInt32 IsObjectEnabled(H5FDdsmConstString name);
   H5FDdsmInt32 GetScalar(H5FDdsmConstString name, H5FDdsmInt32 memType, void *data);
   H5FDdsmInt32 GetVector(H5FDdsmConstString name, H5FDdsmInt32 memType, H5FDdsmInt32 numberOfElements, void *data);
+
+  H5FDdsmInt32 DsmDump();
 
 protected:
   friend class H5FDdsmManager;
@@ -64,14 +70,16 @@ protected:
   H5FDdsmInt32 WriteInteractions(H5FDdsmConstString name, H5FDdsmInt32 numberOfElements, double *data);
   H5FDdsmInt32 CloseInteractionGroup();
 
+  void SetDisabledObject(H5FDdsmString objectName);
+
   H5FDdsmInt32 CheckCommand(H5FDdsmConstString command);
 
   H5FDdsmBuffer *DsmBuffer;
   H5FDdsmString  CurrentCommand;
   H5FDdsmInt32   WriteToDSM;
-  std::string   *SteerableObjects;
   H5FDdsmInt32   FileId;
   H5FDdsmInt32   InteractionGroupId;
+  H5FDdsmSteererInternals *SteererInternals;
 };
 
 #endif // __H5FDdsmSteerer_h

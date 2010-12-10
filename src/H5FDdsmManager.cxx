@@ -52,8 +52,9 @@ struct H5FDdsmManagerInternals
 
   typedef std::vector<SteeringEntryInt>    SteeringEntriesInt;
   typedef std::vector<SteeringEntryDouble> SteeringEntriesDouble;
-  SteeringEntriesInt     SteeringValuesInt;
-  SteeringEntriesDouble  SteeringValuesDouble;
+
+  SteeringEntriesInt    SteeringValuesInt;
+  SteeringEntriesDouble SteeringValuesDouble;
 };
 //----------------------------------------------------------------------------
 H5FDdsmManager::H5FDdsmManager() 
@@ -280,6 +281,7 @@ void H5FDdsmManager::RequestRemoteChannel()
     this->DSMBuffer->GetSteerer()->CloseInteractionGroup();
   }
   this->DSMBuffer->GetSteerer()->UpdateSteeringCommands();
+  this->DSMBuffer->GetSteerer()->UpdateDisabledObjects();
   this->DSMBuffer->RequestRemoteChannel();
 }
 //----------------------------------------------------------------------------
@@ -625,4 +627,9 @@ void H5FDdsmManager::SetSteeringValues(const char *name, int numberOfElements, d
           H5FDdsmManagerInternals::SteeringEntryDouble(name, numberOfElements, entryValues));
     }
   }
+}
+//----------------------------------------------------------------------------
+void H5FDdsmManager::SetDisabledObject(char *objectName)
+{
+  this->DSMBuffer->GetSteerer()->SetDisabledObject(objectName);
 }
