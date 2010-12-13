@@ -129,7 +129,7 @@ done:
 
 
 //----------------------------------------------------------------------------
-// Function:    H5FD_dsm_is_enabled
+// Function:    H5FD_dsm_steering_is_enabled
 //
 // Purpose:     Test if a given dataset is enabled or not in the GUI.
 //              Either the HDF path of a particular dataset or the grid object name
@@ -139,11 +139,11 @@ done:
 //              Failure:        negative
 //
 //----------------------------------------------------------------------------
-herr_t H5FD_dsm_is_enabled(const char *name)
+herr_t H5FD_dsm_steering_is_enabled(const char *name)
 {
   herr_t ret_value = SUCCEED;
   H5FDdsmBuffer *dsmBuffer;
-  FUNC_ENTER_NOAPI(H5FD_dsm_is_enabled, FAIL)
+  FUNC_ENTER_NOAPI(H5FD_dsm_steering_is_enabled, FAIL)
 
   if (!dsm_buffer) {
     DSM_STEERING_GOTO_ERROR("Attempting to use the DSM Steering library before calling H5FD_dsm_steering_init", FAIL)
@@ -161,7 +161,7 @@ done:
 
 
 //----------------------------------------------------------------------------
-// Function:    H5FD_dsm_scalar_get
+// Function:    H5FD_dsm_steering_scalar_get
 //
 // Purpose:     Get the scalar value corresponding to the property name given in the template.
 //
@@ -169,19 +169,19 @@ done:
 //              Failure:        negative
 //
 //----------------------------------------------------------------------------
-herr_t H5FD_dsm_scalar_get(const char *name, int type, void *data)
+herr_t H5FD_dsm_steering_scalar_get(const char *name, int mem_type, void *data)
 {
   herr_t ret_value = SUCCEED;
   H5FDdsmBuffer *dsmBuffer;
-  FUNC_ENTER_NOAPI(H5FD_dsm_scalar_get, FAIL)
+  FUNC_ENTER_NOAPI(H5FD_dsm_steering_scalar_get, FAIL)
 
   if (!dsm_buffer) {
     DSM_STEERING_GOTO_ERROR("Attempting to use the DSM Steering library before calling H5FD_dsm_steering_init", FAIL)
   }
 
   dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
-  if ((type == H5T_NATIVE_INT) || (type == H5T_NATIVE_DOUBLE)) {
-    if (!dsmBuffer->GetSteerer()->GetScalar(name, type, data)) {
+  if ((mem_type == H5T_NATIVE_INT) || (mem_type == H5T_NATIVE_DOUBLE)) {
+    if (!dsmBuffer->GetSteerer()->GetScalar(name, mem_type, data)) {
       ret_value = FAIL;
     }
   } else {
@@ -194,7 +194,7 @@ done:
 
 
 //----------------------------------------------------------------------------
-// Function:    H5FD_dsm_vector_get
+// Function:    H5FD_dsm_steering_vector_get
 //
 // Purpose:     Get the vector valued corresponding to the property name given in the template.
 //
@@ -202,19 +202,19 @@ done:
 //              Failure:        negative
 //
 //----------------------------------------------------------------------------
-herr_t H5FD_dsm_vector_get(const char *name, int type, int number_of_elements, void *data)
+herr_t H5FD_dsm_steering_vector_get(const char *name, int mem_type, int number_of_elements, void *data)
 {
   herr_t ret_value = SUCCEED;
   H5FDdsmBuffer *dsmBuffer;
-  FUNC_ENTER_NOAPI(H5FD_dsm_vector_get, FAIL)
+  FUNC_ENTER_NOAPI(H5FD_dsm_steering_vector_get, FAIL)
 
   if (!dsm_buffer) {
     DSM_STEERING_GOTO_ERROR("Attempting to use the DSM Steering library before calling H5FD_dsm_steering_init", FAIL)
   }
 
   dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
-  if ((type == H5T_NATIVE_INT) || (type == H5T_NATIVE_DOUBLE)) {
-    if (!dsmBuffer->GetSteerer()->GetVector(name, type, number_of_elements, data)) {
+  if ((mem_type == H5T_NATIVE_INT) || (mem_type == H5T_NATIVE_DOUBLE)) {
+    if (!dsmBuffer->GetSteerer()->GetVector(name, mem_type, number_of_elements, data)) {
       ret_value = FAIL;
     }
   } else {

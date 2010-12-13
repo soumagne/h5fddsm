@@ -29,6 +29,7 @@ INCLUDE_DIRECTORIES(
 #-----------------------------------------------------------------------------
 SET(H5FDdsm_F90_C_STUB_SRCS
   H5FDdsmf.c
+  H5FDdsmSteeringf.c
 )
 
 ADD_LIBRARY(H5FDdsm_f90CStub
@@ -49,6 +50,7 @@ SET_LIB_OPTIONS(H5FDdsm_f90CStub)
 SET(H5FDdsm_FORTRAN_SRC
   H5FDdsmf90global.f90
   H5FDdsmff.f90
+  H5FDdsmSteeringff.f90
 )
 
 ADD_LIBRARY(H5FDdsm_fortran
