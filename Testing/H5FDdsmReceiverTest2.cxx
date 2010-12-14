@@ -31,30 +31,6 @@ typedef struct ParticleBuffer {
   #define sleep(a) mySleep(a)
 #endif
 
-#ifdef MACHINE_AGNO
-  #define server "agno.staff.cscs.ch"
-  #define PORT 22000
-#endif
-
-#ifdef MACHINE_DINO
-  #define server "agno.staff.cscs.ch"
-  #define PORT 22000
-#endif
-
-#ifdef MACHINE_BRENO
-  #define server "agno.staff.cscs.ch"
-  #define PORT 22000
-#endif
-
-#ifndef server
-  #define server "default"
-  #define PORT 22000
-#endif
-
-#define COMM_TYPE H5FD_DSM_COMM_SOCKET
-std::string server_name = server;
-int default_port_number = PORT;
-
 //----------------------------------------------------------------------------
 void particle_read(
     ParticleBuffer_t *buf, const char *filename, int rank,
@@ -230,8 +206,8 @@ int main (int argc, char* argv[])
   dsmManager->SetLocalBufferSizeMBytes(DSMSize/size);
   dsmManager->SetDsmCommType(commType);
   dsmManager->SetDsmIsServer(1);
-  dsmManager->SetServerHostName(server_name.c_str());
-  dsmManager->SetServerPort(default_port_number);
+  dsmManager->SetServerHostName("default");
+  dsmManager->SetServerPort(22000);
   dsmManager->CreateDSM();
   // Publish writes .dsm_config file with server name/port/mode in
   // then spawns thread which waits for incoming connections
