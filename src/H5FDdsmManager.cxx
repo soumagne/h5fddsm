@@ -165,14 +165,15 @@ bool H5FDdsmManager::DestroyDSM()
   }
 #endif
 
-  if (this->DSMComm) {
-    delete this->DSMComm;
-    this->DSMComm = NULL;
-  }
   if (this->DSMBuffer) {
     delete this->DSMBuffer;
     this->DSMBuffer = NULL;
     H5FDdsmDebug(<<"DSM destroyed on " << this->UpdatePiece);
+  }
+
+  if (this->DSMComm) {
+    delete this->DSMComm;
+    this->DSMComm = NULL;
   }
 
   this->SetServerHostName(NULL);

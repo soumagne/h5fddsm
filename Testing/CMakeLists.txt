@@ -11,7 +11,7 @@ IF (WIN32)
     ENDIF ("${COMPUTERNAME}" MATCHES "AGNO")
   ENDIF(COMPUTERNAME)
 
-  ADD_DEFINITIONS(-DH5FD_TEST_WAIT) # For debug
+#  ADD_DEFINITIONS(-DH5FD_TEST_WAIT) # For debug
 ENDIF(WIN32)
 
 #-----------------------------------------------
