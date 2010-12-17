@@ -54,7 +54,7 @@ public:
   H5FDdsmInt32   Init();
   H5FDdsmInt32   Send(H5FDdsmMsg *Msg);
   H5FDdsmInt32   Receive(H5FDdsmMsg *Msg);
-  H5FDdsmInt32   Check(H5FDdsmMsg *Msg);
+  H5FDdsmInt32   Probe(H5FDdsmMsg *Msg);
   H5FDdsmInt32   Barrier();
 
   H5FDdsmInt32   OpenPort();

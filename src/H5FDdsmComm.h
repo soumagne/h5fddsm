@@ -102,7 +102,7 @@ public:
     virtual H5FDdsmInt32   PutData(H5FDdsmMsg *DataMsg);
     virtual H5FDdsmInt32   GetData(H5FDdsmMsg *DataMsg);
     //
-    virtual H5FDdsmInt32   Check(H5FDdsmMsg *Msg);
+    virtual H5FDdsmInt32   Probe(H5FDdsmMsg *Msg);
     virtual H5FDdsmInt32   Barrier();
 
     virtual H5FDdsmInt32   OpenPort();

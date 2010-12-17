@@ -217,6 +217,14 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
     static H5FDdsmInt32 disconnectSync = 0;
     static H5FDdsmInt32 clearStorageSync = 0;
 
+//    while (this->ProbeCommandHeader(&who) == H5FD_DSM_FAIL) {
+//#ifdef _WIN32
+//      SwitchToThread();
+//#else
+//      pthread_yield();
+//#endif
+//    }
+// TODO Add source to receive command header
     status = this->ReceiveCommandHeader(&Opcode, &who, &Address, &aLength);
     if (status == H5FD_DSM_FAIL){
         H5FDdsmError("Error Receiving Command Header");

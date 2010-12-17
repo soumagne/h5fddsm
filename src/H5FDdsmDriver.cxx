@@ -224,6 +224,18 @@ H5FDdsmDriver::SetLength(H5FDdsmInt64 aLength, H5FDdsmBoolean AllowAllocate){
 }
 
 H5FDdsmInt32
+H5FDdsmDriver::ProbeCommandHeader(H5FDdsmInt32 *Source){
+  H5FDdsmInt32 status = H5FD_DSM_FAIL;
+  H5FDdsmMsg *Msg = NULL;
+
+  Msg = this->ServiceMsg; // ReceiveCommandHeader always used by Service;
+  Msg->SetTag(H5FD_DSM_COMMAND_TAG);
+  status = this->Comm->Probe(Msg);
+  if (status != H5FD_DSM_FAIL) *Source = Msg->Source;
+  return(status);
+}
+
+H5FDdsmInt32
 H5FDdsmDriver::SendCommandHeader(H5FDdsmInt32 Opcode, H5FDdsmInt32 Dest, H5FDdsmInt64 Address, H5FDdsmInt64 aLength){
     H5FDdsmCommand  Cmd;
     H5FDdsmInt32 Status;
@@ -262,14 +274,14 @@ H5FDdsmDriver::ReceiveCommandHeader(H5FDdsmInt32 *Opcode, H5FDdsmInt32 *Source, 
     Msg->SetData(&Cmd);
 
     memset(&Cmd, 0, sizeof(H5FDdsmCommand));
-    status = this->Comm->Check(Msg);
+    // TODO Do not probe by default
+    status = this->Comm->Probe(Msg);
     if ((status != H5FD_DSM_FAIL) || Block){
         status  = this->Comm->Receive(Msg);
         if (status == H5FD_DSM_FAIL){
             H5FDdsmError("Communicator Receive Failed");
             return(H5FD_DSM_FAIL);
-        }
-        else {
+        } else {
             *Opcode = Cmd.Opcode;
             *Source = Cmd.Source;
             *Address = Cmd.Address;
@@ -306,10 +318,11 @@ H5FDdsmDriver::ReceiveData(H5FDdsmInt32 Source, void *Data, H5FDdsmInt64 aLength
     Msg->SetLength(aLength);
     Msg->SetTag(Tag);
     Msg->SetData(Data);
+    // TODO Do not probe by default
     if(Block){
         Status = this->Comm->Receive(Msg);
     }else{
-        Status = this->Comm->Check(Msg);
+        Status = this->Comm->Probe(Msg);
         if(Status == H5FD_DSM_SUCCESS){
             Status = this->Comm->Receive(Msg);
         }

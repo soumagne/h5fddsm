@@ -65,7 +65,7 @@ H5FDdsmComm::Init(){
 }
 
 H5FDdsmInt32
-H5FDdsmComm::Check(H5FDdsmMsg *Msg){
+H5FDdsmComm::Probe(H5FDdsmMsg *Msg){
     if(Msg->Tag <= 0) Msg->Tag = H5FD_DSM_DEFAULT_TAG;
     return(H5FD_DSM_SUCCESS);
 }

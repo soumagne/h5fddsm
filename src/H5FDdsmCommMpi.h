@@ -87,7 +87,7 @@ public:
     H5FDdsmInt32   PutData(H5FDdsmMsg *DataMsg);
     H5FDdsmInt32   GetData(H5FDdsmMsg *DataMsg);
     //
-    H5FDdsmInt32   Check(H5FDdsmMsg *Msg);
+    H5FDdsmInt32   Probe(H5FDdsmMsg *Msg);
     H5FDdsmInt32   Barrier();
 
     H5FDdsmInt32   OpenPort();

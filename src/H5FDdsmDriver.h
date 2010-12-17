@@ -147,6 +147,7 @@ class H5FDdsm_EXPORT H5FDdsmDriver : public H5FDdsmObject {
     
     H5FDdsmInt32   AddressToId(H5FDdsmInt64 Address);
 
+    H5FDdsmInt32   ProbeCommandHeader(H5FDdsmInt32 *Source);
     H5FDdsmInt32   SendCommandHeader(H5FDdsmInt32 Opcode, H5FDdsmInt32 Dest, H5FDdsmInt64 Address, H5FDdsmInt64 Length);
     H5FDdsmInt32   ReceiveCommandHeader(H5FDdsmInt32 *Opcode, H5FDdsmInt32 *Source, H5FDdsmInt64 *Address, H5FDdsmInt64 *Length, H5FDdsmInt32 Block=1);
 

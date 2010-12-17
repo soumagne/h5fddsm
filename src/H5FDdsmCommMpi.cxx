@@ -92,11 +92,11 @@ H5FDdsmCommMpi::Init(){
 }
 
 H5FDdsmInt32
-H5FDdsmCommMpi::Check(H5FDdsmMsg *Msg){
+H5FDdsmCommMpi::Probe(H5FDdsmMsg *Msg){
     int         nid, flag=0;
     MPI_Status  Status;
 
-    if(H5FDdsmComm::Check(Msg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+    if(H5FDdsmComm::Probe(Msg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
      MPI_Iprobe(MPI_ANY_SOURCE, Msg->Tag, this->Comm, &flag, &Status);
      H5FDdsmDebug("MPI_Iprobe " << H5FDdsmTagToString(Msg->Tag) << ", " << this->Comm);
     if(flag){
