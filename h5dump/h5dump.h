@@ -184,13 +184,7 @@ typedef struct h5dump_header_t {
 
 } h5dump_header_t;
 
-// H5 dump common functions
-H5FDdsm_EXPORT int H5dump(int argc, char *argv[], void *dsmBuffer);
-H5FDdsm_EXPORT int H5dump_xml(const char *fileName, std::ostringstream &);
-
-// DSM specific functions
-H5FDdsm_EXPORT int H5dump_dsm(const char *fileName, void *dsmBuffer);
-H5FDdsm_EXPORT int H5dump_dsm_light(const char *fileName, void *dsmBuffer);
-H5FDdsm_EXPORT int H5dump_dsm_xml(const char *fileName, std::ostringstream &, void *dsmBuffer);
+// H5dump function
+H5FDdsm_EXPORT int H5dump(int argc, const char *argv[], std::ostringstream &stream, void *dsmBuffer);
 
 #endif  /* !H5DUMP_H__ */

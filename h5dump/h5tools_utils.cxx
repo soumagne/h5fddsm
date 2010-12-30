@@ -95,13 +95,13 @@ error_msg(const char *progname, const char *fmt, ...)
     va_start(ap, fmt);
     HDfflush(stdout);
 //    HDfprintf(stderr, "%s error: ", progname);
-#ifdef H5_HAVE_PARALLEL
-    MPI_Comm_rank(MPI_COMM_WORLD, &print_rank);
-#endif
-    if (print_rank == 0) {
+//#ifdef H5_HAVE_PARALLEL
+//    MPI_Comm_rank(MPI_COMM_WORLD, &print_rank);
+//#endif
+//    if (print_rank == 0) {
       fprintf(stderr, "%s error: ", progname);
       HDvfprintf(stderr, fmt, ap);
-    }
+//    }
     va_end(ap);
 }
 
@@ -129,13 +129,13 @@ warn_msg(const char *progname, const char *fmt, ...)
     va_start(ap, fmt);
     HDfflush(stdout);
     //    HDfprintf(stderr, "%s warning: ", progname);
-#ifdef H5_HAVE_PARALLEL
-    MPI_Comm_rank(MPI_COMM_WORLD, &print_rank);
-#endif
-    if (print_rank == 0) {
+//#ifdef H5_HAVE_PARALLEL
+//    MPI_Comm_rank(MPI_COMM_WORLD, &print_rank);
+//#endif
+//    if (print_rank == 0) {
       fprintf(stderr, "%s warning: ", progname);
       HDvfprintf(stderr, fmt, ap);
-    }
+//    }
     va_end(ap);
 }
 

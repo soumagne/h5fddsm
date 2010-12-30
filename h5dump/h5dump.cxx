@@ -50,11 +50,7 @@ extern "C" {
 /*
  * The global output stream replacing stdout
  */
-std::ostringstream output_stream;
-/*
- * The global print rank when used with DSM
- */
-int print_rank;
+std::ostringstream h5fd_dsm_dump_output_stream;
 
 /* module-scoped variables */
 const char  *progname = "h5dump";
@@ -4297,7 +4293,7 @@ free_handler(struct handler_t *hand, int len)
  *-------------------------------------------------------------------------
  */
 int
-H5dump(int argc, const char *argv[], void *dsmBuffer)
+H5dump(int argc, const char *argv[], std::ostringstream &stream, void *dsmBuffer)
 {
     hid_t               fid, gid;
     char               *fname = NULL;
@@ -4307,6 +4303,9 @@ H5dump(int argc, const char *argv[], void *dsmBuffer)
     struct handler_t   *hand;
     int                 i;
     unsigned            u;
+
+    h5fd_dsm_dump_output_stream.str("");
+    h5fd_dsm_dump_output_stream.clear();
 
     opt_ind = 1; // reset parsing index
     dump_header_format = &standardformat;
@@ -4510,6 +4509,7 @@ H5dump(int argc, const char *argv[], void *dsmBuffer)
         printf("</%sHDF5-File>\n", xmlnsprefix);
     }
 
+    stream << h5fd_dsm_dump_output_stream.str();
 done:
     /* Free tables for objects */
     table_list_free();
@@ -4527,6 +4527,7 @@ done:
     H5Eset_auto2(H5E_DEFAULT, func, edata);
 
     h5tools_close();
+
     //leave(d_status);
     return EXIT_SUCCESS;
 }
@@ -4548,52 +4549,6 @@ main(int argc, const char *argv[])
     return d_status;
 }
 #endif
-/*-------------------------------------------------------------------------*/
-int H5dump_dsm(const char *fileName, void *dsmBuffer)
-{
-    const char *argv[4]={"./h5dump", "-f", "dsm", fileName};
-    output_stream.str("");
-    output_stream.clear();
-    d_status = H5dump(4, (const char**) argv, dsmBuffer);
-#ifdef H5_HAVE_PARALLEL
-    MPI_Comm_rank(MPI_COMM_WORLD, &print_rank);
-#endif
-    if(print_rank == 0) std::cout << output_stream.str() << std::endl;
-    return d_status;
-}
-/*-------------------------------------------------------------------------*/
-int H5dump_dsm_light(const char *fileName, void *dsmBuffer)
-{
-    const char *argv[5]={"./h5dump", "-f", "dsm", "-H", fileName};
-    output_stream.str("");
-    output_stream.clear();
-    d_status = H5dump(5, (const char**) argv, dsmBuffer);
-#ifdef H5_HAVE_PARALLEL
-    MPI_Comm_rank(MPI_COMM_WORLD, &print_rank);
-#endif
-    if(print_rank == 0) std::cout << output_stream.str() << std::endl;
-    return d_status;
-}
-/*-------------------------------------------------------------------------*/
-int H5dump_dsm_xml(const char *fileName, std::ostringstream &stream, void *dsmBuffer)
-{
-    const char *argv[8] = {"./h5dump", "-f", "dsm", "-x", "-X", ":", "-H", fileName};
-    output_stream.str("");
-    output_stream.clear();
-    d_status = H5dump(8, (const char**) argv, dsmBuffer);
-    stream << output_stream.str();
-    return d_status;
-}
-/*-------------------------------------------------------------------------*/
-int H5dump_xml(const char *fileName, std::ostringstream &stream)
-{
-    const char *argv[6] = {"./h5dump", "-x", "-X", ":", "-H", fileName};
-    output_stream.str("");
-    output_stream.clear();
-    d_status = H5dump(6, (const char**) argv, NULL);
-    stream << output_stream.str();
-    return d_status;
-}
 /*-------------------------------------------------------------------------
  * Function:    print_enum
  *

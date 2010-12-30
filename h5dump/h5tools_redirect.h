@@ -30,11 +30,7 @@ extern "C" {
 /*
  * The global output stream replacing stdout
  */
-extern std::ostringstream output_stream;
-/*
- * The global print rank when used with DSM
- */
-extern int print_rank;
+extern std::ostringstream h5fd_dsm_dump_output_stream;
 
 static inline int h5tools_redirect_printf(const char *format, ...)
 {
@@ -44,7 +40,7 @@ static inline int h5tools_redirect_printf(const char *format, ...)
 
   va_start(args, format);
   nchars = vsprintf(buf, format, args);
-  output_stream << buf;
+  h5fd_dsm_dump_output_stream << buf;
   va_end(args);
   return nchars;
 }
@@ -81,7 +77,7 @@ static inline int h5tools_redirect_HDfprintf(FILE *stream, const char *fmt, ...)
     modifier[0] = '\0';
 
     if ('%'==fmt[0] && '%'==fmt[1]) {
-      output_stream << '%';
+      h5fd_dsm_dump_output_stream << '%';
       fmt += 2;
       nout++;
     } else if ('%'==fmt[0]) {
@@ -327,14 +323,14 @@ static inline int h5tools_redirect_HDfprintf(FILE *stream, const char *fmt, ...)
         break;
 
       default:
-        output_stream << format_templ;
+        h5fd_dsm_dump_output_stream << format_templ;
         n = (int)HDstrlen (format_templ);
         break;
       }
       nout += n;
       fmt = s;
     } else {
-      output_stream << *fmt;
+      h5fd_dsm_dump_output_stream << *fmt;
       fmt++;
       nout++;
     }
