@@ -1407,7 +1407,7 @@ h5tools_print_region_data_blocks(hid_t region_id,
             HERROR(H5E_tools_g, H5E_tools_min_id_g, "H5Sget_simple_extent_dims failed");
 
         /* assume entire data space to be printed */
-        for (jndx = 0; jndx < (size_t) ctx.ndims; jndx++)
+        for (jndx = 0; ((unsigned int)jndx) < (size_t) ctx.ndims; jndx++)
             ctx.p_min_idx[jndx] = start[jndx];
         init_acc_pos(&ctx, total_size);
 
@@ -1722,7 +1722,7 @@ h5tools_print_region_data_points(hid_t region_space, hid_t region_id,
         ctx.indent_level++;
 
         /* assume entire data space to be printed */
-        for (indx = 0; indx < (size_t) ctx.ndims; indx++)
+        for (indx = 0; ((unsigned int) indx) < (size_t) ctx.ndims; indx++)
             ctx.p_min_idx[indx] = 0;
         if(H5Sget_simple_extent_dims(region_space, ctx.p_max_idx, NULL) < 0)
             HERROR(H5E_tools_g, H5E_tools_min_id_g, "H5Sget_simple_extent_dims failed");
