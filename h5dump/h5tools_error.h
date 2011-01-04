@@ -1,21 +1,4 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- *  Project                 : vtkCSCS                                        *
- *  Module                  : h5dump.h                                       *
- *  Revision of last commit : $Rev: 1460 $                                   *
- *  Author of last commit   : $Author: soumagne $                            *
- *  Date of last commit     : $Date:: 2009-12-02 18:38:09 +0100 #$           *
- *                                                                           *
- *  Copyright (C) CSCS - Swiss National Supercomputing Centre.               *
- *  You may use modify and and distribute this code freely providing         *
- *  1) This copyright notice appears on all copies of source code            *
- *  2) An acknowledgment appears with any substantial usage of the code      *
- *  3) If this code is contributed to any other open source project, it      *
- *  must not be reformatted such that the indentation, bracketing or         *
- *  overall style is modified significantly.                                 *
- *                                                                           *
- *  This software is distributed WITHOUT ANY WARRANTY; without even the      *
- *  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * Copyright by The HDF Group.                                               *
  * Copyright by the Board of Trustees of the University of Illinois.         *
  * All rights reserved.                                                      *
@@ -36,14 +19,12 @@
 #ifndef H5TOOLS_ERROR_H_
 #define H5TOOLS_ERROR_H_
 
-extern "C" {
 #include "H5Epublic.h"
-}
 
 /* tools-HDF5 Error variables */
-extern hid_t H5tools_ERR_CLS_g;
-extern hid_t H5E_tools_g;
-extern hid_t H5E_tools_min_id_g;
+H5TOOLS_DLLVAR hid_t H5tools_ERR_CLS_g;
+H5TOOLS_DLLVAR hid_t H5E_tools_g;
+H5TOOLS_DLLVAR hid_t H5E_tools_min_id_g;
 
 /* Use FUNC to safely handle variations of C99 __func__ keyword handling */
 #ifdef H5_HAVE_C99_FUNC
@@ -90,7 +71,7 @@ extern hid_t H5E_tools_min_id_g;
 /* Macro for "catching" flow of control when an error occurs.  Note that the
  *      H5_LEAVE macro won't jump back here once it's past this point.
  */
-#define CATCH past_catch = TRUE; catch_except:;
+#define CATCH catch_except:; past_catch = TRUE;
 
 /*
  * H5_LEAVE macro, used to facilitate control flow between a
@@ -106,7 +87,7 @@ extern hid_t H5E_tools_min_id_g;
 }
 
 /*
- * H5E_THROW macro, used to facilitate error reporting within a function body.  
+ * H5E_THROW macro, used to facilitate error reporting within a function body.
  * The arguments are the minor error number, and an error string.
  * The return value is assigned to a variable `ret_value' and control branches
  * to the `catch_except' label, if we're not already past it.
@@ -128,10 +109,11 @@ extern hid_t H5E_tools_min_id_g;
 }
 
 /*
- * HGOTO_DONE macro, used to facilitate normal return within a function body. 
- * The argument is the return value which is assigned to the `ret_value' 
+ * HGOTO_DONE macro, used to facilitate normal return within a function body.
+ * The argument is the return value which is assigned to the `ret_value'
  * variable.  Control branches to the `done' label.
  */
 #define HGOTO_DONE(ret_val) {ret_value = ret_val; goto done;}
 
 #endif /* H5TOOLS_ERROR_H_ */
+

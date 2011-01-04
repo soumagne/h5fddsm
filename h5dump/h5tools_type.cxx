@@ -1,21 +1,4 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- *  Project                 : vtkCSCS                                        *
- *  Module                  : h5dump.h                                       *
- *  Revision of last commit : $Rev: 1460 $                                   *
- *  Author of last commit   : $Author: soumagne $                            *
- *  Date of last commit     : $Date:: 2009-12-02 18:38:09 +0100 #$           *
- *                                                                           *
- *  Copyright (C) CSCS - Swiss National Supercomputing Centre.               *
- *  You may use modify and and distribute this code freely providing         *
- *  1) This copyright notice appears on all copies of source code            *
- *  2) An acknowledgment appears with any substantial usage of the code      *
- *  3) If this code is contributed to any other open source project, it      *
- *  must not be reformatted such that the indentation, bracketing or         *
- *  overall style is modified significantly.                                 *
- *                                                                           *
- *  This software is distributed WITHOUT ANY WARRANTY; without even the      *
- *  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * Copyright by The HDF Group.                                               *
  * Copyright by the Board of Trustees of the University of Illinois.         *
  * All rights reserved.                                                      *

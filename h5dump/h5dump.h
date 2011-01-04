@@ -1,21 +1,4 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- *  Project                 : vtkCSCS                                        *
- *  Module                  : h5dump.h                                       *
- *  Revision of last commit : $Rev: 1466 $                                   *
- *  Author of last commit   : $Author: biddisco $                            *
- *  Date of last commit     : $Date:: 2009-12-04 13:32:32 +0100 #$           *
- *                                                                           *
- *  Copyright (C) CSCS - Swiss National Supercomputing Centre.               *
- *  You may use modify and and distribute this code freely providing         *
- *  1) This copyright notice appears on all copies of source code            *
- *  2) An acknowledgment appears with any substantial usage of the code      *
- *  3) If this code is contributed to any other open source project, it      *
- *  must not be reformatted such that the indentation, bracketing or         *
- *  overall style is modified significantly.                                 *
- *                                                                           *
- *  This software is distributed WITHOUT ANY WARRANTY; without even the      *
- *  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * Copyright by The HDF Group.                                               *
  * Copyright by the Board of Trustees of the University of Illinois.         *
  * All rights reserved.                                                      *
@@ -35,13 +18,7 @@
 #ifndef H5DUMP_H__
 #define H5DUMP_H__
 
-#include "mpi.h"
-
-extern "C" {
 #include "hdf5.h"
-}
-
-#include "H5FDdsmConfig.h"
 
 #include <sstream>
 
@@ -97,6 +74,11 @@ extern "C" {
 #define EXTERNAL_FILE   "EXTERNAL_FILE"
 #define FILLVALUE       "FILLVALUE"
 #define FILE_CONTENTS   "FILE_CONTENTS"
+#ifdef H5_HAVE_H5DUMP_PACKED_BITS
+#define PACKED_BITS     "PACKED_BITS"
+#define PACKED_OFFSET   "OFFSET"
+#define PACKED_LENGTH   "LENGTH"
+#endif
 
 #define BEGIN           "{"
 #define END             "}"
@@ -184,7 +166,14 @@ typedef struct h5dump_header_t {
 
 } h5dump_header_t;
 
-// H5dump function
-H5FDdsm_EXPORT int H5dump(int argc, const char *argv[], std::ostringstream &stream, void *dsmBuffer);
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+H5TOOLS_DLL void H5dump(int argc, const char *argv[], std::ostringstream &stream, void *dsmBuffer);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  /* !H5DUMP_H__ */

@@ -1,21 +1,4 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- *  Project                 : vtkCSCS                                        *
- *  Module                  : h5dump.h                                       *
- *  Revision of last commit : $Rev: 1460 $                                   *
- *  Author of last commit   : $Author: soumagne $                            *
- *  Date of last commit     : $Date:: 2009-12-02 18:38:09 +0100 #$           *
- *                                                                           *
- *  Copyright (C) CSCS - Swiss National Supercomputing Centre.               *
- *  You may use modify and and distribute this code freely providing         *
- *  1) This copyright notice appears on all copies of source code            *
- *  2) An acknowledgment appears with any substantial usage of the code      *
- *  3) If this code is contributed to any other open source project, it      *
- *  must not be reformatted such that the indentation, bracketing or         *
- *  overall style is modified significantly.                                 *
- *                                                                           *
- *  This software is distributed WITHOUT ANY WARRANTY; without even the      *
- *  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * Copyright by The HDF Group.                                               *
  * Copyright by the Board of Trustees of the University of Illinois.         *
  * All rights reserved.                                                      *
@@ -39,13 +22,10 @@
 #ifndef H5TOOLS_H__
 #define H5TOOLS_H__
 
-#include "mpi.h"
-
-extern "C" {
 #include "hdf5.h"
-}
-
 #include "h5tools_error.h"
+
+#include "H5FDdsm.h"
 
 #define ESCAPE_HTML             1
 #define OPT(X,S)                ((X) ? (X) : (S))
@@ -75,9 +55,9 @@ extern "C" {
 
 #define H5TOOLS_DUMP_MAX_RANK     H5S_MAX_RANK
 
-/* 
- * Strings for output - these were duplicated from the h5dump.h 
- * file in order to support region reference data display 
+/*
+ * Strings for output - these were duplicated from the h5dump.h
+ * file in order to support region reference data display
  */
 #define ATTRIBUTE       "ATTRIBUTE"
 #define BLOCK           "BLOCK"
@@ -127,9 +107,9 @@ extern "C" {
 #define BEGIN           "{"
 #define END             "}"
 
-/* 
- * dump structure for output - this was duplicated from the h5dump.h 
- * file in order to support region reference data display 
+/*
+ * dump structure for output - this was duplicated from the h5dump.h
+ * file in order to support region reference data display
  */
 typedef struct h5tools_dump_header_t {
     const char *name;
@@ -529,24 +509,39 @@ typedef struct h5tools_context_t {
     hsize_t sm_pos;                   /* current stripmine element position */
 } h5tools_context_t;
 
+typedef struct subset_d {
+    hsize_t     *data;
+    unsigned int len;
+} subset_d;
+
 /* a structure to hold the subsetting particulars for a dataset */
 struct subset_t {
-    hsize_t *start;
-    hsize_t *stride;
-    hsize_t *count;
-    hsize_t *block;
+    subset_d start;
+    subset_d stride;
+    subset_d count;
+    subset_d block;
 };
 
-/* The following include, h5tools_str.h, must be after the 
+/* The following include, h5tools_str.h, must be after the
  * above stucts are defined. There is a dependency in the following
  * include that hasn't been identified yet. */
 
 #include "h5tools_str.h"
 
-extern FILE   *rawdatastream;       /* output stream for raw data */
-extern int     bin_output;          /* binary output */
-extern int     bin_form;            /* binary form */
-extern int     region_output;       /* region output */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifdef H5_HAVE_H5DUMP_PACKED_BITS
+H5TOOLS_DLLVAR int     packed_bits_num;       /* number of packed bits to display */
+H5TOOLS_DLLVAR int         packed_data_offset; /* offset of packed bits to display */
+H5TOOLS_DLLVAR unsigned int packed_data_mask;  /* mask in which packed bits to display */
+#endif
+
+H5TOOLS_DLLVAR FILE   *rawdatastream;       /* output stream for raw data */
+H5TOOLS_DLLVAR int     bin_output;          /* binary output */
+H5TOOLS_DLLVAR int     bin_form;            /* binary form */
+H5TOOLS_DLLVAR int     region_output;       /* region output */
 
 /* Strings for output */
 #define H5_TOOLS_GROUP           "GROUP"
@@ -554,37 +549,41 @@ extern int     region_output;       /* region output */
 #define H5_TOOLS_DATATYPE        "DATATYPE"
 
 /* Definitions of useful routines */
-extern void     h5tools_init(void);
-extern void     h5tools_close(void);
-extern hid_t    h5tools_fopen(const char *fname, unsigned flags, hid_t fapl,
+H5TOOLS_DLL void     h5tools_init(void);
+H5TOOLS_DLL void     h5tools_close(void);
+H5TOOLS_DLL hid_t    h5tools_fopen(const char *fname, unsigned flags, hid_t fapl,
                     const char *driver, char *drivername, size_t drivername_len, void *dsmBuffer);
-extern int      h5tools_dump_dset(FILE *stream, const h5tool_format_t *info, hid_t dset,
+H5TOOLS_DLL int      h5tools_dump_dset(FILE *stream, const h5tool_format_t *info, hid_t dset,
                                   hid_t p_typ, struct subset_t *sset, int indentlevel);
-extern int      h5tools_dump_mem(FILE *stream, const h5tool_format_t *info, hid_t obj_id,
+H5TOOLS_DLL int      h5tools_dump_mem(FILE *stream, const h5tool_format_t *info, hid_t obj_id,
                                  hid_t type, hid_t space, void *mem, int indentlevel);
-extern hid_t    h5tools_get_native_type(hid_t type);
-extern hid_t    h5tools_get_little_endian_type(hid_t type);
-extern hid_t    h5tools_get_big_endian_type(hid_t type);
+H5TOOLS_DLL hid_t    h5tools_get_native_type(hid_t type);
+H5TOOLS_DLL hid_t    h5tools_get_little_endian_type(hid_t type);
+H5TOOLS_DLL hid_t    h5tools_get_big_endian_type(hid_t type);
 
 
-extern void     h5tools_dump_simple_data(FILE *stream, const h5tool_format_t *info, hid_t container,
+H5TOOLS_DLL void     h5tools_dump_simple_data(FILE *stream, const h5tool_format_t *info, hid_t container,
                          h5tools_context_t *ctx/*in,out*/, unsigned flags,
                          hsize_t nelmts, hid_t type, void *_mem);
 
-extern int      h5tools_canreadf(const char* name,
+H5TOOLS_DLL int      h5tools_canreadf(const char* name,
                                  hid_t dcpl_id);
-extern int      h5tools_can_encode(H5Z_filter_t filtn);
+H5TOOLS_DLL int      h5tools_can_encode(H5Z_filter_t filtn);
 
 void            init_acc_pos(h5tools_context_t *ctx, hsize_t *dims);
-/* 
+/*
  * new functions needed to display region reference data
  */
 void            h5tools_dump_datatype(FILE *stream, const h5tool_format_t *info,
-                         h5tools_context_t *ctx/*in,out*/, hid_t type); 
+                         h5tools_context_t *ctx/*in,out*/, hid_t type);
 int             h5tools_print_dataspace(h5tools_str_t *buffer/*in,out*/, hid_t space);
 int             h5tools_print_datatype(h5tools_str_t *buffer/*in,out*/,
                          const h5tool_format_t *info, h5tools_context_t *ctx/*in,out*/,
                          hid_t type);
 int             h5tools_print_enum(h5tools_str_t *buffer/*in,out*/, hid_t type);
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* H5TOOLS_H__ */
 

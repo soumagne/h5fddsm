@@ -1,28 +1,17 @@
-/* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- *  Project                 : vtkCSCS                                        *
- *  Module                  : h5dump.h                                       *
- *  Revision of last commit : $Rev: 1460 $                                   *
- *  Author of last commit   : $Author: soumagne $                            *
- *  Date of last commit     : $Date:: 2009-12-02 18:38:09 +0100 #$           *
- *                                                                           *
- *  Copyright (C) CSCS - Swiss National Supercomputing Centre.               *
- *  You may use modify and and distribute this code freely providing         *
- *  1) This copyright notice appears on all copies of source code            *
- *  2) An acknowledgment appears with any substantial usage of the code      *
- *  3) If this code is contributed to any other open source project, it      *
- *  must not be reformatted such that the indentation, bracketing or         *
- *  overall style is modified significantly.                                 *
- *                                                                           *
- *  This software is distributed WITHOUT ANY WARRANTY; without even the      *
- *  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 #ifndef H5TOOLS_REDIRECT_H__
 #define H5TOOLS_REDIRECT_H__
 
+#ifdef __cplusplus
 extern "C" {
+#endif
+
 #include "H5Fprivate.h"
+
+#ifdef __cplusplus
 }
+#endif
+
 #include <cstdio>
 #include <iostream>
 #include <sstream>
@@ -31,6 +20,10 @@ extern "C" {
  * The global output stream replacing stdout
  */
 extern std::ostringstream h5fd_dsm_dump_output_stream;
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 static inline int h5tools_redirect_printf(const char *format, ...)
 {
@@ -343,5 +336,9 @@ static inline int h5tools_redirect_HDfprintf(FILE *stream, const char *fmt, ...)
 #undef HDfprintf
 #endif
 #define HDfprintf h5tools_redirect_HDfprintf
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* H5TOOLS_REDIRECT_H__ */

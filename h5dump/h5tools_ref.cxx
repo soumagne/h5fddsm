@@ -1,21 +1,4 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- *  Project                 : vtkCSCS                                        *
- *  Module                  : h5dump.h                                       *
- *  Revision of last commit : $Rev: 1460 $                                   *
- *  Author of last commit   : $Author: soumagne $                            *
- *  Date of last commit     : $Date:: 2009-12-02 18:38:09 +0100 #$           *
- *                                                                           *
- *  Copyright (C) CSCS - Swiss National Supercomputing Centre.               *
- *  You may use modify and and distribute this code freely providing         *
- *  1) This copyright notice appears on all copies of source code            *
- *  2) An acknowledgment appears with any substantial usage of the code      *
- *  3) If this code is contributed to any other open source project, it      *
- *  must not be reformatted such that the indentation, bracketing or         *
- *  overall style is modified significantly.                                 *
- *                                                                           *
- *  This software is distributed WITHOUT ANY WARRANTY; without even the      *
- *  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * Copyright by The HDF Group.                                               *
  * Copyright by the Board of Trustees of the University of Illinois.         *
  * All rights reserved.                                                      *
@@ -34,10 +17,16 @@
 #include <cstdlib>
 #include "h5tools_ref.h"
 
+#ifdef __cplusplus
 extern "C" {
+#endif
+
 #include "H5private.h"
 #include "H5SLprivate.h"
+
+#ifdef __cplusplus
 }
+#endif
 
 #include "h5tools.h"
 #include "h5tools_utils.h"
@@ -65,9 +54,6 @@ typedef struct {
 
 static H5SL_t *ref_path_table = NULL;   /* the "table" (implemented with a skip list) */
 static hid_t thefile = (-1);
-
-extern const char  *progname;
-extern int   d_status;
 
 static int ref_path_table_put(const char *, haddr_t objno);
 
@@ -143,8 +129,8 @@ init_ref_path_table(void)
 
     /* Iterate over objects in this file */
     if(h5trav_visit(thefile, "/", TRUE, TRUE, init_ref_path_cb, NULL, NULL) < 0) {
-        error_msg(progname, "unable to construct reference path table\n");
-        d_status = EXIT_FAILURE;
+        error_msg("unable to construct reference path table\n");
+        h5tools_setstatus(EXIT_FAILURE);
     } /* end if */
 
     return(0);

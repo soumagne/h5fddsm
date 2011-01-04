@@ -1,21 +1,4 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- *  Project                 : vtkCSCS                                        *
- *  Module                  : h5dump.h                                       *
- *  Revision of last commit : $Rev: 1460 $                                   *
- *  Author of last commit   : $Author: soumagne $                            *
- *  Date of last commit     : $Date:: 2009-12-02 18:38:09 +0100 #$           *
- *                                                                           *
- *  Copyright (C) CSCS - Swiss National Supercomputing Centre.               *
- *  You may use modify and and distribute this code freely providing         *
- *  1) This copyright notice appears on all copies of source code            *
- *  2) An acknowledgment appears with any substantial usage of the code      *
- *  3) If this code is contributed to any other open source project, it      *
- *  must not be reformatted such that the indentation, bracketing or         *
- *  overall style is modified significantly.                                 *
- *                                                                           *
- *  This software is distributed WITHOUT ANY WARRANTY; without even the      *
- *  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * Copyright by The HDF Group.                                               *
  * Copyright by the Board of Trustees of the University of Illinois.         *
  * All rights reserved.                                                      *
@@ -33,23 +16,29 @@
 
 #include "h5trav.h"
 
+#ifdef __cplusplus
 extern "C" {
-#  include "H5private.h"
+#endif
+
+#include "H5private.h"
+
+#ifdef __cplusplus
 }
+#endif
 
 /*-------------------------------------------------------------------------
  * local typedefs
  *-------------------------------------------------------------------------
  */
-typedef struct path_addr_t {
+typedef struct trav_addr_path_t {
     haddr_t addr;
     char *path;
-} path_addr_t;
+} trav_addr_path_t;
 
 typedef struct trav_addr_t {
-    size_t       nalloc;
-    size_t       nused;
-    path_addr_t *objs;
+    size_t      nalloc;
+    size_t      nused;
+    trav_addr_path_t *objs;
 } trav_addr_t;
 
 typedef struct {
@@ -87,7 +76,7 @@ static void trav_table_addlink(trav_table_t *table,
  *-------------------------------------------------------------------------
  */
 
- 
+
 /*-------------------------------------------------------------------------
  * Function: trav_addr_add
  *
@@ -109,7 +98,7 @@ trav_addr_add(trav_addr_t *visited, haddr_t addr, const char *path)
     /* Allocate space if necessary */
     if(visited->nused == visited->nalloc) {
         visited->nalloc = MAX(1, visited->nalloc * 2);;
-        visited->objs = (path_addr_t*)HDrealloc(visited->objs, visited->nalloc * sizeof(visited->objs[0]));
+        visited->objs = (trav_addr_path_t*)HDrealloc(visited->objs, visited->nalloc * sizeof(visited->objs[0]));
     } /* end if */
 
     /* Append it */
@@ -118,7 +107,7 @@ trav_addr_add(trav_addr_t *visited, haddr_t addr, const char *path)
     visited->objs[idx].path = HDstrdup(path);
 } /* end trav_addr_add() */
 
- 
+
 /*-------------------------------------------------------------------------
  * Function: trav_addr_visited
  *
@@ -147,7 +136,7 @@ trav_addr_visited(trav_addr_t *visited, haddr_t addr)
     return(NULL);
 } /* end trav_addr_visited() */
 
- 
+
 /*-------------------------------------------------------------------------
  * Function: traverse_cb
  *
@@ -172,7 +161,7 @@ traverse_cb(hid_t loc_id, const char *path, const H5L_info_t *linfo,
     if(udata->is_absolute) {
         size_t base_len = HDstrlen(udata->base_grp_name);
         size_t add_slash = base_len ? ((udata->base_grp_name)[base_len-1] != '/') : 1;
-            
+
         if(NULL == (new_name = (char*)HDmalloc(base_len + add_slash + HDstrlen(path) + 1)))
             return(H5_ITER_ERROR);
         HDstrcpy(new_name, udata->base_grp_name);
@@ -226,7 +215,7 @@ traverse_cb(hid_t loc_id, const char *path, const H5L_info_t *linfo,
     return(H5_ITER_CONT);
 } /* end traverse_cb() */
 
- 
+
 /*-------------------------------------------------------------------------
  * Function: traverse
  *
@@ -300,7 +289,7 @@ traverse(hid_t file_id, const char *grp_name, hbool_t visit_start,
     return 0;
 }
 
- 
+
 /*-------------------------------------------------------------------------
  * Function: trav_info_add
  *
@@ -314,7 +303,7 @@ traverse(hid_t file_id, const char *grp_name, hbool_t visit_start,
  *
  *-------------------------------------------------------------------------
  */
-static void
+void
 trav_info_add(trav_info_t *info, const char *path, h5trav_type_t obj_type)
 {
     size_t idx;         /* Index of address to use  */
@@ -331,7 +320,7 @@ trav_info_add(trav_info_t *info, const char *path, h5trav_type_t obj_type)
     info->paths[idx].type = obj_type;
 } /* end trav_info_add() */
 
- 
+
 /*-------------------------------------------------------------------------
  * Function: trav_info_visit_obj
  *
@@ -345,7 +334,7 @@ trav_info_add(trav_info_t *info, const char *path, h5trav_type_t obj_type)
  *
  *-------------------------------------------------------------------------
  */
-static int
+int
 trav_info_visit_obj(const char *path, const H5O_info_t *oinfo,
     const char UNUSED *already_visited, void *udata)
 {
@@ -356,7 +345,7 @@ trav_info_visit_obj(const char *path, const H5O_info_t *oinfo,
     return(0);
 } /* end trav_info_visit_obj() */
 
- 
+
 /*-------------------------------------------------------------------------
  * Function: trav_info_visit_lnk
  *
@@ -370,7 +359,7 @@ trav_info_visit_obj(const char *path, const H5O_info_t *oinfo,
  *
  *-------------------------------------------------------------------------
  */
-static int
+int
 trav_info_visit_lnk(const char *path, const H5L_info_t *linfo, void *udata)
 {
     /* Add the link to the 'info' struct */
@@ -379,7 +368,7 @@ trav_info_visit_lnk(const char *path, const H5L_info_t *linfo, void *udata)
     return(0);
 } /* end trav_info_visit_lnk() */
 
- 
+
 /*-------------------------------------------------------------------------
  * Function: h5trav_getinfo
  *
@@ -460,18 +449,25 @@ h5trav_getindex(const trav_info_t *info, const char *obj)
  */
 
 void
-trav_info_init(trav_info_t **_info)
+trav_info_init(const char *filename, hid_t fileid, trav_info_t **_info)
 {
     trav_info_t *info = (trav_info_t *)HDmalloc(sizeof(trav_info_t));
 
     /* Init info structure */
     info->nused = info->nalloc = 0;
     info->paths = NULL;
+    info->fname = filename;
+    info->fid = fileid;
 
+    /* Initialize list of visited symbolic links */
+    info->symlink_visited.nused = 0;
+    info->symlink_visited.nalloc = 0;
+    info->symlink_visited.objs = NULL;
+    info->symlink_visited.dangle_link = FALSE;
     *_info = info;
 } /* end trav_info_init() */
 
- 
+
 /*-------------------------------------------------------------------------
  * Function: trav_info_free
  *
@@ -486,6 +482,16 @@ trav_info_free(trav_info_t *info)
     size_t u;           /* Local index variable */
 
     if(info) {
+        /* Free visited symbolic links path and file (if alloc) */
+        for(u=0; u < info->symlink_visited.nused; u++) 
+        {
+            if (info->symlink_visited.objs[u].file)
+                HDfree(info->symlink_visited.objs[u].file);
+
+            HDfree(info->symlink_visited.objs[u].path);
+        }
+        HDfree(info->symlink_visited.objs);
+
         /* Free path names */
         for(u = 0; u < info->nused; u++)
             HDfree(info->paths[u].path);
@@ -500,7 +506,7 @@ trav_info_free(trav_info_t *info)
  *-------------------------------------------------------------------------
  */
 
- 
+
 /*-------------------------------------------------------------------------
  * Function: trav_table_visit_obj
  *
@@ -531,7 +537,7 @@ trav_table_visit_obj(const char *path, const H5O_info_t *oinfo,
     return(0);
 } /* end trav_table_visit_obj() */
 
- 
+
 /*-------------------------------------------------------------------------
  * Function: trav_table_visit_lnk
  *
@@ -554,7 +560,7 @@ trav_table_visit_lnk(const char *path, const H5L_info_t UNUSED *linfo, void *uda
     return(0);
 } /* end trav_table_visit_lnk() */
 
- 
+
 /*-------------------------------------------------------------------------
  * Function: h5trav_gettable
  *
@@ -814,7 +820,7 @@ void trav_table_free( trav_table_t *table )
     HDfree(table);
 }
 
- 
+
 /*-------------------------------------------------------------------------
  * Function: trav_print_visit_obj
  *
@@ -865,7 +871,7 @@ trav_print_visit_obj(const char *path, const H5O_info_t *oinfo,
     return(0);
 } /* end trav_print_visit_obj() */
 
- 
+
 /*-------------------------------------------------------------------------
  * Function: trav_print_visit_lnk
  *
@@ -925,7 +931,7 @@ trav_print_visit_lnk(const char *path, const H5L_info_t *linfo, void *udata)
     return(0);
 } /* end trav_print_visit_lnk() */
 
- 
+
 /*-------------------------------------------------------------------------
  * Function: h5trav_print
  *
@@ -961,7 +967,7 @@ h5trav_print(hid_t fid)
     return 0;
 }
 
- 
+
 /*-------------------------------------------------------------------------
  * Function: h5trav_visit
  *
@@ -994,4 +1000,120 @@ h5trav_visit(hid_t fid, const char *grp_name, hbool_t visit_start,
 
     return 0;
 }
+
+/*-------------------------------------------------------------------------
+ * Function: symlink_visit_add
+ *
+ * Purpose: Add an symbolic link to visited data structure
+ *
+ * Return: 0 on success, -1 on failure
+ *
+ * Programmer: Neil Fortner, nfortne2@hdfgroup.org
+ *             Adapted from trav_addr_add in h5trav.c by Quincey Koziol
+ *
+ * Date: September 5, 2008
+ *
+ * Modified: 
+ *  Jonathan Kim
+ *   - Moved from h5ls.c to share among tools.  (Sep 16, 2010)
+ *   - Renamed from elink_trav_add to symlink_visit_add for both soft and 
+ *     external links.   (May 25, 2010)
+ *   - Add type parameter to distingush between soft and external link for 
+ *     sure, which prevent from mixing up visited link when the target names
+ *     are same between the soft and external link, as code marks with the
+ *     target name.  (May 25,2010) 
+ *
+ *-------------------------------------------------------------------------
+ */
+herr_t
+symlink_visit_add(symlink_trav_t *visited, H5L_type_t type, const char *file, const char *path)
+{
+    size_t  idx;         /* Index of address to use */
+    void    *tmp_ptr;
+
+    /* Allocate space if necessary */
+    if(visited->nused == visited->nalloc) 
+    {
+        visited->nalloc = MAX(1, visited->nalloc * 2);
+        if(NULL == (tmp_ptr = HDrealloc(visited->objs, visited->nalloc * sizeof(visited->objs[0]))))
+            return -1;
+        visited->objs = (symlink_trav_obj_t*)tmp_ptr;
+    } /* end if */
+
+    /* Append it */
+    idx = visited->nused++;
+
+    visited->objs[idx].type = type;
+    visited->objs[idx].file = NULL;
+    visited->objs[idx].path = NULL;
+
+    if (type == H5L_TYPE_EXTERNAL)
+    {
+        if(NULL == (visited->objs[idx].file = HDstrdup(file))) 
+        {
+            visited->nused--;
+            return -1;
+        }
+    }
+
+    if(NULL == (visited->objs[idx].path = HDstrdup(path))) 
+    {
+        visited->nused--;
+        if (visited->objs[idx].file)
+            HDfree (visited->objs[idx].file);
+        return -1;
+    }
+
+    return 0;
+} /* end symlink_visit_add() */
+
+
+/*-------------------------------------------------------------------------
+ * Function: symlink_is_visited
+ *
+ * Purpose: Check if an symbolic link has already been visited
+ *
+ * Return: TRUE/FALSE
+ *
+ * Programmer: Neil Fortner, nfortne2@hdfgroup.org
+ *             Adapted from trav_addr_visited in h5trav.c by Quincey Koziol
+ *
+ * Date: September 5, 2008
+ *
+ * Modified: 
+ *  Jonathan Kim
+ *   - Moved from h5ls.c to share among tools.  (Sep 16, 2010)
+ *   - Renamed from elink_trav_visited to symlink_is_visited for both soft and 
+ *     external links.  (May 25, 2010)
+ *   - Add type parameter to distingush between soft and external link for 
+ *     sure, which prevent from mixing up visited link when the target names
+ *     are same between the soft and external link, as code marks with the
+ *     target name.  (May 25,2010) 
+ *
+ *-------------------------------------------------------------------------
+ */
+hbool_t
+symlink_is_visited(symlink_trav_t *visited, H5L_type_t type, const char *file, const char *path)
+{
+    size_t u;  /* Local index variable */
+
+    /* Look for symlink */
+    for(u = 0; u < visited->nused; u++)
+    {
+        /* Check for symlink values already in array */
+        /* check type and path pair to distingush between symbolic links */
+        if ((visited->objs[u].type == type) && !HDstrcmp(visited->objs[u].path, path))
+        {
+            /* if external link, file need to be matched as well */
+            if (visited->objs[u].type == H5L_TYPE_EXTERNAL)
+            {
+                if (!HDstrcmp(visited->objs[u].file, file))
+                    return (TRUE);
+            }
+            return (TRUE);
+        }
+    }
+    /* Didn't find symlink */
+    return(FALSE);
+} /* end symlink_is_visited() */
 

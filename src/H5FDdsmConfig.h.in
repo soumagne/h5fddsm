@@ -20,6 +20,7 @@
 #endif
 
 #cmakedefine H5FDdsm_BUILD_SHARED_LIBS
+#define H5_HAVE_DSM
 
 #if defined (H5FDdsm_BUILD_SHARED_LIBS)
   #if defined(H5FDdsm_EXPORTS) 

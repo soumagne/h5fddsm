@@ -1,21 +1,4 @@
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- *  Project                 : vtkCSCS                                        *
- *  Module                  : h5dump.h                                       *
- *  Revision of last commit : $Rev: 1460 $                                   *
- *  Author of last commit   : $Author: soumagne $                            *
- *  Date of last commit     : $Date:: 2009-12-02 18:38:09 +0100 #$           *
- *                                                                           *
- *  Copyright (C) CSCS - Swiss National Supercomputing Centre.               *
- *  You may use modify and and distribute this code freely providing         *
- *  1) This copyright notice appears on all copies of source code            *
- *  2) An acknowledgment appears with any substantial usage of the code      *
- *  3) If this code is contributed to any other open source project, it      *
- *  must not be reformatted such that the indentation, bracketing or         *
- *  overall style is modified significantly.                                 *
- *                                                                           *
- *  This software is distributed WITHOUT ANY WARRANTY; without even the      *
- *  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * Copyright by The HDF Group.                                               *
  * Copyright by the Board of Trustees of the University of Illinois.         *
  * All rights reserved.                                                      *
@@ -35,17 +18,21 @@
 
 #include "hdf5.h"
 
+#ifdef __cplusplus
 extern "C" {
+#endif
 
-herr_t      fill_ref_path_table(hid_t fid);
-const char *lookup_ref_path(haddr_t ref);
-int         get_next_xid(void);
-haddr_t     get_fake_xid(void);
-haddr_t     ref_path_table_lookup(const char *);
-haddr_t     ref_path_table_gen_fake(const char *);
-int         term_ref_path_table(void);
+H5TOOLS_DLL herr_t      fill_ref_path_table(hid_t fid);
+H5TOOLS_DLL const char *lookup_ref_path(haddr_t ref);
+H5TOOLS_DLL int         get_next_xid(void);
+H5TOOLS_DLL haddr_t     get_fake_xid(void);
+H5TOOLS_DLL haddr_t     ref_path_table_lookup(const char *);
+H5TOOLS_DLL haddr_t     ref_path_table_gen_fake(const char *);
+H5TOOLS_DLL int         term_ref_path_table(void);
 
+#ifdef __cplusplus
 }
+#endif
 
 #endif
 
