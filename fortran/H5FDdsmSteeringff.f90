@@ -104,6 +104,34 @@
             hdferr = h5fd_dsm_steering_is_enabled_c(name, namelen)
          END SUBROUTINE h5fd_dsm_steering_is_enabled_f
 
+
+!----------------------------------------------------------------------
+! Name:     h5fd_dsm_steering_is_set_f
+!
+! Purpose:  Test if a given object exists in the steerable "Interactions" group
+!
+! Inputs:
+!       name        - object name
+! Outputs:
+!       hdferr:     - error code
+!                   Success:  0
+!                   Failure: -1
+! Optional parameters:
+!               NONE
+!
+!----------------------------------------------------------------------
+         SUBROUTINE h5fd_dsm_steering_is_set_f(name, set, hdferr)
+            IMPLICIT NONE
+            CHARACTER(LEN=*), INTENT(IN) :: name ! Name of the dataset
+            INTEGER, INTENT(OUT) :: hdferr       ! Error code
+            INTEGER, INTENT(INOUT) :: set        ! flag to hold result
+            INTEGER :: namelen ! Length of the name character string
+
+            INTEGER, EXTERNAL :: h5fd_dsm_steering_is_set_c
+            namelen = LEN_TRIM(name)
+            hdferr = h5fd_dsm_steering_is_set_c(name, namelen, set)
+         END SUBROUTINE h5fd_dsm_steering_is_set_f
+
 !----------------------------------------------------------------------
 ! Name:     h5fd_dsm_steering_scalar_get_f
 !
@@ -152,21 +180,33 @@
 !               NONE
 !
 !----------------------------------------------------------------------
-         SUBROUTINE h5fd_dsm_steering_vector_get_f(name, mem_type_id, num_elem, buf, hdferr)
+         SUBROUTINE h5fd_dsm_steering_vector_get_int8_f(name, mem_type_id, num_elem, buf, hdferr)
             IMPLICIT NONE
             CHARACTER(LEN=*), INTENT(IN) :: name ! Name of the property
             INTEGER(HID_T), INTENT(IN) :: mem_type_id ! Memory datatype identifier
             INTEGER(HSIZE_T), INTENT(IN) :: num_elem
-            INTEGER, INTENT(INOUT), &
-            DIMENSION(num_elem) :: buf
+            INTEGER, INTENT(INOUT), DIMENSION(num_elem) :: buf
             INTEGER, INTENT(OUT) :: hdferr       ! Error code
             INTEGER :: namelen ! Length of the name character string
 
             INTEGER, EXTERNAL :: h5fd_dsm_steering_vector_get_c
             namelen = LEN_TRIM(name)
             hdferr = h5fd_dsm_steering_vector_get_c(name, namelen, mem_type_id, num_elem, buf)
-         END SUBROUTINE h5fd_dsm_steering_vector_get_f
+         END SUBROUTINE h5fd_dsm_steering_vector_get_int8_f
 
+         SUBROUTINE h5fd_dsm_steering_vector_get_real8_f(name, mem_type_id, num_elem, buf, hdferr)
+            IMPLICIT NONE
+            CHARACTER(LEN=*), INTENT(IN) :: name ! Name of the property
+            INTEGER(HID_T), INTENT(IN) :: mem_type_id ! Memory datatype identifier
+            INTEGER(HSIZE_T), INTENT(IN) :: num_elem
+            REAL(8), INTENT(INOUT), DIMENSION(num_elem) :: buf
+            INTEGER, INTENT(OUT) :: hdferr       ! Error code
+            INTEGER :: namelen ! Length of the name character string
+
+            INTEGER, EXTERNAL :: h5fd_dsm_steering_vector_get_c
+            namelen = LEN_TRIM(name)
+            hdferr = h5fd_dsm_steering_vector_get_c(name, namelen, mem_type_id, num_elem, buf)
+         END SUBROUTINE h5fd_dsm_steering_vector_get_real8_f
 !----------------------------------------------------------------------
 ! Name:     h5fd_dsm_dump_f
 !

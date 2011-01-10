@@ -47,9 +47,14 @@ extern "C" {
   /* Description:
    * Test if a given dataset is enabled or not in the GUI.
    * Either the HDF path of a particular dataset or the grid object name
-   * can bee given (In this last case, it has to match the name given in the template).
+   * can be given (In this last case, it has to match the name given in the template).
    */
   H5FDdsm_EXPORT herr_t H5FD_dsm_steering_is_enabled(const char *name);
+
+  /* Description:
+   * Return true if the object exists in the "Interactions" group
+   */
+  H5FDdsm_EXPORT herr_t H5FD_dsm_steering_is_set(const char *name, int *set);
 
   /* Description:
    * Get the scalar value corresponding to the property name given in the template.

@@ -159,7 +159,33 @@ done:
   FUNC_LEAVE_NOAPI(ret_value);
 }
 
+//----------------------------------------------------------------------------
+// Function:    H5FD_dsm_steering_is_set
+//
+// Purpose:     Test if the steerable objects has been set (in the Interactions group)
+//
+// Return:      Success:        non-negative
+//              Failure:        negative
+//
+//----------------------------------------------------------------------------
+herr_t H5FD_dsm_steering_is_set(const char *name, int *set)
+{
+  herr_t ret_value = SUCCEED;
+  H5FDdsmBuffer *dsmBuffer;
+  FUNC_ENTER_NOAPI(H5FD_dsm_steering_is_set, FAIL)
 
+  if (!dsm_buffer) {
+    DSM_STEERING_GOTO_ERROR("Attempting to use the DSM Steering library before calling H5FD_dsm_steering_init", FAIL)
+  }
+
+  dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
+  if (dsmBuffer->GetSteerer()->IsObjectPresent(name, *set) < 0) {
+    ret_value = FAIL;
+  }
+
+done:
+  FUNC_LEAVE_NOAPI(ret_value);
+}
 //----------------------------------------------------------------------------
 // Function:    H5FD_dsm_steering_scalar_get
 //
@@ -180,7 +206,7 @@ herr_t H5FD_dsm_steering_scalar_get(const char *name, int mem_type, void *data)
   }
 
   dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
-  if ((mem_type == H5T_NATIVE_INT) || (mem_type == H5T_NATIVE_DOUBLE)) {
+  if (H5Tequal(mem_type,H5T_NATIVE_INT) || H5Tequal(mem_type,H5T_NATIVE_DOUBLE)) {
     if (!dsmBuffer->GetSteerer()->GetScalar(name, mem_type, data)) {
       ret_value = FAIL;
     }
@@ -213,7 +239,7 @@ herr_t H5FD_dsm_steering_vector_get(const char *name, int mem_type, int number_o
   }
 
   dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
-  if ((mem_type == H5T_NATIVE_INT) || (mem_type == H5T_NATIVE_DOUBLE)) {
+  if (H5Tequal(mem_type,H5T_NATIVE_INT) || H5Tequal(mem_type,H5T_NATIVE_DOUBLE)) {
     if (!dsmBuffer->GetSteerer()->GetVector(name, mem_type, number_of_elements, data)) {
       ret_value = FAIL;
     }

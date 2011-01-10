@@ -93,10 +93,40 @@ int_f nh5fd_dsm_steering_is_enabled_c(_fcd name, int_f* namelen)
       * Call H5FD_dsm_steering_is_enabled function.
       */
      ret = H5FD_dsm_steering_is_enabled(c_name);
-     if (ret < 0) return ret_value;
      HDfree(c_name);
-     ret_value = 0;
-     return ret_value;
+     if (ret < 0) return ret_value;
+     return 0;
+}
+
+/*----------------------------------------------------------------------------
+ * Name:        h5fd_dsm_steering_is_set_c
+ * Purpose:     Test if a given scalar/vector exists in the Interactions group
+ * Inputs:      name    - Name of an entry in the Interactions declarations
+ *              namelen - name length
+ *              set - variable that will be 0 if object is absent, 1 if present
+ * Returns:     0 on success, -1 on failure
+ *---------------------------------------------------------------------------*/
+int_f nh5fd_dsm_steering_is_set_c(_fcd name, int_f* namelen, int_f* set)
+{
+     int    ret_value = -1;
+     char  *c_name;
+     int_f  c_namelen;
+     herr_t ret;
+
+     /*
+      * Convert FORTRAN name to C name
+      */
+     c_namelen = *namelen;
+     c_name = (char *)HD5f2cstring(name, (size_t)c_namelen);
+     if (c_name == NULL) return ret_value;
+
+     /*
+      * Call H5FD_dsm_steering_is_set function.
+      */
+     ret = H5FD_dsm_steering_is_set(c_name, set);
+     HDfree(c_name);
+     if (ret < 0) return ret_value;
+     return 0;
 }
 
 /*----------------------------------------------------------------------------
@@ -129,10 +159,9 @@ int_f nh5fd_dsm_steering_scalar_get_c(_fcd name, int_f* namelen, hid_t_f* mem_ty
       * Call H5FD_dsm_steering_scalar_get function.
       */
      ret = H5FD_dsm_steering_scalar_get(c_name, c_mem_type_id, _fcdtocp(buf));
-     if (ret < 0) return ret_value;
      HDfree(c_name);
-     ret_value = 0;
-     return ret_value;
+     if (ret < 0) return ret_value;
+     return 0;
 }
 
 /*----------------------------------------------------------------------------
@@ -168,10 +197,9 @@ int_f nh5fd_dsm_steering_vector_get_c(_fcd name, int_f* namelen, hid_t_f* mem_ty
       * Call H5FD_dsm_steering_vector_get function.
       */
      ret = H5FD_dsm_steering_vector_get(c_name, c_mem_type_id, c_num_elem, _fcdtocp(buf));
-     if (ret < 0) return ret_value;
      HDfree(c_name);
-     ret_value = 0;
-     return ret_value;
+     if (ret < 0) return ret_value;
+     return 0;
 }
 
 /*----------------------------------------------------------------------------
