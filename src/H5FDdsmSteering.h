@@ -51,6 +51,13 @@ extern "C" {
    */
   H5FDdsm_EXPORT herr_t H5FD_dsm_steering_is_enabled(const char *name);
 
+
+  H5FDdsm_EXPORT herr_t H5FD_dsm_steering_begin_query();
+  H5FDdsm_EXPORT herr_t H5FD_dsm_steering_end_query();
+  H5FDdsm_EXPORT herr_t H5FD_dsm_steering_gethandle(const char *name, hid_t *handle);
+  H5FDdsm_EXPORT herr_t H5FD_dsm_steering_freehandle(hid_t handle);
+
+
   /* Description:
    * Return true if the object exists in the "Interactions" group
    */
@@ -64,7 +71,7 @@ extern "C" {
   /* Description:
    * Get the vector values corresponding to the property name given in the template.
    */
-  H5FDdsm_EXPORT herr_t H5FD_dsm_steering_vector_get(const char *name, int mem_type, int number_of_elements, void *data);
+  H5FDdsm_EXPORT herr_t H5FD_dsm_steering_vector_get(const char *name, int mem_type, hsize_t number_of_elements, void *data);
 
   /* Description:
    * Display the content of the DSM (Debug only).

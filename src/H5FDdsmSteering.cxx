@@ -65,7 +65,6 @@ void *dsm_buffer = NULL; // pointer to internal dsm buffer reference
 herr_t H5FD_dsm_steering_init(MPI_Comm comm, void *buffer)
 {
   herr_t ret_value = SUCCEED;
-  H5FDdsmBuffer *dsmBuffer;
   FUNC_ENTER_NOAPI(H5FD_dsm_steering_init, FAIL)
 
   if (!buffer) {
@@ -79,7 +78,7 @@ herr_t H5FD_dsm_steering_init(MPI_Comm comm, void *buffer)
     DSM_STEERING_GOTO_ERROR("Error during initialization of the DSM Steering library", FAIL)
   }
 
-  dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
+  H5FDdsmBuffer *dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
   if (dsmBuffer->GetIsAutoAllocated() && !dsmBuffer->GetIsConnected()) {
     H5FDdsmManager *dsmManager = (H5FDdsmManager *)DsmGetAutoAllocatedManager();
     dsmManager->ReadDSMConfigFile();
@@ -103,14 +102,12 @@ done:
 herr_t H5FD_dsm_steering_update()
 {
   herr_t ret_value = SUCCEED;
-  H5FDdsmBuffer *dsmBuffer;
   FUNC_ENTER_NOAPI(H5FD_dsm_steering_update, FAIL)
-
   if (!dsm_buffer) {
     DSM_STEERING_GOTO_ERROR("Attempting to use the DSM Steering library before calling H5FD_dsm_steering_init", FAIL)
   }
 
-  dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
+  H5FDdsmBuffer *dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
   if ((dsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI_RMA) &&
       dsmBuffer->GetIsSyncRequired() && !dsmBuffer->GetIsServer()) {
     // After possible RMA put / get from the server, need to sync windows before
@@ -142,15 +139,12 @@ done:
 herr_t H5FD_dsm_steering_is_enabled(const char *name)
 {
   herr_t ret_value = SUCCEED;
-  H5FDdsmBuffer *dsmBuffer;
   FUNC_ENTER_NOAPI(H5FD_dsm_steering_is_enabled, FAIL)
-
   if (!dsm_buffer) {
     DSM_STEERING_GOTO_ERROR("Attempting to use the DSM Steering library before calling H5FD_dsm_steering_init", FAIL)
   }
 
-  dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
-
+  H5FDdsmBuffer *dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
   if (dsmBuffer->GetSteerer()->IsObjectEnabled(name) < 0) {
     ret_value = FAIL;
   }
@@ -158,6 +152,87 @@ herr_t H5FD_dsm_steering_is_enabled(const char *name)
 done:
   FUNC_LEAVE_NOAPI(ret_value);
 }
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+herr_t H5FD_dsm_steering_begin_query()
+{
+  herr_t ret_value = SUCCEED;
+  FUNC_ENTER_NOAPI(H5FD_dsm_steering_begin_query, FAIL)
+  if (!dsm_buffer) {
+    DSM_STEERING_GOTO_ERROR("Attempting to use the DSM Steering library before calling H5FD_dsm_steering_init", FAIL)
+  }
+
+  H5FDdsmBuffer *dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
+  if (dsmBuffer->GetSteerer()->BeginQuery() < 0) {
+    ret_value = FAIL;
+  }
+
+done:
+  FUNC_LEAVE_NOAPI(ret_value);
+}
+//----------------------------------------------------------------------------
+herr_t H5FD_dsm_steering_end_query()
+{
+  herr_t ret_value = SUCCEED;
+  FUNC_ENTER_NOAPI(H5FD_dsm_steering_end_query, FAIL)
+  if (!dsm_buffer) {
+    DSM_STEERING_GOTO_ERROR("Attempting to use the DSM Steering library before calling H5FD_dsm_steering_init", FAIL)
+  }
+
+  H5FDdsmBuffer *dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
+  if (dsmBuffer->GetSteerer()->EndQuery() < 0) {
+    ret_value = FAIL;
+  }
+
+done:
+  FUNC_LEAVE_NOAPI(ret_value);
+}
+//----------------------------------------------------------------------------
+herr_t H5FD_dsm_steering_gethandle(const char *name, hid_t *handle)
+{
+  herr_t ret_value = SUCCEED;
+  FUNC_ENTER_NOAPI(H5FD_dsm_steering_gethandle, FAIL)
+  if (!dsm_buffer) {
+    DSM_STEERING_GOTO_ERROR("Attempting to use the DSM Steering library before calling H5FD_dsm_steering_init", FAIL)
+  }
+
+  H5FDdsmBuffer *dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
+  if (dsmBuffer->GetSteerer()->GetHandle(name, handle) < 0) {
+    ret_value = FAIL;
+  }
+done:
+  FUNC_LEAVE_NOAPI(ret_value);
+}
+//----------------------------------------------------------------------------
+herr_t H5FD_dsm_steering_freehandle(hid_t handle)
+{
+  herr_t ret_value = SUCCEED;
+  FUNC_ENTER_NOAPI(H5FD_dsm_steering_freehandle, FAIL)
+  if (!dsm_buffer) {
+    DSM_STEERING_GOTO_ERROR("Attempting to use the DSM Steering library before calling H5FD_dsm_steering_init", FAIL)
+  }
+
+  H5FDdsmBuffer *dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
+  if (dsmBuffer->GetSteerer()->FreeHandle(handle) < 0) {
+    ret_value = FAIL;
+  }
+
+done:
+  FUNC_LEAVE_NOAPI(ret_value);
+}
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------
 // Function:    H5FD_dsm_steering_is_set
@@ -171,14 +246,12 @@ done:
 herr_t H5FD_dsm_steering_is_set(const char *name, int *set)
 {
   herr_t ret_value = SUCCEED;
-  H5FDdsmBuffer *dsmBuffer;
   FUNC_ENTER_NOAPI(H5FD_dsm_steering_is_set, FAIL)
-
   if (!dsm_buffer) {
     DSM_STEERING_GOTO_ERROR("Attempting to use the DSM Steering library before calling H5FD_dsm_steering_init", FAIL)
   }
 
-  dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
+  H5FDdsmBuffer *dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
   if (dsmBuffer->GetSteerer()->IsObjectPresent(name, *set) < 0) {
     ret_value = FAIL;
   }
@@ -198,14 +271,12 @@ done:
 herr_t H5FD_dsm_steering_scalar_get(const char *name, int mem_type, void *data)
 {
   herr_t ret_value = SUCCEED;
-  H5FDdsmBuffer *dsmBuffer;
   FUNC_ENTER_NOAPI(H5FD_dsm_steering_scalar_get, FAIL)
-
   if (!dsm_buffer) {
     DSM_STEERING_GOTO_ERROR("Attempting to use the DSM Steering library before calling H5FD_dsm_steering_init", FAIL)
   }
 
-  dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
+  H5FDdsmBuffer *dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
   if (H5Tequal(mem_type,H5T_NATIVE_INT) || H5Tequal(mem_type,H5T_NATIVE_DOUBLE)) {
     if (!dsmBuffer->GetSteerer()->GetScalar(name, mem_type, data)) {
       ret_value = FAIL;
@@ -228,17 +299,15 @@ done:
 //              Failure:        negative
 //
 //----------------------------------------------------------------------------
-herr_t H5FD_dsm_steering_vector_get(const char *name, int mem_type, int number_of_elements, void *data)
+herr_t H5FD_dsm_steering_vector_get(const char *name, int mem_type, hsize_t number_of_elements, void *data)
 {
   herr_t ret_value = SUCCEED;
-  H5FDdsmBuffer *dsmBuffer;
   FUNC_ENTER_NOAPI(H5FD_dsm_steering_vector_get, FAIL)
-
   if (!dsm_buffer) {
     DSM_STEERING_GOTO_ERROR("Attempting to use the DSM Steering library before calling H5FD_dsm_steering_init", FAIL)
   }
 
-  dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
+  H5FDdsmBuffer *dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
   if (H5Tequal(mem_type,H5T_NATIVE_INT) || H5Tequal(mem_type,H5T_NATIVE_DOUBLE)) {
     if (!dsmBuffer->GetSteerer()->GetVector(name, mem_type, number_of_elements, data)) {
       ret_value = FAIL;
@@ -264,14 +333,12 @@ done:
 herr_t H5FD_dsm_dump()
 {
   herr_t ret_value = SUCCEED;
-  H5FDdsmBuffer *dsmBuffer;
   FUNC_ENTER_NOAPI(H5FD_dsm_dump, FAIL)
-
   if (!dsm_buffer) {
     DSM_STEERING_GOTO_ERROR("Attempting to use the DSM Steering library before calling H5FD_dsm_steering_init", FAIL)
   }
 
-  dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
+  H5FDdsmBuffer *dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
   if (!dsmBuffer->GetSteerer()->DsmDump()) {
     ret_value = FAIL;
   }

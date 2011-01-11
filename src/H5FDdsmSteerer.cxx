@@ -38,18 +38,22 @@
 
 struct H5FDdsmSteererInternals {
   typedef std::map<std::string, bool> SteeringEntriesString;
-  SteeringEntriesString DisabledObjects;
+  SteeringEntriesString               DisabledObjects;
+  //
 };
 //----------------------------------------------------------------------------
 H5FDdsmSteerer::H5FDdsmSteerer(H5FDdsmBuffer *buffer)
 {
-  this->WriteToDSM = 1;
-  this->CurrentCommand = NULL;
+  this->WriteToDSM         = 1;
+  this->CurrentCommand     = NULL;
   this->SetCurrentCommand("none");
-  this->DsmBuffer = buffer;
-  this->FileId = H5I_BADID;
+  this->DsmBuffer          = buffer;
+  this->FileId             = H5I_BADID;
   this->InteractionGroupId = H5I_BADID;
-  this->SteererInternals = new H5FDdsmSteererInternals;
+  this->SteererInternals   = new H5FDdsmSteererInternals;
+  this->QueryCache_fapl               = H5I_BADID;
+  this->QueryCache_fileId             = H5I_BADID;
+  this->QueryCache_interactionGroupId = H5I_BADID;
 }
 //----------------------------------------------------------------------------
 H5FDdsmSteerer::~H5FDdsmSteerer()
@@ -217,141 +221,175 @@ H5FDdsmInt32 H5FDdsmSteerer::IsObjectEnabled(H5FDdsmConstString name)
   return(ret);
 }
 //----------------------------------------------------------------------------
+bool H5FDdsmSteerer::QueryActive()
+{
+  return (this->QueryCache_fapl!=H5I_BADID);
+}
+//----------------------------------------------------------------------------
+H5FDdsmInt32 H5FDdsmSteerer::BeginQuery()
+{
+  if (this->QueryActive()) return H5FD_DSM_SUCCESS;
+  //
+  H5FDdsmInt32 ret = H5FD_DSM_SUCCESS;
+  this->BeginHideHDF5Errors();
+  //
+  this->QueryCache_fapl = H5Pcreate(H5P_FILE_ACCESS);
+  H5Pset_fapl_dsm(this->QueryCache_fapl, MPI_COMM_WORLD, this->DsmBuffer);
+  this->QueryCache_fileId = H5Fopen("dsm", H5F_ACC_RDONLY, this->QueryCache_fapl);
+  if (this->QueryCache_fileId < 0) {
+    ret = H5FD_DSM_FAIL;
+  } else {
+    this->QueryCache_interactionGroupId = H5Gopen(this->QueryCache_fileId, "Interactions", H5P_DEFAULT);
+    if (this->QueryCache_interactionGroupId < 0) {
+      ret = H5FD_DSM_FAIL;
+    } 
+  }
+  this->EndHideHDF5Errors();
+
+  return(ret);
+}
+//----------------------------------------------------------------------------
+H5FDdsmInt32 H5FDdsmSteerer::EndQuery()
+{
+  H5FDdsmInt32 ret = H5FD_DSM_SUCCESS;
+  //
+  if (!this->QueryActive()) return ret;
+  //
+  if (H5Pclose(this->QueryCache_fapl)<0) ret = H5FD_DSM_FAIL;
+  if (H5Gclose(this->QueryCache_interactionGroupId)<0) ret = H5FD_DSM_FAIL;
+  if (H5Fclose(this->QueryCache_fileId)<0) ret = H5FD_DSM_FAIL;
+  //
+  this->QueryCache_fapl               = H5I_BADID;
+  this->QueryCache_fileId             = H5I_BADID;
+  this->QueryCache_interactionGroupId = H5I_BADID;
+  return (ret);
+}
+//----------------------------------------------------------------------------
+void H5FDdsmSteerer::BeginHideHDF5Errors()
+{
+  // Prevent HDF5 to print out handled errors, first save old error handler
+  H5Eget_auto(H5E_DEFAULT, &this->QueryCache_errfunc, &this->QueryCache_errdata);
+  // Turn off error handling
+  H5Eset_auto(H5E_DEFAULT, NULL, NULL);
+}
+//----------------------------------------------------------------------------
+void H5FDdsmSteerer::EndHideHDF5Errors()
+{
+  // Restore previous error handler
+  H5Eset_auto(H5E_DEFAULT, this->QueryCache_errfunc, this->QueryCache_errdata);
+}
+//----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmSteerer::IsObjectPresent(H5FDdsmConstString name, int &present)
 {
   H5FDdsmInt32 ret = H5FD_DSM_SUCCESS;
-  hid_t fapl, fileId, interactionGroupId, datasetId;
-  hid_t errorStack = H5E_DEFAULT;
-  herr_t (*old_func)(hid_t, void*);
-  void *old_client_data;
-  present = 5;
-
-  // Prevent HDF5 to print out handled errors, first save old error handler
-  H5Eget_auto(errorStack, &old_func, &old_client_data);
-
-  // Turn off error handling
-  H5Eset_auto(errorStack, NULL, NULL);
-
-  fapl = H5Pcreate(H5P_FILE_ACCESS);
-  H5Pset_fapl_dsm(fapl, MPI_COMM_WORLD, this->DsmBuffer);
-  fileId = H5Fopen("dsm", H5F_ACC_RDONLY, fapl);
-  H5Pclose(fapl);
-  if (fileId < 0) {
-    ret = H5FD_DSM_FAIL;
-    present = 4;
-  } else {
-    interactionGroupId = H5Gopen(fileId, "Interactions", H5P_DEFAULT);
-    if (interactionGroupId < 0) {
-      ret = H5FD_DSM_FAIL;
-      present = 3;
-    } else {
-      datasetId = H5Dopen(interactionGroupId, name, H5P_DEFAULT);
-      if (datasetId < 0) {
-        ret = H5FD_DSM_FAIL;
-      } else {
-        present = 1;
-      }
-      H5Dclose(datasetId);
-    }
-    H5Gclose(interactionGroupId);
+  bool usecache = this->QueryActive();
+  if (!usecache) {
+    if (this->BeginQuery()!=H5FD_DSM_SUCCESS) return H5FD_DSM_FAIL;
   }
-  H5Fclose(fileId);
-  // Restore previous error handler
-  H5Eset_auto(errorStack, old_func, old_client_data);
-
+  this->BeginHideHDF5Errors();
+  //
+  hid_t datasetId = H5Dopen(this->QueryCache_interactionGroupId, name, H5P_DEFAULT);
+  if (datasetId < 0) {
+    present = 0;
+    ret = H5FD_DSM_FAIL;
+  } else {
+    present = 1;
+  }
+  H5Dclose(datasetId);
+  
+  // Clean up
+  if (!usecache) {
+    if (this->EndQuery()!=H5FD_DSM_SUCCESS) ret = H5FD_DSM_FAIL;
+  }
+  this->EndHideHDF5Errors();
   return(ret);
 }
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmSteerer::GetScalar(H5FDdsmConstString name, H5FDdsmInt32 memType, void *data)
 {
   H5FDdsmInt32 ret = H5FD_DSM_SUCCESS;
-  hid_t fapl, fileId, interactionGroupId, attributeId;
-  hid_t errorStack = H5E_DEFAULT;
-  herr_t (*old_func)(hid_t, void*);
-  void *old_client_data;
+  bool usecache = this->QueryActive();
+  if (!usecache) {
+    if (this->BeginQuery()!=H5FD_DSM_SUCCESS) return H5FD_DSM_FAIL;
+  }
+  this->BeginHideHDF5Errors();
 
-  // Prevent HDF5 to print out handled errors, first save old error handler
-  H5Eget_auto(errorStack, &old_func, &old_client_data);
-
-  // Turn off error handling
-  H5Eset_auto(errorStack, NULL, NULL);
-
-  fapl = H5Pcreate(H5P_FILE_ACCESS);
-  H5Pset_fapl_dsm(fapl, MPI_COMM_WORLD, this->DsmBuffer);
-  fileId = H5Fopen("dsm", H5F_ACC_RDONLY, fapl);
-  H5Pclose(fapl);
-  if (fileId < 0) {
+  hid_t attributeId = H5Aopen(this->QueryCache_interactionGroupId, name, H5P_DEFAULT);
+  if (attributeId < 0) {
     ret = H5FD_DSM_FAIL;
   } else {
-    interactionGroupId = H5Gopen(fileId, "Interactions", H5P_DEFAULT);
-    if (interactionGroupId < 0) {
+    if (H5Aread(attributeId, memType, data) < 0) {
+      H5Eprint(H5E_DEFAULT, stderr);
       ret = H5FD_DSM_FAIL;
-    } else {
-      attributeId = H5Aopen(interactionGroupId, name, H5P_DEFAULT);
-      if (attributeId < 0) {
-        ret = H5FD_DSM_FAIL;
-      } else {
-        if (H5Aread(attributeId, memType, data) < 0) {
-          H5Eprint(errorStack, stderr);
-          ret = H5FD_DSM_FAIL;
-        }
-      }
-      H5Aclose(attributeId);
     }
-    H5Gclose(interactionGroupId);
   }
-  H5Fclose(fileId);
-  // Restore previous error handler
-  H5Eset_auto(errorStack, old_func, old_client_data);
-
+  // Clean up
+  if (!usecache) {
+    if (this->EndQuery()!=H5FD_DSM_SUCCESS) ret = H5FD_DSM_FAIL;
+  }
+  this->EndHideHDF5Errors();
   return(ret);
 }
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmSteerer::GetVector(H5FDdsmConstString name, H5FDdsmInt32 memType, H5FDdsmInt32 numberOfElements, void *data)
 {
   H5FDdsmInt32 ret = H5FD_DSM_SUCCESS;
-  hid_t fapl, fileId, interactionGroupId, memspaceId, datasetId;
+  bool usecache = this->QueryActive();
+  if (!usecache) {
+    if (this->BeginQuery()!=H5FD_DSM_SUCCESS) return H5FD_DSM_FAIL;
+  }
+  this->BeginHideHDF5Errors();
+
   hsize_t arraySize = numberOfElements;
-  hid_t errorStack = H5E_DEFAULT;
-  herr_t (*old_func)(hid_t, void*);
-  void *old_client_data;
-
-  // Prevent HDF5 to print out handled errors, first save old error handler
-  H5Eget_auto(errorStack, &old_func, &old_client_data);
-
-  // Turn off error handling
-  H5Eset_auto(errorStack, NULL, NULL);
-
-  fapl = H5Pcreate(H5P_FILE_ACCESS);
-  H5Pset_fapl_dsm(fapl, MPI_COMM_WORLD, this->DsmBuffer);
-  fileId = H5Fopen("dsm", H5F_ACC_RDONLY, fapl);
-  H5Pclose(fapl);
-  if (fileId < 0) {
+  hid_t  memspaceId = H5Screate_simple(1, &arraySize, NULL);
+  hid_t   datasetId = H5Dopen(this->QueryCache_interactionGroupId, name, H5P_DEFAULT);
+  if (datasetId < 0) {
     ret = H5FD_DSM_FAIL;
   } else {
-    interactionGroupId = H5Gopen(fileId, "Interactions", H5P_DEFAULT);
-    if (interactionGroupId < 0) {
+    if (H5Dread(datasetId, memType, memspaceId, H5S_ALL, H5P_DEFAULT, data) < 0) {
+      H5Eprint(H5E_DEFAULT, stderr);
       ret = H5FD_DSM_FAIL;
-    } else {
-      memspaceId = H5Screate_simple(1, &arraySize, NULL);
-      datasetId = H5Dopen(interactionGroupId, name, H5P_DEFAULT);
-      if (datasetId < 0) {
-        ret = H5FD_DSM_FAIL;
-      } else {
-        if (H5Dread(datasetId, memType, memspaceId, H5S_ALL, H5P_DEFAULT, data) < 0) {
-          H5Eprint(errorStack, stderr);
-          ret = H5FD_DSM_FAIL;
-        }
-      }
-      H5Dclose(datasetId);
-      H5Sclose(memspaceId);
     }
-    H5Gclose(interactionGroupId);
   }
-  H5Fclose(fileId);
-  // Restore previous error handler
-  H5Eset_auto(errorStack, old_func, old_client_data);
+  H5Dclose(datasetId);
+  H5Sclose(memspaceId);
 
+  // Clean up
+  if (!usecache) {
+    if (this->EndQuery()!=H5FD_DSM_SUCCESS) ret = H5FD_DSM_FAIL;
+  }
+  this->EndHideHDF5Errors();
+  return(ret);
+}
+//----------------------------------------------------------------------------
+H5FDdsmInt32 H5FDdsmSteerer::GetHandle(H5FDdsmConstString name, hid_t *handle)
+{
+  H5FDdsmInt32 ret = H5FD_DSM_SUCCESS;
+  bool usecache = this->QueryActive();
+  if (!usecache) {
+    H5FDdsmError("This function cannot be used without first calling H5FD_dsm_steering_begin_query()");
+    return H5FD_DSM_FAIL;
+  }
+
+  *handle = H5Dopen(this->QueryCache_interactionGroupId, name, H5P_DEFAULT);
+  if (*handle < 0) {
+    ret = H5FD_DSM_FAIL;
+  } 
+  return(ret);
+}
+//----------------------------------------------------------------------------
+H5FDdsmInt32 H5FDdsmSteerer::FreeHandle(hid_t handle)
+{
+  H5FDdsmInt32 ret = H5FD_DSM_SUCCESS;
+  bool usecache = this->QueryActive();
+  if (!usecache) {
+    H5FDdsmError("This function cannot be used without first calling H5FD_dsm_steering_begin_query()");
+    return H5FD_DSM_FAIL;
+  }
+
+  if (H5Dclose(handle) < 0) {
+    ret = H5FD_DSM_FAIL;
+  } 
   return(ret);
 }
 //----------------------------------------------------------------------------

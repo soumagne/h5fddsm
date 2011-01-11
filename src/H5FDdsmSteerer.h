@@ -56,10 +56,18 @@ public:
   H5FDdsmInt32 UpdateDisabledObjects();
   H5FDdsmInt32 GetDisabledObjects();
 
+  H5FDdsmInt32 BeginQuery();
+  H5FDdsmInt32 EndQuery();
+  bool         QueryActive();
+  void         BeginHideHDF5Errors();
+  void         EndHideHDF5Errors();
+
   H5FDdsmInt32 IsObjectEnabled(H5FDdsmConstString name);
   H5FDdsmInt32 IsObjectPresent(H5FDdsmConstString name, int &present);
   H5FDdsmInt32 GetScalar(H5FDdsmConstString name, H5FDdsmInt32 memType, void *data);
   H5FDdsmInt32 GetVector(H5FDdsmConstString name, H5FDdsmInt32 memType, H5FDdsmInt32 numberOfElements, void *data);
+  H5FDdsmInt32 GetHandle(H5FDdsmConstString name, hid_t *handle);
+  H5FDdsmInt32 FreeHandle(hid_t handle);
 
   H5FDdsmInt32 DsmDump();
 
@@ -81,6 +89,12 @@ protected:
   H5FDdsmInt32   FileId;
   H5FDdsmInt32   InteractionGroupId;
   H5FDdsmSteererInternals *SteererInternals;
+  //
+  hid_t        QueryCache_fapl;
+  hid_t        QueryCache_fileId;
+  hid_t        QueryCache_interactionGroupId;
+  H5E_auto2_t  QueryCache_errfunc;
+  void        *QueryCache_errdata;
 };
 
 #endif // __H5FDdsmSteerer_h

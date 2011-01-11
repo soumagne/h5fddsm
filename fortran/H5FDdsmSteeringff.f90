@@ -105,6 +105,49 @@
          END SUBROUTINE h5fd_dsm_steering_is_enabled_f
 
 
+! **********************************
+! **********************************
+
+         SUBROUTINE h5fd_dsm_steering_begin_query_f(hdferr)
+            IMPLICIT NONE
+            INTEGER, INTENT(OUT) :: hdferr       ! Error code
+
+            INTEGER, EXTERNAL :: h5fd_dsm_steering_begin_query_c
+            hdferr = h5fd_dsm_steering_begin_query_c()
+         END SUBROUTINE h5fd_dsm_steering_begin_query_f
+
+         SUBROUTINE h5fd_dsm_steering_end_query_f(hdferr)
+            IMPLICIT NONE
+            INTEGER, INTENT(OUT) :: hdferr       ! Error code
+
+            INTEGER, EXTERNAL :: h5fd_dsm_steering_end_query_c
+            hdferr = h5fd_dsm_steering_end_query_c()
+         END SUBROUTINE h5fd_dsm_steering_end_query_f
+
+         SUBROUTINE h5fd_dsm_steering_gethandle_f(name, handle, hdferr)
+            IMPLICIT NONE
+            CHARACTER(LEN=*), INTENT(IN) :: name ! Name of the property
+            INTEGER(HID_T), INTENT(OUT) :: handle ! identifier
+            INTEGER, INTENT(OUT) :: hdferr       ! Error code
+            INTEGER :: namelen ! Length of the name character string
+
+            INTEGER, EXTERNAL :: h5fd_dsm_steering_gethandle_c
+            namelen = LEN_TRIM(name)
+            hdferr = h5fd_dsm_steering_gethandle_c(name, namelen, handle)
+         END SUBROUTINE h5fd_dsm_steering_gethandle_f
+
+         SUBROUTINE h5fd_dsm_steering_freehandle_f(handle, hdferr)
+            IMPLICIT NONE
+            INTEGER(HID_T), INTENT(OUT) :: handle ! identifier
+            INTEGER, INTENT(OUT) :: hdferr       ! Error code
+
+            INTEGER, EXTERNAL :: h5fd_dsm_steering_freehandle_c
+            hdferr = h5fd_dsm_steering_freehandle_c(handle)
+         END SUBROUTINE h5fd_dsm_steering_freehandle_f
+
+! **********************************
+! **********************************
+
 !----------------------------------------------------------------------
 ! Name:     h5fd_dsm_steering_is_set_f
 !

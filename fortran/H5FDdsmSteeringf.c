@@ -130,6 +130,61 @@ int_f nh5fd_dsm_steering_is_set_c(_fcd name, int_f* namelen, int_f* set)
 }
 
 /*----------------------------------------------------------------------------
+ *---------------------------------------------------------------------------*/
+int_f nh5fd_dsm_steering_begin_query_c()
+{
+ /*
+  * Call H5FD_dsm_steering_begin_query function.
+  */
+  herr_t ret = H5FD_dsm_steering_begin_query();
+  if (ret < 0) return -1;
+  return 0;
+}
+
+int_f nh5fd_dsm_steering_end_query_c()
+{
+ /*
+  * Call H5FD_dsm_steering_end_query function.
+  */
+  herr_t ret = H5FD_dsm_steering_end_query();
+  if (ret < 0) return -1;
+  return 0;
+}
+
+int_f nh5fd_dsm_steering_gethandle_c(_fcd name, int_f* namelen, int_f* handle)
+{
+  char  *c_name;
+  int_f  c_namelen;
+  herr_t ret;
+ /*
+  * Convert FORTRAN name to C name
+  */
+  c_namelen = *namelen;
+  c_name = (char *)HD5f2cstring(name, (size_t)c_namelen);
+  if (c_name == NULL) return -1;
+
+ /*
+  * Call H5FD_dsm_steering_gethandle function.
+  */
+  ret = H5FD_dsm_steering_gethandle(c_name, handle);
+  HDfree(c_name);
+  if (ret < 0) return -1;
+  return 0;
+}
+
+int_f nh5fd_dsm_steering_freehandle_c(int_f* handle)
+{
+  herr_t ret;
+  hid_t handle_f = *handle;
+ /*
+  * Call H5FD_dsm_steering_gethandle function.
+  */
+  ret = H5FD_dsm_steering_freehandle(handle_f);
+  if (ret < 0) return -1;
+  return 0;
+}
+
+/*----------------------------------------------------------------------------
  * Name:        h5fd_dsm_steering_scalar_get_c
  * Purpose:     Get the steering scalar values
  * Inputs:      name        - property name
