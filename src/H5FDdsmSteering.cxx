@@ -163,6 +163,30 @@ done:
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
+
+herr_t H5FD_dsm_steering_wait()
+{
+  herr_t ret_value = SUCCEED;
+  H5FDdsmBuffer *dsmBuffer;
+  FUNC_ENTER_NOAPI(H5FD_dsm_steering_wait, FAIL)
+  if (!dsm_buffer) {
+    DSM_STEERING_GOTO_ERROR("Attempting to use the DSM Steering library before calling H5FD_dsm_steering_init", FAIL)
+  }
+
+  dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
+  if (dsmBuffer->GetSteerer()->SetCurrentCommand("pause")<0 ||
+      dsmBuffer->GetSteerer()->UpdateSteeringCommands()<0) 
+  {
+    ret_value = FAIL;
+  }
+  else {
+    H5FD_dsm_steering_update();
+  }
+
+done:
+  FUNC_LEAVE_NOAPI(ret_value);
+}
+//----------------------------------------------------------------------------
 herr_t H5FD_dsm_steering_begin_query()
 {
   herr_t ret_value = SUCCEED;

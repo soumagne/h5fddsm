@@ -83,12 +83,13 @@ protected:
 
   H5FDdsmInt32 CheckCommand(H5FDdsmConstString command);
 
-  H5FDdsmBuffer *DsmBuffer;
-  H5FDdsmString  CurrentCommand;
-  H5FDdsmInt32   WriteToDSM;
-  H5FDdsmInt32   FileId;
-  H5FDdsmInt32   InteractionGroupId;
+  H5FDdsmBuffer           *DsmBuffer;
+  H5FDdsmString            CurrentCommand;
+  H5FDdsmInt32             WriteToDSM;
   H5FDdsmSteererInternals *SteererInternals;
+  // need to merge these with the ones below
+  H5FDdsmInt32             FileId;
+  H5FDdsmInt32             InteractionGroupId;
   //
   hid_t        QueryCache_fapl;
   hid_t        QueryCache_fileId;

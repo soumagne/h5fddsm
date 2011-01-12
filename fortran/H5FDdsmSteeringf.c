@@ -131,6 +131,17 @@ int_f nh5fd_dsm_steering_is_set_c(_fcd name, int_f* namelen, int_f* set)
 
 /*----------------------------------------------------------------------------
  *---------------------------------------------------------------------------*/
+
+int_f nh5fd_dsm_steering_wait_c()
+{
+ /*
+  * Call H5FD_dsm_steering_wait function.
+  */
+  herr_t ret = H5FD_dsm_steering_wait();
+  if (ret < 0) return -1;
+  return 0;
+}
+
 int_f nh5fd_dsm_steering_begin_query_c()
 {
  /*

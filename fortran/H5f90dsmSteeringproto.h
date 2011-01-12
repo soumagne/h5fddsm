@@ -40,6 +40,9 @@ int_f nh5fd_dsm_steering_is_enabled_c(_fcd name, int_f* namelen);
 
 ////
 
+#define nh5fd_dsm_steering_wait_c H5_FC_FUNC_(h5fd_dsm_steering_wait_c, H5FD_DSM_STEERING_WAIT_C)
+int_f nh5fd_dsm_steering_wait_c();
+
 #define nh5fd_dsm_steering_begin_query_c H5_FC_FUNC_(h5fd_dsm_steering_begin_query_c, H5FD_DSM_STEERING_BEGIN_QUERY_C)
 int_f nh5fd_dsm_steering_begin_query_c();
 

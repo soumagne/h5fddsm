@@ -108,6 +108,14 @@
 ! **********************************
 ! **********************************
 
+         SUBROUTINE h5fd_dsm_steering_wait_f(hdferr)
+            IMPLICIT NONE
+            INTEGER, INTENT(OUT) :: hdferr       ! Error code
+
+            INTEGER, EXTERNAL :: h5fd_dsm_steering_wait_c
+            hdferr = h5fd_dsm_steering_wait_c()
+         END SUBROUTINE h5fd_dsm_steering_wait_f
+
          SUBROUTINE h5fd_dsm_steering_begin_query_f(hdferr)
             IMPLICIT NONE
             INTEGER, INTENT(OUT) :: hdferr       ! Error code

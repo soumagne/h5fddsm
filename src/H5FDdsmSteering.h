@@ -52,6 +52,7 @@ extern "C" {
   H5FDdsm_EXPORT herr_t H5FD_dsm_steering_is_enabled(const char *name);
 
 
+  H5FDdsm_EXPORT herr_t H5FD_dsm_steering_wait();
   H5FDdsm_EXPORT herr_t H5FD_dsm_steering_begin_query();
   H5FDdsm_EXPORT herr_t H5FD_dsm_steering_end_query();
   H5FDdsm_EXPORT herr_t H5FD_dsm_steering_gethandle(const char *name, hid_t *handle);
