@@ -38,6 +38,7 @@ struct H5FDdsmSteererInternals;
 class H5FDdsm_EXPORT H5FDdsmSteerer : public H5FDdsmObject {
 
 public:
+  H5FDdsmSteerer();
   H5FDdsmSteerer(H5FDdsmBuffer *);
   ~H5FDdsmSteerer();
 
