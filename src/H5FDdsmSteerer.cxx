@@ -391,15 +391,12 @@ H5FDdsmInt32 H5FDdsmSteerer::SetVector(H5FDdsmConstString name, H5FDdsmInt32 mem
       ret = H5FD_DSM_FAIL;
     }
   }
-  if (this->EndInteractionsCache()<0) {
-    ret = H5FD_DSM_FAIL;
-  }
 
+//  this->EndHideHDF5Errors();
   // Clean up
   if (!usecache) {
     if (this->EndInteractionsCache()!=H5FD_DSM_SUCCESS) ret = H5FD_DSM_FAIL;
   }
-//  this->EndHideHDF5Errors();
   return(ret);
 }
 //----------------------------------------------------------------------------
