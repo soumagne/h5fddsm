@@ -238,6 +238,8 @@ H5FDdsmInt32 H5FDdsmSteerer::BeginInteractionsCache(int mode)
   H5Pset_fapl_dsm(this->Cache_fapl, MPI_COMM_WORLD, this->DsmBuffer);
   this->Cache_fileId = H5Fopen("dsm", mode, this->Cache_fapl);
   if (this->Cache_fileId < 0) {
+    if (this->Cache_fapl) H5Pclose(this->Cache_fapl);
+    this->Cache_fapl = H5I_BADID;
     ret = H5FD_DSM_FAIL;
   } else {
     if (mode==H5F_ACC_RDONLY) {
@@ -248,8 +250,12 @@ H5FDdsmInt32 H5FDdsmSteerer::BeginInteractionsCache(int mode)
       if (H5Lexists(this->Cache_fileId, "Interactions", H5P_DEFAULT)==0) {
         this->Cache_interactionGroupId = H5Gcreate(this->Cache_fileId, "Interactions", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
         if (this->Cache_interactionGroupId < 0) {
+          H5Fclose(this->Cache_fileId);
+          this->Cache_fileId = H5I_BADID;
+          if (this->Cache_fapl) H5Pclose(this->Cache_fapl);
+          this->Cache_fapl = H5I_BADID;
           ret = H5FD_DSM_FAIL;
-        } 
+        }
       }
       else {
         this->Cache_interactionGroupId = H5Gopen(this->Cache_fileId, "Interactions", H5P_DEFAULT);
@@ -334,6 +340,7 @@ H5FDdsmInt32 H5FDdsmSteerer::GetScalar(H5FDdsmConstString name, H5FDdsmInt32 mem
       H5Eprint(H5E_DEFAULT, stderr);
       ret = H5FD_DSM_FAIL;
     }
+    H5Aclose(attributeId);
   }
   // Clean up
   if (!usecache) {
