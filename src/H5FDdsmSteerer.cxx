@@ -42,6 +42,9 @@ struct H5FDdsmSteererInternals {
   //
 };
 //----------------------------------------------------------------------------
+H5FDdsmSteerer::H5FDdsmSteerer()
+{
+}
 H5FDdsmSteerer::H5FDdsmSteerer(H5FDdsmBuffer *buffer)
 {
   this->WriteToDSM         = 1;
