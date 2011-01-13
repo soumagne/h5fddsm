@@ -267,7 +267,7 @@ void H5FDdsmManager::RequestRemoteChannel()
 {
   if (this->ManagerInternals->SteeringValuesInt.size() ||
       this->ManagerInternals->SteeringValuesDouble.size()) {
-    this->DSMBuffer->GetSteerer()->CreateInteractionGroup();
+    this->DSMBuffer->GetSteerer()->BeginInteractionsCache(H5F_ACC_RDWR);
     while (!this->ManagerInternals->SteeringValuesInt.empty()) {
       H5FDdsmManagerInternals::SteeringEntryInt entryInt =
           this->ManagerInternals->SteeringValuesInt.back();
@@ -282,7 +282,7 @@ void H5FDdsmManager::RequestRemoteChannel()
           entryDouble.NumberOfElements, entryDouble.Values);
       this->ManagerInternals->SteeringValuesDouble.pop_back();
     }
-    this->DSMBuffer->GetSteerer()->CloseInteractionGroup();
+    this->DSMBuffer->GetSteerer()->EndInteractionsCache();
   }
 
   while (!this->ManagerInternals->RequestedDisabledObjects.empty()) {

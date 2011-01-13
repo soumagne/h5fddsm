@@ -258,6 +258,35 @@
             namelen = LEN_TRIM(name)
             hdferr = h5fd_dsm_steering_vector_get_c(name, namelen, mem_type_id, num_elem, buf)
          END SUBROUTINE h5fd_dsm_steering_vector_get_real8_f
+         
+         SUBROUTINE h5fd_dsm_steering_vector_set_int8_f(name, mem_type_id, num_elem, buf, hdferr)
+            IMPLICIT NONE
+            CHARACTER(LEN=*), INTENT(IN) :: name ! Name of the property
+            INTEGER(HID_T), INTENT(IN) :: mem_type_id ! Memory datatype identifier
+            INTEGER(HSIZE_T), INTENT(IN) :: num_elem
+            INTEGER, INTENT(INOUT), DIMENSION(num_elem) :: buf
+            INTEGER, INTENT(OUT) :: hdferr       ! Error code
+            INTEGER :: namelen ! Length of the name character string
+
+            INTEGER, EXTERNAL :: h5fd_dsm_steering_vector_set_c
+            namelen = LEN_TRIM(name)
+            hdferr = h5fd_dsm_steering_vector_set_c(name, namelen, mem_type_id, num_elem, buf)
+         END SUBROUTINE h5fd_dsm_steering_vector_set_int8_f
+
+         SUBROUTINE h5fd_dsm_steering_vector_set_real8_f(name, mem_type_id, num_elem, buf, hdferr)
+            IMPLICIT NONE
+            CHARACTER(LEN=*), INTENT(IN) :: name ! Name of the property
+            INTEGER(HID_T), INTENT(IN) :: mem_type_id ! Memory datatype identifier
+            INTEGER(HSIZE_T), INTENT(IN) :: num_elem
+            REAL(8), INTENT(INOUT), DIMENSION(num_elem) :: buf
+            INTEGER, INTENT(OUT) :: hdferr       ! Error code
+            INTEGER :: namelen ! Length of the name character string
+
+            INTEGER, EXTERNAL :: h5fd_dsm_steering_vector_set_c
+            namelen = LEN_TRIM(name)
+            hdferr = h5fd_dsm_steering_vector_set_c(name, namelen, mem_type_id, num_elem, buf)
+         END SUBROUTINE h5fd_dsm_steering_vector_set_real8_f
+         
 !----------------------------------------------------------------------
 ! Name:     h5fd_dsm_dump_f
 !

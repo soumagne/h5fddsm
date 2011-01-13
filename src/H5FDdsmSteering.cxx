@@ -197,7 +197,7 @@ herr_t H5FD_dsm_steering_begin_query()
   }
 
   dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
-  if (dsmBuffer->GetSteerer()->BeginQuery() < 0) {
+  if (dsmBuffer->GetSteerer()->BeginInteractionsCache(H5F_ACC_RDONLY) < 0) {
     ret_value = FAIL;
   }
 
@@ -215,7 +215,7 @@ herr_t H5FD_dsm_steering_end_query()
   }
 
   dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
-  if (dsmBuffer->GetSteerer()->EndQuery() < 0) {
+  if (dsmBuffer->GetSteerer()->EndInteractionsCache() < 0) {
     ret_value = FAIL;
   }
 
@@ -344,6 +344,28 @@ herr_t H5FD_dsm_steering_vector_get(const char *name, int mem_type, hsize_t numb
   dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
   if (H5Tequal(mem_type,H5T_NATIVE_INT) || H5Tequal(mem_type,H5T_NATIVE_DOUBLE)) {
     if (!dsmBuffer->GetSteerer()->GetVector(name, mem_type, number_of_elements, data)) {
+      ret_value = FAIL;
+    }
+  } else {
+    DSM_STEERING_GOTO_ERROR("Type not supported, please use H5T_NATIVE_INT or H5T_NATIVE_DOUBLE", FAIL)
+  }
+
+done:
+  FUNC_LEAVE_NOAPI(ret_value);
+}
+
+herr_t H5FD_dsm_steering_vector_set(const char *name, int mem_type, hsize_t number_of_elements, void *data)
+{
+  herr_t ret_value = SUCCEED;
+  H5FDdsmBuffer *dsmBuffer;
+  FUNC_ENTER_NOAPI(H5FD_dsm_steering_vector_set, FAIL)
+  if (!dsm_buffer) {
+    DSM_STEERING_GOTO_ERROR("Attempting to use the DSM Steering library before calling H5FD_dsm_steering_init", FAIL)
+  }
+
+  dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
+  if (H5Tequal(mem_type,H5T_NATIVE_INT) || H5Tequal(mem_type,H5T_NATIVE_DOUBLE)) {
+    if (!dsmBuffer->GetSteerer()->SetVector(name, mem_type, number_of_elements, data)) {
       ret_value = FAIL;
     }
   } else {

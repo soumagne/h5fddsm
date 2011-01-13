@@ -56,9 +56,11 @@ public:
   H5FDdsmInt32 UpdateDisabledObjects();
   H5FDdsmInt32 GetDisabledObjects();
 
-  H5FDdsmInt32 BeginQuery();
-  H5FDdsmInt32 EndQuery();
-  bool         QueryActive();
+  // Use H5F_ACC_RDONLY	for queries
+  // Use H5F_ACC_RDWR	for read/write
+  H5FDdsmInt32 BeginInteractionsCache(int mode);
+  H5FDdsmInt32 EndInteractionsCache();
+  bool         InteractionsCacheActive();
   void         BeginHideHDF5Errors();
   void         EndHideHDF5Errors();
 
@@ -66,6 +68,7 @@ public:
   H5FDdsmInt32 IsObjectPresent(H5FDdsmConstString name, int &present);
   H5FDdsmInt32 GetScalar(H5FDdsmConstString name, H5FDdsmInt32 memType, void *data);
   H5FDdsmInt32 GetVector(H5FDdsmConstString name, H5FDdsmInt32 memType, H5FDdsmInt32 numberOfElements, void *data);
+  H5FDdsmInt32 SetVector(H5FDdsmConstString name, H5FDdsmInt32 memType, H5FDdsmInt32 numberOfElements, void *data);
   H5FDdsmInt32 GetHandle(H5FDdsmConstString name, hid_t *handle);
   H5FDdsmInt32 FreeHandle(hid_t handle);
 
@@ -74,10 +77,8 @@ public:
 protected:
   friend class H5FDdsmManager;
 
-  H5FDdsmInt32 CreateInteractionGroup();
   H5FDdsmInt32 WriteInteractions(H5FDdsmConstString name, H5FDdsmInt32 numberOfElements, int *data);
   H5FDdsmInt32 WriteInteractions(H5FDdsmConstString name, H5FDdsmInt32 numberOfElements, double *data);
-  H5FDdsmInt32 CloseInteractionGroup();
 
   void SetDisabledObject(H5FDdsmConstString objectName);
 
@@ -87,15 +88,12 @@ protected:
   H5FDdsmString            CurrentCommand;
   H5FDdsmInt32             WriteToDSM;
   H5FDdsmSteererInternals *SteererInternals;
-  // need to merge these with the ones below
-  H5FDdsmInt32             FileId;
-  H5FDdsmInt32             InteractionGroupId;
   //
-  hid_t        QueryCache_fapl;
-  hid_t        QueryCache_fileId;
-  hid_t        QueryCache_interactionGroupId;
-  H5E_auto2_t  QueryCache_errfunc;
-  void        *QueryCache_errdata;
+  hid_t        Cache_fapl;
+  hid_t        Cache_fileId;
+  hid_t        Cache_interactionGroupId;
+  H5E_auto2_t  Cache_errfunc;
+  void        *Cache_errdata;
 };
 
 #endif // __H5FDdsmSteerer_h

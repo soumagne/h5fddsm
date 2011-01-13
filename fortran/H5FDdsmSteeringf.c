@@ -268,6 +268,34 @@ int_f nh5fd_dsm_steering_vector_get_c(_fcd name, int_f* namelen, hid_t_f* mem_ty
      return 0;
 }
 
+int_f nh5fd_dsm_steering_vector_set_c(_fcd name, int_f* namelen, hid_t_f* mem_type_id, hsize_t_f* num_elem, _fcd buf)
+{
+     int     ret_value = -1;
+     char   *c_name;
+     int_f   c_namelen;
+     hid_t   c_mem_type_id;
+     hsize_t c_num_elem;
+
+     herr_t ret;
+
+     /*
+      * Convert FORTRAN name to C name
+      */
+     c_namelen = *namelen;
+     c_mem_type_id = (hid_t)*mem_type_id;
+     c_num_elem = (hsize_t)*num_elem;
+     c_name = (char *)HD5f2cstring(name, (size_t)c_namelen);
+     if (c_name == NULL) return ret_value;
+
+     /*
+      * Call H5FD_dsm_steering_vector_get function.
+      */
+     ret = H5FD_dsm_steering_vector_set(c_name, c_mem_type_id, c_num_elem, _fcdtocp(buf));
+     HDfree(c_name);
+     if (ret < 0) return ret_value;
+     return 0;
+}
+
 /*----------------------------------------------------------------------------
  * Name:        h5fd_dsm_dump_c
  * Purpose:     Display the content of the DSM (Debug only)

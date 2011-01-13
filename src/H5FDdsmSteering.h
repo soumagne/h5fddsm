@@ -70,9 +70,10 @@ extern "C" {
   H5FDdsm_EXPORT herr_t H5FD_dsm_steering_scalar_get(const char *name, int mem_type, void *data);
 
   /* Description:
-   * Get the vector values corresponding to the property name given in the template.
+   * Get/Set the vector values corresponding to the property name given in the template.
    */
   H5FDdsm_EXPORT herr_t H5FD_dsm_steering_vector_get(const char *name, int mem_type, hsize_t number_of_elements, void *data);
+  H5FDdsm_EXPORT herr_t H5FD_dsm_steering_vector_set(const char *name, int mem_type, hsize_t number_of_elements, void *data);
 
   /* Description:
    * Display the content of the DSM (Debug only).
