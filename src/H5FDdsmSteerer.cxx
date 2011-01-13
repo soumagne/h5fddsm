@@ -245,13 +245,16 @@ H5FDdsmInt32 H5FDdsmSteerer::BeginInteractionsCache(int mode)
     }
     else if (mode==H5F_ACC_RDWR) {
       // if it does not already exist, create it
-      if (H5Lexists(this->Cache_fileId, "Interactions", H5P_DEFAULT)==FALSE) {
+      if (H5Lexists(this->Cache_fileId, "Interactions", H5P_DEFAULT)==0) {
         this->Cache_interactionGroupId = H5Gcreate(this->Cache_fileId, "Interactions", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+        if (this->Cache_interactionGroupId < 0) {
+          ret = H5FD_DSM_FAIL;
+        } 
+      }
+      else {
+        this->Cache_interactionGroupId = H5Gopen(this->Cache_fileId, "Interactions", H5P_DEFAULT);
       }
     }
-    if (this->Cache_interactionGroupId < 0) {
-      ret = H5FD_DSM_FAIL;
-    } 
   }
   this->EndHideHDF5Errors();
 
@@ -265,7 +268,7 @@ H5FDdsmInt32 H5FDdsmSteerer::EndInteractionsCache()
   if (!this->InteractionsCacheActive()) return ret;
   //
   if (H5Pclose(this->Cache_fapl)<0) ret = H5FD_DSM_FAIL;
-  if (H5Gclose(this->Cache_interactionGroupId)<0) ret = H5FD_DSM_FAIL;
+  if (this->Cache_interactionGroupId!=-1 && H5Gclose(this->Cache_interactionGroupId)<0) ret = H5FD_DSM_FAIL;
   if (H5Fclose(this->Cache_fileId)<0) ret = H5FD_DSM_FAIL;
   //
   this->Cache_fapl               = H5I_BADID;
