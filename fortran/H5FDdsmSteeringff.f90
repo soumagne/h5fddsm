@@ -32,18 +32,18 @@
          CONTAINS
 
 !----------------------------------------------------------------------
-! Name:		h5fd_dsm_steering_init_f
+! Name:        h5fd_dsm_steering_init_f
 !
-! Purpose: 	Initialize the steering interface
+! Purpose:     Initialize the steering interface
 !
 ! Inputs:
-!		comm        - Communicator used by the IO nodes
+!        comm        - Communicator used by the IO nodes
 ! Outputs:
-!		hdferr:		- error code
-!				 	Success:  0
-!				 	Failure: -1
+!        hdferr:        - error code
+!                     Success:  0
+!                     Failure: -1
 ! Optional parameters:
-!				NONE
+!                NONE
 !
 !----------------------------------------------------------------------
          SUBROUTINE h5fd_dsm_steering_init_f(comm, hdferr)

@@ -32,19 +32,19 @@
          CONTAINS
 
 !----------------------------------------------------------------------
-! Name:		h5pset_fapl_dsm_f
+! Name:        h5pset_fapl_dsm_f
 !
-! Purpose: 	Set the File access property for DSM VFD usage
+! Purpose:     Set the File access property for DSM VFD usage
 !
 ! Inputs:
-!		prp_id		- file access property list identifier
-!		comm        - Communicator used by the IO nodes
+!        prp_id        - file access property list identifier
+!        comm        - Communicator used by the IO nodes
 ! Outputs:
-!		hdferr:		- error code
-!				 	Success:  0
-!				 	Failure: -1
+!        hdferr:        - error code
+!                     Success:  0
+!                     Failure: -1
 ! Optional parameters:
-!				NONE
+!                NONE
 !
 !----------------------------------------------------------------------
          SUBROUTINE h5pset_fapl_dsm_f(prp_id, comm, hdferr)
@@ -58,19 +58,19 @@
           END SUBROUTINE h5pset_fapl_dsm_f
 
 !----------------------------------------------------------------------
-! Name:		h5pget_fapl_dsm_f
+! Name:        h5pget_fapl_dsm_f
 !
-! Purpose: 	Returns MPI communicator information.
+! Purpose:     Returns MPI communicator information.
 !
 ! Inputs:
-!		prp_id		- file access property list identifier
+!        prp_id        - file access property list identifier
 ! Outputs:
-!		comm		- Communicator used by the IO nodes
-!		hdferr:		- error code
-!				 	Success:  0
-!				 	Failure: -1
+!        comm        - Communicator used by the IO nodes
+!        hdferr:        - error code
+!                     Success:  0
+!                     Failure: -1
 ! Optional parameters:
-!				NONE
+!                NONE
 !
 !----------------------------------------------------------------------
          SUBROUTINE h5pget_fapl_dsm_f(prp_id, comm, hdferr)

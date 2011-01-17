@@ -89,7 +89,8 @@
 /*
  * Specific DSM operating modes
  */
-#define H5FD_DSM_MANUAL_SERVER_UPDATE 0x20
+#define H5FD_DSM_AUTOMATIC_SERVER_UPDATE 0x10
+#define H5FD_DSM_MANUAL_SERVER_UPDATE    0x20
 
 #ifdef __cplusplus
 extern "C" {

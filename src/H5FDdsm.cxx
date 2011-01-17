@@ -1231,7 +1231,7 @@ done:
  * Return:  Success: non-negative
  *    Failure: negative
  *
- * Programmer:	JB : After H5FDmpio : By Quincey Koziol
+ * Programmer:    JB : After H5FDmpio : By Quincey Koziol
  *
  *-------------------------------------------------------------------------
  */
@@ -1261,7 +1261,7 @@ done:
  * Return:  Success: non-negative
  *    Failure: negative
  *
- * Programmer:	JB : After H5FDmpio : By Quincey Koziol
+ * Programmer:    JB : After H5FDmpio : By Quincey Koziol
  *
  *-------------------------------------------------------------------------
  */
@@ -1292,7 +1292,7 @@ done:
  *
  *    Failure:  NULL
  *
- * Programmer:	JB : After H5FDmpio : By Quincey Koziol
+ * Programmer:    JB : After H5FDmpio : By Quincey Koziol
  *
  *-------------------------------------------------------------------------
  */
@@ -1323,16 +1323,16 @@ done:
 } // end H5FD_mpi_posix_communicator()
 
 /*-------------------------------------------------------------------------
- * Function:	H5FD_dsm_query
+ * Function:    H5FD_dsm_query
  *
- * Purpose:	Set the flags that this VFL driver is capable of supporting.
+ * Purpose:    Set the flags that this VFL driver is capable of supporting.
  *              (listed in H5FDpublic.h)
  *
- * Return:	Success:	non-negative
+ * Return:    Success:    non-negative
  *
- *		Failure:	negative
+ *        Failure:    negative
  *
- * Programmer:	JB : After H5FDmpio : By Quincey Koziol
+ * Programmer:    JB : After H5FDmpio : By Quincey Koziol
  *
  *-------------------------------------------------------------------------
  */

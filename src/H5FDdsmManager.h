@@ -105,10 +105,12 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     // Description:
     // Set values and associated name for the corresponding int interaction.
     void SetSteeringValues(const char *name, int numberOfElements, int *values);
+    void GetSteeringValues(const char *name, int numberOfElements, int *values);
 
     // Description:
     // Set values and associated name for the corresponding int interaction.
     void SetSteeringValues(const char *name, int numberOfElements, double *values);
+    void GetSteeringValues(const char *name, int numberOfElements, double *values);
 
     // Description:
     // Set/Unset objects
@@ -155,7 +157,7 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
 
 #ifdef _WIN32
     DWORD          ServiceThread;
-	HANDLE         ServiceThreadHandle;
+    HANDLE         ServiceThreadHandle;
 #else
     pthread_t      ServiceThread;
 #endif

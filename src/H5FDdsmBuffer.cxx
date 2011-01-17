@@ -72,17 +72,17 @@
 
 extern "C"{
 #ifdef _WIN32
-		H5FDdsm_EXPORT DWORD WINAPI H5FDdsmBufferServiceThread(void *DsmObj) {
-		H5FDdsmBuffer *Dsm = (H5FDdsmBuffer *)DsmObj;
-		Dsm->ServiceThread();
-		return(0);
-	}
+        H5FDdsm_EXPORT DWORD WINAPI H5FDdsmBufferServiceThread(void *DsmObj) {
+        H5FDdsmBuffer *Dsm = (H5FDdsmBuffer *)DsmObj;
+        Dsm->ServiceThread();
+        return(0);
+    }
 #else
-	H5FDdsm_EXPORT void *
-		H5FDdsmBufferServiceThread(void *DsmObj){
-			H5FDdsmBuffer *Dsm = (H5FDdsmBuffer *)DsmObj;
-			return(Dsm->ServiceThread());
-	}
+    H5FDdsm_EXPORT void *
+        H5FDdsmBufferServiceThread(void *DsmObj){
+            H5FDdsmBuffer *Dsm = (H5FDdsmBuffer *)DsmObj;
+            return(Dsm->ServiceThread());
+    }
 #endif
 }
 

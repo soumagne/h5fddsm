@@ -153,9 +153,9 @@ bool H5FDdsmManager::DestroyDSM()
 
 #ifdef _WIN32
   if (this->ServiceThread) {
-	  WaitForSingleObject(this->ServiceThreadHandle, INFINITE);
+      WaitForSingleObject(this->ServiceThreadHandle, INFINITE);
     CloseHandle(this->ServiceThreadHandle);
-	this->ServiceThread = 0;
+    this->ServiceThread = 0;
     this->ServiceThreadHandle = NULL;
   }
 #else
@@ -236,9 +236,9 @@ bool H5FDdsmManager::CreateDSM()
     //
     H5FDdsmDebug(<< "Creating service thread...");
 #ifdef _WIN32
-	this->ServiceThreadHandle = CreateThread(NULL, 0, H5FDdsmBufferServiceThread, (void *) this->DSMBuffer,	0, &this->ServiceThread);
+    this->ServiceThreadHandle = CreateThread(NULL, 0, H5FDdsmBufferServiceThread, (void *) this->DSMBuffer,    0, &this->ServiceThread);
 #else
-	// Start another thread to handle DSM requests from other nodes
+    // Start another thread to handle DSM requests from other nodes
     pthread_create(&this->ServiceThread, NULL, &H5FDdsmBufferServiceThread, (void *) this->DSMBuffer);
 #endif
 
@@ -612,6 +612,15 @@ void H5FDdsmManager::SetSteeringValues(const char *name, int numberOfElements, i
   }
 }
 //----------------------------------------------------------------------------
+void H5FDdsmManager::GetSteeringValues(const char *name, int numberOfElements, int *values)
+{
+  if (numberOfElements) {
+    this->DSMBuffer->GetSteerer()->BeginInteractionsCache(H5F_ACC_RDONLY);
+    this->DSMBuffer->GetSteerer()->GetVector(name, H5T_NATIVE_INT, numberOfElements, values);
+    this->DSMBuffer->GetSteerer()->EndInteractionsCache();
+  }
+}
+//----------------------------------------------------------------------------
 void H5FDdsmManager::SetSteeringValues(const char *name, int numberOfElements, double *values)
 {
   if (numberOfElements) {
@@ -637,6 +646,15 @@ void H5FDdsmManager::SetSteeringValues(const char *name, int numberOfElements, d
       this->ManagerInternals->SteeringValuesDouble.push_back(
           H5FDdsmManagerInternals::SteeringEntryDouble(name, numberOfElements, entryValues));
     }
+  }
+}
+//----------------------------------------------------------------------------
+void H5FDdsmManager::GetSteeringValues(const char *name, int numberOfElements, double *values)
+{
+  if (numberOfElements) {
+    this->DSMBuffer->GetSteerer()->BeginInteractionsCache(H5F_ACC_RDONLY);
+    this->DSMBuffer->GetSteerer()->GetVector(name, H5T_NATIVE_DOUBLE, numberOfElements, values);
+    this->DSMBuffer->GetSteerer()->EndInteractionsCache();
   }
 }
 //----------------------------------------------------------------------------

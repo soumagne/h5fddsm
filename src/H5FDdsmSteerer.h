@@ -57,8 +57,8 @@ public:
   H5FDdsmInt32 UpdateDisabledObjects();
   H5FDdsmInt32 GetDisabledObjects();
 
-  // Use H5F_ACC_RDONLY	for queries
-  // Use H5F_ACC_RDWR	for read/write
+  // Use H5F_ACC_RDONLY    for queries
+  // Use H5F_ACC_RDWR    for read/write
   H5FDdsmInt32 BeginInteractionsCache(int mode);
   H5FDdsmInt32 EndInteractionsCache();
   bool         InteractionsCacheActive();
