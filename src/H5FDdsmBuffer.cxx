@@ -95,8 +95,7 @@ H5FDdsmBuffer::H5FDdsmBuffer() {
     this->IsServer = true;
     this->IsConnected = false;
     this->IsSyncRequired = true;
-    this->IsUpdateReady = false;
-    this->IsDataModified = false;
+    this->UpdateLevel = H5FD_DSM_UPDATE_NONE;
     this->IsReadOnly = true;
     this->Locks = new H5FDdsmInt64[H5FD_DSM_MAX_LOCKS];
     for(i=0;i < H5FD_DSM_MAX_LOCKS;i++) this->Locks[i] = -1;
@@ -325,9 +324,9 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
           if (this->Comm->RemoteCommChannelSynced(&localSync) || !this->IsConnected) {
             this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_LOCAL);
             this->Comm->Barrier();
-            if (Address) this->SetIsDataModified(true); // Work-around to avoid to have to send two different messages
-            this->SetIsUpdateReady(true);
-            H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "IsUpdateReady, Switched to Local channel");
+            this->SetUpdateLevel(Address);
+            H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "Update level " <<
+                this->GetUpdateLevel() << ", Switched to Local channel");
           }
           break;
         case H5FD_DSM_DISCONNECT:
@@ -564,10 +563,10 @@ H5FDdsmBuffer::RequestLocalChannel() {
   H5FDdsmInt32 who, status = H5FD_DSM_SUCCESS;
 
   for (who = this->StartServerId ; who <= this->EndServerId ; who++) {
-    H5FDdsmDebug("Send request local channel to " << who);
-    status = this->SendCommandHeader(H5FD_DSM_LOCAL_CHANNEL, who, this->GetIsDataModified(), 0);
+    H5FDdsmDebug("Send request local channel to " << who << " with level " << this->GetUpdateLevel());
+    status = this->SendCommandHeader(H5FD_DSM_LOCAL_CHANNEL, who, this->GetUpdateLevel(), 0);
   }
-  if (this->GetIsDataModified()) this->SetIsDataModified(false);
+  if (this->GetUpdateLevel() != H5FD_DSM_UPDATE_NONE) this->UpdateLevel = H5FD_DSM_UPDATE_NONE;
   this->Comm->Barrier();
   return(status);
 }

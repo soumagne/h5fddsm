@@ -115,7 +115,7 @@ int H5FDdsmManager::GetDsmUpdateReady()
 {
   int ret = 0;
   if (this->DSMBuffer) {
-    if (this->DSMBuffer->GetIsUpdateReady()) ret = 1;
+    if (this->DSMBuffer->GetUpdateLevel() >= H5FD_DSM_UPDATE_LEVEL_1) ret = 1;
   }
   return ret;
 }
@@ -123,7 +123,7 @@ int H5FDdsmManager::GetDsmUpdateReady()
 void H5FDdsmManager::ClearDsmUpdateReady()
 {
   if (this->DSMBuffer) {
-    this->DSMBuffer->SetIsUpdateReady(0);
+    this->DSMBuffer->SetUpdateLevel(H5FD_DSM_UPDATE_NONE);
   }
 }
 //----------------------------------------------------------------------------
@@ -131,7 +131,7 @@ int H5FDdsmManager::GetDsmIsDataModified()
 {
   int ret = 0;
   if (this->DSMBuffer) {
-    if (this->DSMBuffer->GetIsDataModified()) ret = 1;
+    if (this->DSMBuffer->GetUpdateLevel() == H5FD_DSM_UPDATE_MODIFIED_DATA) ret = 1;
   }
   return ret;
 }
@@ -139,7 +139,7 @@ int H5FDdsmManager::GetDsmIsDataModified()
 void H5FDdsmManager::ClearDsmIsDataModified()
 {
   if (this->DSMBuffer) {
-    this->DSMBuffer->SetIsDataModified(0);
+    this->DSMBuffer->SetUpdateLevel(H5FD_DSM_UPDATE_NONE);
   }
 }
 //----------------------------------------------------------------------------

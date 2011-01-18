@@ -27,11 +27,12 @@
          !
          ! H5FD DSM flags declaration
          !
-         INTEGER, PARAMETER :: H5FD_DSM_FLAGS_LEN = 1
+         INTEGER, PARAMETER :: H5FD_DSM_FLAGS_LEN = 2
          INTEGER H5FD_dsm_flags(H5FD_DSM_FLAGS_LEN)
          COMMON /H5FD_DSM_FLAGS/ H5FD_dsm_flags
 
          INTEGER :: H5FD_DSM_MANUAL_SERVER_UPDATE_F
+         INTEGER :: H5FD_DSM_MANUAL_UPDATE_LEVEL_2_F
 
          EQUIVALENCE(H5FD_dsm_flags(1), H5FD_DSM_MANUAL_SERVER_UPDATE_F)
 
