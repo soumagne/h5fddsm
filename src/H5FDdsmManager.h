@@ -105,12 +105,16 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     // Description:
     // Set values and associated name for the corresponding int interaction.
     void SetSteeringValues(const char *name, int numberOfElements, int *values);
-    void GetSteeringValues(const char *name, int numberOfElements, int *values);
+    bool GetSteeringValues(const char *name, int numberOfElements, int *values);
 
     // Description:
     // Set values and associated name for the corresponding int interaction.
     void SetSteeringValues(const char *name, int numberOfElements, double *values);
-    void GetSteeringValues(const char *name, int numberOfElements, double *values);
+    bool GetSteeringValues(const char *name, int numberOfElements, double *values);
+
+    // Description:
+    // Return true if the Interactions group exists, false otherwise
+    bool GetInteractionsGroupPresent();
 
     // Description:
     // Set/Unset objects
