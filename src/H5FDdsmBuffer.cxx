@@ -99,7 +99,7 @@ H5FDdsmBuffer::H5FDdsmBuffer() {
     this->IsSyncRequired = true;
     this->IsUpdateReady = false;
     this->IsDataModified = false;
-    this->UpdateLevel = 0;
+    this->UpdateLevel = H5FD_DSM_UPDATE_LEVEL_MAX;
     this->IsReadOnly = true;
     this->Locks = new H5FDdsmInt64[H5FD_DSM_MAX_LOCKS];
     for(i=0;i < H5FD_DSM_MAX_LOCKS;i++) this->Locks[i] = -1;
@@ -581,7 +581,7 @@ H5FDdsmBuffer::RequestLocalChannel() {
     status = this->SendCommandHeader(H5FD_DSM_LOCAL_CHANNEL, who, localFlag, 0);
   }
   if (this->GetIsDataModified()) this->SetIsDataModified(false);
-  if (this->GetUpdateLevel()) this->SetUpdateLevel(0);
+  if (this->GetUpdateLevel() != H5FD_DSM_UPDATE_LEVEL_MAX) this->SetUpdateLevel(H5FD_DSM_UPDATE_LEVEL_MAX);
   this->Comm->Barrier();
   return(status);
 }

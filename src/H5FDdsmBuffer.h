@@ -58,6 +58,8 @@ class H5FDdsmSteerer;
 
 #define H5FD_DSM_MAX_LOCKS 32
 
+#define H5FD_DSM_UPDATE_LEVEL_MAX 0x4
+
 //! Helper for pthread_create() and CreateThread()
 extern "C" {
 #ifdef _WIN32

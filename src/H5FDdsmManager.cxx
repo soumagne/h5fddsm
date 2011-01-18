@@ -155,7 +155,7 @@ int H5FDdsmManager::GetDsmUpdateLevel()
 void H5FDdsmManager::ClearDsmUpdateLevel()
 {
   if (this->DSMBuffer) {
-    this->DSMBuffer->SetUpdateLevel(0);
+    this->DSMBuffer->SetUpdateLevel(H5FD_DSM_UPDATE_LEVEL_MAX);
   }
 }
 //----------------------------------------------------------------------------
