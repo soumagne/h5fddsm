@@ -58,11 +58,6 @@ class H5FDdsmSteerer;
 
 #define H5FD_DSM_MAX_LOCKS 32
 
-#define H5FD_DSM_UPDATE_NONE          0x30
-#define H5FD_DSM_UPDATE_LEVEL_1       0x31
-#define H5FD_DSM_UPDATE_LEVEL_2       0x32
-#define H5FD_DSM_UPDATE_MODIFIED_DATA 0x33
-
 //! Helper for pthread_create() and CreateThread()
 extern "C" {
 #ifdef _WIN32
@@ -99,6 +94,14 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     // Is the DSMBuffer connected
     H5FDdsmGetValueMacro(IsSyncRequired, H5FDdsmBoolean);
     H5FDdsmSetValueMacro(IsSyncRequired, H5FDdsmBoolean);
+
+    // Is the DSMBuffer ready to update
+    H5FDdsmGetValueMacro(IsUpdateReady, H5FDdsmBoolean);
+    H5FDdsmSetValueMacro(IsUpdateReady, H5FDdsmBoolean);
+
+   // Has the data been modified
+    H5FDdsmGetValueMacro(IsDataModified, H5FDdsmBoolean);
+    H5FDdsmSetValueMacro(IsDataModified, H5FDdsmBoolean);
 
     // Set/Get Update level
     H5FDdsmGetValueMacro(UpdateLevel, H5FDdsmInt32);
@@ -151,6 +154,8 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     volatile H5FDdsmInt32   ThreadDsmReady;
     volatile H5FDdsmBoolean IsConnected;
     volatile H5FDdsmBoolean IsSyncRequired;
+    volatile H5FDdsmBoolean IsUpdateReady;
+    volatile H5FDdsmBoolean IsDataModified;
     H5FDdsmInt32            UpdateLevel;
     bool                    IsAutoAllocated;
     bool                    IsServer;

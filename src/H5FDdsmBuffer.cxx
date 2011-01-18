@@ -70,6 +70,8 @@
 #define H5FD_DSM_XML_EXCHANGE        0x08
 #define H5FD_DSM_CLEAR_STORAGE       0x09
 
+#define H5FD_DSM_DATA_MODIFIED 0x100
+
 extern "C"{
 #ifdef _WIN32
         H5FDdsm_EXPORT DWORD WINAPI H5FDdsmBufferServiceThread(void *DsmObj) {
@@ -95,7 +97,9 @@ H5FDdsmBuffer::H5FDdsmBuffer() {
     this->IsServer = true;
     this->IsConnected = false;
     this->IsSyncRequired = true;
-    this->UpdateLevel = H5FD_DSM_UPDATE_NONE;
+    this->IsUpdateReady = false;
+    this->IsDataModified = false;
+    this->UpdateLevel = 0;
     this->IsReadOnly = true;
     this->Locks = new H5FDdsmInt64[H5FD_DSM_MAX_LOCKS];
     for(i=0;i < H5FD_DSM_MAX_LOCKS;i++) this->Locks[i] = -1;
@@ -324,7 +328,13 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
           if (this->Comm->RemoteCommChannelSynced(&localSync) || !this->IsConnected) {
             this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_LOCAL);
             this->Comm->Barrier();
-            this->SetUpdateLevel(Address);
+            if (Address & H5FD_DSM_DATA_MODIFIED) {
+              this->SetIsDataModified(true);
+              this->SetUpdateLevel(Address - H5FD_DSM_DATA_MODIFIED);
+            } else {
+              this->SetUpdateLevel(Address);
+            }
+            this->SetIsUpdateReady(true);
             H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "Update level " <<
                 this->GetUpdateLevel() << ", Switched to Local channel");
           }
@@ -563,10 +573,15 @@ H5FDdsmBuffer::RequestLocalChannel() {
   H5FDdsmInt32 who, status = H5FD_DSM_SUCCESS;
 
   for (who = this->StartServerId ; who <= this->EndServerId ; who++) {
+    H5FDdsmInt64 localFlag = 0;
     H5FDdsmDebug("Send request local channel to " << who << " with level " << this->GetUpdateLevel());
-    status = this->SendCommandHeader(H5FD_DSM_LOCAL_CHANNEL, who, this->GetUpdateLevel(), 0);
+    // for convenience
+    if (this->GetIsDataModified()) localFlag = H5FD_DSM_DATA_MODIFIED;
+    localFlag |= this->GetUpdateLevel();
+    status = this->SendCommandHeader(H5FD_DSM_LOCAL_CHANNEL, who, localFlag, 0);
   }
-  if (this->GetUpdateLevel() != H5FD_DSM_UPDATE_NONE) this->UpdateLevel = H5FD_DSM_UPDATE_NONE;
+  if (this->GetIsDataModified()) this->SetIsDataModified(false);
+  if (this->GetUpdateLevel()) this->SetUpdateLevel(0);
   this->Comm->Barrier();
   return(status);
 }

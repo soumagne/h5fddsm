@@ -38,7 +38,11 @@ int_f nh5fd_dsm_init_flags_c(int_f* h5fd_dsm_flags)
   int ret_value = -1;
 
   h5fd_dsm_flags[0] = (int_f)H5FD_DSM_MANUAL_SERVER_UPDATE;
-  h5fd_dsm_flags[1] = (int_f)H5FD_DSM_MANUAL_UPDATE_LEVEL_2;
+  h5fd_dsm_flags[1] = (int_f)H5FD_DSM_UPDATE_LEVEL_0;
+  h5fd_dsm_flags[2] = (int_f)H5FD_DSM_UPDATE_LEVEL_1;
+  h5fd_dsm_flags[3] = (int_f)H5FD_DSM_UPDATE_LEVEL_2;
+  h5fd_dsm_flags[4] = (int_f)H5FD_DSM_UPDATE_LEVEL_3;
+  h5fd_dsm_flags[5] = (int_f)H5FD_DSM_UPDATE_LEVEL_4;
 
   ret_value = 0;
   return ret_value;
