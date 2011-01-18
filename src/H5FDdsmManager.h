@@ -98,6 +98,11 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     void ClearDsmIsDataModified();
 
     // Description:
+    // Get/Set the update level flag
+    int  GetDsmUpdateLevel();
+    void ClearDsmUpdateLevel();
+
+    // Description:
     // Set/Get the current given steering command.
     // The command is then passed to the simulation.
     void SetSteeringCommand(H5FDdsmString cmd);

@@ -502,8 +502,12 @@ H5FD_dsm_set_mode(unsigned long flags, void *dsmBuffer)
   case H5FD_DSM_MANUAL_SERVER_UPDATE:
     buffer->SetCommSwitchOnClose(false);
     break;
-  case H5FD_DSM_MANUAL_UPDATE_LEVEL_2:
-    buffer->SetUpdateLevel(H5FD_DSM_UPDATE_LEVEL_2);
+  case H5FD_DSM_UPDATE_LEVEL_0:
+  case H5FD_DSM_UPDATE_LEVEL_1:
+  case H5FD_DSM_UPDATE_LEVEL_2:
+  case H5FD_DSM_UPDATE_LEVEL_3:
+  case H5FD_DSM_UPDATE_LEVEL_4:
+    buffer->SetUpdateLevel(flags);
     break;
   default:
     PRINT_DSM_INFO(buffer->GetComm()->GetId(), "Not implemented mode");
@@ -545,10 +549,6 @@ H5FD_dsm_server_update(void *dsmBuffer)
   if (buffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
     PRINT_DSM_INFO(buffer->GetComm()->GetId(), "SetIsSyncRequired(true)");
     buffer->SetIsSyncRequired(true);
-  }
-  // If no update flag specified, do a minimal update
-  if (buffer->GetUpdateLevel() == H5FD_DSM_UPDATE_NONE) {
-      buffer->SetUpdateLevel(H5FD_DSM_UPDATE_LEVEL_1);
   }
   buffer->RequestLocalChannel();
 
@@ -863,7 +863,7 @@ H5FD_dsm_close(H5FD_t *_file)
       // Gather all the dirty flags because some processes may not have written yet
       MPI_Allreduce(&file->dirty, &isSomeoneDirty, sizeof(hbool_t), MPI_UNSIGNED_CHAR, MPI_MAX, comm);
       if (isSomeoneDirty) {
-        file->DsmBuffer->SetUpdateLevel(H5FD_DSM_UPDATE_MODIFIED_DATA);
+        file->DsmBuffer->SetIsDataModified(true);
         if (file->DsmBuffer->GetCommSwitchOnClose()) {
             H5FD_dsm_server_update(file->DsmBuffer);
         }
