@@ -227,7 +227,7 @@ bool H5FDdsmSteerer::InteractionsCacheActive()
   return (this->Cache_fapl!=H5I_BADID);
 }
 //----------------------------------------------------------------------------
-H5FDdsmInt32 H5FDdsmSteerer::BeginInteractionsCache(int mode)
+H5FDdsmInt32 H5FDdsmSteerer::BeginInteractionsCache(unsigned int mode)
 {
   if (this->InteractionsCacheActive()) return H5FD_DSM_SUCCESS;
   //

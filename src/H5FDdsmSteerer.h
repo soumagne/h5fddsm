@@ -59,7 +59,7 @@ public:
 
   // Use H5F_ACC_RDONLY    for queries
   // Use H5F_ACC_RDWR    for read/write
-  H5FDdsmInt32 BeginInteractionsCache(int mode);
+  H5FDdsmInt32 BeginInteractionsCache(unsigned int mode);
   H5FDdsmInt32 EndInteractionsCache();
   bool         InteractionsCacheActive();
   void         BeginHideHDF5Errors();

@@ -630,13 +630,13 @@ void H5FDdsmManager::SetSteeringValues(const char *name, int numberOfElements, i
 //----------------------------------------------------------------------------
 bool H5FDdsmManager::GetSteeringValues(const char *name, int numberOfElements, int *values)
 {
-  bool ok = true;
+  bool ret = false;
   if (numberOfElements) {
-    ok = (ok && H5FD_DSM_SUCCESS==this->DSMBuffer->GetSteerer()->BeginInteractionsCache(H5F_ACC_RDONLY));
-    ok = (ok && H5FD_DSM_SUCCESS==this->DSMBuffer->GetSteerer()->GetVector(name, H5T_NATIVE_INT, numberOfElements, values));
-    ok = (ok && H5FD_DSM_SUCCESS==this->DSMBuffer->GetSteerer()->EndInteractionsCache());
+    this->DSMBuffer->GetSteerer()->BeginInteractionsCache(H5F_ACC_RDONLY);
+    ret = (H5FD_DSM_SUCCESS==this->DSMBuffer->GetSteerer()->GetVector(name, H5T_NATIVE_INT, numberOfElements, values));
+    this->DSMBuffer->GetSteerer()->EndInteractionsCache();
   }
-  return ok;
+  return ret;
 }
 //----------------------------------------------------------------------------
 void H5FDdsmManager::SetSteeringValues(const char *name, int numberOfElements, double *values)
@@ -669,21 +669,23 @@ void H5FDdsmManager::SetSteeringValues(const char *name, int numberOfElements, d
 //----------------------------------------------------------------------------
 bool H5FDdsmManager::GetSteeringValues(const char *name, int numberOfElements, double *values)
 {
-  bool ok = true;
+  bool ret = false;
   if (numberOfElements) {
-    ok = (ok && H5FD_DSM_SUCCESS==this->DSMBuffer->GetSteerer()->BeginInteractionsCache(H5F_ACC_RDONLY));
-    ok = (ok && H5FD_DSM_SUCCESS==this->DSMBuffer->GetSteerer()->GetVector(name, H5T_NATIVE_DOUBLE, numberOfElements, values));
-    ok = (ok && H5FD_DSM_SUCCESS==this->DSMBuffer->GetSteerer()->EndInteractionsCache());
+    this->DSMBuffer->GetSteerer()->BeginInteractionsCache(H5F_ACC_RDONLY);
+    ret = (H5FD_DSM_SUCCESS==this->DSMBuffer->GetSteerer()->GetVector(name, H5T_NATIVE_DOUBLE, numberOfElements, values));
+    this->DSMBuffer->GetSteerer()->EndInteractionsCache();
   }
-  return ok;
+  return ret;
 }
 //----------------------------------------------------------------------------
 bool H5FDdsmManager::GetInteractionsGroupPresent()
 {
-  bool ok = (this->DSMBuffer!=NULL && this->DSMBuffer->GetSteerer()!=NULL);
-  ok = (ok && H5FD_DSM_SUCCESS==this->DSMBuffer->GetSteerer()->BeginInteractionsCache(H5F_ACC_RDONLY));
-  ok = (ok && H5FD_DSM_SUCCESS==this->DSMBuffer->GetSteerer()->EndInteractionsCache());
-  return ok;
+  bool ret = false;
+  if ((this->DSMBuffer != NULL) && (this->DSMBuffer->GetSteerer() != NULL)) {
+    ret = (H5FD_DSM_SUCCESS==this->DSMBuffer->GetSteerer()->BeginInteractionsCache(H5F_ACC_RDONLY));
+    this->DSMBuffer->GetSteerer()->EndInteractionsCache();
+  }
+  return ret;
 }
 //----------------------------------------------------------------------------
 void H5FDdsmManager::SetDisabledObject(char *objectName)
