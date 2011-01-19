@@ -200,7 +200,7 @@
 !               NONE
 !
 !----------------------------------------------------------------------
-         SUBROUTINE h5fd_dsm_steering_scalar_get_f(name, mem_type_id, buf, hdferr)
+         SUBROUTINE h5fd_dsm_steering_scalar_get_int8_f(name, mem_type_id, buf, hdferr)
             IMPLICIT NONE
             CHARACTER(LEN=*), INTENT(IN) :: name ! Name of the property
             INTEGER(HID_T), INTENT(IN) :: mem_type_id ! Memory datatype identifier
@@ -211,7 +211,46 @@
             INTEGER, EXTERNAL :: h5fd_dsm_steering_scalar_get_c
             namelen = LEN_TRIM(name)
             hdferr = h5fd_dsm_steering_scalar_get_c(name, namelen, mem_type_id, buf)
-         END SUBROUTINE h5fd_dsm_steering_scalar_get_f
+         END SUBROUTINE h5fd_dsm_steering_scalar_get_int8_f
+
+         SUBROUTINE h5fd_dsm_steering_scalar_get_real8_f(name, mem_type_id, buf, hdferr)
+            IMPLICIT NONE
+            CHARACTER(LEN=*), INTENT(IN) :: name ! Name of the property
+            INTEGER(HID_T), INTENT(IN) :: mem_type_id ! Memory datatype identifier
+            REAL(8), INTENT(INOUT) :: buf        ! data
+            INTEGER, INTENT(OUT) :: hdferr       ! Error code
+            INTEGER :: namelen ! Length of the name character string
+
+            INTEGER, EXTERNAL :: h5fd_dsm_steering_scalar_get_c
+            namelen = LEN_TRIM(name)
+            hdferr = h5fd_dsm_steering_scalar_get_c(name, namelen, mem_type_id, buf)
+         END SUBROUTINE h5fd_dsm_steering_scalar_get_real8_f
+
+         SUBROUTINE h5fd_dsm_steering_scalar_set_int8_f(name, mem_type_id, buf, hdferr)
+            IMPLICIT NONE
+            CHARACTER(LEN=*), INTENT(IN) :: name ! Name of the property
+            INTEGER(HID_T), INTENT(IN) :: mem_type_id ! Memory datatype identifier
+            INTEGER, INTENT(INOUT) :: buf        ! data
+            INTEGER, INTENT(OUT) :: hdferr       ! Error code
+            INTEGER :: namelen ! Length of the name character string
+
+            INTEGER, EXTERNAL :: h5fd_dsm_steering_scalar_set_c
+            namelen = LEN_TRIM(name)
+            hdferr = h5fd_dsm_steering_scalar_set_c(name, namelen, mem_type_id, buf)
+         END SUBROUTINE h5fd_dsm_steering_scalar_set_int8_f
+
+         SUBROUTINE h5fd_dsm_steering_scalar_set_real8_f(name, mem_type_id, buf, hdferr)
+            IMPLICIT NONE
+            CHARACTER(LEN=*), INTENT(IN) :: name ! Name of the property
+            INTEGER(HID_T), INTENT(IN) :: mem_type_id ! Memory datatype identifier
+            REAL(8), INTENT(INOUT) :: buf        ! data
+            INTEGER, INTENT(OUT) :: hdferr       ! Error code
+            INTEGER :: namelen ! Length of the name character string
+
+            INTEGER, EXTERNAL :: h5fd_dsm_steering_scalar_set_c
+            namelen = LEN_TRIM(name)
+            hdferr = h5fd_dsm_steering_scalar_set_c(name, namelen, mem_type_id, buf)
+         END SUBROUTINE h5fd_dsm_steering_scalar_set_real8_f
 
 !----------------------------------------------------------------------
 ! Name:     h5fd_dsm_steering_vector_get_f

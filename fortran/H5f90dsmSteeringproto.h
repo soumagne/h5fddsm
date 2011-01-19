@@ -63,6 +63,9 @@ int_f nh5fd_dsm_steering_is_set_c(_fcd name, int_f* namelen, int_f* set);
 #define nh5fd_dsm_steering_scalar_get_c H5_FC_FUNC_(h5fd_dsm_steering_scalar_get_c, H5FD_DSM_STEERING_SCALAR_GET_C)
 int_f nh5fd_dsm_steering_scalar_get_c(_fcd name, int_f* namelen, hid_t_f* mem_type_id, _fcd buf);
 
+#define nh5fd_dsm_steering_scalar_set_c H5_FC_FUNC_(h5fd_dsm_steering_scalar_set_c, H5FD_DSM_STEERING_SCALAR_SET_C)
+int_f nh5fd_dsm_steering_scalar_set_c(_fcd name, int_f* namelen, hid_t_f* mem_type_id, _fcd buf);
+
 #define nh5fd_dsm_steering_vector_get_c H5_FC_FUNC_(h5fd_dsm_steering_vector_get_c, H5FD_DSM_STEERING_VECTOR_GET_C)
 int_f nh5fd_dsm_steering_vector_get_c(_fcd name, int_f* namelen, hid_t_f* mem_type_id, hsize_t_f* num_elem, _fcd buf);
 

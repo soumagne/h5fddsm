@@ -350,6 +350,35 @@ H5FDdsmInt32 H5FDdsmSteerer::GetScalar(H5FDdsmConstString name, H5FDdsmInt32 mem
   return(ret);
 }
 //----------------------------------------------------------------------------
+H5FDdsmInt32 H5FDdsmSteerer::SetScalar(H5FDdsmConstString name, H5FDdsmInt32 memType, void *data)
+{
+  H5FDdsmInt32 ret = H5FD_DSM_SUCCESS;
+  bool usecache = this->InteractionsCacheActive();
+  if (!usecache) {
+    if (this->BeginInteractionsCache(H5F_ACC_RDWR)!=H5FD_DSM_SUCCESS) return H5FD_DSM_FAIL;
+  }
+  // we don't hide errors when writing, we need to know if something has failed
+//  this->BeginHideHDF5Errors();
+
+  if (H5Tequal(memType,H5T_NATIVE_INT)) {
+    if (this->WriteInteractions(name, 1, static_cast<int*>(data))<0) {
+      ret = H5FD_DSM_FAIL;
+    }
+  }
+  else if (H5Tequal(memType,H5T_NATIVE_DOUBLE)) {
+    if (this->WriteInteractions(name, 1, static_cast<double*>(data))<0) {
+      ret = H5FD_DSM_FAIL;
+    }
+  }
+
+//  this->EndHideHDF5Errors();
+  // Clean up
+  if (!usecache) {
+    if (this->EndInteractionsCache()!=H5FD_DSM_SUCCESS) ret = H5FD_DSM_FAIL;
+  }
+  return(ret);
+}
+//----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmSteerer::GetVector(H5FDdsmConstString name, H5FDdsmInt32 memType, H5FDdsmInt32 numberOfElements, void *data)
 {
   H5FDdsmInt32 ret = H5FD_DSM_SUCCESS;

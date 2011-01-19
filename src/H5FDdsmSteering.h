@@ -65,9 +65,10 @@ extern "C" {
   H5FDdsm_EXPORT herr_t H5FD_dsm_steering_is_set(const char *name, int *set);
 
   /* Description:
-   * Get the scalar value corresponding to the property name given in the template.
+   * Get/Set the scalar value corresponding to the property name given in the template.
    */
   H5FDdsm_EXPORT herr_t H5FD_dsm_steering_scalar_get(const char *name, int mem_type, void *data);
+  H5FDdsm_EXPORT herr_t H5FD_dsm_steering_scalar_set(const char *name, int mem_type, void *data);
 
   /* Description:
    * Get/Set the vector values corresponding to the property name given in the template.
