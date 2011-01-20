@@ -305,15 +305,22 @@ H5FDdsmInt32 H5FDdsmSteerer::IsObjectPresent(H5FDdsmConstString name, int &prese
     if (this->BeginInteractionsCache(H5F_ACC_RDONLY)!=H5FD_DSM_SUCCESS) return H5FD_DSM_FAIL;
   }
   this->BeginHideHDF5Errors();
-  //
-  hid_t datasetId = H5Dopen(this->Cache_interactionGroupId, name, H5P_DEFAULT);
-  if (datasetId < 0) {
-    present = 0;
-    ret = H5FD_DSM_FAIL;
+  // Try attribute first
+  hid_t attributeId = H5Aopen(this->Cache_interactionGroupId, name, H5P_DEFAULT);
+  if (attributeId < 0) {
+    // Try dataset if attribute failed
+    hid_t datasetId = H5Dopen(this->Cache_interactionGroupId, name, H5P_DEFAULT);
+    if (datasetId < 0) {
+      present = 0;
+      ret = H5FD_DSM_FAIL;
+    } else {
+      present = 1;
+      H5Dclose(datasetId);
+    }
   } else {
     present = 1;
+    H5Aclose(attributeId);
   }
-  H5Dclose(datasetId);
   
   // Clean up
   if (!usecache) {
