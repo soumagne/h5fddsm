@@ -144,6 +144,7 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     void   H5DumpLight();
     void   H5DumpXML();
     void   SendDSMXML();
+    void   WriteSteeredData();
     void   RequestRemoteChannel();
 
     // Description:

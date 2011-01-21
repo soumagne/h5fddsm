@@ -247,7 +247,8 @@ H5FDdsmInt32 H5FDdsmSteerer::BeginInteractionsCache(unsigned int mode)
     }
     else if (mode==H5F_ACC_RDWR) {
       // if it does not already exist, create it
-      if (H5Lexists(this->Cache_fileId, "Interactions", H5P_DEFAULT)==0) {
+      int exists = H5Lexists(this->Cache_fileId, "Interactions", H5P_DEFAULT);
+      if (exists!=1) {
         this->Cache_interactionGroupId = H5Gcreate(this->Cache_fileId, "Interactions", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
         if (this->Cache_interactionGroupId < 0) {
           H5Fclose(this->Cache_fileId);

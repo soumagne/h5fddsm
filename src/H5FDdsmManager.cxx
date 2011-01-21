@@ -293,7 +293,7 @@ void H5FDdsmManager::ClearDSM()
   if (this->UpdatePiece == 0) H5FDdsmDebug(<< "DSM cleared");
 }
 //----------------------------------------------------------------------------
-void H5FDdsmManager::RequestRemoteChannel()
+void H5FDdsmManager::WriteSteeredData()
 {
   if (this->ManagerInternals->SteeringValuesInt.size() ||
       this->ManagerInternals->SteeringValuesDouble.size()) {
@@ -314,6 +314,11 @@ void H5FDdsmManager::RequestRemoteChannel()
     }
     this->DSMBuffer->GetSteerer()->EndInteractionsCache();
   }
+}
+//----------------------------------------------------------------------------
+void H5FDdsmManager::RequestRemoteChannel()
+{
+  this->WriteSteeredData();
 
   while (!this->ManagerInternals->RequestedDisabledObjects.empty()) {
     this->DSMBuffer->GetSteerer()->SetDisabledObject(
