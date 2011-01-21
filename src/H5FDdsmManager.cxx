@@ -163,7 +163,21 @@ bool H5FDdsmManager::DestroyDSM()
 {
   // Watch out that all processes have empty message queues
   // Should be already done during the disconnection
-  if (this->DSMBuffer && this->DSMBuffer->GetIsServer() && this->UpdatePiece == 0) {
+
+  // "TODO : Dirty JB hack for standalone mode - FIXME
+  if (this->DSMBuffer && 
+    !this->DSMBuffer->GetIsConnected() && this->UpdatePiece == 0) 
+  {
+    CloseHandle(this->ServiceThreadHandle);
+    this->ServiceThread = 0;
+    this->ServiceThreadHandle = NULL;
+    delete this->DSMBuffer;
+    this->DSMBuffer = NULL;
+  }
+  
+  if (this->DSMBuffer && 
+    this->DSMBuffer->GetIsServer() && this->UpdatePiece == 0) 
+  {
     this->DSMBuffer->SendDone();
   }
 
