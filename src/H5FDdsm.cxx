@@ -864,7 +864,7 @@ H5FD_dsm_close(H5FD_t *_file)
       MPI_Allreduce(&file->dirty, &isSomeoneDirty, sizeof(hbool_t), MPI_UNSIGNED_CHAR, MPI_MAX, comm);
       if (isSomeoneDirty) {
         file->DsmBuffer->SetIsDataModified(true);
-        if (file->DsmBuffer->GetCommSwitchOnClose()) {
+        if (!file->DsmBuffer->GetIsServer() && file->DsmBuffer->GetCommSwitchOnClose()) {
             H5FD_dsm_server_update(file->DsmBuffer);
         }
         file->dirty = FALSE;
