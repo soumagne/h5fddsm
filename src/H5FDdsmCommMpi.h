@@ -65,7 +65,7 @@ class H5FDdsm_EXPORT H5FDdsmCommMpi : public H5FDdsmComm {
 
 public:
   H5FDdsmCommMpi();
-  ~H5FDdsmCommMpi();
+  virtual ~H5FDdsmCommMpi();
 
 #ifndef SWIG
     //! Set the MPI Communicator
@@ -82,7 +82,7 @@ public:
 #endif
     H5FDdsmInt32   Init();
     H5FDdsmInt32   Send(H5FDdsmMsg *Msg);
-    H5FDdsmInt32   Receive(H5FDdsmMsg *Msg);
+    H5FDdsmInt32   Receive(H5FDdsmMsg *Msg, H5FDdsmInt32 Channel=0);
     // Additional methods for one sided communications
     H5FDdsmInt32   PutData(H5FDdsmMsg *DataMsg);
     H5FDdsmInt32   GetData(H5FDdsmMsg *DataMsg);

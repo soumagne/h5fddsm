@@ -495,7 +495,7 @@ H5FDdsmInt32 H5FDdsmSteerer::WriteInteractions(H5FDdsmConstString name, H5FDdsmI
     hid_t memspace = H5Screate_simple(1, &arraySize, NULL);
     hid_t dataset = H5Dcreate(this->Cache_interactionGroupId, name, H5T_NATIVE_INT, memspace,
         H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    if (H5Dwrite(dataset, H5T_NATIVE_INT, memspace, H5S_ALL, H5P_DEFAULT, data) < 0) {
+    if (H5Dwrite(dataset, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, data) < 0) {
       return(H5FD_DSM_FAIL);
     }
     H5Sclose(memspace);
@@ -524,7 +524,7 @@ H5FDdsmInt32 H5FDdsmSteerer::WriteInteractions(H5FDdsmConstString name, H5FDdsmI
     hid_t memspace = H5Screate_simple(1, &arraySize, NULL);
     hid_t dataset = H5Dcreate(this->Cache_interactionGroupId, name, H5T_NATIVE_DOUBLE, memspace,
         H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    if (H5Dwrite(dataset, H5T_NATIVE_DOUBLE, memspace, H5S_ALL, H5P_DEFAULT, data) < 0) {
+    if (H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, data) < 0) {
       return(H5FD_DSM_FAIL);
     }
     H5Sclose(memspace);

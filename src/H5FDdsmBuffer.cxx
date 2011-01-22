@@ -70,6 +70,9 @@
 #define H5FD_DSM_XML_EXCHANGE        0x08
 #define H5FD_DSM_CLEAR_STORAGE       0x09
 
+#define H5FD_DSM_REMOTE_REQUEST 0x10
+#define H5FD_DSM_OPCODE_LOCK 0x11
+
 #define H5FD_DSM_DATA_MODIFIED 0x100
 
 extern "C"{
@@ -86,11 +89,27 @@ extern "C"{
             return(Dsm->ServiceThread());
     }
 #endif
+
+#ifdef _WIN32
+        H5FDdsm_EXPORT DWORD WINAPI H5FDdsmBufferRemoteServiceThread(void *DsmObj) {
+        H5FDdsmBuffer *Dsm = (H5FDdsmBuffer *)DsmObj;
+        Dsm->RemoteServiceThread();
+        return(0);
+    }
+#else
+    H5FDdsm_EXPORT void *
+        H5FDdsmBufferRemoteServiceThread(void *DsmObj){
+            H5FDdsmBuffer *Dsm = (H5FDdsmBuffer *)DsmObj;
+            return(Dsm->RemoteServiceThread());
+    }
+#endif
 }
 
 H5FDdsmBuffer::H5FDdsmBuffer() {
     H5FDdsmInt64 i;
     this->ThreadDsmReady = 0;
+    this->ThreadRemoteDsmReady = 0;
+
     this->DataPointer = 0;
     this->IsAutoAllocated = false;
     this->CommSwitchOnClose = true;
@@ -108,6 +127,11 @@ H5FDdsmBuffer::H5FDdsmBuffer() {
     this->XMLDescription = NULL;
 
     this->Steerer = new H5FDdsmSteerer(this);
+
+    this->RemoteServiceThreadPtr          = 0;
+  #ifdef _WIN32
+    this->RemoteServiceThreadHandle    = NULL;
+  #endif
 }
 
 H5FDdsmBuffer::~H5FDdsmBuffer() {
@@ -150,6 +174,18 @@ H5FDdsmBuffer::ServiceThread(){
     this->ThreadDsmReady = 0;
     H5FDdsmDebug("Ending DSM Service on node " << this->Comm->GetId() << " last op = " << ReturnOpcode);
   }
+  return((void *)this);
+}
+
+void *
+H5FDdsmBuffer::RemoteServiceThread(){
+  H5FDdsmInt32   ReturnOpcode;
+  // Do not use copy in order to use shared memory space
+  H5FDdsmDebug("Starting DSM Remote Service on node " << this->Comm->GetId());
+  this->ThreadRemoteDsmReady = 1;
+  this->RemoteService(&ReturnOpcode);
+  this->ThreadRemoteDsmReady = 0;
+  H5FDdsmDebug("Ending DSM Remote Service on node " << this->Comm->GetId() << " last op = " << ReturnOpcode);
   return((void *)this);
 }
 
@@ -207,6 +243,30 @@ H5FDdsmBuffer::ServiceLoop(H5FDdsmInt32 *ReturnOpcode){
         if (op == H5FD_DSM_OPCODE_DONE) return(H5FD_DSM_SUCCESS);
     }
     return(H5FD_DSM_SUCCESS);
+}
+
+H5FDdsmInt32
+H5FDdsmBuffer::RemoteService(H5FDdsmInt32 *ReturnOpcode){
+
+  H5FDdsmInt32        Opcode, who, status = H5FD_DSM_FAIL;
+  H5FDdsmInt64        aLength;
+  H5FDdsmInt64        Address;
+
+  status = this->ReceiveRemoteCommandHeader(&Opcode, &who, &Address, &aLength);
+  if (status == H5FD_DSM_FAIL){
+      H5FDdsmError("Error Receiving Command Header");
+      return(H5FD_DSM_FAIL);
+  }
+  switch(Opcode){
+  case H5FD_DSM_OPCODE_LOCK:
+    this->RequestRemoteRequest();
+    break;
+  default:
+    H5FDdsmError("Unknown Remote Service Opcode " << Opcode);
+    return(H5FD_DSM_FAIL);
+  }
+  if (ReturnOpcode) *ReturnOpcode = Opcode;
+  return(H5FD_DSM_SUCCESS);
 }
 
 H5FDdsmInt32
@@ -308,21 +368,39 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
                 return(H5FD_DSM_FAIL);
             }
             break;
+        case H5FD_DSM_OPCODE_LOCK:
+          H5FDdsmDebug("Already locked");
+          break;
         case H5FD_DSM_OPCODE_DONE:
             break;
+        case H5FD_DSM_REMOTE_REQUEST:
+          this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_REMOTE);
+          H5FDdsmDebug("Listening on Remote");
+          this->Comm->Barrier();
+          break;
         case H5FD_DSM_REMOTE_CHANNEL:
-          H5FDdsmDebug("Switching to Remote channel");
+          H5FDdsmDebug("Enabling Remote channel");
           if (!this->IsConnected) {
             this->Comm->RemoteCommAccept(this->DataPointer, this->Length);
             // send DSM information
             this->Comm->RemoteCommSendInfo(&this->Length, &this->TotalLength, &this->StartServerId, &this->EndServerId);
             this->IsConnected = true;
           }
-          this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_REMOTE);
+//          this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_REMOTE);
+          // create a single thread listening on the remote transaction request
+          H5FDdsmDebug(<< "Creating remote service thread...");
+#ifdef _WIN32
+          this->RemoteServiceThreadHandle = CreateThread(NULL, 0, H5FDdsmBufferRemoteServiceThread, (void *) this, 0, &this->RemoteServiceThreadPtr);
+#else
+          // Start another thread to handle DSM requests from other nodes
+          pthread_create(&this->RemoteServiceThreadPtr, NULL, &H5FDdsmBufferRemoteServiceThread, (void *) this);
+#endif
+          while (!this->ThreadRemoteDsmReady) {}
+//TODO RMA is special and the thread may not be necessary
           if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
             this->Comm->RemoteCommSync();
           }
-          H5FDdsmDebug("Switched to Remote channel");
+//          H5FDdsmDebug("Switched to Remote channel");
           break;
         case H5FD_DSM_LOCAL_CHANNEL:
           if (this->Comm->RemoteCommChannelSynced(&localSync) || !this->IsConnected) {
@@ -560,6 +638,29 @@ H5FDdsmBuffer::Get(H5FDdsmInt64 Address, H5FDdsmInt64 aLength, void *Data){
 }
 
 H5FDdsmInt32
+H5FDdsmBuffer::RequestRemoteRequest() {
+  H5FDdsmInt32 who = this->Comm->GetId(), status = H5FD_DSM_SUCCESS;
+
+  H5FDdsmDebug("Send request remote request to " << who);
+  status = this->SendCommandHeader(H5FD_DSM_REMOTE_REQUEST, who, 0, 0);
+  return(status);
+}
+
+H5FDdsmInt32
+H5FDdsmBuffer::RequestRemoteLock() {
+  H5FDdsmInt32 who, status = H5FD_DSM_SUCCESS;
+
+  if (this->Comm->GetId() == 0) {
+      for (who = this->StartServerId ; who <= this->EndServerId ; who++) {
+          H5FDdsmDebug("Send request LOCK to " << who);
+          status = this->SendCommandHeader(H5FD_DSM_OPCODE_LOCK, who, 0, 0);
+      }
+  }
+  this->Comm->Barrier();
+  return(status);
+}
+
+H5FDdsmInt32
 H5FDdsmBuffer::RequestRemoteChannel() {
   H5FDdsmInt32 who = this->Comm->GetId(), status = H5FD_DSM_SUCCESS;
 
@@ -589,6 +690,8 @@ H5FDdsmBuffer::RequestLocalChannel() {
 H5FDdsmInt32
 H5FDdsmBuffer::RequestDisconnection() {
   H5FDdsmInt32 who, status = H5FD_DSM_SUCCESS;
+
+  this->RequestRemoteLock();
 
   if ((this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) &&
       this->IsSyncRequired) {

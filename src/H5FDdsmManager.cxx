@@ -163,7 +163,7 @@ bool H5FDdsmManager::DestroyDSM()
 {
   // Watch out that all processes have empty message queues
   // Should be already done during the disconnection
-
+#ifdef _WIN32
   // "TODO : Dirty JB hack for standalone mode - FIXME
   if (this->DSMBuffer && 
     !this->DSMBuffer->GetIsConnected() && this->UpdatePiece == 0) 
@@ -174,6 +174,7 @@ bool H5FDdsmManager::DestroyDSM()
     delete this->DSMBuffer;
     this->DSMBuffer = NULL;
   }
+#endif
   
   if (this->DSMBuffer && 
     this->DSMBuffer->GetIsServer() && this->UpdatePiece == 0) 
@@ -278,7 +279,7 @@ bool H5FDdsmManager::CreateDSM()
     }
     this->DSMBuffer->SetIsServer(true);
     H5FDdsmDebug(<<"DSM Service Ready on " << this->UpdatePiece);
-  } 
+  }
   else {
     this->DSMBuffer->SetIsServer(false);
     this->DSMBuffer->SetComm(this->DSMComm);

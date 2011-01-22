@@ -37,7 +37,7 @@ class H5FDdsm_EXPORT H5FDdsmCommSocket : public H5FDdsmComm {
 
 public:
   H5FDdsmCommSocket();
-  ~H5FDdsmCommSocket();
+  virtual ~H5FDdsmCommSocket();
 
   // Set/Get the Internal MPI Communicator
   H5FDdsmSetValueMacro(Comm, MPI_Comm);
@@ -53,7 +53,7 @@ public:
 
   H5FDdsmInt32   Init();
   H5FDdsmInt32   Send(H5FDdsmMsg *Msg);
-  H5FDdsmInt32   Receive(H5FDdsmMsg *Msg);
+  H5FDdsmInt32   Receive(H5FDdsmMsg *Msg, H5FDdsmInt32 Channel=0);
   H5FDdsmInt32   Probe(H5FDdsmMsg *Msg);
   H5FDdsmInt32   Barrier();
 

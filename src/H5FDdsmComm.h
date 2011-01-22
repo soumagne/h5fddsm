@@ -97,7 +97,7 @@ public:
 
     virtual H5FDdsmInt32   Init();
     virtual H5FDdsmInt32   Send(H5FDdsmMsg *Msg);
-    virtual H5FDdsmInt32   Receive(H5FDdsmMsg *Msg);
+    virtual H5FDdsmInt32   Receive(H5FDdsmMsg *Msg, H5FDdsmInt32 Channel=0);
     // Additional methods for one sided communications
     virtual H5FDdsmInt32   PutData(H5FDdsmMsg *DataMsg);
     virtual H5FDdsmInt32   GetData(H5FDdsmMsg *DataMsg);

@@ -77,12 +77,14 @@ H5FDdsmDriver::H5FDdsmDriver() {
     this->StartServerId = this->EndServerId = -1;
     this->Msg = new H5FDdsmMsg;
     this->ServiceMsg = new H5FDdsmMsg;
+    this->RemoteServiceMsg = new H5FDdsmMsg;
 }
 
 H5FDdsmDriver::~H5FDdsmDriver() {
     if(this->Storage && this->StorageIsMine) delete this->Storage;
     if(this->Msg) delete this->Msg;
     if(this->ServiceMsg) delete this->ServiceMsg;
+    if(this->RemoteServiceMsg) delete this->RemoteServiceMsg;
 }
 
 H5FDdsmInt32
@@ -107,6 +109,8 @@ H5FDdsmDriver::Copy(H5FDdsmDriver *Source){
     this->Msg = new H5FDdsmMsg;
     if (this->ServiceMsg) delete this->ServiceMsg;
     this->ServiceMsg = new H5FDdsmMsg;
+    if (this->RemoteServiceMsg) delete this->RemoteServiceMsg;
+    this->RemoteServiceMsg = new H5FDdsmMsg;
     return(H5FD_DSM_SUCCESS);
 }
 
@@ -149,7 +153,7 @@ H5FDdsmDriver::ConfigureUniform(H5FDdsmComm *aComm, H5FDdsmInt64 aLength, H5FDds
     }else{
         this->Length = aLength;
     }
-    this->ServiceMsg->Source = this->Msg->Source = this->Comm->GetId();
+    this->ServiceMsg->Source = this->Msg->Source = this->RemoteServiceMsg->Source = this->Comm->GetId();
     this->TotalLength = aLength * (EndId - StartId + 1);
     return(H5FD_DSM_SUCCESS);
 }
@@ -258,6 +262,39 @@ H5FDdsmDriver::SendCommandHeader(H5FDdsmInt32 Opcode, H5FDdsmInt32 Dest, H5FDdsm
     Status = this->Comm->Send(Msg);
     H5FDdsmDebug("(" << this->Comm->GetId() << ") sent opcode " << Cmd.Opcode);
     return(Status);
+}
+
+H5FDdsmInt32
+H5FDdsmDriver::ReceiveRemoteCommandHeader(H5FDdsmInt32 *Opcode, H5FDdsmInt32 *Source, H5FDdsmInt64 *Address, H5FDdsmInt64 *aLength, H5FDdsmInt32 Block){
+    H5FDdsmCommand  Cmd;
+    H5FDdsmInt32    status = H5FD_DSM_FAIL;
+
+    H5FDdsmMsg *Msg = NULL;
+    Msg = this->RemoteServiceMsg; // ReceiveCommandHeader always used by Service;
+
+    Msg->Source = H5FD_DSM_ANY_SOURCE;
+    Msg->SetLength(sizeof(Cmd));
+    Msg->SetTag(H5FD_DSM_COMMAND_TAG);
+    Msg->SetData(&Cmd);
+
+    memset(&Cmd, 0, sizeof(H5FDdsmCommand));
+    // TODO Do not probe by default
+    status = this->Comm->Probe(Msg);
+    if ((status != H5FD_DSM_FAIL) || Block){
+        status  = this->Comm->Receive(Msg, H5FD_DSM_COMM_CHANNEL_REMOTE);
+        if (status == H5FD_DSM_FAIL){
+            H5FDdsmError("Communicator Receive Failed");
+            return(H5FD_DSM_FAIL);
+        } else {
+            *Opcode = Cmd.Opcode;
+            *Source = Cmd.Source;
+            *Address = Cmd.Address;
+            *aLength = Cmd.Length;
+            status = H5FD_DSM_SUCCESS;
+            H5FDdsmDebug("(Server " << this->Comm->GetId() << ") got remote opcode " << Cmd.Opcode);
+        }
+    }
+    return(status);
 }
 
 H5FDdsmInt32

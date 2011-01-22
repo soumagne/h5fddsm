@@ -108,16 +108,19 @@ H5FDdsmCommMpi::Probe(H5FDdsmMsg *Msg){
 }
 
 H5FDdsmInt32
-H5FDdsmCommMpi::Receive(H5FDdsmMsg *Msg){
+H5FDdsmCommMpi::Receive(H5FDdsmMsg *Msg, H5FDdsmInt32 Channel){
     int            MessageLength;
     H5FDdsmInt32   status;
     H5FDdsmInt32   source = MPI_ANY_SOURCE;
+    H5FDdsmInt32   receiveChannel = Channel;
     MPI_Status  SendRecvStatus;
 
     if(H5FDdsmComm::Receive(Msg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
     if(Msg->Source >= 0) source = Msg->Source;
 
-    if (this->CommChannel == H5FD_DSM_COMM_CHANNEL_REMOTE) {
+    if (!receiveChannel) receiveChannel = this->CommChannel;
+
+    if (receiveChannel == H5FD_DSM_COMM_CHANNEL_REMOTE) {
       H5FDdsmDebug("(" << this->Id << ") Receiving from remote DSM " << Msg->Length << " bytes from " << source << " Tag = " << H5FDdsmTagToString(Msg->Tag));
       status = MPI_Recv(Msg->Data, Msg->Length, MPI_UNSIGNED_CHAR, source, Msg->Tag, this->InterComm, &SendRecvStatus);
     }
@@ -239,7 +242,7 @@ H5FDdsmCommMpi::RemoteCommAccept(void *storagePointer, H5FDdsmInt64 storageSize)
   if(H5FDdsmComm::RemoteCommAccept(storagePointer, storageSize) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
   // this->DsmMasterHostName internally used on root
   MPI_Comm_accept(this->DsmMasterHostName, MPI_INFO_NULL, 0, this->Comm, &this->InterComm);
-  this->CommChannel = H5FD_DSM_COMM_CHANNEL_REMOTE;
+//  this->CommChannel = H5FD_DSM_COMM_CHANNEL_REMOTE;
 
   if (this->Id == 0) {
     MPI_Status status;

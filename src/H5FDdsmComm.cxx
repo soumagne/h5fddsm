@@ -71,7 +71,7 @@ H5FDdsmComm::Probe(H5FDdsmMsg *Msg){
 }
 
 H5FDdsmInt32
-H5FDdsmComm::Receive(H5FDdsmMsg *Msg){
+H5FDdsmComm::Receive(H5FDdsmMsg *Msg, H5FDdsmInt32 Channel){
     if(Msg->Tag <= 0) Msg->Tag = H5FD_DSM_DEFAULT_TAG;
     if(Msg->Length <= 0 ){
         H5FDdsmError("Cannot Receive Message of Length = " << Msg->Length);

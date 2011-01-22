@@ -134,7 +134,9 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     H5FDdsmInt32   Aquire(H5FDdsmInt64 Index);
     H5FDdsmInt32   Release(H5FDdsmInt64 Index);
 
+    H5FDdsmInt32   RequestRemoteRequest();
     H5FDdsmInt32   RequestRemoteChannel();
+    H5FDdsmInt32   RequestRemoteLock();
     H5FDdsmInt32   RequestLocalChannel();
     H5FDdsmInt32   RequestDisconnection();
     H5FDdsmInt32   RequestClearStorage();
@@ -148,12 +150,23 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     H5FDdsmInt32   ServiceUntilIdle(H5FDdsmInt32 *ReturnOpcode=0);
     H5FDdsmInt32   ServiceLoop(H5FDdsmInt32 *ReturnOpcode=0);
     H5FDdsmInt32   Service(H5FDdsmInt32 *ReturnOpcode=0);
+    H5FDdsmInt32   RemoteService(H5FDdsmInt32 *ReturnOpcode=0);
     void *         ServiceThread();
+    void *         RemoteServiceThread();
 
     H5FDdsmSteerer *GetSteerer() { return(Steerer); }
 
   protected:
     volatile H5FDdsmInt32   ThreadDsmReady;
+    volatile H5FDdsmInt32   ThreadRemoteDsmReady;
+
+#ifdef _WIN32
+    DWORD          RemoteServiceThreadPtr;
+    HANDLE         RemoteServiceThreadHandle;
+#else
+    pthread_t      RemoteServiceThreadPtr;
+#endif
+
     volatile H5FDdsmBoolean IsConnected;
     volatile H5FDdsmBoolean IsSyncRequired;
     volatile H5FDdsmBoolean IsUpdateReady;
