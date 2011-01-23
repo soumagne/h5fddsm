@@ -125,6 +125,9 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     H5FDdsmGetValueMacro(IsReadOnly, bool);
     H5FDdsmSetValueMacro(IsReadOnly, bool);
 
+    H5FDdsmGetValueMacro(IsLocked, bool);
+    H5FDdsmSetValueMacro(IsLocked, bool);
+
     H5FDdsmGetStringMacro(XMLDescription);
     H5FDdsmSetStringMacro(XMLDescription);
 
@@ -137,6 +140,7 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     H5FDdsmInt32   RequestRemoteRequest();
     H5FDdsmInt32   RequestRemoteChannel();
     H5FDdsmInt32   RequestRemoteLock();
+    H5FDdsmInt32   RequestReleaseLock();
     H5FDdsmInt32   RequestLocalChannel();
     H5FDdsmInt32   RequestDisconnection();
     H5FDdsmInt32   RequestClearStorage();
@@ -151,6 +155,7 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     H5FDdsmInt32   ServiceLoop(H5FDdsmInt32 *ReturnOpcode=0);
     H5FDdsmInt32   Service(H5FDdsmInt32 *ReturnOpcode=0);
     H5FDdsmInt32   RemoteService(H5FDdsmInt32 *ReturnOpcode=0);
+    void           StartRemoteService();
     void *         ServiceThread();
     void *         RemoteServiceThread();
 
@@ -176,6 +181,7 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     bool                    IsServer;
     bool                    CommSwitchOnClose;
     bool                    IsReadOnly;
+    bool                    IsLocked;
     H5FDdsmInt32            ServiceThreadUseCopy;
     H5FDdsmString           XMLDescription;
 

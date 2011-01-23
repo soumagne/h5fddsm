@@ -110,11 +110,14 @@ herr_t H5FD_dsm_steering_update()
   }
 
   dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
-  if ((dsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI_RMA) &&
+  if (//(dsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI_RMA) &&
       dsmBuffer->GetIsSyncRequired() && !dsmBuffer->GetIsServer()) {
     // After possible RMA put / get from the server, need to sync windows before
     // further operations
-    dsmBuffer->GetComm()->RemoteCommSync();
+      if (dsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
+          dsmBuffer->GetComm()->RemoteCommSync();
+      }
+    dsmBuffer->RequestRemoteLock();
     dsmBuffer->SetIsSyncRequired(false);
   }
   dsmBuffer->GetSteerer()->GetSteeringCommands();

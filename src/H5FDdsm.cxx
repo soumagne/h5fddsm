@@ -546,11 +546,40 @@ H5FD_dsm_server_update(void *dsmBuffer)
       HGOTO_ERROR(H5E_VFL, H5E_NOTFOUND, FAIL, "No DSM buffer found");
     }
   }
+
+  if (!buffer->GetIsLocked()) buffer->RequestRemoteLock();
 //  if (buffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
     PRINT_DSM_INFO(buffer->GetComm()->GetId(), "SetIsSyncRequired(true)");
     buffer->SetIsSyncRequired(true);
 //  }
   buffer->RequestLocalChannel();
+
+done:
+  FUNC_LEAVE_NOAPI(ret_value);
+}
+
+herr_t
+H5FD_dsm_release_lock(void *dsmBuffer)
+{
+  herr_t ret_value = SUCCEED;
+  H5FDdsmBuffer *buffer = NULL;
+
+  FUNC_ENTER_NOAPI(H5FD_dsm_release_lock, FAIL)
+
+  if (dsmBuffer) {
+    buffer = static_cast <H5FDdsmBuffer*> (dsmBuffer);
+  } else {
+    if (dsmManagerSingleton) {
+      buffer = dsmManagerSingleton->GetDSMHandle();
+    } else {
+      HGOTO_ERROR(H5E_VFL, H5E_NOTFOUND, FAIL, "No DSM buffer found");
+    }
+  }
+//  if (buffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
+    PRINT_DSM_INFO(buffer->GetComm()->GetId(), "SetIsSyncRequired(true)");
+    buffer->SetIsSyncRequired(true);
+//  }
+  buffer->RequestReleaseLock();
 
 done:
   FUNC_LEAVE_NOAPI(ret_value);
@@ -760,10 +789,12 @@ H5FD_dsm_open(const char *name, unsigned UNUSED flags, hid_t fapl_id, haddr_t ma
       if (file->DsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
           file->DsmBuffer->GetComm()->RemoteCommSync();
       }
-      file->DsmBuffer->RequestRemoteLock();
       PRINT_INFO("SetIsSyncRequired(false)");
       file->DsmBuffer->SetIsSyncRequired(false);
     }
+
+    if (!file->DsmBuffer->GetIsServer()) file->DsmBuffer->RequestRemoteLock();
+
     if ((H5F_ACC_CREAT & flags) && !file->DsmBuffer->GetIsServer()) {
       // TODO Probably do this somewhere else but here for now
       file->DsmBuffer->GetSteerer()->GetSteeringCommands();
@@ -867,8 +898,19 @@ H5FD_dsm_close(H5FD_t *_file)
       MPI_Allreduce(&file->dirty, &isSomeoneDirty, sizeof(hbool_t), MPI_UNSIGNED_CHAR, MPI_MAX, comm);
       if (isSomeoneDirty) {
         file->DsmBuffer->SetIsDataModified(true);
-        if (!file->DsmBuffer->GetIsServer() && file->DsmBuffer->GetCommSwitchOnClose()) {
-            H5FD_dsm_server_update(file->DsmBuffer);
+        if (!file->DsmBuffer->GetIsServer()) {
+            if (file->DsmBuffer->GetCommSwitchOnClose()) {
+                H5FD_dsm_server_update(file->DsmBuffer);
+                // Release resources
+                if (file->name) H5MM_xfree(file->name);
+                HDmemset(file, 0, sizeof(H5FD_dsm_t));
+                H5MM_xfree(file);
+                PRINT_DSM_INFO("Undef", "File closed");
+                goto done;
+            }
+//            else {
+//                H5FD_dsm_release_lock(file->DsmBuffer);
+//            }
         }
         file->dirty = FALSE;
       }
@@ -881,6 +923,8 @@ H5FD_dsm_close(H5FD_t *_file)
 //      file->DsmBuffer->RequestRemoteChannel();
 //    }
   }
+
+  if (!file->DsmBuffer->GetIsServer()) H5FD_dsm_release_lock(file->DsmBuffer);
 
   // Release resources
   if (file->name) H5MM_xfree(file->name);

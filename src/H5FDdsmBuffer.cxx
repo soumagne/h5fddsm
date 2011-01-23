@@ -72,6 +72,7 @@
 
 #define H5FD_DSM_REMOTE_REQUEST 0x10
 #define H5FD_DSM_OPCODE_LOCK 0x11
+#define H5FD_DSM_RELEASE_LOCK 0x12
 
 #define H5FD_DSM_DATA_MODIFIED 0x100
 
@@ -106,6 +107,7 @@ extern "C"{
 }
 
 H5FDdsmBuffer::H5FDdsmBuffer() {
+  this->DebugOn();
     H5FDdsmInt64 i;
     this->ThreadDsmReady = 0;
     this->ThreadRemoteDsmReady = 0;
@@ -120,6 +122,7 @@ H5FDdsmBuffer::H5FDdsmBuffer() {
     this->IsDataModified = false;
     this->UpdateLevel = H5FD_DSM_UPDATE_LEVEL_MAX;
     this->IsReadOnly = true;
+    this->IsLocked = false;
     this->Locks = new H5FDdsmInt64[H5FD_DSM_MAX_LOCKS];
     for(i=0;i < H5FD_DSM_MAX_LOCKS;i++) this->Locks[i] = -1;
 
@@ -259,6 +262,7 @@ H5FDdsmBuffer::RemoteService(H5FDdsmInt32 *ReturnOpcode){
   }
   switch(Opcode){
   case H5FD_DSM_OPCODE_LOCK:
+    this->IsLocked = true;
     this->RequestRemoteRequest();
     break;
   default:
@@ -267,6 +271,19 @@ H5FDdsmBuffer::RemoteService(H5FDdsmInt32 *ReturnOpcode){
   }
   if (ReturnOpcode) *ReturnOpcode = Opcode;
   return(H5FD_DSM_SUCCESS);
+}
+
+void
+H5FDdsmBuffer::StartRemoteService() {
+  // create a single thread listening on the remote transaction request
+  H5FDdsmDebug(<< "Creating remote service thread...");
+#ifdef _WIN32
+  this->RemoteServiceThreadHandle = CreateThread(NULL, 0, H5FDdsmBufferRemoteServiceThread, (void *) this, 0, &this->RemoteServiceThreadPtr);
+#else
+  // Start another thread to handle DSM requests from other nodes
+  pthread_create(&this->RemoteServiceThreadPtr, NULL, &H5FDdsmBufferRemoteServiceThread, (void *) this);
+#endif
+  while (!this->ThreadRemoteDsmReady) {}
 }
 
 H5FDdsmInt32
@@ -368,9 +385,6 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
                 return(H5FD_DSM_FAIL);
             }
             break;
-        case H5FD_DSM_OPCODE_LOCK:
-          H5FDdsmDebug("Already locked");
-          break;
         case H5FD_DSM_OPCODE_DONE:
             break;
         case H5FD_DSM_REMOTE_REQUEST:
@@ -386,24 +400,25 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
             this->Comm->RemoteCommSendInfo(&this->Length, &this->TotalLength, &this->StartServerId, &this->EndServerId);
             this->IsConnected = true;
           }
-//          this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_REMOTE);
-          // create a single thread listening on the remote transaction request
-          H5FDdsmDebug(<< "Creating remote service thread...");
-#ifdef _WIN32
-          this->RemoteServiceThreadHandle = CreateThread(NULL, 0, H5FDdsmBufferRemoteServiceThread, (void *) this, 0, &this->RemoteServiceThreadPtr);
-#else
-          // Start another thread to handle DSM requests from other nodes
-          pthread_create(&this->RemoteServiceThreadPtr, NULL, &H5FDdsmBufferRemoteServiceThread, (void *) this);
-#endif
-          while (!this->ThreadRemoteDsmReady) {}
+          this->StartRemoteService();
 //TODO RMA is special and the thread may not be necessary
           if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
             this->Comm->RemoteCommSync();
           }
 //          H5FDdsmDebug("Switched to Remote channel");
           break;
+        case H5FD_DSM_RELEASE_LOCK:
+          if (this->Comm->RemoteCommChannelSynced(&localSync) || !this->IsConnected) {
+              this->IsLocked = false;
+              this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_LOCAL);
+              this->Comm->Barrier();
+              H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "LOCK released ");
+              this->StartRemoteService();
+          }
+          break;
         case H5FD_DSM_LOCAL_CHANNEL:
           if (this->Comm->RemoteCommChannelSynced(&localSync) || !this->IsConnected) {
+              this->IsLocked = false;
             this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_LOCAL);
             this->Comm->Barrier();
             if (Address & H5FD_DSM_DATA_MODIFIED) {
@@ -656,9 +671,24 @@ H5FDdsmBuffer::RequestRemoteLock() {
           status = this->SendCommandHeader(H5FD_DSM_OPCODE_LOCK, who, 0, 0);
       }
   }
+  this->IsLocked = true;
   this->Comm->Barrier();
   return(status);
 }
+
+H5FDdsmInt32
+H5FDdsmBuffer::RequestReleaseLock() {
+  H5FDdsmInt32 who, status = H5FD_DSM_SUCCESS;
+
+  for (who = this->StartServerId ; who <= this->EndServerId ; who++) {
+    H5FDdsmDebug("Send request release lock to " << who);
+    status = this->SendCommandHeader(H5FD_DSM_RELEASE_LOCK, who, 0, 0);
+  }
+  this->IsLocked = false;
+  this->Comm->Barrier();
+  return(status);
+}
+
 
 H5FDdsmInt32
 H5FDdsmBuffer::RequestRemoteChannel() {
@@ -683,6 +713,7 @@ H5FDdsmBuffer::RequestLocalChannel() {
   }
   if (this->GetIsDataModified()) this->SetIsDataModified(false);
   if (this->GetUpdateLevel() != H5FD_DSM_UPDATE_LEVEL_MAX) this->SetUpdateLevel(H5FD_DSM_UPDATE_LEVEL_MAX);
+  this->IsLocked = false;
   this->Comm->Barrier();
   return(status);
 }
