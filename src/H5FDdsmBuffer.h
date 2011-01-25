@@ -137,11 +137,9 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     H5FDdsmInt32   Aquire(H5FDdsmInt64 Index);
     H5FDdsmInt32   Release(H5FDdsmInt64 Index);
 
-    H5FDdsmInt32   RequestRemoteRequest();
-    H5FDdsmInt32   RequestRemoteChannel();
-    H5FDdsmInt32   RequestRemoteLock();
-    H5FDdsmInt32   RequestReleaseLock();
-    H5FDdsmInt32   RequestLocalChannel();
+    H5FDdsmInt32   RequestLockAquire();
+    H5FDdsmInt32   RequestLockRelease();
+    H5FDdsmInt32   RequestServerUpdate();
     H5FDdsmInt32   RequestDisconnection();
     H5FDdsmInt32   RequestClearStorage();
     H5FDdsmInt32   RequestXMLExchange();
@@ -154,6 +152,7 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     H5FDdsmInt32   ServiceUntilIdle(H5FDdsmInt32 *ReturnOpcode=0);
     H5FDdsmInt32   ServiceLoop(H5FDdsmInt32 *ReturnOpcode=0);
     H5FDdsmInt32   Service(H5FDdsmInt32 *ReturnOpcode=0);
+
     H5FDdsmInt32   RemoteService(H5FDdsmInt32 *ReturnOpcode=0);
     void           StartRemoteService();
     void *         ServiceThread();

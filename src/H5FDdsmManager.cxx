@@ -329,7 +329,7 @@ void H5FDdsmManager::RequestRemoteChannel()
 
   this->DSMBuffer->GetSteerer()->UpdateSteeringCommands();
   this->DSMBuffer->GetSteerer()->UpdateDisabledObjects();
-  this->DSMBuffer->RequestRemoteChannel();
+  this->DSMBuffer->RequestLockRelease();
 }
 //----------------------------------------------------------------------------
 void H5FDdsmManager::ConnectDSM()
@@ -474,7 +474,7 @@ void H5FDdsmManager::PublishDSM()
     }
   }
   //
-  this->DSMBuffer->RequestRemoteChannel();
+  this->DSMBuffer->RequestLockRelease();
 }
 //----------------------------------------------------------------------------
 

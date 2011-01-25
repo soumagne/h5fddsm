@@ -547,12 +547,12 @@ H5FD_dsm_server_update(void *dsmBuffer)
     }
   }
 
-  if (!buffer->GetIsLocked()) buffer->RequestRemoteLock();
+  if (!buffer->GetIsLocked()) buffer->RequestLockAquire();
 //  if (buffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
     PRINT_DSM_INFO(buffer->GetComm()->GetId(), "SetIsSyncRequired(true)");
     buffer->SetIsSyncRequired(true);
 //  }
-  buffer->RequestLocalChannel();
+  buffer->RequestServerUpdate();
 
 done:
   FUNC_LEAVE_NOAPI(ret_value);
@@ -579,7 +579,7 @@ H5FD_dsm_release_lock(void *dsmBuffer)
     PRINT_DSM_INFO(buffer->GetComm()->GetId(), "SetIsSyncRequired(true)");
     buffer->SetIsSyncRequired(true);
 //  }
-  buffer->RequestReleaseLock();
+  buffer->RequestLockRelease();
 
 done:
   FUNC_LEAVE_NOAPI(ret_value);
@@ -793,7 +793,7 @@ H5FD_dsm_open(const char *name, unsigned UNUSED flags, hid_t fapl_id, haddr_t ma
       file->DsmBuffer->SetIsSyncRequired(false);
     }
 
-    if (!file->DsmBuffer->GetIsServer()) file->DsmBuffer->RequestRemoteLock();
+    if (!file->DsmBuffer->GetIsServer()) file->DsmBuffer->RequestLockAquire();
 
     if ((H5F_ACC_CREAT & flags) && !file->DsmBuffer->GetIsServer()) {
       // TODO Probably do this somewhere else but here for now

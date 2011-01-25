@@ -149,12 +149,13 @@ class H5FDdsm_EXPORT H5FDdsmDriver : public H5FDdsmObject {
 
     H5FDdsmInt32   ProbeCommandHeader(H5FDdsmInt32 *Source);
     H5FDdsmInt32   SendCommandHeader(H5FDdsmInt32 Opcode, H5FDdsmInt32 Dest, H5FDdsmInt64 Address, H5FDdsmInt64 Length);
-    H5FDdsmInt32   ReceiveCommandHeader(H5FDdsmInt32 *Opcode, H5FDdsmInt32 *Source, H5FDdsmInt64 *Address, H5FDdsmInt64 *Length, H5FDdsmInt32 Block=1);
-    H5FDdsmInt32   ReceiveRemoteCommandHeader(H5FDdsmInt32 *Opcode, H5FDdsmInt32 *Source, H5FDdsmInt64 *Address, H5FDdsmInt64 *Length, H5FDdsmInt32 Block=1);
+    H5FDdsmInt32   ReceiveCommandHeader(H5FDdsmInt32 *Opcode, H5FDdsmInt32 *Source, H5FDdsmInt64 *Address, H5FDdsmInt64 *Length, H5FDdsmInt32 IsRemoteService=0, H5FDdsmInt32 Block=1);
 
+    // Send/Recv Methods for point-to-point comm
     H5FDdsmInt32   SendData(H5FDdsmInt32 Dest, void *Data, H5FDdsmInt64 Length, H5FDdsmInt32 Tag, H5FDdsmInt32 IsService=0);
     H5FDdsmInt32   ReceiveData(H5FDdsmInt32 Source, void *Data, H5FDdsmInt64 Length, H5FDdsmInt32 Tag, H5FDdsmInt32 IsService=0, H5FDdsmInt32 Block=1);
 
+    // RMA specific operations
     H5FDdsmInt32   PutData(H5FDdsmInt32 Dest, void *Data, H5FDdsmInt64 Length, H5FDdsmInt64 Address);
     H5FDdsmInt32   GetData(H5FDdsmInt32 Source, void *Data, H5FDdsmInt64 Length, H5FDdsmInt64 Address);
 
