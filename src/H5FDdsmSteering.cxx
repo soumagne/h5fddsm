@@ -117,7 +117,7 @@ herr_t H5FD_dsm_steering_update()
     if (dsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
       dsmBuffer->GetComm()->RemoteCommSync();
     }
-    if (!dsmBuffer->GetIsLocked()) dsmBuffer->RequestLockAquire();
+    if (!dsmBuffer->GetIsLocked()) dsmBuffer->RequestLockAcquire();
     dsmBuffer->SetIsSyncRequired(false);
   }
   dsmBuffer->GetSteerer()->GetSteeringCommands();

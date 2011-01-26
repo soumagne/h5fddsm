@@ -547,39 +547,12 @@ H5FD_dsm_server_update(void *dsmBuffer)
     }
   }
 
-  if (!buffer->GetIsLocked()) buffer->RequestLockAquire();
+  if (!buffer->GetIsLocked()) buffer->RequestLockAcquire();
 //  if (buffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
     PRINT_DSM_INFO(buffer->GetComm()->GetId(), "SetIsSyncRequired(true)");
     buffer->SetIsSyncRequired(true);
 //  }
   buffer->RequestServerUpdate();
-
-done:
-  FUNC_LEAVE_NOAPI(ret_value);
-}
-
-herr_t
-H5FD_dsm_release_lock(void *dsmBuffer)
-{
-  herr_t ret_value = SUCCEED;
-  H5FDdsmBuffer *buffer = NULL;
-
-  FUNC_ENTER_NOAPI(H5FD_dsm_release_lock, FAIL)
-
-  if (dsmBuffer) {
-    buffer = static_cast <H5FDdsmBuffer*> (dsmBuffer);
-  } else {
-    if (dsmManagerSingleton) {
-      buffer = dsmManagerSingleton->GetDSMHandle();
-    } else {
-      HGOTO_ERROR(H5E_VFL, H5E_NOTFOUND, FAIL, "No DSM buffer found");
-    }
-  }
-//  if (buffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
-    PRINT_DSM_INFO(buffer->GetComm()->GetId(), "SetIsSyncRequired(true)");
-    buffer->SetIsSyncRequired(true);
-//  }
-  buffer->RequestLockRelease();
 
 done:
   FUNC_LEAVE_NOAPI(ret_value);
@@ -793,7 +766,7 @@ H5FD_dsm_open(const char *name, unsigned UNUSED flags, hid_t fapl_id, haddr_t ma
       file->DsmBuffer->SetIsSyncRequired(false);
     }
 
-    if (!file->DsmBuffer->GetIsServer()) file->DsmBuffer->RequestLockAquire();
+    if (!file->DsmBuffer->GetIsServer()) file->DsmBuffer->RequestLockAcquire();
 
     if ((H5F_ACC_CREAT & flags) && !file->DsmBuffer->GetIsServer()) {
       // TODO Probably do this somewhere else but here for now
@@ -924,7 +897,7 @@ H5FD_dsm_close(H5FD_t *_file)
 //    }
   }
 
-  if (!file->DsmBuffer->GetIsServer()) H5FD_dsm_release_lock(file->DsmBuffer);
+  if (!file->DsmBuffer->GetIsServer()) file->DsmBuffer->RequestLockRelease();
 
   // Release resources
   if (file->name) H5MM_xfree(file->name);

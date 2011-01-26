@@ -295,7 +295,11 @@ H5FDdsmDriver::ReceiveCommandHeader(H5FDdsmInt32 *Opcode, H5FDdsmInt32 *Source, 
             *Address = Cmd.Address;
             *aLength = Cmd.Length;
             status = H5FD_DSM_SUCCESS;
-            H5FDdsmDebug("(Server " << this->Comm->GetId() << ") got opcode " << Cmd.Opcode);
+            if (IsRemoteService) {
+                H5FDdsmDebug("(Remote Service Server " << this->Comm->GetId() << ") got opcode " << Cmd.Opcode);
+            } else {
+                H5FDdsmDebug("(Server " << this->Comm->GetId() << ") got opcode " << Cmd.Opcode);
+            }
         }
     }
     return(status);

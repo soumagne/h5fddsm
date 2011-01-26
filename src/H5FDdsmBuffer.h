@@ -134,10 +134,10 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     H5FDdsmInt32   Put(H5FDdsmInt64 Address, H5FDdsmInt64 Length, void *Data);
     H5FDdsmInt32   Get(H5FDdsmInt64 Address, H5FDdsmInt64 Length, void *Data);
 
-    H5FDdsmInt32   Aquire(H5FDdsmInt64 Index);
+    H5FDdsmInt32   Acquire(H5FDdsmInt64 Index);
     H5FDdsmInt32   Release(H5FDdsmInt64 Index);
 
-    H5FDdsmInt32   RequestLockAquire();
+    H5FDdsmInt32   RequestLockAcquire();
     H5FDdsmInt32   RequestLockRelease();
     H5FDdsmInt32   RequestServerUpdate();
     H5FDdsmInt32   RequestDisconnection();
