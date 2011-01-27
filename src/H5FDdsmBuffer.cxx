@@ -186,7 +186,7 @@ H5FDdsmBuffer::ServiceThread(){
 void *
 H5FDdsmBuffer::RemoteServiceThread(){
   H5FDdsmInt32   ReturnOpcode;
-  // Do not use copy in order to use shared memory space
+
   H5FDdsmDebug("Starting DSM Remote Service on node " << this->Comm->GetId());
   this->ThreadRemoteDsmReady = 1;
   this->RemoteService(&ReturnOpcode);
@@ -257,27 +257,39 @@ H5FDdsmBuffer::RemoteService(H5FDdsmInt32 *ReturnOpcode){
   H5FDdsmInt32        Opcode, who, status = H5FD_DSM_FAIL;
   H5FDdsmInt64        aLength;
   H5FDdsmInt64        Address;
+  H5FDdsmInt32        lockSync = 0;
 
-  status = this->ReceiveCommandHeader(&Opcode, &who, &Address, &aLength, 1);
-  if (status == H5FD_DSM_FAIL){
-    H5FDdsmError("Error Receiving Command Header");
-    return(H5FD_DSM_FAIL);
-  }
-  switch(Opcode){
-  case H5FD_DSM_LOCK_ACQUIRE:
-    this->IsLocked = true;
-    who = this->Comm->GetId();
-    status = H5FD_DSM_SUCCESS;
-    H5FDdsmDebug("Send request communicator switch to " << who);
-    status = this->SendCommandHeader(H5FD_DSM_COMM_SWITCH, who, 0, 0);
+//  while (!this->IsLocked) {
+    // This receive always gets data from the inter-communicator
+
+  for (int i = 0; i < this->Comm->GetInterSize(); i++) {
+
+    status = this->ReceiveCommandHeader(&Opcode, &who, &Address, &aLength, 1);
+
     if (status == H5FD_DSM_FAIL){
-      H5FDdsmError("Error Sending Command Header");
+      H5FDdsmError("Error Receiving Command Header");
       return(H5FD_DSM_FAIL);
     }
-    break;
-  default:
-    H5FDdsmError("Unknown Remote Service Opcode " << Opcode);
-    return(H5FD_DSM_FAIL);
+
+    switch(Opcode){
+    case H5FD_DSM_LOCK_ACQUIRE:
+      if (this->Comm->RemoteCommChannelSynced(&lockSync)) {
+//        this->Comm->RemoteCommSendReady();
+        this->IsLocked = true;
+        who = this->Comm->GetId();
+        status = H5FD_DSM_SUCCESS;
+        H5FDdsmDebug("Send request communicator switch to " << who);
+        status = this->SendCommandHeader(H5FD_DSM_COMM_SWITCH, who, 0, 0);
+        if (status == H5FD_DSM_FAIL){
+          H5FDdsmError("Error Sending Command Header");
+          return(H5FD_DSM_FAIL);
+        }
+      }
+      break;
+    default:
+      H5FDdsmError("Unknown Remote Service Opcode " << Opcode);
+      return(H5FD_DSM_FAIL);
+    }
   }
   if (ReturnOpcode) *ReturnOpcode = Opcode;
   return(H5FD_DSM_SUCCESS);
@@ -294,6 +306,23 @@ H5FDdsmBuffer::StartRemoteService() {
   pthread_create(&this->RemoteServiceThreadPtr, NULL, &H5FDdsmBufferRemoteServiceThread, (void *) this);
 #endif
   while (!this->ThreadRemoteDsmReady) {}
+}
+//----------------------------------------------------------------------------
+void
+H5FDdsmBuffer::EndRemoteService() {
+#ifdef _WIN32
+  if (this->RemoteServiceThreadPtr) {
+    WaitForSingleObject(this->RemoteServiceThreadHandle, INFINITE);
+    CloseHandle(this->RemoteServiceThreadHandle);
+    this->RemoteServiceThreadPtr = 0;
+    this->RemoteServiceThreadHandle = NULL;
+  }
+#else
+  if (this->RemoteServiceThreadPtr) {
+    pthread_join(this->RemoteServiceThreadPtr, NULL);
+    this->RemoteServiceThreadPtr = 0;
+  }
+#endif
 }
 //----------------------------------------------------------------------------
 H5FDdsmInt32
@@ -400,6 +429,8 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
     break;
   case H5FD_DSM_COMM_SWITCH:
     if (this->Comm->GetCommChannel() == H5FD_DSM_COMM_CHANNEL_LOCAL) {
+      // The remote service must be stopped before the main service can start to listen on the inter-communicator
+      this->EndRemoteService();
       this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_REMOTE);
       H5FDdsmDebug("Listening on Remote");
     } else {
@@ -429,6 +460,7 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
     if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
       this->Comm->RemoteCommSync();
     } else {
+//      this->Comm->RemoteCommSendReady();
       this->StartRemoteService();
     }
     break;
@@ -436,7 +468,8 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
     if (this->Comm->RemoteCommChannelSynced(&updateSync) || !this->IsConnected) {
       this->IsLocked = false;
       this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_LOCAL);
-      this->Comm->Barrier();
+//      this->Comm->Barrier();
+//      this->Comm->RemoteCommSendReady();
       if (Address & H5FD_DSM_DATA_MODIFIED) {
         this->IsDataModified = true;
         this->UpdateLevel = Address - H5FD_DSM_DATA_MODIFIED;
@@ -672,14 +705,21 @@ H5FDdsmInt32
 H5FDdsmBuffer::RequestLockAcquire() {
   H5FDdsmInt32 who, status = H5FD_DSM_SUCCESS;
 
-  if (this->Comm->GetId() == 0) {
+  if (this->IsServer) {
+
+  } else {
+
+//  if (this->Comm->GetId() == 0) {
+//    who = 0;
     for (who = this->StartServerId ; who <= this->EndServerId ; who++) {
       H5FDdsmDebug("Send request LOCK acquire to " << who);
       status = this->SendCommandHeader(H5FD_DSM_LOCK_ACQUIRE, who, 0, 0);
     }
+//  }
+//    status = this->Comm->RemoteCommRecvReady();
+    this->IsLocked = true;
+
   }
-  this->IsLocked = true;
-  this->Comm->Barrier();
   return(status);
 }
 //----------------------------------------------------------------------------
@@ -692,12 +732,15 @@ H5FDdsmBuffer::RequestLockRelease() {
     H5FDdsmDebug("Send request LOCK release to " << who);
     status = this->SendCommandHeader(H5FD_DSM_LOCK_RELEASE, who, 1, 0);
   } else {
+//    if (this->Comm->GetId() == 0) {
     for (who = this->StartServerId ; who <= this->EndServerId ; who++) {
       H5FDdsmDebug("Send request LOCK release to " << who);
       status = this->SendCommandHeader(H5FD_DSM_LOCK_RELEASE, who, 0, 0);
     }
+//    }
     this->IsLocked = false;
-    this->Comm->Barrier();
+//    status = this->Comm->RemoteCommRecvReady();
+//    this->Comm->Barrier();
   }
   return(status);
 }
@@ -717,7 +760,9 @@ H5FDdsmBuffer::RequestServerUpdate() {
   if (this->IsDataModified) this->IsDataModified = false;
   if (this->UpdateLevel != H5FD_DSM_UPDATE_LEVEL_MAX) this->UpdateLevel = H5FD_DSM_UPDATE_LEVEL_MAX;
   this->IsLocked = false;
-  this->Comm->Barrier();
+//  status = this->Comm->RemoteCommRecvReady();
+
+//  this->Comm->Barrier();
   return(status);
 }
 //----------------------------------------------------------------------------

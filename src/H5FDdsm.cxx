@@ -766,7 +766,7 @@ H5FD_dsm_open(const char *name, unsigned UNUSED flags, hid_t fapl_id, haddr_t ma
       file->DsmBuffer->SetIsSyncRequired(false);
     }
 
-    if (!file->DsmBuffer->GetIsServer()) file->DsmBuffer->RequestLockAcquire();
+    file->DsmBuffer->RequestLockAcquire();
 
     if ((H5F_ACC_CREAT & flags) && !file->DsmBuffer->GetIsServer()) {
       // TODO Probably do this somewhere else but here for now
@@ -897,7 +897,8 @@ H5FD_dsm_close(H5FD_t *_file)
 //    }
   }
 
-  if (!file->DsmBuffer->GetIsServer()) file->DsmBuffer->RequestLockRelease();
+//  if (!file->DsmBuffer->GetIsServer()) file->DsmBuffer->RequestLockRelease();
+  file->DsmBuffer->RequestLockRelease();
 
   // Release resources
   if (file->name) H5MM_xfree(file->name);

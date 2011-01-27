@@ -155,6 +155,7 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
 
     H5FDdsmInt32   RemoteService(H5FDdsmInt32 *ReturnOpcode=0);
     void           StartRemoteService();
+    void           EndRemoteService();
     void *         ServiceThread();
     void *         RemoteServiceThread();
 
