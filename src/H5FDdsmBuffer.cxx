@@ -54,6 +54,8 @@
 #include "H5FDdsmMsg.h"
 #include "H5FDdsmSteerer.h"
 
+#include <queue>
+
 #ifndef NOMINMAX
 #ifndef min
 #define min(a,b)  (((a) < (b)) ? (a) : (b))
@@ -110,7 +112,7 @@ extern "C"{
 }
 //----------------------------------------------------------------------------
 H5FDdsmBuffer::H5FDdsmBuffer() {
-  this->DebugOn();
+//  this->DebugOn();
   H5FDdsmInt64 i;
   this->ThreadDsmReady = 0;
   this->ThreadRemoteDsmReady = 0;
@@ -259,12 +261,10 @@ H5FDdsmBuffer::RemoteService(H5FDdsmInt32 *ReturnOpcode){
   H5FDdsmInt64        Address;
   H5FDdsmInt32        lockSync = 0;
 
-//  while (!this->IsLocked) {
-    // This receive always gets data from the inter-communicator
-
   for (int i = 0; i < this->Comm->GetInterSize(); i++) {
-
-    status = this->ReceiveCommandHeader(&Opcode, &who, &Address, &aLength, 1);
+    // This receive always gets data from the inter-communicator
+    H5FDdsmInt32 useInterCommunicator = 1;
+    status = this->ReceiveCommandHeader(&Opcode, &who, &Address, &aLength, useInterCommunicator, i);
 
     if (status == H5FD_DSM_FAIL){
       H5FDdsmError("Error Receiving Command Header");
@@ -274,7 +274,6 @@ H5FDdsmBuffer::RemoteService(H5FDdsmInt32 *ReturnOpcode){
     switch(Opcode){
     case H5FD_DSM_LOCK_ACQUIRE:
       if (this->Comm->RemoteCommChannelSynced(&lockSync)) {
-//        this->Comm->RemoteCommSendReady();
         this->IsLocked = true;
         who = this->Comm->GetId();
         status = H5FD_DSM_SUCCESS;
@@ -331,11 +330,12 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
   H5FDdsmInt64        aLength;
   H5FDdsmInt64        Address;
   H5FDdsmByte        *datap;
-  H5FDdsmInt32        IsService = 1;
   static H5FDdsmInt32 updateSync = 0;
   static H5FDdsmInt32 releaseSync = 0;
   static H5FDdsmInt32 disconnectSync = 0;
   static H5FDdsmInt32 clearStorageSync = 0;
+  static H5FDdsmInt32 commSync = 0;
+  static std::queue<H5FDdsmInt32> syncQueue;
 
   //    while (this->ProbeCommandHeader(&who) == H5FD_DSM_FAIL) {
   //#ifdef _WIN32
@@ -344,8 +344,13 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
   //      pthread_yield();
   //#endif
   //    }
-  // TODO Add source to receive command header
-  status = this->ReceiveCommandHeader(&Opcode, &who, &Address, &aLength);
+  if (commSync) {
+    H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "Receiving command header from " << syncQueue.front());
+    status = this->ReceiveCommandHeader(&Opcode, &who, &Address, &aLength, 0, syncQueue.front());
+  } else {
+    H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "Receiving command header from anyone");
+    status = this->ReceiveCommandHeader(&Opcode, &who, &Address, &aLength);
+  }
   if (status == H5FD_DSM_FAIL){
     H5FDdsmError("Error Receiving Command Header");
     return(H5FD_DSM_FAIL);
@@ -359,7 +364,7 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
     }
     if ((datap = this->DataPointer) == NULL) H5FDdsmError("Null Data Pointer when trying to put data");
     datap += Address - this->StartAddress;
-    status = this->ReceiveData(who, datap, aLength, H5FD_DSM_PUT_DATA_TAG, IsService);
+    status = this->ReceiveData(who, datap, aLength, H5FD_DSM_PUT_DATA_TAG);
     if (status == H5FD_DSM_FAIL){
       H5FDdsmError("ReceiveData() failed");
       return(H5FD_DSM_FAIL);
@@ -375,7 +380,7 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
     }
     if ((datap = this->DataPointer) == NULL) H5FDdsmError("Null Data Pointer when trying to get data");
     datap += Address - this->StartAddress;
-    status = this->SendData(who, datap, aLength, H5FD_DSM_GET_DATA_TAG, IsService);
+    status = this->SendData(who, datap, aLength, H5FD_DSM_GET_DATA_TAG);
     if (status == H5FD_DSM_FAIL){
       H5FDdsmError("SendData() failed");
       return(H5FD_DSM_FAIL);
@@ -398,7 +403,7 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
         value = H5FD_DSM_FAIL;
       }
     }
-    status = this->SendData(who, (H5FDdsmByte *)&value, sizeof(H5FDdsmInt32), H5FD_DSM_RESPONSE_TAG, IsService);
+    status = this->SendData(who, (H5FDdsmByte *)&value, sizeof(H5FDdsmInt32), H5FD_DSM_RESPONSE_TAG);
     if (status == H5FD_DSM_FAIL){
       H5FDdsmError("SemaAcquire Response Failed");
       return(H5FD_DSM_FAIL);
@@ -419,7 +424,7 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
         value = H5FD_DSM_FAIL;
       }
     }
-    status = this->SendData(who, (H5FDdsmByte *)&value, sizeof(H5FDdsmInt32), H5FD_DSM_RESPONSE_TAG, IsService);
+    status = this->SendData(who, (H5FDdsmByte *)&value, sizeof(H5FDdsmInt32), H5FD_DSM_RESPONSE_TAG);
     if (status == H5FD_DSM_FAIL){
       H5FDdsmError("SemaAcquire Response Failed");
       return(H5FD_DSM_FAIL);
@@ -437,7 +442,6 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
       this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_LOCAL);
       H5FDdsmDebug("Listening on Local");
     }
-    this->Comm->Barrier();
     break;
   case H5FD_DSM_LOCK_RELEASE:
     if (Address && !this->IsConnected) {
@@ -448,38 +452,79 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
       this->IsConnected = true;
     } else {
       if (!Address && !this->Comm->RemoteCommChannelSynced(&releaseSync) && this->IsConnected ) {
+        if (!commSync) {
+          commSync = 1;
+          if (!syncQueue.empty()) {
+            H5FDdsmError("(" << this->Comm->GetId() << ") " << "Sync queue should be empty!! " << syncQueue.front());
+          }
+          for (int i=0; i<this->Comm->GetInterSize(); i++) if (i != who) syncQueue.push(i);
+        } else {
+          if (syncQueue.front() != who) H5FDdsmError("(" << this->Comm->GetId() << ") " << "Mismatched IDs in sync queue ");
+          syncQueue.pop();
+        }
         H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "LOCK being released ");
         break;
       }
     }
+    if (!Address && !syncQueue.empty()) {
+      H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "pop sync queue from " << who);
+      if (syncQueue.front() != who) {
+        H5FDdsmError("(" << this->Comm->GetId() << ") " << "Mismatched IDs in sync queue ");
+      }
+      syncQueue.pop();
+    }
+    commSync = 0;
     this->IsLocked = false;
     this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_LOCAL);
-    this->Comm->Barrier();
     H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "LOCK released ");
     //TODO RMA is special and the thread may not be necessary
     if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
       this->Comm->RemoteCommSync();
     } else {
-//      this->Comm->RemoteCommSendReady();
       this->StartRemoteService();
     }
     break;
   case H5FD_DSM_SERVER_UPDATE:
-    if (this->Comm->RemoteCommChannelSynced(&updateSync) || !this->IsConnected) {
-      this->IsLocked = false;
-      this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_LOCAL);
-//      this->Comm->Barrier();
-//      this->Comm->RemoteCommSendReady();
-      if (Address & H5FD_DSM_DATA_MODIFIED) {
-        this->IsDataModified = true;
-        this->UpdateLevel = Address - H5FD_DSM_DATA_MODIFIED;
+    if (!this->Comm->RemoteCommChannelSynced(&updateSync) && this->IsConnected) {
+      if (!commSync) {
+        commSync = 1;
+        if (!syncQueue.empty()) {
+          H5FDdsmError("(" << this->Comm->GetId() << ") " << "Sync queue should be empty!! " << syncQueue.front());
+        }
+
+        H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "filling sync queue from " << who);
+        for (int i=0; i<this->Comm->GetInterSize(); i++) {
+          if (i != who) syncQueue.push(i);
+        }
       } else {
-        this->UpdateLevel = Address;
+        H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "pop sync queue from " << who);
+        if (syncQueue.front() != who) {
+          H5FDdsmError("(" << this->Comm->GetId() << ") " << "Mismatched IDs in sync queue ");
+        }
+        syncQueue.pop();
       }
-      this->IsUpdateReady = true;
-      H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "Update level " <<
-          this->UpdateLevel << ", Switched to Local channel");
+      H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "LOCK being released ");
+      break;
     }
+    if (!syncQueue.empty()) {
+      H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "pop sync queue from " << who);
+      if (syncQueue.front() != who) {
+        H5FDdsmError("(" << this->Comm->GetId() << ") " << "Mismatched IDs in sync queue ");
+      }
+      syncQueue.pop();
+    }
+    commSync = 0;
+    this->IsLocked = false;
+    this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_LOCAL);
+    if (Address & H5FD_DSM_DATA_MODIFIED) {
+      this->IsDataModified = true;
+      this->UpdateLevel = Address - H5FD_DSM_DATA_MODIFIED;
+    } else {
+      this->UpdateLevel = Address;
+    }
+    this->IsUpdateReady = true;
+    H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "Update level " <<
+        this->UpdateLevel << ", Switched to Local channel");
     break;
   case H5FD_DSM_DISCONNECT:
     if (this->Comm->RemoteCommChannelSynced(&disconnectSync)) {
@@ -706,19 +751,13 @@ H5FDdsmBuffer::RequestLockAcquire() {
   H5FDdsmInt32 who, status = H5FD_DSM_SUCCESS;
 
   if (this->IsServer) {
-
+    // Nothing for now
   } else {
-
-//  if (this->Comm->GetId() == 0) {
-//    who = 0;
     for (who = this->StartServerId ; who <= this->EndServerId ; who++) {
       H5FDdsmDebug("Send request LOCK acquire to " << who);
       status = this->SendCommandHeader(H5FD_DSM_LOCK_ACQUIRE, who, 0, 0);
     }
-//  }
-//    status = this->Comm->RemoteCommRecvReady();
     this->IsLocked = true;
-
   }
   return(status);
 }
@@ -732,15 +771,11 @@ H5FDdsmBuffer::RequestLockRelease() {
     H5FDdsmDebug("Send request LOCK release to " << who);
     status = this->SendCommandHeader(H5FD_DSM_LOCK_RELEASE, who, 1, 0);
   } else {
-//    if (this->Comm->GetId() == 0) {
     for (who = this->StartServerId ; who <= this->EndServerId ; who++) {
       H5FDdsmDebug("Send request LOCK release to " << who);
       status = this->SendCommandHeader(H5FD_DSM_LOCK_RELEASE, who, 0, 0);
     }
-//    }
     this->IsLocked = false;
-//    status = this->Comm->RemoteCommRecvReady();
-//    this->Comm->Barrier();
   }
   return(status);
 }
@@ -751,7 +786,7 @@ H5FDdsmBuffer::RequestServerUpdate() {
 
   for (who = this->StartServerId ; who <= this->EndServerId ; who++) {
     H5FDdsmInt64 localFlag = 0;
-    H5FDdsmDebug("Send request local channel to " << who << " with level " << this->UpdateLevel);
+    H5FDdsmDebug("Send request server update to " << who << " with level " << this->UpdateLevel);
     // for convenience
     if (this->IsDataModified) localFlag = H5FD_DSM_DATA_MODIFIED;
     localFlag |= this->UpdateLevel;
@@ -760,9 +795,7 @@ H5FDdsmBuffer::RequestServerUpdate() {
   if (this->IsDataModified) this->IsDataModified = false;
   if (this->UpdateLevel != H5FD_DSM_UPDATE_LEVEL_MAX) this->UpdateLevel = H5FD_DSM_UPDATE_LEVEL_MAX;
   this->IsLocked = false;
-//  status = this->Comm->RemoteCommRecvReady();
 
-//  this->Comm->Barrier();
   return(status);
 }
 //----------------------------------------------------------------------------
@@ -796,8 +829,6 @@ H5FDdsmBuffer::RequestClearStorage() {
     H5FDdsmDebug("Send request clear storage to " << who);
     status = this->SendCommandHeader(H5FD_DSM_CLEAR_STORAGE, who, 0, 0);
   }
-
-  this->Comm->Barrier();
   return(status);
 }
 //----------------------------------------------------------------------------
@@ -811,6 +842,5 @@ H5FDdsmBuffer::RequestXMLExchange() {
       status = this->SendCommandHeader(H5FD_DSM_XML_EXCHANGE, who, 0, 0);
     }
   }
-  this->Comm->Barrier();
   return(status);
 }

@@ -75,16 +75,10 @@ H5FDdsmDriver::H5FDdsmDriver() {
     this->StartAddress = this->EndAddress = 0;
     this->Comm = 0;
     this->StartServerId = this->EndServerId = -1;
-    this->Msg = new H5FDdsmMsg;
-    this->ServiceMsg = new H5FDdsmMsg;
-    this->RemoteServiceMsg = new H5FDdsmMsg;
 }
 
 H5FDdsmDriver::~H5FDdsmDriver() {
     if(this->Storage && this->StorageIsMine) delete this->Storage;
-    if(this->Msg) delete this->Msg;
-    if(this->ServiceMsg) delete this->ServiceMsg;
-    if(this->RemoteServiceMsg) delete this->RemoteServiceMsg;
 }
 
 H5FDdsmInt32
@@ -104,13 +98,6 @@ H5FDdsmDriver::Copy(H5FDdsmDriver *Source){
     this->StartServerId = Source->StartServerId;
     this->EndServerId = Source->EndServerId;
     this->Locks = Source->Locks;
-    // Always make a new Message so there is no contention
-    if (this->Msg) delete this->Msg;
-    this->Msg = new H5FDdsmMsg;
-    if (this->ServiceMsg) delete this->ServiceMsg;
-    this->ServiceMsg = new H5FDdsmMsg;
-    if (this->RemoteServiceMsg) delete this->RemoteServiceMsg;
-    this->RemoteServiceMsg = new H5FDdsmMsg;
     return(H5FD_DSM_SUCCESS);
 }
 
@@ -153,7 +140,7 @@ H5FDdsmDriver::ConfigureUniform(H5FDdsmComm *aComm, H5FDdsmInt64 aLength, H5FDds
     }else{
         this->Length = aLength;
     }
-    this->ServiceMsg->Source = this->Msg->Source = this->RemoteServiceMsg->Source = this->Comm->GetId();
+//    this->ServiceMsg->Source = this->Msg->Source = this->RemoteServiceMsg->Source = this->Comm->GetId();
     this->TotalLength = aLength * (EndId - StartId + 1);
     return(H5FD_DSM_SUCCESS);
 }
@@ -230,12 +217,11 @@ H5FDdsmDriver::SetLength(H5FDdsmInt64 aLength, H5FDdsmBoolean AllowAllocate){
 H5FDdsmInt32
 H5FDdsmDriver::ProbeCommandHeader(H5FDdsmInt32 *Source){
   H5FDdsmInt32 status = H5FD_DSM_FAIL;
-  H5FDdsmMsg *Msg = NULL;
+  H5FDdsmMsg Msg;
 
-  Msg = this->ServiceMsg; // ReceiveCommandHeader always used by Service;
-  Msg->SetTag(H5FD_DSM_COMMAND_TAG);
-  status = this->Comm->Probe(Msg);
-  if (status != H5FD_DSM_FAIL) *Source = Msg->Source;
+  Msg.SetTag(H5FD_DSM_COMMAND_TAG);
+  status = this->Comm->Probe(&Msg);
+  if (status != H5FD_DSM_FAIL) *Source = Msg.Source;
   return(status);
 }
 
@@ -244,8 +230,7 @@ H5FDdsmDriver::SendCommandHeader(H5FDdsmInt32 Opcode, H5FDdsmInt32 Dest, H5FDdsm
     H5FDdsmCommand  Cmd;
     H5FDdsmInt32 Status;
 
-    H5FDdsmMsg *Msg = NULL;
-    Msg = this->Msg; // SendCommandHeader should never be used by Service
+    H5FDdsmMsg Msg;
 
     Cmd.Opcode = Opcode;
     Cmd.Source = this->Comm->GetId();
@@ -253,38 +238,37 @@ H5FDdsmDriver::SendCommandHeader(H5FDdsmInt32 Opcode, H5FDdsmInt32 Dest, H5FDdsm
     Cmd.Address = Address;
     Cmd.Length = aLength;
 
-    Msg->SetSource(this->Comm->GetId());
-    Msg->SetDest(Dest);
-    Msg->SetTag(H5FD_DSM_COMMAND_TAG);
-    Msg->SetLength(sizeof(Cmd));
-    Msg->SetData(&Cmd);
+    Msg.SetSource(this->Comm->GetId());
+    Msg.SetDest(Dest);
+    Msg.SetTag(H5FD_DSM_COMMAND_TAG);
+    Msg.SetLength(sizeof(Cmd));
+    Msg.SetData(&Cmd);
 
-    Status = this->Comm->Send(Msg);
+    Status = this->Comm->Send(&Msg);
     H5FDdsmDebug("(" << this->Comm->GetId() << ") sent opcode " << Cmd.Opcode);
     return(Status);
 }
 
 H5FDdsmInt32
-H5FDdsmDriver::ReceiveCommandHeader(H5FDdsmInt32 *Opcode, H5FDdsmInt32 *Source, H5FDdsmInt64 *Address, H5FDdsmInt64 *aLength, H5FDdsmInt32 IsRemoteService, H5FDdsmInt32 Block){
+H5FDdsmDriver::ReceiveCommandHeader(H5FDdsmInt32 *Opcode, H5FDdsmInt32 *Source, H5FDdsmInt64 *Address, H5FDdsmInt64 *aLength, H5FDdsmInt32 IsRemoteService, H5FDdsmInt32 RemoteSource, H5FDdsmInt32 Block){
     H5FDdsmCommand  Cmd;
     H5FDdsmInt32       status = H5FD_DSM_FAIL;
 
-    H5FDdsmMsg *Msg = NULL;
-    Msg = (IsRemoteService) ? this->RemoteServiceMsg : this->ServiceMsg; // ReceiveCommandHeader always used by Service;
+    H5FDdsmMsg Msg;
 
-    Msg->Source = H5FD_DSM_ANY_SOURCE;
-    Msg->SetLength(sizeof(Cmd));
-    Msg->SetTag(H5FD_DSM_COMMAND_TAG);
-    Msg->SetData(&Cmd);
+    Msg.Source = (RemoteSource>=0) ? RemoteSource : H5FD_DSM_ANY_SOURCE;
+    Msg.SetLength(sizeof(Cmd));
+    Msg.SetTag(H5FD_DSM_COMMAND_TAG);
+    Msg.SetData(&Cmd);
 
     memset(&Cmd, 0, sizeof(H5FDdsmCommand));
     // TODO Do not probe by default
-    status = this->Comm->Probe(Msg);
+    status = this->Comm->Probe(&Msg);
     if ((status != H5FD_DSM_FAIL) || Block){
         if (IsRemoteService) {
-          status  = this->Comm->Receive(Msg, H5FD_DSM_COMM_CHANNEL_REMOTE);
+          status  = this->Comm->Receive(&Msg, H5FD_DSM_COMM_CHANNEL_REMOTE);
         } else {
-          status  = this->Comm->Receive(Msg);
+          status  = this->Comm->Receive(&Msg);
         }
         if (status == H5FD_DSM_FAIL){
             H5FDdsmError("Communicator Receive Failed");
@@ -306,37 +290,35 @@ H5FDdsmDriver::ReceiveCommandHeader(H5FDdsmInt32 *Opcode, H5FDdsmInt32 *Source, 
 }
 
 H5FDdsmInt32
-H5FDdsmDriver::SendData(H5FDdsmInt32 Dest, void *Data, H5FDdsmInt64 aLength, H5FDdsmInt32 Tag, H5FDdsmInt32 IsService){
+H5FDdsmDriver::SendData(H5FDdsmInt32 Dest, void *Data, H5FDdsmInt64 aLength, H5FDdsmInt32 Tag){
 
-    H5FDdsmMsg *Msg = NULL;
-    Msg = (IsService)? this->ServiceMsg: this->Msg;
+    H5FDdsmMsg Msg;
 
-    Msg->SetSource(this->Comm->GetId());
-    Msg->SetDest(Dest);
-    Msg->SetLength(aLength);
-    Msg->SetTag(Tag);
-    Msg->SetData(Data);
-    return(this->Comm->Send(Msg));
+    Msg.SetSource(this->Comm->GetId());
+    Msg.SetDest(Dest);
+    Msg.SetLength(aLength);
+    Msg.SetTag(Tag);
+    Msg.SetData(Data);
+    return(this->Comm->Send(&Msg));
 }
 
 H5FDdsmInt32
-H5FDdsmDriver::ReceiveData(H5FDdsmInt32 Source, void *Data, H5FDdsmInt64 aLength, H5FDdsmInt32 Tag, H5FDdsmInt32 IsService, H5FDdsmInt32 Block){
+H5FDdsmDriver::ReceiveData(H5FDdsmInt32 Source, void *Data, H5FDdsmInt64 aLength, H5FDdsmInt32 Tag, H5FDdsmInt32 Block){
     H5FDdsmInt32   Status = H5FD_DSM_FAIL;
 
-    H5FDdsmMsg *Msg = NULL;
-    Msg = (IsService)? this->ServiceMsg: this->Msg;
+    H5FDdsmMsg Msg;
 
-    Msg->SetSource(Source);
-    Msg->SetLength(aLength);
-    Msg->SetTag(Tag);
-    Msg->SetData(Data);
+    Msg.SetSource(Source);
+    Msg.SetLength(aLength);
+    Msg.SetTag(Tag);
+    Msg.SetData(Data);
     // TODO Do not probe by default
     if(Block){
-        Status = this->Comm->Receive(Msg);
+        Status = this->Comm->Receive(&Msg);
     }else{
-        Status = this->Comm->Probe(Msg);
+        Status = this->Comm->Probe(&Msg);
         if(Status == H5FD_DSM_SUCCESS){
-            Status = this->Comm->Receive(Msg);
+            Status = this->Comm->Receive(&Msg);
         }
     }
     return(Status);
@@ -345,26 +327,24 @@ H5FDdsmDriver::ReceiveData(H5FDdsmInt32 Source, void *Data, H5FDdsmInt64 aLength
 H5FDdsmInt32
 H5FDdsmDriver::PutData(H5FDdsmInt32 Dest, void *Data, H5FDdsmInt64 aLength, H5FDdsmInt64 aAddress){
 
-    H5FDdsmMsg *Msg = NULL;
-    Msg = this->Msg;
+    H5FDdsmMsg Msg;
 
-    Msg->SetSource(this->Comm->GetId());
-    Msg->SetDest(Dest);
-    Msg->SetLength(aLength);
-    Msg->SetAddress(aAddress);
-    Msg->SetData(Data);
-    return(this->Comm->PutData(Msg));
+    Msg.SetSource(this->Comm->GetId());
+    Msg.SetDest(Dest);
+    Msg.SetLength(aLength);
+    Msg.SetAddress(aAddress);
+    Msg.SetData(Data);
+    return(this->Comm->PutData(&Msg));
 }
 
 H5FDdsmInt32
 H5FDdsmDriver::GetData(H5FDdsmInt32 Source, void *Data, H5FDdsmInt64 aLength, H5FDdsmInt64 aAddress){
 
-    H5FDdsmMsg *Msg = NULL;
-    Msg = this->Msg;
+    H5FDdsmMsg Msg;
 
-    Msg->SetSource(Source);
-    Msg->SetLength(aLength);
-    Msg->SetAddress(aAddress);
-    Msg->SetData(Data);
-    return(this->Comm->GetData(Msg));
+    Msg.SetSource(Source);
+    Msg.SetLength(aLength);
+    Msg.SetAddress(aAddress);
+    Msg.SetData(Data);
+    return(this->Comm->GetData(&Msg));
 }

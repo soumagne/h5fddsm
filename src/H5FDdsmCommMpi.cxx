@@ -358,22 +358,6 @@ H5FDdsmCommMpi::RemoteCommSync() {
 }
 
 H5FDdsmInt32
-H5FDdsmCommMpi::RemoteCommChannelSynced(H5FDdsmInt32 *sem) {
-
-  H5FDdsmInt32 ret = H5FD_DSM_FALSE;
-
-  if (H5FDdsmComm::RemoteCommChannelSynced(sem) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
-
-  (*sem)++;
-  if (*sem == this->InterSize) {
-    H5FDdsmDebug("Channels cleared: " << *sem << "/" << this->InterSize);
-    *sem = 0;
-    ret = H5FD_DSM_TRUE;
-  }
-  return(ret);
-}
-
-H5FDdsmInt32
 H5FDdsmCommMpi::RemoteCommRecvReady() {
 
   if (H5FDdsmComm::RemoteCommRecvReady() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);

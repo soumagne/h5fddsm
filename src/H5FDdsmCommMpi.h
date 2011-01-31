@@ -97,7 +97,6 @@ public:
     H5FDdsmInt32   RemoteCommDisconnect();
 
     H5FDdsmInt32   RemoteCommSync();
-    H5FDdsmInt32   RemoteCommChannelSynced(H5FDdsmInt32 *sem);
     H5FDdsmInt32   RemoteCommRecvReady();
     H5FDdsmInt32   RemoteCommSendReady();
 

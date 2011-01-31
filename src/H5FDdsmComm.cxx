@@ -167,7 +167,15 @@ H5FDdsmComm::RemoteCommSync(){
 
 H5FDdsmInt32
 H5FDdsmComm::RemoteCommChannelSynced(H5FDdsmInt32 *sem){
-  return(H5FD_DSM_SUCCESS);
+  H5FDdsmInt32 ret = H5FD_DSM_FALSE;
+
+  (*sem)++;
+  if (*sem == this->InterSize) {
+    H5FDdsmDebug("Channels cleared: " << *sem << "/" << this->InterSize);
+    *sem = 0;
+    ret = H5FD_DSM_TRUE;
+  }
+  return(ret);
 }
 
 H5FDdsmInt32
