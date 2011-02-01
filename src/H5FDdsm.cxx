@@ -871,42 +871,26 @@ H5FD_dsm_close(H5FD_t *_file)
       MPI_Allreduce(&file->dirty, &isSomeoneDirty, sizeof(hbool_t), MPI_UNSIGNED_CHAR, MPI_MAX, comm);
       if (isSomeoneDirty) {
         file->DsmBuffer->SetIsDataModified(true);
-        if (!file->DsmBuffer->GetIsServer()) {
-            if (file->DsmBuffer->GetCommSwitchOnClose()) {
-                H5FD_dsm_server_update(file->DsmBuffer);
-                // Release resources
-                if (file->name) H5MM_xfree(file->name);
-                HDmemset(file, 0, sizeof(H5FD_dsm_t));
-                H5MM_xfree(file);
-                PRINT_DSM_INFO("Undef", "File closed");
-                goto done;
-            }
-//            else {
-//                H5FD_dsm_release_lock(file->DsmBuffer);
-//            }
+        if (!file->DsmBuffer->GetIsServer() && file->DsmBuffer->GetCommSwitchOnClose()) {
+          H5FD_dsm_server_update(file->DsmBuffer);
+          goto done;
         }
         file->dirty = FALSE;
       }
     }
     PRINT_INFO("SetIsReadOnly(true)");
     file->DsmBuffer->SetIsReadOnly(true);
-  } else {
-//    if (file->DsmBuffer->GetIsUpdateReady() && file->DsmBuffer->GetIsAutoAllocated() && file->DsmBuffer->GetCommSwitchOnClose()) {
-//      file->DsmBuffer->SetIsUpdateReady(false);
-//      file->DsmBuffer->RequestRemoteChannel();
-//    }
   }
 
-//  if (!file->DsmBuffer->GetIsServer()) file->DsmBuffer->RequestLockRelease();
   file->DsmBuffer->RequestLockRelease();
 
+done:
   // Release resources
   if (file->name) H5MM_xfree(file->name);
   HDmemset(file, 0, sizeof(H5FD_dsm_t));
   H5MM_xfree(file);
   PRINT_DSM_INFO("Undef", "File closed");
 
-done: 
   FUNC_LEAVE_NOAPI(ret_value)
 }
 

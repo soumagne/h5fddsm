@@ -71,12 +71,14 @@
 #define H5FD_DSM_LOCK_ACQUIRE        0x05
 #define H5FD_DSM_LOCK_RELEASE        0x06
 
-#define H5FD_DSM_COMM_SWITCH         0x07
-#define H5FD_DSM_SERVER_UPDATE       0x08
-#define H5FD_DSM_DISCONNECT          0x09
+#define H5FD_DSM_ACCEPT              0x07
+#define H5FD_DSM_DISCONNECT          0x08
 
-#define H5FD_DSM_XML_EXCHANGE        0x10
-#define H5FD_DSM_CLEAR_STORAGE       0x11
+#define H5FD_DSM_COMM_SWITCH         0x10
+#define H5FD_DSM_SERVER_UPDATE       0x11
+
+#define H5FD_DSM_XML_EXCHANGE        0x12
+#define H5FD_DSM_CLEAR_STORAGE       0x13
 
 #define H5FD_DSM_DATA_MODIFIED       0x100
 
@@ -112,7 +114,7 @@ extern "C"{
 }
 //----------------------------------------------------------------------------
 H5FDdsmBuffer::H5FDdsmBuffer() {
-//  this->DebugOn();
+  this->DebugOn();
   H5FDdsmInt64 i;
   this->ThreadDsmReady = 0;
   this->ThreadRemoteDsmReady = 0;
@@ -138,7 +140,13 @@ H5FDdsmBuffer::H5FDdsmBuffer() {
 
   this->RemoteServiceThreadPtr          = 0;
 #ifdef _WIN32
-this->RemoteServiceThreadHandle    = NULL;
+  this->RemoteServiceThreadHandle    = NULL;
+#endif
+
+#ifdef _WIN32
+  // TODO Init mutex
+#else
+  pthread_mutex_init(&this->Lock, NULL);
 #endif
 }
 //----------------------------------------------------------------------------
@@ -146,6 +154,7 @@ H5FDdsmBuffer::~H5FDdsmBuffer() {
   if (this->StorageIsMine) delete[] this->Locks;
   if (this->XMLDescription) delete[] this->XMLDescription;
   if (this->Steerer) delete this->Steerer;
+  pthread_mutex_destroy(&this->Lock);
 }
 //----------------------------------------------------------------------------
 /*
@@ -274,7 +283,15 @@ H5FDdsmBuffer::RemoteService(H5FDdsmInt32 *ReturnOpcode){
     switch(Opcode){
     case H5FD_DSM_LOCK_ACQUIRE:
       if (this->Comm->RemoteCommChannelSynced(&lockSync)) {
+        if (!this->IsLocked) {
+          H5FDdsmError("(" << this->Comm->GetId() << ") " << "LOCK already acquired ");
+        }
         this->IsLocked = true;
+#ifdef _WIN32
+        //TODO mutex lock
+#else
+        pthread_mutex_lock(&this->Lock);
+#endif
         who = this->Comm->GetId();
         status = H5FD_DSM_SUCCESS;
         H5FDdsmDebug("Send request communicator switch to " << who);
@@ -444,29 +461,21 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
     }
     break;
   case H5FD_DSM_LOCK_RELEASE:
-    if (Address && !this->IsConnected) {
-      // from server
-      this->Comm->RemoteCommAccept(this->DataPointer, this->Length);
-      // send DSM information
-      this->Comm->RemoteCommSendInfo(&this->Length, &this->TotalLength, &this->StartServerId, &this->EndServerId);
-      this->IsConnected = true;
-    } else {
-      if (!Address && !this->Comm->RemoteCommChannelSynced(&releaseSync) && this->IsConnected ) {
-        if (!commSync) {
-          commSync = 1;
-          if (!syncQueue.empty()) {
-            H5FDdsmError("(" << this->Comm->GetId() << ") " << "Sync queue should be empty!! " << syncQueue.front());
-          }
-          for (int i=0; i<this->Comm->GetInterSize(); i++) if (i != who) syncQueue.push(i);
-        } else {
-          if (syncQueue.front() != who) H5FDdsmError("(" << this->Comm->GetId() << ") " << "Mismatched IDs in sync queue ");
-          syncQueue.pop();
+    if (!this->Comm->RemoteCommChannelSynced(&releaseSync) && this->IsConnected ) {
+      if (!commSync) {
+        commSync = 1;
+        if (!syncQueue.empty()) {
+          H5FDdsmError("(" << this->Comm->GetId() << ") " << "Sync queue should be empty!! " << syncQueue.front());
         }
-        H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "LOCK being released ");
-        break;
+        for (int i=0; i<this->Comm->GetInterSize(); i++) if (i != who) syncQueue.push(i);
+      } else {
+        if (syncQueue.front() != who) H5FDdsmError("(" << this->Comm->GetId() << ") " << "Mismatched IDs in sync queue ");
+        syncQueue.pop();
       }
+      H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "LOCK being released ");
+      break;
     }
-    if (!Address && !syncQueue.empty()) {
+    if (!syncQueue.empty()) {
       H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "pop sync queue from " << who);
       if (syncQueue.front() != who) {
         H5FDdsmError("(" << this->Comm->GetId() << ") " << "Mismatched IDs in sync queue ");
@@ -474,14 +483,41 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
       syncQueue.pop();
     }
     commSync = 0;
-    this->IsLocked = false;
     this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_LOCAL);
     H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "LOCK released ");
+    if (this->IsConnected) {
+      //TODO RMA is special and the thread may not be necessary
+      if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
+        this->Comm->RemoteCommSync();
+      }
+    }
+    if (!this->RemoteServiceThreadPtr) this->StartRemoteService();
+#ifdef _WIN32
+    //TODO mutex unlock
+#else
+    pthread_mutex_unlock(&this->Lock);
+#endif
+    this->IsLocked = false;
+    break;
+  case H5FD_DSM_ACCEPT:
+    if (!this->IsConnected) {
+      this->Comm->RemoteCommAccept(this->DataPointer, this->Length);
+      // send DSM information
+      this->Comm->RemoteCommSendInfo(&this->Length, &this->TotalLength, &this->StartServerId, &this->EndServerId);
+      this->IsConnected = true;
+    }
     //TODO RMA is special and the thread may not be necessary
     if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
       this->Comm->RemoteCommSync();
-    } else {
-      this->StartRemoteService();
+    }
+    if (!this->RemoteServiceThreadPtr) this->StartRemoteService();
+    break;
+  case H5FD_DSM_DISCONNECT:
+    if (this->Comm->RemoteCommChannelSynced(&disconnectSync)) {
+      H5FDdsmDebug("( " << this->Comm->GetId() << " ) Freeing now remote channel");
+      this->Comm->RemoteCommDisconnect();
+      this->IsConnected = false;
+      H5FDdsmDebug("DSM disconnected on " << this->Comm->GetId() << ", Switched to Local channel");
     }
     break;
   case H5FD_DSM_SERVER_UPDATE:
@@ -491,7 +527,6 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
         if (!syncQueue.empty()) {
           H5FDdsmError("(" << this->Comm->GetId() << ") " << "Sync queue should be empty!! " << syncQueue.front());
         }
-
         H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "filling sync queue from " << who);
         for (int i=0; i<this->Comm->GetInterSize(); i++) {
           if (i != who) syncQueue.push(i);
@@ -514,7 +549,6 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
       syncQueue.pop();
     }
     commSync = 0;
-    this->IsLocked = false;
     this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_LOCAL);
     if (Address & H5FD_DSM_DATA_MODIFIED) {
       this->IsDataModified = true;
@@ -525,14 +559,12 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
     this->IsUpdateReady = true;
     H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "Update level " <<
         this->UpdateLevel << ", Switched to Local channel");
-    break;
-  case H5FD_DSM_DISCONNECT:
-    if (this->Comm->RemoteCommChannelSynced(&disconnectSync)) {
-      H5FDdsmDebug("( " << this->Comm->GetId() << " ) Freeing now remote channel");
-      this->Comm->RemoteCommDisconnect();
-      this->IsConnected = false;
-      H5FDdsmDebug("DSM disconnected on " << this->Comm->GetId() << ", Switched to Local channel");
-    }
+    this->IsLocked = false;
+#ifdef _WIN32
+    //TODO mutex unlock
+#else
+    pthread_mutex_unlock(&this->Lock);
+#endif
     break;
   case H5FD_DSM_CLEAR_STORAGE:
     if (this->Comm->RemoteCommChannelSynced(&clearStorageSync)) {
@@ -750,15 +782,24 @@ H5FDdsmInt32
 H5FDdsmBuffer::RequestLockAcquire() {
   H5FDdsmInt32 who, status = H5FD_DSM_SUCCESS;
 
+  if (!this->IsLocked) {
+    H5FDdsmError("(" << this->Comm->GetId() << ") " << "LOCK already acquired ");
+  }
+  this->IsLocked = true;
+
   if (this->IsServer) {
-    // Nothing for now
+#ifdef _WIN32
+    //TODO mutex lock
+#else
+    pthread_mutex_lock(&this->Lock);
+#endif
   } else {
     for (who = this->StartServerId ; who <= this->EndServerId ; who++) {
       H5FDdsmDebug("Send request LOCK acquire to " << who);
       status = this->SendCommandHeader(H5FD_DSM_LOCK_ACQUIRE, who, 0, 0);
     }
-    this->IsLocked = true;
   }
+
   return(status);
 }
 //----------------------------------------------------------------------------
@@ -766,41 +807,43 @@ H5FDdsmInt32
 H5FDdsmBuffer::RequestLockRelease() {
   H5FDdsmInt32 who, status = H5FD_DSM_SUCCESS;
 
+  if (!this->IsLocked) {
+    H5FDdsmError("(" << this->Comm->GetId() << ") " << "LOCK already released ");
+  }
+  this->IsLocked = false;
+
   if(this->IsServer) {
-    who = this->Comm->GetId();
-    H5FDdsmDebug("Send request LOCK release to " << who);
-    status = this->SendCommandHeader(H5FD_DSM_LOCK_RELEASE, who, 1, 0);
+#ifdef _WIN32
+    //TODO mutex unlock
+#else
+    pthread_mutex_unlock(&this->Lock);
+#endif
+    this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_LOCAL);
+    H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "Server LOCK released ");
+    if (!this->RemoteServiceThreadPtr && this->IsConnected) this->StartRemoteService();
   } else {
     for (who = this->StartServerId ; who <= this->EndServerId ; who++) {
       H5FDdsmDebug("Send request LOCK release to " << who);
       status = this->SendCommandHeader(H5FD_DSM_LOCK_RELEASE, who, 0, 0);
     }
-    this->IsLocked = false;
   }
+
   return(status);
 }
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBuffer::RequestServerUpdate() {
+H5FDdsmBuffer::RequestAccept() {
   H5FDdsmInt32 who, status = H5FD_DSM_SUCCESS;
 
-  for (who = this->StartServerId ; who <= this->EndServerId ; who++) {
-    H5FDdsmInt64 localFlag = 0;
-    H5FDdsmDebug("Send request server update to " << who << " with level " << this->UpdateLevel);
-    // for convenience
-    if (this->IsDataModified) localFlag = H5FD_DSM_DATA_MODIFIED;
-    localFlag |= this->UpdateLevel;
-    status = this->SendCommandHeader(H5FD_DSM_SERVER_UPDATE, who, localFlag, 0);
-  }
-  if (this->IsDataModified) this->IsDataModified = false;
-  if (this->UpdateLevel != H5FD_DSM_UPDATE_LEVEL_MAX) this->UpdateLevel = H5FD_DSM_UPDATE_LEVEL_MAX;
-  this->IsLocked = false;
+  who = this->Comm->GetId();
+  H5FDdsmDebug("Send request LOCK release to " << who);
+  status = this->SendCommandHeader(H5FD_DSM_ACCEPT, who, 0, 0);
 
   return(status);
 }
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBuffer::RequestDisconnection() {
+H5FDdsmBuffer::RequestDisconnect() {
   H5FDdsmInt32 who, status = H5FD_DSM_SUCCESS;
 
   this->RequestLockAcquire();
@@ -818,6 +861,30 @@ H5FDdsmBuffer::RequestDisconnection() {
   status = this->Comm->RemoteCommDisconnect();
   this->IsConnected = false;
   H5FDdsmDebug("DSM disconnected on " << this->Comm->GetId());
+  return(status);
+}
+//----------------------------------------------------------------------------
+H5FDdsmInt32
+H5FDdsmBuffer::RequestServerUpdate() {
+  H5FDdsmInt32 who, status = H5FD_DSM_SUCCESS;
+
+  // No mutex here, only informal since it's the client
+  if (!this->IsLocked) {
+    H5FDdsmError("(" << this->Comm->GetId() << ") " << "LOCK or update already released ");
+  }
+  this->IsLocked = false;
+
+  for (who = this->StartServerId ; who <= this->EndServerId ; who++) {
+    H5FDdsmInt64 localFlag = 0;
+    H5FDdsmDebug("Send request server update to " << who << " with level " << this->UpdateLevel);
+    // for convenience
+    if (this->IsDataModified) localFlag = H5FD_DSM_DATA_MODIFIED;
+    localFlag |= this->UpdateLevel;
+    status = this->SendCommandHeader(H5FD_DSM_SERVER_UPDATE, who, localFlag, 0);
+  }
+  if (this->IsDataModified) this->IsDataModified = false;
+  if (this->UpdateLevel != H5FD_DSM_UPDATE_LEVEL_MAX) this->UpdateLevel = H5FD_DSM_UPDATE_LEVEL_MAX;
+
   return(status);
 }
 //----------------------------------------------------------------------------

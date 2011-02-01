@@ -409,7 +409,7 @@ void H5FDdsmManager::ConnectDSM()
 void H5FDdsmManager::DisconnectDSM()
 {
   if (this->UpdatePiece == 0) H5FDdsmDebug(<< "Disconnect DSM");
-  this->DSMBuffer->RequestDisconnection(); // Go back to normal channel
+  this->DSMBuffer->RequestDisconnect();
 }
 //----------------------------------------------------------------------------
 void H5FDdsmManager::PublishDSM()
@@ -474,7 +474,7 @@ void H5FDdsmManager::PublishDSM()
     }
   }
   //
-  this->DSMBuffer->RequestLockRelease();
+  this->DSMBuffer->RequestAccept();
 }
 //----------------------------------------------------------------------------
 

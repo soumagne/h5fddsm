@@ -139,8 +139,12 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
 
     H5FDdsmInt32   RequestLockAcquire();
     H5FDdsmInt32   RequestLockRelease();
+
+    H5FDdsmInt32   RequestAccept();
+    H5FDdsmInt32   RequestDisconnect();
+
     H5FDdsmInt32   RequestServerUpdate();
-    H5FDdsmInt32   RequestDisconnection();
+
     H5FDdsmInt32   RequestClearStorage();
     H5FDdsmInt32   RequestXMLExchange();
 
@@ -181,6 +185,11 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     bool                    IsServer;
     bool                    CommSwitchOnClose;
     bool                    IsReadOnly;
+#ifdef _WIN32
+
+#else
+    pthread_mutex_t         Lock;
+#endif
     bool                    IsLocked;
     H5FDdsmInt32            ServiceThreadUseCopy;
     H5FDdsmString           XMLDescription;
