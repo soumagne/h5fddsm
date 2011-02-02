@@ -145,7 +145,7 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     void   H5DumpXML();
     void   SendDSMXML();
     void   WriteSteeredData();
-    void   RequestRemoteChannel();
+    void   UpdateSteeredObjects();
 
     // Description:
     // If the .dsm_config file exists in the standard location

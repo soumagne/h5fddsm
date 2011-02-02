@@ -249,7 +249,6 @@ int main (int argc, char* argv[])
 
       // Clean up for next step
       dsmManager->ClearDsmUpdateReady();
-      dsmManager->RequestRemoteChannel();
     }
     else {
       sleep(1);

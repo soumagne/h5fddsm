@@ -115,7 +115,11 @@ int H5FDdsmManager::GetDsmUpdateReady()
 {
   int ret = 0;
   if (this->DSMBuffer) {
-    if (this->DSMBuffer->GetIsUpdateReady()) ret = 1;
+    if (this->DSMBuffer->GetIsUpdateReady()) {
+      // When update ready is found, the server takes the lock
+      this->DSMBuffer->RequestLockAcquire();
+      ret = 1;
+    }
   }
   return ret;
 }
@@ -123,7 +127,9 @@ int H5FDdsmManager::GetDsmUpdateReady()
 void H5FDdsmManager::ClearDsmUpdateReady()
 {
   if (this->DSMBuffer) {
+    // When update ready is cleared, the server lock is released
     this->DSMBuffer->SetIsUpdateReady(0);
+    this->DSMBuffer->RequestLockRelease();
   }
 }
 //----------------------------------------------------------------------------
@@ -317,7 +323,7 @@ void H5FDdsmManager::WriteSteeredData()
   }
 }
 //----------------------------------------------------------------------------
-void H5FDdsmManager::RequestRemoteChannel()
+void H5FDdsmManager::UpdateSteeredObjects()
 {
   this->WriteSteeredData();
 
@@ -329,7 +335,6 @@ void H5FDdsmManager::RequestRemoteChannel()
 
   this->DSMBuffer->GetSteerer()->UpdateSteeringCommands();
   this->DSMBuffer->GetSteerer()->UpdateDisabledObjects();
-  this->DSMBuffer->RequestLockRelease();
 }
 //----------------------------------------------------------------------------
 void H5FDdsmManager::ConnectDSM()
@@ -361,7 +366,7 @@ void H5FDdsmManager::ConnectDSM()
       }
     }
     else {
-      if (this->UpdatePiece == 0) H5FDdsmError(<< "NULL port");
+      if (this->UpdatePiece == 0) H5FDdsmError("NULL port");
     }
 #ifdef H5FD_DSM_DEBUG
     this->DSMBuffer->DebugOn();

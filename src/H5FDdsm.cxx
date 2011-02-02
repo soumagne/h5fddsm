@@ -766,10 +766,13 @@ H5FD_dsm_open(const char *name, unsigned UNUSED flags, hid_t fapl_id, haddr_t ma
       file->DsmBuffer->SetIsSyncRequired(false);
     }
 
-    file->DsmBuffer->RequestLockAcquire();
+    if (!file->DsmBuffer->GetIsLocked()) {
+      file->DsmBuffer->RequestLockAcquire();
+    }
 
     if ((H5F_ACC_CREAT & flags) && !file->DsmBuffer->GetIsServer()) {
       // TODO Probably do this somewhere else but here for now
+      // so we get automatic pause and play
       file->DsmBuffer->GetSteerer()->GetSteeringCommands();
     }
     //
@@ -882,7 +885,9 @@ H5FD_dsm_close(H5FD_t *_file)
     file->DsmBuffer->SetIsReadOnly(true);
   }
 
-  file->DsmBuffer->RequestLockRelease();
+  // TODO As we need a manual update for the client, we may need a manual lock release for the server
+  // For now never release the server lock automatically
+  if (!file->DsmBuffer->GetIsServer()) file->DsmBuffer->RequestLockRelease();
 
 done:
   // Release resources
