@@ -186,7 +186,7 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     bool                    CommSwitchOnClose;
     bool                    IsReadOnly;
 #ifdef _WIN32
-
+	HANDLE                  Lock;
 #else
     pthread_mutex_t         Lock;
 #endif

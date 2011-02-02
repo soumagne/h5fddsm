@@ -303,7 +303,7 @@ done:
 //              Failure:        negative
 //
 //----------------------------------------------------------------------------
-herr_t H5FD_dsm_steering_scalar_get(const char *name, int mem_type, void *data)
+herr_t H5FD_dsm_steering_scalar_get(const char *name, hid_t mem_type, void *data)
 {
   herr_t ret_value = SUCCEED;
   H5FDdsmBuffer *dsmBuffer;
@@ -325,7 +325,7 @@ done:
   FUNC_LEAVE_NOAPI(ret_value);
 }
 
-herr_t H5FD_dsm_steering_scalar_set(const char *name, int mem_type, void *data)
+herr_t H5FD_dsm_steering_scalar_set(const char *name, hid_t mem_type, void *data)
 {
   herr_t ret_value = SUCCEED;
   H5FDdsmBuffer *dsmBuffer;
@@ -357,7 +357,7 @@ done:
 //              Failure:        negative
 //
 //----------------------------------------------------------------------------
-herr_t H5FD_dsm_steering_vector_get(const char *name, int mem_type, hsize_t number_of_elements, void *data)
+herr_t H5FD_dsm_steering_vector_get(const char *name, hid_t mem_type, hsize_t number_of_elements, void *data)
 {
   herr_t ret_value = SUCCEED;
   H5FDdsmBuffer *dsmBuffer;
@@ -379,7 +379,7 @@ done:
   FUNC_LEAVE_NOAPI(ret_value);
 }
 
-herr_t H5FD_dsm_steering_vector_set(const char *name, int mem_type, hsize_t number_of_elements, void *data)
+herr_t H5FD_dsm_steering_vector_set(const char *name, hid_t mem_type, hsize_t number_of_elements, void *data)
 {
   herr_t ret_value = SUCCEED;
   H5FDdsmBuffer *dsmBuffer;

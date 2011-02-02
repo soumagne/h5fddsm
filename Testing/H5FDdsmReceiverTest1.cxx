@@ -32,11 +32,11 @@ int main (int argc, char* argv[])
 {
   int provided, rank, size;
   MPI_Comm dcomm = MPI_COMM_WORLD;
-  double DSMSize = 16;
+  long DSMSize = 16;
   int commType = H5FD_DSM_COMM_SOCKET;
 
   if (argv[1]) {
-    DSMSize = atof(argv[1]);
+    DSMSize = atol(argv[1]);
   }
 
   if (argv[2]) {

@@ -247,7 +247,11 @@ int H5FDdsmSocket::Bind(int port, const char *hostName)
 //-----------------------------------------------------------------------------
 int H5FDdsmSocket::Select(unsigned long msec)
 {
+#ifdef _WIN32
+  SOCKET socketdescriptor = INVALID_SOCKET;
+#else
   int socketdescriptor = -1;
+#endif
   if (this->ClientSocketDescriptor < 0) {
     socketdescriptor = this->SocketDescriptor;
   } else {
@@ -269,7 +273,7 @@ int H5FDdsmSocket::Select(unsigned long msec)
   }
   FD_ZERO(&rset);
   FD_SET(socketdescriptor, &rset);
-  int res = select(socketdescriptor + 1, &rset, 0, 0, tvalptr);
+  int res = select((int)socketdescriptor + 1, &rset, 0, 0, tvalptr);
   if(res == 0) {
     return 0;//for time limit expire
   }

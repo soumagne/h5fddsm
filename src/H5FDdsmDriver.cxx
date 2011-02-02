@@ -60,7 +60,7 @@ typedef struct {
     H5FDdsmInt32   Source;
     H5FDdsmInt32   Target;
     H5FDdsmInt64   Address;
-    H5FDdsmInt64   Length;
+    H5FDdsmInt32   Length;
     H5FDdsmInt64   Parameters[10];
 } H5FDdsmCommand;
 
@@ -226,7 +226,7 @@ H5FDdsmDriver::ProbeCommandHeader(H5FDdsmInt32 *Source){
 }
 
 H5FDdsmInt32
-H5FDdsmDriver::SendCommandHeader(H5FDdsmInt32 Opcode, H5FDdsmInt32 Dest, H5FDdsmInt64 Address, H5FDdsmInt64 aLength){
+H5FDdsmDriver::SendCommandHeader(H5FDdsmInt32 Opcode, H5FDdsmInt32 Dest, H5FDdsmInt64 Address, H5FDdsmInt32 aLength){
     H5FDdsmCommand  Cmd;
     H5FDdsmInt32 Status;
 
@@ -250,7 +250,7 @@ H5FDdsmDriver::SendCommandHeader(H5FDdsmInt32 Opcode, H5FDdsmInt32 Dest, H5FDdsm
 }
 
 H5FDdsmInt32
-H5FDdsmDriver::ReceiveCommandHeader(H5FDdsmInt32 *Opcode, H5FDdsmInt32 *Source, H5FDdsmInt64 *Address, H5FDdsmInt64 *aLength, H5FDdsmInt32 IsRemoteService, H5FDdsmInt32 RemoteSource, H5FDdsmInt32 Block){
+H5FDdsmDriver::ReceiveCommandHeader(H5FDdsmInt32 *Opcode, H5FDdsmInt32 *Source, H5FDdsmInt64 *Address, H5FDdsmInt32 *aLength, H5FDdsmInt32 IsRemoteService, H5FDdsmInt32 RemoteSource, H5FDdsmInt32 Block){
     H5FDdsmCommand  Cmd;
     H5FDdsmInt32       status = H5FD_DSM_FAIL;
 
@@ -290,7 +290,7 @@ H5FDdsmDriver::ReceiveCommandHeader(H5FDdsmInt32 *Opcode, H5FDdsmInt32 *Source, 
 }
 
 H5FDdsmInt32
-H5FDdsmDriver::SendData(H5FDdsmInt32 Dest, void *Data, H5FDdsmInt64 aLength, H5FDdsmInt32 Tag){
+H5FDdsmDriver::SendData(H5FDdsmInt32 Dest, void *Data, H5FDdsmInt32 aLength, H5FDdsmInt32 Tag){
 
     H5FDdsmMsg Msg;
 
@@ -303,7 +303,7 @@ H5FDdsmDriver::SendData(H5FDdsmInt32 Dest, void *Data, H5FDdsmInt64 aLength, H5F
 }
 
 H5FDdsmInt32
-H5FDdsmDriver::ReceiveData(H5FDdsmInt32 Source, void *Data, H5FDdsmInt64 aLength, H5FDdsmInt32 Tag, H5FDdsmInt32 Block){
+H5FDdsmDriver::ReceiveData(H5FDdsmInt32 Source, void *Data, H5FDdsmInt32 aLength, H5FDdsmInt32 Tag, H5FDdsmInt32 Block){
     H5FDdsmInt32   Status = H5FD_DSM_FAIL;
 
     H5FDdsmMsg Msg;
@@ -325,7 +325,7 @@ H5FDdsmDriver::ReceiveData(H5FDdsmInt32 Source, void *Data, H5FDdsmInt64 aLength
 }
 
 H5FDdsmInt32
-H5FDdsmDriver::PutData(H5FDdsmInt32 Dest, void *Data, H5FDdsmInt64 aLength, H5FDdsmInt64 aAddress){
+H5FDdsmDriver::PutData(H5FDdsmInt32 Dest, void *Data, H5FDdsmInt32 aLength, H5FDdsmInt64 aAddress){
 
     H5FDdsmMsg Msg;
 
@@ -338,7 +338,7 @@ H5FDdsmDriver::PutData(H5FDdsmInt32 Dest, void *Data, H5FDdsmInt64 aLength, H5FD
 }
 
 H5FDdsmInt32
-H5FDdsmDriver::GetData(H5FDdsmInt32 Source, void *Data, H5FDdsmInt64 aLength, H5FDdsmInt64 aAddress){
+H5FDdsmDriver::GetData(H5FDdsmInt32 Source, void *Data, H5FDdsmInt32 aLength, H5FDdsmInt64 aAddress){
 
     H5FDdsmMsg Msg;
 

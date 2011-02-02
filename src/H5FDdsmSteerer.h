@@ -67,10 +67,10 @@ public:
 
   H5FDdsmInt32 IsObjectEnabled(H5FDdsmConstString name);
   H5FDdsmInt32 IsObjectPresent(H5FDdsmConstString name, int &present);
-  H5FDdsmInt32 GetScalar(H5FDdsmConstString name, H5FDdsmInt32 memType, void *data);
-  H5FDdsmInt32 SetScalar(H5FDdsmConstString name, H5FDdsmInt32 memType, void *data);
-  H5FDdsmInt32 GetVector(H5FDdsmConstString name, H5FDdsmInt32 memType, H5FDdsmInt32 numberOfElements, void *data);
-  H5FDdsmInt32 SetVector(H5FDdsmConstString name, H5FDdsmInt32 memType, H5FDdsmInt32 numberOfElements, void *data);
+  H5FDdsmInt32 GetScalar(H5FDdsmConstString name, hid_t memType, void *data);
+  H5FDdsmInt32 SetScalar(H5FDdsmConstString name, hid_t memType, void *data);
+  H5FDdsmInt32 GetVector(H5FDdsmConstString name, hid_t memType, hsize_t numberOfElements, void *data);
+  H5FDdsmInt32 SetVector(H5FDdsmConstString name, hid_t memType, hsize_t numberOfElements, void *data);
   H5FDdsmInt32 GetHandle(H5FDdsmConstString name, hid_t *handle);
   H5FDdsmInt32 FreeHandle(hid_t handle);
 
@@ -79,8 +79,8 @@ public:
 protected:
   friend class H5FDdsmManager;
 
-  H5FDdsmInt32 WriteInteractions(H5FDdsmConstString name, H5FDdsmInt32 numberOfElements, int *data);
-  H5FDdsmInt32 WriteInteractions(H5FDdsmConstString name, H5FDdsmInt32 numberOfElements, double *data);
+  H5FDdsmInt32 WriteInteractions(H5FDdsmConstString name, hsize_t numberOfElements, int *data);
+  H5FDdsmInt32 WriteInteractions(H5FDdsmConstString name, hsize_t numberOfElements, double *data);
 
   void SetDisabledObject(H5FDdsmConstString objectName);
 

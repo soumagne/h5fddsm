@@ -126,7 +126,7 @@ double TestParticleWrite(const char *filename, hsize_t N, int mpiId, int mpiNum,
   // create arrays for the test vars we selected above
   doublearray = (double*)malloc(sizeof(double)*N);
   for (i=0; i<N; i++) {
-    doublearray[i] = i + start + step_increment;
+    doublearray[i] = (double) (i + start + step_increment);
   }
   WriteBuffer.Ddata = doublearray;
 
@@ -215,7 +215,7 @@ int main(int argc, char **argv)
       std::cout << "Writing to Disk" << std::endl;
     }
     for (int loop=0; loop<LOOPS; loop++) {
-      hsize_t numParticles = 1024*1024*(remoteMB-1)/(sizeof(double)*nlocalprocs);
+      hsize_t numParticles = (hsize_t) (1024*1024*(remoteMB-1)/(sizeof(double)*nlocalprocs));
 
       Bytes       = (double)numParticles*sizeof(double); // only a 1D vector
       SendBytes   = Bytes*(double)nlocalprocs;

@@ -511,7 +511,7 @@ H5FDdsmCommMpi::RemoteCommSendXML(H5FDdsmString file, H5FDdsmInt32 dest)
       communicator = this->Comm;
     }
     //
-    H5FDdsmInt32 length = strlen(file) + 1;
+    H5FDdsmInt32 length = (H5FDdsmInt32)strlen(file) + 1;
     H5FDdsmDebug("Send XML to DSM Buffer object - FilePath: " << file);
     if (MPI_Send(file, length, MPI_CHAR, dest, H5FD_DSM_XML_TAG, communicator) != MPI_SUCCESS){
       H5FDdsmError("Id = " << this->Id << " MPI_Send of XML file failed");

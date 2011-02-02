@@ -387,7 +387,7 @@ H5FDdsmInt32 H5FDdsmSteerer::SetScalar(H5FDdsmConstString name, H5FDdsmInt32 mem
   return(ret);
 }
 //----------------------------------------------------------------------------
-H5FDdsmInt32 H5FDdsmSteerer::GetVector(H5FDdsmConstString name, H5FDdsmInt32 memType, H5FDdsmInt32 numberOfElements, void *data)
+H5FDdsmInt32 H5FDdsmSteerer::GetVector(H5FDdsmConstString name, H5FDdsmInt32 memType, hsize_t numberOfElements, void *data)
 {
   H5FDdsmInt32 ret = H5FD_DSM_SUCCESS;
   bool usecache = this->InteractionsCacheActive();
@@ -418,7 +418,7 @@ H5FDdsmInt32 H5FDdsmSteerer::GetVector(H5FDdsmConstString name, H5FDdsmInt32 mem
   return(ret);
 }
 //----------------------------------------------------------------------------
-H5FDdsmInt32 H5FDdsmSteerer::SetVector(H5FDdsmConstString name, H5FDdsmInt32 memType, H5FDdsmInt32 numberOfElements, void *data)
+H5FDdsmInt32 H5FDdsmSteerer::SetVector(H5FDdsmConstString name, H5FDdsmInt32 memType, hsize_t numberOfElements, void *data)
 {
   H5FDdsmInt32 ret = H5FD_DSM_SUCCESS;
   bool usecache = this->InteractionsCacheActive();
@@ -488,7 +488,7 @@ H5FDdsmInt32 H5FDdsmSteerer::DsmDump()
   return(H5FD_DSM_SUCCESS);
 }
 //----------------------------------------------------------------------------
-H5FDdsmInt32 H5FDdsmSteerer::WriteInteractions(H5FDdsmConstString name, H5FDdsmInt32 numberOfElements, int *data)
+H5FDdsmInt32 H5FDdsmSteerer::WriteInteractions(H5FDdsmConstString name, hsize_t numberOfElements, int *data)
 {
   if (numberOfElements > 1) {
     hsize_t arraySize = numberOfElements;
@@ -517,7 +517,7 @@ H5FDdsmInt32 H5FDdsmSteerer::WriteInteractions(H5FDdsmConstString name, H5FDdsmI
   return(H5FD_DSM_SUCCESS);
 }
 //----------------------------------------------------------------------------
-H5FDdsmInt32 H5FDdsmSteerer::WriteInteractions(H5FDdsmConstString name, H5FDdsmInt32 numberOfElements, double *data)
+H5FDdsmInt32 H5FDdsmSteerer::WriteInteractions(H5FDdsmConstString name, hsize_t numberOfElements, double *data)
 {
   if (numberOfElements > 1) {
     hsize_t arraySize = numberOfElements;

@@ -49,6 +49,10 @@
 
 #include "H5FDdsmObject.h"
 
+#ifdef _WIN32
+#include <winsock.h>
+#endif
+
 class H5FDdsm_EXPORT H5FDdsmSocket : public H5FDdsmObject {
 
 public:
@@ -60,8 +64,13 @@ public:
   // Check if the socket is alive.
   int GetConnected() { return (this->SocketDescriptor >=0); }
 
+#ifdef _WIN32
+  H5FDdsmGetValueMacro(SocketDescriptor, SOCKET);
+  H5FDdsmGetValueMacro(ClientSocketDescriptor, SOCKET);
+#else
   H5FDdsmGetValueMacro(SocketDescriptor, int);
   H5FDdsmGetValueMacro(ClientSocketDescriptor, int);
+#endif
 
   // Description:
   // Initialize/Clean Windows Socket Library
@@ -142,8 +151,13 @@ public:
   int Receive(void* data, int length, int readFully=1);
 
 protected:
+#ifdef _WIN32
+  SOCKET SocketDescriptor;
+  SOCKET ClientSocketDescriptor;
+#else
   int SocketDescriptor;
   int ClientSocketDescriptor;
+#endif
 };
 
 

@@ -261,7 +261,8 @@ bool H5FDdsmManager::CreateDSM()
 
   if (this->DsmIsServer) {
     // Uniform Dsm : every node has a buffer the same size. (Addresses are sequential)
-    this->DSMBuffer->ConfigureUniform(this->DSMComm, ((long) this->GetLocalBufferSizeMBytes())*1024*1024, -1, -1);
+    H5FDdsmInt64 length = this->GetLocalBufferSizeMBytes()*1024*1024;
+    this->DSMBuffer->ConfigureUniform(this->DSMComm, length, -1, -1);
     if (this->UpdatePiece == 0) {
       H5FDdsmDebug(<< "Length set: " << this->DSMBuffer->GetLength() <<
          ", totalLength set: " << this->DSMBuffer->GetTotalLength() <<

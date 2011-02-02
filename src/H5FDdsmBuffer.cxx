@@ -143,7 +143,7 @@ H5FDdsmBuffer::H5FDdsmBuffer() {
 #endif
 
 #ifdef _WIN32
-  // TODO Init mutex
+  this->Lock = CreateMutex(NULL, FALSE, NULL);
 #else
   pthread_mutex_init(&this->Lock, NULL);
 #endif
@@ -153,7 +153,11 @@ H5FDdsmBuffer::~H5FDdsmBuffer() {
   if (this->StorageIsMine) delete[] this->Locks;
   if (this->XMLDescription) delete[] this->XMLDescription;
   if (this->Steerer) delete this->Steerer;
+#ifdef _WIN32
+  CloseHandle(Lock);
+#else
   pthread_mutex_destroy(&this->Lock);
+#endif
 }
 //----------------------------------------------------------------------------
 /*
@@ -265,7 +269,7 @@ H5FDdsmInt32
 H5FDdsmBuffer::RemoteService(H5FDdsmInt32 *ReturnOpcode){
 
   H5FDdsmInt32        Opcode, who, status = H5FD_DSM_FAIL;
-  H5FDdsmInt64        aLength;
+  H5FDdsmInt32        aLength;
   H5FDdsmInt64        Address;
   H5FDdsmInt32        lockSync = 0;
 
@@ -283,7 +287,7 @@ H5FDdsmBuffer::RemoteService(H5FDdsmInt32 *ReturnOpcode){
     case H5FD_DSM_LOCK_ACQUIRE:
       if (this->Comm->RemoteCommChannelSynced(&lockSync)) {
 #ifdef _WIN32
-        //TODO mutex lock
+        WaitForSingleObject(this->Lock, INFINITE);
 #else
         pthread_mutex_lock(&this->Lock);
 #endif
@@ -345,7 +349,7 @@ H5FDdsmBuffer::EndRemoteService() {
 H5FDdsmInt32
 H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
   H5FDdsmInt32        Opcode, who, value, status = H5FD_DSM_FAIL;
-  H5FDdsmInt64        aLength;
+  H5FDdsmInt32        aLength;
   H5FDdsmInt64        Address;
   H5FDdsmByte        *datap;
   static H5FDdsmInt32 updateSync = 0;
@@ -492,7 +496,7 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
       }
     }
 #ifdef _WIN32
-    //TODO mutex unlock
+    ReleaseMutex(this->Lock);
 #else
     pthread_mutex_unlock(&this->Lock);
 #endif
@@ -557,15 +561,15 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
     this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_LOCAL);
     if (Address & H5FD_DSM_DATA_MODIFIED) {
       this->IsDataModified = true;
-      this->UpdateLevel = Address - H5FD_DSM_DATA_MODIFIED;
+      this->UpdateLevel = (H5FDdsmInt32)Address - H5FD_DSM_DATA_MODIFIED;
     } else {
-      this->UpdateLevel = Address;
+      this->UpdateLevel = (H5FDdsmInt32)Address;
     }
     this->IsUpdateReady = true;
     H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "Update level " <<
         this->UpdateLevel << ", Switched to Local channel");
 #ifdef _WIN32
-    //TODO mutex unlock
+    ReleaseMutex(this->Lock);
 #else
     pthread_mutex_unlock(&this->Lock);
 #endif
@@ -687,7 +691,7 @@ H5FDdsmInt32
 H5FDdsmBuffer::Put(H5FDdsmInt64 Address, H5FDdsmInt64 aLength, void *Data){
   H5FDdsmInt32   who, MyId = this->Comm->GetId();
   H5FDdsmInt64       astart, aend;
-  H5FDdsmInt64         len;
+  H5FDdsmInt32       len;
   H5FDdsmByte    *datap = (H5FDdsmByte *)Data;
 
   while(aLength){
@@ -698,7 +702,7 @@ H5FDdsmBuffer::Put(H5FDdsmInt64 Address, H5FDdsmInt64 aLength, void *Data){
       return(H5FD_DSM_FAIL);
     }
     this->GetAddressRangeForId(who, &astart, &aend);
-    len = static_cast<int>(min(aLength, aend - Address + 1));
+    len = static_cast<H5FDdsmInt32>(min(aLength, aend - Address + 1));
     H5FDdsmDebug("Put " << len << " Bytes to Address " << Address << " Id = " << who);
     if (who == MyId && !this->IsConnected) { // check if a remote DSM is connected
       H5FDdsmByte *dp;
@@ -740,7 +744,7 @@ H5FDdsmInt32
 H5FDdsmBuffer::Get(H5FDdsmInt64 Address, H5FDdsmInt64 aLength, void *Data){
   H5FDdsmInt32   who, MyId = this->Comm->GetId();
   H5FDdsmInt64       astart, aend;
-  H5FDdsmInt64        len;
+  H5FDdsmInt32       len;
   H5FDdsmByte    *datap = (H5FDdsmByte *)Data;
 
   while(aLength){
@@ -750,7 +754,7 @@ H5FDdsmBuffer::Get(H5FDdsmInt64 Address, H5FDdsmInt64 aLength, void *Data){
       return(H5FD_DSM_FAIL);
     }
     this->GetAddressRangeForId(who, &astart, &aend);
-    len = static_cast<int>(min(aLength, aend - Address + 1));
+    len = static_cast<H5FDdsmInt32>(min(aLength, aend - Address + 1));
     H5FDdsmDebug("Get " << len << " Bytes from Address " << Address << " Id = " << who);
     if ((who == MyId) && (!this->IsConnected || this->IsServer)){
       H5FDdsmByte *dp;
@@ -794,7 +798,7 @@ H5FDdsmBuffer::RequestLockAcquire() {
 
   if (this->IsServer) {
 #ifdef _WIN32
-    //TODO mutex lock
+    WaitForSingleObject(this->Lock, INFINITE);
 #else
     pthread_mutex_lock(&this->Lock);
 #endif
@@ -821,7 +825,7 @@ H5FDdsmBuffer::RequestLockRelease() {
 
   if(this->IsServer) {
 #ifdef _WIN32
-    //TODO mutex unlock
+    ReleaseMutex(this->Lock);
 #else
     pthread_mutex_unlock(&this->Lock);
 #endif

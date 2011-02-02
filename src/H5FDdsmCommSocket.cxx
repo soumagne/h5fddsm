@@ -144,7 +144,7 @@ H5FDdsmCommSocket::Receive(H5FDdsmMsg *Msg, H5FDdsmInt32 Channel)
       int selectedIndex;
       int *socketsToSelect = new int[this->InterSize];
       for (int i=0; i<this->InterSize; i++) {
-        socketsToSelect[i] = this->InterComm[i]->GetClientSocketDescriptor();
+        socketsToSelect[i] = (int) this->InterComm[i]->GetClientSocketDescriptor();
       }
       // if ANY_SOURCE use select on the whole list of sockets descriptors
       this->InterComm[0]->SelectSockets(socketsToSelect, this->InterSize, 0, &selectedIndex);
@@ -450,7 +450,7 @@ H5FDdsmCommSocket::RemoteCommSendXML(H5FDdsmString file, H5FDdsmInt32 dest)
   if (H5FDdsmComm::RemoteCommSendXML(file, dest) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
   //
   if (this->Id == 0) {
-    H5FDdsmInt32 length = strlen(file) + 1;
+    H5FDdsmInt32 length = (H5FDdsmInt32)strlen(file) + 1;
     H5FDdsmDebug("Send XML to DSM Buffer object: Length=" << length << "\n" << file);
 
     if (this->CommChannel == H5FD_DSM_COMM_CHANNEL_REMOTE) {

@@ -149,11 +149,11 @@ int main (int argc, char* argv[])
   MPI_Comm dcomm = MPI_COMM_WORLD;
   char fullname[16] = "dsm";
   hsize_t numParticles = 0;
-  double DSMSize = 16; // default MB
+  long DSMSize = 16; // default MB
   int commType = H5FD_DSM_COMM_SOCKET;
 
   if (argv[1]) {
-    DSMSize = atof(argv[1]);
+    DSMSize = atol(argv[1]);
   }
 
   if (argv[2]) {
@@ -237,7 +237,7 @@ int main (int argc, char* argv[])
       // dsmManager->H5DumpLight();
 
       nremoteprocs = dsmManager->GetDSMHandle()->GetComm()->GetInterSize();
-      numParticles = (1024*1024*((dsmManager->GetDSMHandle()->GetTotalLength()/(1024.0*1024.0))-1)/(sizeof(double)*nremoteprocs));
+      numParticles = (hsize_t) (1024*1024*((dsmManager->GetDSMHandle()->GetTotalLength()/(1024.0*1024.0))-1)/(sizeof(double)*nremoteprocs));
       // Check data
       if (rank == 0) {
         // printf("Trying to read %d * %llu particles\n", nremoteprocs, numParticles);
