@@ -66,7 +66,6 @@ extern "C" {
 #include "H5FDprivate.h"  /* File drivers */
 #include "H5FDdsm.h"      /* MPI-based file drivers */
 #include "H5Iprivate.h"   /* IDs */
-#include "H5MMprivate.h"  /* Memory management */
 #include "H5Pprivate.h"   /* Property lists */
 
 #include "H5FDmpio.h"
@@ -744,12 +743,12 @@ H5FD_dsm_open(const char *name, unsigned UNUSED flags, hid_t fapl_id, haddr_t ma
   }
 
   if (name && *name) {
-    file->name = H5MM_xstrdup(name);
+    file->name = HDstrdup(name);
   }
 
   // See if DsmBuffer exists
   if (!fa->buffer) {
-    if (file->name) H5MM_xfree(file->name);
+    if (file->name) HDfree(file->name);
     free(file);
     HGOTO_ERROR(H5E_VFL, H5E_NOTFOUND, NULL, "DSM buffer not found");
   } else {
@@ -778,7 +777,7 @@ H5FD_dsm_open(const char *name, unsigned UNUSED flags, hid_t fapl_id, haddr_t ma
     //
     PRINT_INFO("Opening " << name);
     if (DsmGetEntry(file) == H5FD_DSM_FAIL) {
-      if (file->name) H5MM_xfree(file->name);
+      if (file->name) HDfree(file->name);
       free(file);
       HGOTO_ERROR(H5E_VFL, H5E_NOTFOUND, NULL, "Cannot get existing DSM buffer entries");
     } else {
@@ -891,7 +890,7 @@ H5FD_dsm_close(H5FD_t *_file)
 
 done:
   // Release resources
-  if (file->name) H5MM_xfree(file->name);
+  if (file->name) HDfree(file->name);
   HDmemset(file, 0, sizeof(H5FD_dsm_t));
   free(file);
   PRINT_DSM_INFO("Undef", "File closed");
