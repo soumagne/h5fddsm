@@ -744,13 +744,13 @@ H5FD_dsm_open(const char *name, unsigned UNUSED flags, hid_t fapl_id, haddr_t ma
   }
 
   if (name && *name) {
-    file->name = HDstrdup(name);
+    file->name = H5MM_xstrdup(name);
   }
 
   // See if DsmBuffer exists
   if (!fa->buffer) {
     if (file->name) H5MM_xfree(file->name);
-    H5MM_xfree(file);
+    free(file);
     HGOTO_ERROR(H5E_VFL, H5E_NOTFOUND, NULL, "DSM buffer not found");
   } else {
     file->DsmBuffer = fa->buffer;
@@ -779,7 +779,7 @@ H5FD_dsm_open(const char *name, unsigned UNUSED flags, hid_t fapl_id, haddr_t ma
     PRINT_INFO("Opening " << name);
     if (DsmGetEntry(file) == H5FD_DSM_FAIL) {
       if (file->name) H5MM_xfree(file->name);
-      H5MM_xfree(file);
+      free(file);
       HGOTO_ERROR(H5E_VFL, H5E_NOTFOUND, NULL, "Cannot get existing DSM buffer entries");
     } else {
       if (H5F_ACC_RDWR & flags) {
@@ -893,7 +893,7 @@ done:
   // Release resources
   if (file->name) H5MM_xfree(file->name);
   HDmemset(file, 0, sizeof(H5FD_dsm_t));
-  H5MM_xfree(file);
+  free(file);
   PRINT_DSM_INFO("Undef", "File closed");
 
   FUNC_LEAVE_NOAPI(ret_value)

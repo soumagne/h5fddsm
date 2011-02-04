@@ -35,11 +35,11 @@ int main (int argc, char* argv[])
   long DSMSize = 16;
   int commType = H5FD_DSM_COMM_SOCKET;
 
-  if (argv[1]) {
+  if (argc > 1) {
     DSMSize = atol(argv[1]);
   }
 
-  if (argv[2]) {
+  if (argc > 2) {
     if (!strcmp(argv[2], "Socket")) {
       commType = H5FD_DSM_COMM_SOCKET;
       std::cout << "SOCKET Inter-Communicator selected" << std::endl;

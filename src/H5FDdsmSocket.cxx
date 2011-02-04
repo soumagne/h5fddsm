@@ -133,7 +133,7 @@ int H5FDdsmSocket::WinSockCleanup()
 //-----------------------------------------------------------------------------
 int H5FDdsmSocket::Create()
 {
-  if ((this->SocketDescriptor = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+  if ((this->SocketDescriptor = (int)socket(AF_INET, SOCK_STREAM, 0)) < 0) {
     return -1;
   }
   // Eliminate windows 0.2 second delay sending (buffering) data.
@@ -247,11 +247,8 @@ int H5FDdsmSocket::Bind(int port, const char *hostName)
 //-----------------------------------------------------------------------------
 int H5FDdsmSocket::Select(unsigned long msec)
 {
-#ifdef _WIN32
-  SOCKET socketdescriptor = INVALID_SOCKET;
-#else
   int socketdescriptor = -1;
-#endif
+
   if (this->ClientSocketDescriptor < 0) {
     socketdescriptor = this->SocketDescriptor;
   } else {
@@ -299,7 +296,7 @@ int H5FDdsmSocket::Accept()
   if (this->SocketDescriptor < 0) {
     return -1;
   }
-  this->ClientSocketDescriptor = accept(this->SocketDescriptor, reinterpret_cast<sockaddr*>(&client), &client_len);
+  this->ClientSocketDescriptor = (int)accept(this->SocketDescriptor, reinterpret_cast<sockaddr*>(&client), &client_len);
   if (this->ClientSocketDescriptor < 0) {
     return -1;
   }
