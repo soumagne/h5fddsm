@@ -116,8 +116,10 @@ int H5FDdsmManager::GetDsmUpdateReady()
   int ret = 0;
   if (this->DSMBuffer) {
     if (this->DSMBuffer->GetIsUpdateReady()) {
-      // When update ready is found, the server takes the lock
-      this->DSMBuffer->RequestLockAcquire();
+      // When update ready is found, the server keeps the lock
+      // and only releases it when the update is over
+      // this->DSMBuffer->RequestLockAcquire();
+      this->DSMBuffer->SetReleaseLockOnClose(false);
       ret = 1;
     }
   }
@@ -129,6 +131,7 @@ void H5FDdsmManager::ClearDsmUpdateReady()
   if (this->DSMBuffer) {
     // When update ready is cleared, the server lock is released
     this->DSMBuffer->SetIsUpdateReady(0);
+    this->DSMBuffer->SetReleaseLockOnClose(true);
     this->DSMBuffer->RequestLockRelease();
   }
 }

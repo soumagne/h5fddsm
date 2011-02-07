@@ -499,7 +499,7 @@ H5FD_dsm_set_mode(unsigned long flags, void *dsmBuffer)
 
   switch(flags) {
   case H5FD_DSM_MANUAL_SERVER_UPDATE:
-    buffer->SetCommSwitchOnClose(false);
+    buffer->SetUpdateServerOnClose(false);
     break;
   case H5FD_DSM_UPDATE_LEVEL_0:
   case H5FD_DSM_UPDATE_LEVEL_1:
@@ -873,7 +873,7 @@ H5FD_dsm_close(H5FD_t *_file)
       MPI_Allreduce(&file->dirty, &isSomeoneDirty, sizeof(hbool_t), MPI_UNSIGNED_CHAR, MPI_MAX, comm);
       if (isSomeoneDirty) {
         file->DsmBuffer->SetIsDataModified(true);
-        if (!file->DsmBuffer->GetIsServer() && file->DsmBuffer->GetCommSwitchOnClose()) {
+        if (!file->DsmBuffer->GetIsServer() && file->DsmBuffer->GetUpdateServerOnClose()) {
           H5FD_dsm_server_update(file->DsmBuffer);
           goto done;
         }
@@ -885,8 +885,7 @@ H5FD_dsm_close(H5FD_t *_file)
   }
 
   // TODO As we need a manual update for the client, we may need a manual lock release for the server
-  // For now never release the server lock automatically
-  if (!file->DsmBuffer->GetIsServer()) file->DsmBuffer->RequestLockRelease();
+  if (file->DsmBuffer->GetReleaseLockOnClose()) file->DsmBuffer->RequestLockRelease();
 
 done:
   // Release resources

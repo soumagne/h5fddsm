@@ -98,7 +98,7 @@ H5FDdsmCommMpi::Probe(H5FDdsmMsg *Msg){
 
     if(H5FDdsmComm::Probe(Msg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
      MPI_Iprobe(MPI_ANY_SOURCE, Msg->Tag, this->Comm, &flag, &Status);
-     H5FDdsmDebug("MPI_Iprobe " << H5FDdsmTagToString(Msg->Tag) << ", " << this->Comm);
+     H5FDdsmDebug("MPI_Iprobe " << H5FDdsmTagToString(Msg->Tag));
     if(flag){
         nid = Status.MPI_SOURCE;
         Msg->SetSource(nid);
