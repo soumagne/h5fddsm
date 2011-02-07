@@ -38,8 +38,6 @@ int_f nh5fd_dsm_steering_update_c();
 #define nh5fd_dsm_steering_is_enabled_c H5_FC_FUNC_(h5fd_dsm_steering_is_enabled_c, H5FD_DSM_STEERING_IS_ENABLED_C)
 int_f nh5fd_dsm_steering_is_enabled_c(_fcd name, int_f* namelen);
 
-////
-
 #define nh5fd_dsm_steering_wait_c H5_FC_FUNC_(h5fd_dsm_steering_wait_c, H5FD_DSM_STEERING_WAIT_C)
 int_f nh5fd_dsm_steering_wait_c();
 
@@ -49,13 +47,11 @@ int_f nh5fd_dsm_steering_begin_query_c();
 #define nh5fd_dsm_steering_end_query_c H5_FC_FUNC_(h5fd_dsm_steering_end_query_c, H5FD_DSM_STEERING_END_QUERY_C)
 int_f nh5fd_dsm_steering_end_query_c();
 
-#define nh5fd_dsm_steering_gethandle_c H5_FC_FUNC_(h5fd_dsm_steering_gethandle_c, H5FD_DSM_STEERING_GETHANDLE_C)
+#define nh5fd_dsm_steering_get_handle_c H5_FC_FUNC_(h5fd_dsm_steering_get_handle_c, H5FD_DSM_STEERING_GET_HANDLE_C)
 int_f nh5fd_dsm_steering_get_handle_c(_fcd name, int_f* namelen, int_f* handle);
 
-#define nh5fd_dsm_steering_freehandle_c H5_FC_FUNC_(h5fd_dsm_steering_freehandle_c, H5FD_DSM_STEERING_FREEHANDLE_C)
-int_f nh5fd_dsm_steering_freehandle_c(int_f* handle);
-
-////
+#define nh5fd_dsm_steering_free_handle_c H5_FC_FUNC_(h5fd_dsm_steering_free_handle_c, H5FD_DSM_STEERING_FREE_HANDLE_C)
+int_f nh5fd_dsm_steering_free_handle_c(int_f* handle);
 
 #define nh5fd_dsm_steering_is_set_c H5_FC_FUNC_(h5fd_dsm_steering_is_set_c, H5FD_DSM_STEERING_IS_SET_C)
 int_f nh5fd_dsm_steering_is_set_c(_fcd name, int_f* namelen, int_f* set);

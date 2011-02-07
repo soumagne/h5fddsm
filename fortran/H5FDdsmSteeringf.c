@@ -130,8 +130,11 @@ int_f nh5fd_dsm_steering_is_set_c(_fcd name, int_f* namelen, int_f* set)
 }
 
 /*----------------------------------------------------------------------------
+ * Name:        h5fd_dsm_steering_wait_c
+ * Purpose:     Pause and wait until completion of steering orders
+ * Inputs:      none
+ * Returns:     0 on success, -1 on failure
  *---------------------------------------------------------------------------*/
-
 int_f nh5fd_dsm_steering_wait_c()
 {
  /*
@@ -142,6 +145,12 @@ int_f nh5fd_dsm_steering_wait_c()
   return 0;
 }
 
+/*----------------------------------------------------------------------------
+ * Name:        h5fd_dsm_steering_begin_query_c
+ * Purpose:     Start a query of steering orders
+ * Inputs:      none
+ * Returns:     0 on success, -1 on failure
+ *---------------------------------------------------------------------------*/
 int_f nh5fd_dsm_steering_begin_query_c()
 {
  /*
@@ -152,6 +161,12 @@ int_f nh5fd_dsm_steering_begin_query_c()
   return 0;
 }
 
+/*----------------------------------------------------------------------------
+ * Name:        h5fd_dsm_steering_end_query_c
+ * Purpose:     End a query of steering orders
+ * Inputs:      none
+ * Returns:     0 on success, -1 on failure
+ *---------------------------------------------------------------------------*/
 int_f nh5fd_dsm_steering_end_query_c()
 {
  /*
@@ -162,7 +177,15 @@ int_f nh5fd_dsm_steering_end_query_c()
   return 0;
 }
 
-int_f nh5fd_dsm_steering_gethandle_c(_fcd name, int_f* namelen, int_f* handle)
+/*----------------------------------------------------------------------------
+ * Name:        h5fd_dsm_steering_get_handle_c
+ * Purpose:     Get the DSM interaction dataset handle
+ * Inputs:      name        - dataset name
+ *              namelen     - name length
+ * Outputs:     handle      - dataset handle
+ * Returns:     0 on success, -1 on failure
+ *---------------------------------------------------------------------------*/
+int_f nh5fd_dsm_steering_get_handle_c(_fcd name, int_f* namelen, int_f* handle)
 {
   char  *c_name;
   int_f  c_namelen;
@@ -175,22 +198,28 @@ int_f nh5fd_dsm_steering_gethandle_c(_fcd name, int_f* namelen, int_f* handle)
   if (c_name == NULL) return -1;
 
  /*
-  * Call H5FD_dsm_steering_gethandle function.
+  * Call H5FD_dsm_steering_get_handle function.
   */
-  ret = H5FD_dsm_steering_gethandle(c_name, handle);
+  ret = H5FD_dsm_steering_get_handle(c_name, handle);
   HDfree(c_name);
   if (ret < 0) return -1;
   return 0;
 }
 
-int_f nh5fd_dsm_steering_freehandle_c(int_f* handle)
+/*----------------------------------------------------------------------------
+ * Name:        h5fd_dsm_steering_free_handle_c
+ * Purpose:     Free the DSM interaction dataset handle
+ * Inputs:      handle      - dataset handle
+ * Returns:     0 on success, -1 on failure
+ *---------------------------------------------------------------------------*/
+int_f nh5fd_dsm_steering_free_handle_c(int_f* handle)
 {
   herr_t ret;
   hid_t handle_f = *handle;
  /*
-  * Call H5FD_dsm_steering_gethandle function.
+  * Call H5FD_dsm_steering_free_handle function.
   */
-  ret = H5FD_dsm_steering_freehandle(handle_f);
+  ret = H5FD_dsm_steering_free_handle(handle_f);
   if (ret < 0) return -1;
   return 0;
 }
@@ -230,6 +259,15 @@ int_f nh5fd_dsm_steering_scalar_get_c(_fcd name, int_f* namelen, hid_t_f* mem_ty
      return 0;
 }
 
+/*----------------------------------------------------------------------------
+ * Name:        h5fd_dsm_steering_scalar_set_c
+ * Purpose:     Set the steering scalar values
+ * Inputs:      name        - property name
+ *              namelen     - name length
+ *              mem_type_id - memory datatype identifier
+ *              buf         - character data buffer
+ * Returns:     0 on success, -1 on failure
+ *---------------------------------------------------------------------------*/
 int_f nh5fd_dsm_steering_scalar_set_c(_fcd name, int_f* namelen, hid_t_f* mem_type_id, _fcd buf)
 {
      int    ret_value = -1;
@@ -294,6 +332,16 @@ int_f nh5fd_dsm_steering_vector_get_c(_fcd name, int_f* namelen, hid_t_f* mem_ty
      return 0;
 }
 
+/*----------------------------------------------------------------------------
+ * Name:        h5fd_dsm_steering_vector_set_c
+ * Purpose:     Set the steering vector values
+ * Inputs:      name        - property name
+ *              namelen     - name length
+ *              mem_type_id - memory datatype identifier
+ *              num_elem    - number of elements to get
+ *              buf         - character data buffer
+ * Returns:     0 on success, -1 on failure
+ *---------------------------------------------------------------------------*/
 int_f nh5fd_dsm_steering_vector_set_c(_fcd name, int_f* namelen, hid_t_f* mem_type_id, hsize_t_f* num_elem, _fcd buf)
 {
      int     ret_value = -1;

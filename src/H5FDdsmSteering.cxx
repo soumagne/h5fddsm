@@ -51,7 +51,6 @@ extern void* DsmGetAutoAllocatedManager();
 
 void *dsm_buffer = NULL; // pointer to internal dsm buffer reference
 
-
 //----------------------------------------------------------------------------
 // Function:    H5FD_dsm_steering_init
 //
@@ -89,7 +88,6 @@ herr_t H5FD_dsm_steering_init(MPI_Comm comm, void *buffer)
 done:
   FUNC_LEAVE_NOAPI(ret_value);
 }
-
 
 //----------------------------------------------------------------------------
 // Function:    H5FD_dsm_steering_update
@@ -129,7 +127,6 @@ done:
   FUNC_LEAVE_NOAPI(ret_value);
 }
 
-
 //----------------------------------------------------------------------------
 // Function:    H5FD_dsm_steering_is_enabled
 //
@@ -160,13 +157,14 @@ done:
 }
 
 //----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
+// Function:    H5FD_dsm_steering_wait
+//
+// Purpose:     Pause and wait until completion of steering orders, released by a play.
+//
+// Return:      Success:        non-negative
+//              Failure:        negative
 //
 //----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
 herr_t H5FD_dsm_steering_wait()
 {
   herr_t ret_value = SUCCEED;
@@ -189,6 +187,15 @@ herr_t H5FD_dsm_steering_wait()
 done:
   FUNC_LEAVE_NOAPI(ret_value);
 }
+
+//----------------------------------------------------------------------------
+// Function:    H5FD_dsm_steering_begin_query
+//
+// Purpose:     Begin/End query - Avoid to open and request file lock acquisition multiple times.
+//
+// Return:      Success:        non-negative
+//              Failure:        negative
+//
 //----------------------------------------------------------------------------
 herr_t H5FD_dsm_steering_begin_query()
 {
@@ -207,6 +214,15 @@ herr_t H5FD_dsm_steering_begin_query()
 done:
   FUNC_LEAVE_NOAPI(ret_value);
 }
+
+//----------------------------------------------------------------------------
+// Function:    H5FD_dsm_steering_end_query
+//
+// Purpose:     Begin/End query - Avoid to open and request file lock acquisition multiple times.
+//
+// Return:      Success:        non-negative
+//              Failure:        negative
+//
 //----------------------------------------------------------------------------
 herr_t H5FD_dsm_steering_end_query()
 {
@@ -225,12 +241,22 @@ herr_t H5FD_dsm_steering_end_query()
 done:
   FUNC_LEAVE_NOAPI(ret_value);
 }
+
 //----------------------------------------------------------------------------
-herr_t H5FD_dsm_steering_gethandle(const char *name, hid_t *handle)
+// Function:    H5FD_dsm_steering_get_handle
+//
+// Purpose:     Get/Free DSM handle to interaction dataset - can be passed
+//              to HDF5 common functions for further read/write.
+//
+// Return:      Success:        non-negative
+//              Failure:        negative
+//
+//----------------------------------------------------------------------------
+herr_t H5FD_dsm_steering_get_handle(const char *name, hid_t *handle)
 {
   herr_t ret_value = SUCCEED;
   H5FDdsmBuffer *dsmBuffer;
-  FUNC_ENTER_NOAPI(H5FD_dsm_steering_gethandle, FAIL)
+  FUNC_ENTER_NOAPI(H5FD_dsm_steering_get_handle, FAIL)
   if (!dsm_buffer) {
     DSM_STEERING_GOTO_ERROR("Attempting to use the DSM Steering library before calling H5FD_dsm_steering_init", FAIL)
   }
@@ -242,12 +268,22 @@ herr_t H5FD_dsm_steering_gethandle(const char *name, hid_t *handle)
 done:
   FUNC_LEAVE_NOAPI(ret_value);
 }
+
 //----------------------------------------------------------------------------
-herr_t H5FD_dsm_steering_freehandle(hid_t handle)
+// Function:    H5FD_dsm_steering_free_handle
+//
+// Purpose:     Get/Free DSM handle to interaction dataset - can be passed
+//              to HDF5 common functions for further read/write.
+//
+// Return:      Success:        non-negative
+//              Failure:        negative
+//
+//----------------------------------------------------------------------------
+herr_t H5FD_dsm_steering_free_handle(hid_t handle)
 {
   herr_t ret_value = SUCCEED;
   H5FDdsmBuffer *dsmBuffer;
-  FUNC_ENTER_NOAPI(H5FD_dsm_steering_freehandle, FAIL)
+  FUNC_ENTER_NOAPI(H5FD_dsm_steering_free_handle, FAIL)
   if (!dsm_buffer) {
     DSM_STEERING_GOTO_ERROR("Attempting to use the DSM Steering library before calling H5FD_dsm_steering_init", FAIL)
   }
@@ -260,13 +296,6 @@ herr_t H5FD_dsm_steering_freehandle(hid_t handle)
 done:
   FUNC_LEAVE_NOAPI(ret_value);
 }
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------
 // Function:    H5FD_dsm_steering_is_set
@@ -294,6 +323,7 @@ herr_t H5FD_dsm_steering_is_set(const char *name, int *set)
 done:
   FUNC_LEAVE_NOAPI(ret_value);
 }
+
 //----------------------------------------------------------------------------
 // Function:    H5FD_dsm_steering_scalar_get
 //
@@ -325,6 +355,15 @@ done:
   FUNC_LEAVE_NOAPI(ret_value);
 }
 
+//----------------------------------------------------------------------------
+// Function:    H5FD_dsm_steering_scalar_get
+//
+// Purpose:     Set the scalar value corresponding to the property name given in the template.
+//
+// Return:      Success:        non-negative
+//              Failure:        negative
+//
+//----------------------------------------------------------------------------
 herr_t H5FD_dsm_steering_scalar_set(const char *name, hid_t mem_type, void *data)
 {
   herr_t ret_value = SUCCEED;
@@ -346,7 +385,6 @@ herr_t H5FD_dsm_steering_scalar_set(const char *name, hid_t mem_type, void *data
 done:
   FUNC_LEAVE_NOAPI(ret_value);
 }
-
 
 //----------------------------------------------------------------------------
 // Function:    H5FD_dsm_steering_vector_get
@@ -379,6 +417,15 @@ done:
   FUNC_LEAVE_NOAPI(ret_value);
 }
 
+//----------------------------------------------------------------------------
+// Function:    H5FD_dsm_steering_vector_get
+//
+// Purpose:     Set the vector valued corresponding to the property name given in the template.
+//
+// Return:      Success:        non-negative
+//              Failure:        negative
+//
+//----------------------------------------------------------------------------
 herr_t H5FD_dsm_steering_vector_set(const char *name, hid_t mem_type, hsize_t number_of_elements, void *data)
 {
   herr_t ret_value = SUCCEED;
@@ -400,7 +447,6 @@ herr_t H5FD_dsm_steering_vector_set(const char *name, hid_t mem_type, hsize_t nu
 done:
   FUNC_LEAVE_NOAPI(ret_value);
 }
-
 
 //----------------------------------------------------------------------------
 // Function:    H5FD_dsm_dump

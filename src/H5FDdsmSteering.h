@@ -51,16 +51,26 @@ extern "C" {
    */
   H5FDdsm_EXPORT herr_t H5FD_dsm_steering_is_enabled(const char *name);
 
-
+  /* Description:
+   * Pause and wait until completion of steering orders, released by a play.
+   */
   H5FDdsm_EXPORT herr_t H5FD_dsm_steering_wait();
-  H5FDdsm_EXPORT herr_t H5FD_dsm_steering_begin_query();
-  H5FDdsm_EXPORT herr_t H5FD_dsm_steering_end_query();
-  H5FDdsm_EXPORT herr_t H5FD_dsm_steering_gethandle(const char *name, hid_t *handle);
-  H5FDdsm_EXPORT herr_t H5FD_dsm_steering_freehandle(hid_t handle);
-
 
   /* Description:
-   * Return true if the object exists in the "Interactions" group
+   * Begin/End query - Avoid to open and request file lock acquisition multiple times.
+   */
+  H5FDdsm_EXPORT herr_t H5FD_dsm_steering_begin_query();
+  H5FDdsm_EXPORT herr_t H5FD_dsm_steering_end_query();
+
+  /* Description:
+   * Get/Free DSM handle to interaction dataset - can be passed
+   * to HDF5 common functions for further read/write.
+   */
+  H5FDdsm_EXPORT herr_t H5FD_dsm_steering_get_handle(const char *name, hid_t *handle);
+  H5FDdsm_EXPORT herr_t H5FD_dsm_steering_free_handle(hid_t handle);
+
+  /* Description:
+   * Return true if the object exists in the "Interactions" group.
    */
   H5FDdsm_EXPORT herr_t H5FD_dsm_steering_is_set(const char *name, int *set);
 
