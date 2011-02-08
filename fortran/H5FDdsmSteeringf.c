@@ -233,7 +233,8 @@ int_f nh5fd_dsm_steering_free_handle_c(int_f* handle)
  * Outputs:     buf         - character data buffer
  * Returns:     0 on success, -1 on failure
  *---------------------------------------------------------------------------*/
-int_f nh5fd_dsm_steering_scalar_get_c(_fcd name, int_f* namelen, hid_t_f* mem_type_id, _fcd buf)
+int_f nh5fd_dsm_steering_scalar_get_c(_fcd name, int_f* namelen,
+    hid_t_f* mem_type_id, _fcd buf)
 {
      int    ret_value = -1;
      char  *c_name;
@@ -268,7 +269,8 @@ int_f nh5fd_dsm_steering_scalar_get_c(_fcd name, int_f* namelen, hid_t_f* mem_ty
  *              buf         - character data buffer
  * Returns:     0 on success, -1 on failure
  *---------------------------------------------------------------------------*/
-int_f nh5fd_dsm_steering_scalar_set_c(_fcd name, int_f* namelen, hid_t_f* mem_type_id, _fcd buf)
+int_f nh5fd_dsm_steering_scalar_set_c(_fcd name, int_f* namelen,
+    hid_t_f* mem_type_id, _fcd buf)
 {
      int    ret_value = -1;
      char  *c_name;
@@ -304,7 +306,8 @@ int_f nh5fd_dsm_steering_scalar_set_c(_fcd name, int_f* namelen, hid_t_f* mem_ty
  * Outputs:     buf         - character data buffer
  * Returns:     0 on success, -1 on failure
  *---------------------------------------------------------------------------*/
-int_f nh5fd_dsm_steering_vector_get_c(_fcd name, int_f* namelen, hid_t_f* mem_type_id, hsize_t_f* num_elem, _fcd buf)
+int_f nh5fd_dsm_steering_vector_get_c(_fcd name, int_f* namelen,
+    hid_t_f* mem_type_id, hsize_t_f* num_elem, _fcd buf)
 {
      int     ret_value = -1;
      char   *c_name;
@@ -326,7 +329,8 @@ int_f nh5fd_dsm_steering_vector_get_c(_fcd name, int_f* namelen, hid_t_f* mem_ty
      /*
       * Call H5FD_dsm_steering_vector_get function.
       */
-     ret = H5FD_dsm_steering_vector_get(c_name, c_mem_type_id, c_num_elem, _fcdtocp(buf));
+     ret = H5FD_dsm_steering_vector_get(c_name, c_mem_type_id, c_num_elem,
+         _fcdtocp(buf));
      HDfree(c_name);
      if (ret < 0) return ret_value;
      return 0;
@@ -342,7 +346,8 @@ int_f nh5fd_dsm_steering_vector_get_c(_fcd name, int_f* namelen, hid_t_f* mem_ty
  *              buf         - character data buffer
  * Returns:     0 on success, -1 on failure
  *---------------------------------------------------------------------------*/
-int_f nh5fd_dsm_steering_vector_set_c(_fcd name, int_f* namelen, hid_t_f* mem_type_id, hsize_t_f* num_elem, _fcd buf)
+int_f nh5fd_dsm_steering_vector_set_c(_fcd name, int_f* namelen,
+    hid_t_f* mem_type_id, hsize_t_f* num_elem, _fcd buf)
 {
      int     ret_value = -1;
      char   *c_name;
@@ -364,7 +369,8 @@ int_f nh5fd_dsm_steering_vector_set_c(_fcd name, int_f* namelen, hid_t_f* mem_ty
      /*
       * Call H5FD_dsm_steering_vector_set function.
       */
-     ret = H5FD_dsm_steering_vector_set(c_name, c_mem_type_id, c_num_elem, _fcdtocp(buf));
+     ret = H5FD_dsm_steering_vector_set(c_name, c_mem_type_id, c_num_elem,
+         _fcdtocp(buf));
      HDfree(c_name);
      if (ret < 0) return ret_value;
      return 0;

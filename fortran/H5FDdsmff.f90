@@ -26,10 +26,10 @@
 !
 ! This file contains Fortran90 interfaces for H5FDdsm functions.
 !
-     MODULE H5FDDSM
-         USE H5FDDSM_GLOBAL
-         USE H5GLOBAL
-         CONTAINS
+MODULE H5FDDSM
+  USE H5FDDSM_GLOBAL
+  USE H5GLOBAL
+  CONTAINS
 
 !----------------------------------------------------------------------
 ! Name:        h5pset_fapl_dsm_f
@@ -47,15 +47,15 @@
 !                NONE
 !
 !----------------------------------------------------------------------
-         SUBROUTINE h5pset_fapl_dsm_f(prp_id, comm, hdferr)
-            IMPLICIT NONE
-            INTEGER(HID_T), INTENT(IN) :: prp_id ! Property list identifier
-            INTEGER, INTENT(IN)  :: comm         ! Default communicator
-            INTEGER, INTENT(OUT) :: hdferr       ! Error code
+  SUBROUTINE h5pset_fapl_dsm_f(prp_id, comm, hdferr)
+    IMPLICIT NONE
+    INTEGER(HID_T), INTENT(IN) :: prp_id ! Property list identifier
+    INTEGER, INTENT(IN)  :: comm         ! Default communicator
+    INTEGER, INTENT(OUT) :: hdferr       ! Error code
 
-            INTEGER, EXTERNAL :: h5pset_fapl_dsm_c
-            hdferr = h5pset_fapl_dsm_c(prp_id, comm)
-          END SUBROUTINE h5pset_fapl_dsm_f
+    INTEGER, EXTERNAL :: h5pset_fapl_dsm_c
+    hdferr = h5pset_fapl_dsm_c(prp_id, comm)
+  END SUBROUTINE h5pset_fapl_dsm_f
 
 !----------------------------------------------------------------------
 ! Name:        h5pget_fapl_dsm_f
@@ -73,15 +73,15 @@
 !                NONE
 !
 !----------------------------------------------------------------------
-         SUBROUTINE h5pget_fapl_dsm_f(prp_id, comm, hdferr)
-           IMPLICIT NONE
-           INTEGER(HID_T), INTENT(IN) :: prp_id ! Property list identifier
-           INTEGER, INTENT(OUT) :: comm ! buffer to return communicator
-           INTEGER, INTENT(OUT) :: hdferr  ! Error code
+  SUBROUTINE h5pget_fapl_dsm_f(prp_id, comm, hdferr)
+    IMPLICIT NONE
+    INTEGER(HID_T), INTENT(IN) :: prp_id ! Property list identifier
+    INTEGER, INTENT(OUT) :: comm ! buffer to return communicator
+    INTEGER, INTENT(OUT) :: hdferr  ! Error code
 
-           INTEGER, EXTERNAL :: h5pget_fapl_dsm_c
-           hdferr = h5pget_fapl_dsm_c(prp_id, comm)
-         END SUBROUTINE h5pget_fapl_dsm_f
+    INTEGER, EXTERNAL :: h5pget_fapl_dsm_c
+    hdferr = h5pget_fapl_dsm_c(prp_id, comm)
+  END SUBROUTINE h5pget_fapl_dsm_f
 
 !----------------------------------------------------------------------
 ! Name:     h5fd_dsm_set_mode_f
@@ -99,23 +99,23 @@
 !               NONE
 !
 !----------------------------------------------------------------------
-         SUBROUTINE h5fd_dsm_set_mode_f(mode, hdferr)
-            IMPLICIT NONE
-            INTEGER, INTENT(IN)  :: mode         ! DSM mode to use
-            INTEGER, INTENT(OUT) :: hdferr       ! Error code
-            INTEGER :: err_0, err_1
+  SUBROUTINE h5fd_dsm_set_mode_f(mode, hdferr)
+    IMPLICIT NONE
+    INTEGER, INTENT(IN)  :: mode         ! DSM mode to use
+    INTEGER, INTENT(OUT) :: hdferr       ! Error code
+    INTEGER :: err_0, err_1
 
-            INTEGER, EXTERNAL :: h5fd_dsm_set_mode_c
-            INTERFACE
-              INTEGER FUNCTION h5fd_dsm_init_flags_c(i_H5FD_dsm_flags)
-                USE H5FDDSM_GLOBAL
-                INTEGER i_H5FD_dsm_flags(H5FD_DSM_FLAGS_LEN)
-              END FUNCTION h5fd_dsm_init_flags_c
-            END INTERFACE
-            err_0 = h5fd_dsm_init_flags_c(H5FD_dsm_flags)
-            err_1 = h5fd_dsm_set_mode_c(mode)
-            hdferr = err_0 + err_1
-          END SUBROUTINE h5fd_dsm_set_mode_f
+    INTEGER, EXTERNAL :: h5fd_dsm_set_mode_c
+    INTERFACE
+      INTEGER FUNCTION h5fd_dsm_init_flags_c(i_H5FD_dsm_flags)
+        USE H5FDDSM_GLOBAL
+        INTEGER i_H5FD_dsm_flags(H5FD_DSM_FLAGS_LEN)
+      END FUNCTION h5fd_dsm_init_flags_c
+    END INTERFACE
+    err_0 = h5fd_dsm_init_flags_c(H5FD_dsm_flags)
+    err_1 = h5fd_dsm_set_mode_c(mode)
+    hdferr = err_0 + err_1
+  END SUBROUTINE h5fd_dsm_set_mode_f
 
 !----------------------------------------------------------------------
 ! Name:     h5fd_dsm_server_update_f
@@ -132,13 +132,12 @@
 !               NONE
 !
 !----------------------------------------------------------------------
-         SUBROUTINE h5fd_dsm_server_update_f(hdferr)
-            IMPLICIT NONE
-            INTEGER, INTENT(OUT) :: hdferr       ! Error code
+  SUBROUTINE h5fd_dsm_server_update_f(hdferr)
+    IMPLICIT NONE
+    INTEGER, INTENT(OUT) :: hdferr       ! Error code
 
-            INTEGER, EXTERNAL :: h5fd_dsm_server_update_c
-            hdferr = h5fd_dsm_server_update_c()
-          END SUBROUTINE h5fd_dsm_server_update_f
+    INTEGER, EXTERNAL :: h5fd_dsm_server_update_c
+    hdferr = h5fd_dsm_server_update_c()
+  END SUBROUTINE h5fd_dsm_server_update_f
 
-
-    END MODULE H5FDDSM
+END MODULE H5FDDSM
