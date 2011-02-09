@@ -584,20 +584,12 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
     } else {
       this->UpdateLevel = (H5FDdsmInt32)Address;
     }
+    // When update ready is found, the server keeps the lock
+    // and only releases it when the update is over
+    this->ReleaseLockOnClose = false;
     this->IsUpdateReady = true;
     H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "Update level " <<
         this->UpdateLevel << ", Switched to Local channel");
-//    if (!this->IsLocked) {
-//      H5FDdsmLockError("already released");
-//    } else {
-//      this->IsLocked = false;
-//      H5FDdsmLockDebug("released");
-//    }
-//#ifdef _WIN32
-//    ReleaseMutex(this->Lock);
-//#else
-//    pthread_mutex_unlock(&this->Lock);
-//#endif
     break;
   case H5FD_DSM_CLEAR_STORAGE:
     if (this->Comm->RemoteCommChannelSynced(&clearStorageSync)) {

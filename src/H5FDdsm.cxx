@@ -547,10 +547,11 @@ H5FD_dsm_server_update(void *dsmBuffer)
   }
 
   if (!buffer->GetIsLocked()) buffer->RequestLockAcquire();
-//  if (buffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
+
+  if (buffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
     PRINT_DSM_INFO(buffer->GetComm()->GetId(), "SetIsSyncRequired(true)");
     buffer->SetIsSyncRequired(true);
-//  }
+  }
   buffer->RequestServerUpdate();
 
 done:
@@ -599,7 +600,7 @@ H5Pset_fapl_dsm(hid_t fapl_id, MPI_Comm dsmComm, void *dsmBuffer)
   }
 
   if (!fa.buffer->GetSteerer()->GetWriteToDSM() || 
-      (fa.buffer && !fa.buffer->GetIsConnected() && !fa.buffer->GetIsServer())) 
+      (!fa.buffer->GetIsConnected() && !fa.buffer->GetIsServer()))
   {
     // next time step will go back to the DSM if a steering asked for writing to the disk
     if (fa.buffer->GetSteerer()) fa.buffer->GetSteerer()->SetWriteToDSM(1);
@@ -754,19 +755,17 @@ H5FD_dsm_open(const char *name, unsigned UNUSED flags, hid_t fapl_id, haddr_t ma
   } else {
     file->DsmBuffer = fa->buffer;
 
-    if (//(file->DsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI_RMA) &&
+    if (!file->DsmBuffer->GetIsLocked() && file->DsmBuffer->GetIsConnected()) {
+      file->DsmBuffer->RequestLockAcquire();
+    }
+
+    if ((file->DsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI_RMA) &&
         file->DsmBuffer->GetIsSyncRequired() && !file->DsmBuffer->GetIsServer()) {
       // After possible RMA put / get from the server, need to sync windows before
       // further operations
-      if (file->DsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
-          file->DsmBuffer->GetComm()->RemoteCommSync();
-      }
+      file->DsmBuffer->GetComm()->RemoteCommSync();
       PRINT_INFO("SetIsSyncRequired(false)");
       file->DsmBuffer->SetIsSyncRequired(false);
-    }
-
-    if (!file->DsmBuffer->GetIsLocked()) {
-      file->DsmBuffer->RequestLockAcquire();
     }
 
     if ((H5F_ACC_CREAT & flags) && !file->DsmBuffer->GetIsServer()) {
@@ -858,7 +857,7 @@ H5FD_dsm_close(H5FD_t *_file)
     HGOTO_ERROR(H5E_VFL, H5E_CLOSEERROR, FAIL, "can't close DSM");
 
   if (!file->DsmBuffer->GetIsReadOnly()) {
-    if (!file->DsmBuffer->GetIsServer() || (file->DsmBuffer->GetIsServer() && !file->DsmBuffer->GetIsConnected())) {
+    if (!file->DsmBuffer->GetIsServer() || !file->DsmBuffer->GetIsConnected()) {
       PRINT_INFO("Gathering dirty info");
       if (file->DsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_SOCKET) {
         comm = dynamic_cast <H5FDdsmCommSocket*> (file->DsmBuffer->GetComm())->GetComm();
@@ -873,9 +872,12 @@ H5FD_dsm_close(H5FD_t *_file)
       MPI_Allreduce(&file->dirty, &isSomeoneDirty, sizeof(hbool_t), MPI_UNSIGNED_CHAR, MPI_MAX, comm);
       if (isSomeoneDirty) {
         file->DsmBuffer->SetIsDataModified(true);
-        if (!file->DsmBuffer->GetIsServer() && file->DsmBuffer->GetUpdateServerOnClose()) {
-          H5FD_dsm_server_update(file->DsmBuffer);
-          goto done;
+        if (file->DsmBuffer->GetUpdateServerOnClose()) {
+          if (!file->DsmBuffer->GetIsServer()) {
+            H5FD_dsm_server_update(file->DsmBuffer);
+          } else {
+            file->DsmBuffer->SetIsUpdateReady(true);
+          }
         }
         file->dirty = FALSE;
       }
@@ -885,15 +887,18 @@ H5FD_dsm_close(H5FD_t *_file)
   }
 
   // TODO As we need a manual update for the client, we may need a manual lock release for the server
-  if (file->DsmBuffer->GetReleaseLockOnClose()) file->DsmBuffer->RequestLockRelease();
+  if (file->DsmBuffer->GetReleaseLockOnClose() && file->DsmBuffer->GetIsConnected()
+      && file->DsmBuffer->GetIsLocked()) {
+    file->DsmBuffer->RequestLockRelease();
+  }
 
-done:
   // Release resources
   if (file->name) HDfree(file->name);
   HDmemset(file, 0, sizeof(H5FD_dsm_t));
   free(file);
   PRINT_DSM_INFO("Undef", "File closed");
 
+done:
   FUNC_LEAVE_NOAPI(ret_value)
 }
 

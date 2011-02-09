@@ -551,9 +551,18 @@ H5FDdsmInt32 H5FDdsmSteerer::CheckCommand(H5FDdsmConstString command)
   std::string stringCommand = command;
 
   if (stringCommand == "pause") {
+    bool lockStatus = this->DsmBuffer->GetIsLocked();
+    if (lockStatus) {
+      // During the pause we don't do anything so we don't need to keep the lock
+      this->DsmBuffer->RequestLockRelease();
+    }
     H5FDdsmDebug("Receiving ready...");
     this->DsmBuffer->GetComm()->RemoteCommRecvReady();
     H5FDdsmDebug("Ready received");
+    if (lockStatus) {
+      // If the client had acquired the lock before, take it back
+      this->DsmBuffer->RequestLockAcquire();
+    }
     return(H5FD_DSM_SUCCESS);
   }
   else if (stringCommand == "play") {

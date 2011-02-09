@@ -199,11 +199,11 @@ public:
 
 #define H5FDdsmError(x) \
 { \
-  std::cout << "H5FD_DSM Error : " __FILE__ << " line " << __LINE__ << x << std::endl; \
+  std::cout << "H5FD_DSM Error : " __FILE__ << " line " << __LINE__ << ": " << x << std::endl; \
 } \
 
 #define H5FDdsmExternalError(x) \
-{ std::cout << "H5FD_DSM Error : " __FILE__ << " line " << __LINE__ << x << std::endl; \
+{ std::cout << "H5FD_DSM Error : " __FILE__ << " line " << __LINE__ << ": " << x << std::endl; \
 }
 #endif
 //------------------------------------------------------------------------------

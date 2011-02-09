@@ -108,16 +108,19 @@ herr_t H5FD_dsm_steering_update()
   }
 
   dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
-  if (//(dsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI_RMA) &&
+
+  if (!dsmBuffer->GetIsLocked()) dsmBuffer->RequestLockAcquire();
+
+  if ((dsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI_RMA) &&
       dsmBuffer->GetIsSyncRequired() && !dsmBuffer->GetIsServer()) {
     // After possible RMA put / get from the server, need to sync windows before
     // further operations
     if (dsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
       dsmBuffer->GetComm()->RemoteCommSync();
     }
-    if (!dsmBuffer->GetIsLocked()) dsmBuffer->RequestLockAcquire();
     dsmBuffer->SetIsSyncRequired(false);
   }
+
   dsmBuffer->GetSteerer()->GetSteeringCommands();
   dsmBuffer->GetSteerer()->GetDisabledObjects();
   // Automatically triggers an update of steering objects during the begin loop function
