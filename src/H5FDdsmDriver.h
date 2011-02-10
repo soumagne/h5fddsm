@@ -68,8 +68,10 @@ class H5FDdsmStorage;
 #define H5FD_DSM_TYPE_UNIFORM       0
 #define H5FD_DSM_TYPE_UNIFORM_RANGE 1
 #define H5FD_DSM_TYPE_MIXED         2
+#define H5FD_DSM_TYPE_BLOCK_CYCLIC  3
 
 #define H5FD_DSM_DEFAULT_LENGTH 10000
+#define H5FD_DSM_BLOCK_LENGTH 1024
 
 typedef struct
 {
@@ -135,7 +137,7 @@ class H5FDdsm_EXPORT H5FDdsmDriver : public H5FDdsmObject {
     H5FDdsmSetValueMacro(Comm, H5FDdsmComm *);
 
     //! Address Range
-    H5FDdsmInt32 GetAddressRangeForId(H5FDdsmInt32 Id, H5FDdsmInt64 *Start, H5FDdsmInt64 *End);
+    H5FDdsmInt32 GetAddressRangeForId(H5FDdsmInt32 Id, H5FDdsmInt64 *Start, H5FDdsmInt64 *End, H5FDdsmInt64 Address=-1);
 
     //! Configure the system. Set the Comm and ServerIds
     H5FDdsmInt32   ConfigureUniform(H5FDdsmComm *Comm, H5FDdsmInt64 Length, H5FDdsmInt32 StartId=-1, H5FDdsmInt32 EndId=-1);

@@ -146,7 +146,7 @@ H5FDdsmDriver::ConfigureUniform(H5FDdsmComm *aComm, H5FDdsmInt64 aLength, H5FDds
 }
 
 H5FDdsmInt32
-H5FDdsmDriver::GetAddressRangeForId(H5FDdsmInt32 Id, H5FDdsmInt64 *Start, H5FDdsmInt64 *End){
+H5FDdsmDriver::GetAddressRangeForId(H5FDdsmInt32 Id, H5FDdsmInt64 *Start, H5FDdsmInt64 *End, H5FDdsmInt64 Address){
     switch(this->DsmType) {
         case H5FD_DSM_TYPE_UNIFORM :
         case H5FD_DSM_TYPE_UNIFORM_RANGE :
@@ -154,6 +154,10 @@ H5FDdsmDriver::GetAddressRangeForId(H5FDdsmInt32 Id, H5FDdsmInt64 *Start, H5FDds
             *Start = (Id - this->StartServerId) * this->Length;
             *End = *Start + Length - 1;
             break;
+        case H5FD_DSM_TYPE_BLOCK_CYCLIC :
+          *Start = ((H5FDdsmInt32)(Address / H5FD_DSM_BLOCK_LENGTH)) * H5FD_DSM_BLOCK_LENGTH;
+          *End = ((H5FDdsmInt32)(Address / H5FD_DSM_BLOCK_LENGTH) + 1) * H5FD_DSM_BLOCK_LENGTH - 1;
+          break;
         default :
             // Not Implemented
             H5FDdsmError("DsmType " << this->DsmType << " not yet implemented");
@@ -176,6 +180,13 @@ H5FDdsmDriver::AddressToId(H5FDdsmInt64 Address){
                 H5FDdsmError("ServerId " << ServerId << " for Address " << Address << " is larger than EndServerId " << this->EndServerId);
             }
             break;
+        case H5FD_DSM_TYPE_BLOCK_CYCLIC :
+          // Keep a uniform DSM but add block cyclic distribution
+          if (Address > this->EndAddress*(this->EndServerId - this->StartServerId + 1)) {
+            H5FDdsmError("Address " << Address << " is larger than end address of EndServerId " << this->EndServerId);
+          }
+          ServerId = this->StartServerId + ((H5FDdsmInt32)(Address / H5FD_DSM_BLOCK_LENGTH) % (this->EndServerId - this->StartServerId + 1));
+          break;
         default :
             // Not Implemented
             H5FDdsmError("DsmType " << this->DsmType << " not yet implemented");
