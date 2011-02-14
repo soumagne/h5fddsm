@@ -118,28 +118,24 @@ int main (int argc, char* argv[])
   }
 
   // H5FDdsmInt64   Counter = 0;
-  bool connected = true;  
+  bool connected = true;
   while(connected) {
-    if (dsmManager->GetDsmUpdateReady()) {
-      if (rank == 0) {
-        // std::cout << "Receive count : " << ++Counter << std::endl;
-      }
-      //
-      // H5Dump
-      //
-      // dsmManager->H5DumpLight();
-      //
-      // Sync here
-      //
-      MPI_Barrier(dcomm);
-      //
-      // Clean up for next step
-      //
-      dsmManager->ClearDsmUpdateReady();
+    dsmManager->WaitForUpdateReady();
+    if (rank == 0) {
+      // std::cout << "Receive count : " << ++Counter << std::endl;
     }
-    else {
-      sleep(1);
-    }
+    //
+    // H5Dump
+    //
+    // dsmManager->H5DumpLight();
+    //
+    // Sync here
+    //
+    MPI_Barrier(dcomm);
+    //
+    // Clean up for next step
+    //
+    dsmManager->UpdateFinalize();
     connected = (dsmManager->GetDSMHandle()->GetIsConnected()!=0);
   }
 

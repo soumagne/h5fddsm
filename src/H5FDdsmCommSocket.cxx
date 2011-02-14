@@ -29,18 +29,6 @@
 #include <cstring>
 #include <cstdlib>
 
-// Sleep  in milliseconds
-#ifdef _WIN32
-  #include <windows.h> 
-  #define sleep(a) ::Sleep(a)
-#else
-  void Sleep(int ms) {
-    usleep(ms*1000); //convert to microseconds
-    return;
-  }
-  #define sleep(a) Sleep(a)
-#endif
-
 #define DSM_COMM_SOCKET_PORT_INIT 22000
 #define DSM_COMM_SOCKET_PORT_DATA 23000
 //----------------------------------------------------------------------------

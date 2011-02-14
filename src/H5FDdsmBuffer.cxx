@@ -134,6 +134,8 @@ extern "C"{
 H5FDdsmBuffer::H5FDdsmBuffer() {
   H5FDdsmInt64 i;
   this->ThreadDsmReady = 0;
+  this->ServiceThreadUseCopy = 1;
+
   this->ThreadRemoteDsmReady = 0;
 
   this->DataPointer = 0;
@@ -143,19 +145,21 @@ H5FDdsmBuffer::H5FDdsmBuffer() {
   this->IsServer = true;
   this->IsConnected = false;
   this->IsSyncRequired = true;
+
   this->IsUpdateReady = false;
+#ifdef _WIN32
+  InitializeCriticalSection (&this->UpdateReadyCritSection);
+  InitializeConditionVariable(&this->UpdateReadyCond);
+#else
+  pthread_mutex_init(&this->UpdateReadyMutex, NULL);
+  pthread_cond_init (&this->UpdateReadyCond, NULL);
+#endif
+
   this->IsDataModified = false;
   this->UpdateLevel = H5FD_DSM_UPDATE_LEVEL_MAX;
   this->IsReadOnly = true;
   this->IsLocked = false;
-  this->Locks = new H5FDdsmInt64[H5FD_DSM_MAX_LOCKS];
-  for(i=0;i < H5FD_DSM_MAX_LOCKS;i++) this->Locks[i] = -1;
-
-  this->ServiceThreadUseCopy = 1;
-  this->XMLDescription = NULL;
-
-  this->Steerer = new H5FDdsmSteerer(this);
-
+  // Initialize mutex and condition variable objects
   this->RemoteServiceThreadPtr          = 0;
 #ifdef _WIN32
   this->RemoteServiceThreadHandle    = NULL;
@@ -166,11 +170,23 @@ H5FDdsmBuffer::H5FDdsmBuffer() {
 #else
   pthread_mutex_init(&this->Lock, NULL);
 #endif
+
+  this->Locks = new H5FDdsmInt64[H5FD_DSM_MAX_LOCKS];
+  for(i=0;i < H5FD_DSM_MAX_LOCKS;i++) this->Locks[i] = -1;
+
+  this->XMLDescription = NULL;
+
+  // Initialize steerer
+  this->Steerer = new H5FDdsmSteerer(this);
 }
 //----------------------------------------------------------------------------
 H5FDdsmBuffer::~H5FDdsmBuffer() {
   if (this->StorageIsMine) delete[] this->Locks;
   if (this->XMLDescription) delete[] this->XMLDescription;
+#ifndef _WIN32
+  pthread_mutex_destroy(&this->UpdateReadyMutex);
+  pthread_cond_destroy(&this->UpdateReadyCond);
+#endif
   if (this->Steerer) delete this->Steerer;
 #ifdef _WIN32
   CloseHandle(this->Lock);
@@ -509,7 +525,7 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
     commSync = 0;
     this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_LOCAL);
     if (this->IsConnected) {
-      //TODO RMA is special and the thread may not be necessary
+      // @TODO RMA is special and the thread may not be necessary
       if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
         this->Comm->RemoteCommSync();
       }
@@ -534,7 +550,7 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
       this->Comm->RemoteCommSendInfo(&this->Length, &this->TotalLength, &this->StartServerId, &this->EndServerId);
       this->IsConnected = true;
     }
-    //TODO RMA is special and the thread may not be necessary
+    // @TODO RMA is special and the thread may not be necessary
     if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
       this->Comm->RemoteCommSync();
     }
@@ -546,6 +562,8 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
       this->Comm->RemoteCommDisconnect();
       this->IsConnected = false;
       H5FDdsmDebug("DSM disconnected on " << this->Comm->GetId() << ", Switched to Local channel");
+      // Because we may have been waiting for an update ready
+      this->SignalUpdateReady();
     }
     break;
   case H5FD_DSM_SERVER_UPDATE:
@@ -587,9 +605,10 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
     // When update ready is found, the server keeps the lock
     // and only releases it when the update is over
     this->ReleaseLockOnClose = false;
-    this->IsUpdateReady = true;
     H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "Update level " <<
         this->UpdateLevel << ", Switched to Local channel");
+    this->Comm->Barrier();
+    this->SignalUpdateReady();
     break;
   case H5FD_DSM_CLEAR_STORAGE:
     if (this->Comm->RemoteCommChannelSynced(&clearStorageSync)) {
@@ -698,6 +717,48 @@ H5FDdsmBuffer::Release(H5FDdsmInt64 Index){
   return(H5FD_DSM_FAIL);
 }
 //----------------------------------------------------------------------------
+void
+H5FDdsmBuffer::SignalUpdateReady() {
+#ifdef _WIN32
+  EnterCriticalSection(&this->UpdateReadyCritSection);
+#else
+  pthread_mutex_lock(&this->UpdateReadyMutex);
+#endif
+  this->IsUpdateReady = true;
+#ifdef _WIN32
+  WakeConditionVariable (&this->UpdateReadyCond);
+  LeaveCriticalSection(&this->UpdateReadyCritSection);
+#else
+  pthread_cond_signal(&this->UpdateReadyCond);
+  H5FDdsmDebug("Sent update ready condition signal");
+  pthread_mutex_unlock(&this->UpdateReadyMutex);
+#endif
+}
+//----------------------------------------------------------------------------
+void
+H5FDdsmBuffer::WaitForUpdateReady() {
+#ifdef _WIN32
+  EnterCriticalSection(&this->UpdateReadyCritSection);
+#else
+  pthread_mutex_lock(&this->UpdateReadyMutex);
+#endif
+  while (!this->IsUpdateReady) {
+    H5FDdsmDebug("Thread going into wait for update ready...");
+#ifdef _WIN32
+    SleepConditionVariableCS(&this->UpdateReadyCond, &this->UpdateReadyCritSection, INFINITE);
+#else
+    pthread_cond_wait(&this->UpdateReadyCond, &this->UpdateReadyMutex);
+#endif
+    H5FDdsmDebug("Thread received update ready signal");
+  }
+  this->IsUpdateReady = 0;
+#ifdef _WIN32
+  LeaveCriticalSection(&this->UpdateReadyCritSection);
+#else
+  pthread_mutex_unlock(&this->UpdateReadyMutex);
+#endif
+}
+//----------------------------------------------------------------------------
 H5FDdsmInt32
 H5FDdsmBuffer::Put(H5FDdsmInt64 Address, H5FDdsmInt64 aLength, void *Data){
   H5FDdsmInt32   who, MyId = this->Comm->GetId();
@@ -723,7 +784,7 @@ H5FDdsmBuffer::Put(H5FDdsmInt64 Address, H5FDdsmInt64 aLength, void *Data){
 
     }else{
       H5FDdsmInt32   status;
-      // TODO For now, one-sided comms are only used with the inter-communicator
+      // @TODO For now, one-sided comms are only used with the inter-communicator
       if ((this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) && (this->Comm->GetCommChannel() == H5FD_DSM_COMM_CHANNEL_REMOTE)) {
         H5FDdsmDebug("PUT request from " << who << " for " << len << " bytes @ " << Address);
         status = this->PutData(who, datap, len, Address - astart);
@@ -775,7 +836,7 @@ H5FDdsmBuffer::Get(H5FDdsmInt64 Address, H5FDdsmInt64 aLength, void *Data){
 
     }else{
       H5FDdsmInt32   status;
-      // TODO For now, one-sided comms are only used with the inter-communicator
+      // @TODO For now, one-sided comms are only used with the inter-communicator
       if ((this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) && (this->Comm->GetCommChannel() == H5FD_DSM_COMM_CHANNEL_REMOTE)) {
         H5FDdsmDebug("Get request from " << who << " for " << len << " bytes @ " << Address);
         status = this->GetData(who, datap, len, Address - astart);

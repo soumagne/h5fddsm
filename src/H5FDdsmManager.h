@@ -91,6 +91,7 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     // Get/Set the update ready flag which triggers the pipeline update.
     int  GetDsmUpdateReady();
     void ClearDsmUpdateReady();
+    void WaitForUpdateReady();
 
     // Description:
     // Get/Set the data modified flag
@@ -101,6 +102,10 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     // Get/Set the update level flag
     int  GetDsmUpdateLevel();
     void ClearDsmUpdateLevel();
+
+    // Description:
+    // Release locks and clean up for next update
+    void UpdateFinalize();
 
     // Description:
     // Set/Get the current given steering command.

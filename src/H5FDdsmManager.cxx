@@ -123,12 +123,14 @@ int H5FDdsmManager::GetDsmUpdateReady()
 void H5FDdsmManager::ClearDsmUpdateReady()
 {
   if (this->DSMBuffer) {
-    // When update ready is cleared, the server lock is released
     this->DSMBuffer->SetIsUpdateReady(0);
-    this->DSMBuffer->SetReleaseLockOnClose(true);
-    if (this->DSMBuffer->GetIsConnected()) {
-      this->DSMBuffer->RequestLockRelease();
-    }
+  }
+}
+//----------------------------------------------------------------------------
+void H5FDdsmManager::WaitForUpdateReady()
+{
+  if (this->DSMBuffer) {
+    this->DSMBuffer->WaitForUpdateReady();
   }
 }
 //----------------------------------------------------------------------------
@@ -161,6 +163,15 @@ void H5FDdsmManager::ClearDsmUpdateLevel()
 {
   if (this->DSMBuffer) {
     this->DSMBuffer->SetUpdateLevel(H5FD_DSM_UPDATE_LEVEL_MAX);
+  }
+}
+//----------------------------------------------------------------------------
+void H5FDdsmManager::UpdateFinalize()
+{
+  // When UpdateFinalize, the server lock is released
+  this->DSMBuffer->SetReleaseLockOnClose(true);
+  if (this->DSMBuffer->GetIsConnected()) {
+    this->DSMBuffer->RequestLockRelease();
   }
 }
 //----------------------------------------------------------------------------

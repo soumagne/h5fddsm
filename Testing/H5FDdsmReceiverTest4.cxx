@@ -88,19 +88,16 @@ main(int argc, char * argv[])
 
   bool connected = true;
   while (connected) {
-    if (dsmManager->GetDsmUpdateReady()) {
+    dsmManager->WaitForUpdateReady();
 
-      // H5Dump
-      dsmManager->H5DumpLight();
+    // H5Dump
+    dsmManager->H5DumpLight();
 
-      // Sync here
-      MPI_Barrier(comm);
+    // Sync here
+    MPI_Barrier(comm);
 
-      // Clean up for next step
-      dsmManager->ClearDsmUpdateReady();
-    } else {
-      sleep(1);
-    }
+    // Clean up for next step
+    dsmManager->UpdateFinalize();
     connected = (dsmManager->GetDSMHandle()->GetIsConnected() != 0);
   }
 

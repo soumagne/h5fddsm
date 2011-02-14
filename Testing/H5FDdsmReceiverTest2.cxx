@@ -227,32 +227,28 @@ int main (int argc, char* argv[])
   }
 
   // H5FDdsmInt64   Counter = 0;
-  bool connected = true;  
+  bool connected = true;
   while(connected) {
-    if (dsmManager->GetDsmUpdateReady()) {
-      if (rank == 0) {
-        // std::cout << "Receive count : " << ++Counter << std::endl;
-      }
-      // H5Dump
-      // dsmManager->H5DumpLight();
-
-      nremoteprocs = dsmManager->GetDSMHandle()->GetComm()->GetInterSize();
-      numParticles = (hsize_t) (1024*1024*((dsmManager->GetDSMHandle()->GetTotalLength()/(1024.0*1024.0))-1)/(sizeof(double)*nremoteprocs));
-      // Check data
-      if (rank == 0) {
-        // printf("Trying to read %d * %llu particles\n", nremoteprocs, numParticles);
-      }
-      TestParticleRead(fullname, rank, nremoteprocs*numParticles, dcomm, dsmManager->GetDSMHandle());
-
-      // Sync here
-      MPI_Barrier(dcomm);
-
-      // Clean up for next step
-      dsmManager->ClearDsmUpdateReady();
+    dsmManager->WaitForUpdateReady();
+    if (rank == 0) {
+      // std::cout << "Receive count : " << ++Counter << std::endl;
     }
-    else {
-      sleep(1);
+    // H5Dump
+    // dsmManager->H5DumpLight();
+
+    nremoteprocs = dsmManager->GetDSMHandle()->GetComm()->GetInterSize();
+    numParticles = (hsize_t) (1024*1024*((dsmManager->GetDSMHandle()->GetTotalLength()/(1024.0*1024.0))-1)/(sizeof(double)*nremoteprocs));
+    // Check data
+    if (rank == 0) {
+      // printf("Trying to read %d * %llu particles\n", nremoteprocs, numParticles);
     }
+    TestParticleRead(fullname, rank, nremoteprocs*numParticles, dcomm, dsmManager->GetDSMHandle());
+
+    // Sync here
+    MPI_Barrier(dcomm);
+
+    // Clean up for next step
+    dsmManager->UpdateFinalize();
     connected = (dsmManager->GetDSMHandle()->GetIsConnected()!=0);
   }
 

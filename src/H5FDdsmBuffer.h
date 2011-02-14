@@ -100,6 +100,8 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     // Is the DSMBuffer ready to update
     H5FDdsmGetValueMacro(IsUpdateReady, H5FDdsmBoolean);
     H5FDdsmSetValueMacro(IsUpdateReady, H5FDdsmBoolean);
+    void SignalUpdateReady();
+    void WaitForUpdateReady();
 
    // Has the data been modified
     H5FDdsmGetValueMacro(IsDataModified, H5FDdsmBoolean);
@@ -110,27 +112,27 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     H5FDdsmSetValueMacro(UpdateLevel, H5FDdsmInt32);
 
     // Is the DSMBuffer auto allocated within the driver or not
-    H5FDdsmGetValueMacro(IsAutoAllocated, bool);
-    H5FDdsmSetValueMacro(IsAutoAllocated, bool);
-
-    // Does the server update automatically on H5Fclose or not
-    H5FDdsmGetValueMacro(UpdateServerOnClose, bool);
-    H5FDdsmSetValueMacro(UpdateServerOnClose, bool);
-
-    // Releases the lock automatically on H5Fclose or not
-    H5FDdsmGetValueMacro(ReleaseLockOnClose, bool);
-    H5FDdsmSetValueMacro(ReleaseLockOnClose, bool);
+    H5FDdsmGetValueMacro(IsAutoAllocated, H5FDdsmBoolean);
+    H5FDdsmSetValueMacro(IsAutoAllocated, H5FDdsmBoolean);
 
     // Is the DSMBuffer in server or client mode
-    H5FDdsmGetValueMacro(IsServer, bool);
-    H5FDdsmSetValueMacro(IsServer, bool);
+    H5FDdsmGetValueMacro(IsServer, H5FDdsmBoolean);
+    H5FDdsmSetValueMacro(IsServer, H5FDdsmBoolean);
+
+    // Does the server update automatically on H5Fclose or not
+    H5FDdsmGetValueMacro(UpdateServerOnClose, H5FDdsmBoolean);
+    H5FDdsmSetValueMacro(UpdateServerOnClose, H5FDdsmBoolean);
+
+    // Releases the lock automatically on H5Fclose or not
+    H5FDdsmGetValueMacro(ReleaseLockOnClose, H5FDdsmBoolean);
+    H5FDdsmSetValueMacro(ReleaseLockOnClose, H5FDdsmBoolean);
 
     // Is the DSMBuffer open for Read Only operations
-    H5FDdsmGetValueMacro(IsReadOnly, bool);
-    H5FDdsmSetValueMacro(IsReadOnly, bool);
+    H5FDdsmGetValueMacro(IsReadOnly, H5FDdsmBoolean);
+    H5FDdsmSetValueMacro(IsReadOnly, H5FDdsmBoolean);
 
-    H5FDdsmGetValueMacro(IsLocked, bool);
-    H5FDdsmSetValueMacro(IsLocked, bool);
+    H5FDdsmGetValueMacro(IsLocked, H5FDdsmBoolean);
+    H5FDdsmSetValueMacro(IsLocked, H5FDdsmBoolean);
 
     H5FDdsmGetStringMacro(XMLDescription);
     H5FDdsmSetStringMacro(XMLDescription);
@@ -171,32 +173,44 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
 
   protected:
     volatile H5FDdsmInt32   ThreadDsmReady;
+    H5FDdsmInt32            ServiceThreadUseCopy;
+
     volatile H5FDdsmInt32   ThreadRemoteDsmReady;
 
 #ifdef _WIN32
-    DWORD          RemoteServiceThreadPtr;
-    HANDLE         RemoteServiceThreadHandle;
+    DWORD                   RemoteServiceThreadPtr;
+    HANDLE                  RemoteServiceThreadHandle;
 #else
-    pthread_t      RemoteServiceThreadPtr;
+    pthread_t               RemoteServiceThreadPtr;
 #endif
 
+    H5FDdsmBoolean          IsServer;
     volatile H5FDdsmBoolean IsConnected;
-    volatile H5FDdsmBoolean IsSyncRequired;
-    volatile H5FDdsmBoolean IsUpdateReady;
-    volatile H5FDdsmBoolean IsDataModified;
-    H5FDdsmInt32            UpdateLevel;
-    bool                    IsAutoAllocated;
-    bool                    IsServer;
-    bool                    UpdateServerOnClose;
-    bool                    ReleaseLockOnClose;
-    bool                    IsReadOnly;
+    H5FDdsmBoolean          IsSyncRequired;
+
+    H5FDdsmBoolean          IsUpdateReady;
 #ifdef _WIN32
-	HANDLE                  Lock;
+    CRITICAL_SECTION        UpdateReadyCritSection;
+    CONDITION_VARIABLE      UpdateReadyCond;
+#else
+    pthread_mutex_t         UpdateReadyMutex;
+    pthread_cond_t          UpdateReadyCond;
+#endif
+
+    H5FDdsmBoolean          IsDataModified;
+    H5FDdsmInt32            UpdateLevel;
+    H5FDdsmBoolean          IsAutoAllocated;
+    H5FDdsmBoolean          UpdateServerOnClose;
+    H5FDdsmBoolean          ReleaseLockOnClose;
+    H5FDdsmBoolean          IsReadOnly;
+
+    H5FDdsmBoolean          IsLocked;
+#ifdef _WIN32
+    HANDLE                  Lock;
 #else
     pthread_mutex_t         Lock;
 #endif
-    bool                    IsLocked;
-    H5FDdsmInt32            ServiceThreadUseCopy;
+
     H5FDdsmString           XMLDescription;
 
     H5FDdsmSteerer         *Steerer;
