@@ -82,6 +82,7 @@ main(int argc, char * argv[])
 
   // The output comment below must not be deleted, it allows ctest to detect
   // when the server is initialized
+  sleep(100);
   std::cout << "Waiting for client..." << std::endl;
   dsmManager->WaitForConnected();
 

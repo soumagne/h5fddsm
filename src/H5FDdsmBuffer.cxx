@@ -581,6 +581,7 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
       this->Comm->RemoteCommDisconnect();
       this->IsConnected = false;
       H5FDdsmDebug("DSM disconnected on " << this->Comm->GetId() << ", Switched to Local channel");
+      this->Comm->Barrier();
       // Because we may have been waiting for an update ready
       this->SignalUpdateReady();
     }
@@ -744,9 +745,10 @@ H5FDdsmBuffer::StartRemoteService() {
   // Start another thread to handle DSM requests from other nodes
   pthread_create(&this->RemoteServiceThreadPtr, NULL, &H5FDdsmBufferRemoteServiceThread, (void *) this);
 #endif
-  while (!this->ThreadRemoteDsmReady) {
+  // @TODO somehow this is not right
+//  while (!this->ThreadRemoteDsmReady) {
     // Spin until service initialized
-  }
+//  }
   return(H5FD_DSM_SUCCESS);
 }
 //----------------------------------------------------------------------------
