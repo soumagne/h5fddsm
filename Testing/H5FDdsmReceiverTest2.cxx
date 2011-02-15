@@ -211,16 +211,15 @@ int main (int argc, char* argv[])
     std::cout << "DSM server process count  : " <<  (serversize+1) << std::endl;
   }
 
+  // The output comment below must not be deleted, it allows ctest to detect
+  // when the server is initialized
   std::cout << "Waiting for client..." << std::endl;
-  while (!dsmManager->GetDSMHandle()->GetIsConnected()) {
-    sleep(1000);
-  }
+  dsmManager->WaitForConnected();
 
-  while(dsmManager->GetDSMHandle()->GetIsConnected()) {
+  while(dsmManager->GetDsmIsConnected()) {
     if (dsmManager->WaitForUpdateReady() > 0) {
       // H5Dump
       // dsmManager->H5DumpLight();
-
       nremoteprocs = dsmManager->GetDSMHandle()->GetComm()->GetInterSize();
       numParticles = (hsize_t) (1024*1024*((dsmManager->GetDSMHandle()->GetTotalLength()/(1024.0*1024.0))-1)/(sizeof(double)*nremoteprocs));
       // Check data
@@ -228,10 +227,8 @@ int main (int argc, char* argv[])
         // printf("Trying to read %d * %llu particles\n", nremoteprocs, numParticles);
       }
       TestParticleRead(fullname, rank, nremoteprocs*numParticles, dcomm, dsmManager->GetDSMHandle());
-
       // Sync here
       MPI_Barrier(dcomm);
-
       // Clean up for next step
       dsmManager->UpdateFinalize();
     }

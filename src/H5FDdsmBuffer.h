@@ -60,38 +60,20 @@ class H5FDdsmSteerer;
 
 #define H5FD_DSM_UPDATE_LEVEL_MAX 0x4
 
-//! Helper for pthread_create() and CreateThread()
-extern "C" {
-#ifdef _WIN32
-	#include <windows.h>
-	H5FDdsm_EXPORT DWORD WINAPI
-		H5FDdsmBufferServiceThread(void *DsmObj);
-#else
-	H5FDdsm_EXPORT void *
-		H5FDdsmBufferServiceThread(void *DsmObj);
-#endif
-}
-
 //! Base comm object for Distributed Shared Memory implementation
 /*!
 */
-
-
 class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
 
   public:
     H5FDdsmBuffer();
     virtual ~H5FDdsmBuffer();
 
-    H5FDdsmGetValueMacro(ThreadDsmReady, H5FDdsmInt32);
-    H5FDdsmSetValueMacro(ThreadDsmReady, H5FDdsmInt32);
-
-    H5FDdsmGetValueMacro(ServiceThreadUseCopy, H5FDdsmInt32);
-    H5FDdsmSetValueMacro(ServiceThreadUseCopy, H5FDdsmInt32);
-
     // Is the DSMBuffer connected
     H5FDdsmGetValueMacro(IsConnected, H5FDdsmBoolean);
     H5FDdsmSetValueMacro(IsConnected, H5FDdsmBoolean);
+    H5FDdsmInt32 SignalConnected();
+    H5FDdsmInt32 WaitForConnected();
 
     // Is the DSMBuffer connected
     H5FDdsmGetValueMacro(IsSyncRequired, H5FDdsmBoolean);
@@ -137,6 +119,21 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     H5FDdsmGetStringMacro(XMLDescription);
     H5FDdsmSetStringMacro(XMLDescription);
 
+    void *         ServiceThread();
+    void *         RemoteServiceThread();
+
+    H5FDdsmInt32   ServiceInit();
+    H5FDdsmInt32   ServiceOnce(H5FDdsmInt32 *ReturnOpcode=0);
+    H5FDdsmInt32   ServiceUntilIdle(H5FDdsmInt32 *ReturnOpcode=0);
+    H5FDdsmInt32   ServiceLoop(H5FDdsmInt32 *ReturnOpcode=0);
+    H5FDdsmInt32   Service(H5FDdsmInt32 *ReturnOpcode=0);
+    H5FDdsmInt32   StartService();
+    H5FDdsmInt32   EndService();
+
+    H5FDdsmInt32   RemoteService(H5FDdsmInt32 *ReturnOpcode=0);
+    H5FDdsmInt32   StartRemoteService();
+    H5FDdsmInt32   EndRemoteService();
+
     H5FDdsmInt32   Put(H5FDdsmInt64 Address, H5FDdsmInt64 Length, void *Data);
     H5FDdsmInt32   Get(H5FDdsmInt64 Address, H5FDdsmInt64 Length, void *Data);
 
@@ -154,38 +151,32 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     H5FDdsmInt32   RequestClearStorage();
     H5FDdsmInt32   RequestXMLExchange();
 
-    /*
-    H5FDdsmInt32   Copy(H5FDdsmBuffer *Source);
-    */
-    H5FDdsmInt32   ServiceInit();
-    H5FDdsmInt32   ServiceOnce(H5FDdsmInt32 *ReturnOpcode=0);
-    H5FDdsmInt32   ServiceUntilIdle(H5FDdsmInt32 *ReturnOpcode=0);
-    H5FDdsmInt32   ServiceLoop(H5FDdsmInt32 *ReturnOpcode=0);
-    H5FDdsmInt32   Service(H5FDdsmInt32 *ReturnOpcode=0);
-
-    H5FDdsmInt32   RemoteService(H5FDdsmInt32 *ReturnOpcode=0);
-    void           StartRemoteService();
-    void           EndRemoteService();
-    void *         ServiceThread();
-    void *         RemoteServiceThread();
-
     H5FDdsmSteerer *GetSteerer() { return(Steerer); }
 
   protected:
     volatile H5FDdsmInt32   ThreadDsmReady;
-    H5FDdsmInt32            ServiceThreadUseCopy;
-
     volatile H5FDdsmInt32   ThreadRemoteDsmReady;
 
 #ifdef _WIN32
+    DWORD                   ServiceThreadPtr;
+    HANDLE                  ServiceThreadHandle;
     DWORD                   RemoteServiceThreadPtr;
     HANDLE                  RemoteServiceThreadHandle;
 #else
+    pthread_t               ServiceThreadPtr;
     pthread_t               RemoteServiceThreadPtr;
 #endif
 
     H5FDdsmBoolean          IsServer;
-    volatile H5FDdsmBoolean IsConnected;
+    H5FDdsmBoolean          IsConnected;
+#ifdef _WIN32
+    CRITICAL_SECTION        ConnectedCritSection;
+    CONDITION_VARIABLE      ConnectedCond;
+#else
+    pthread_mutex_t         ConnectedMutex;
+    pthread_cond_t          ConnectedCond;
+#endif
+
     H5FDdsmBoolean          IsSyncRequired;
 
     H5FDdsmBoolean          IsUpdateReady;

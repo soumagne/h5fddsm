@@ -26,14 +26,6 @@
 #include "H5FDdsmCommSocket.h"
 #include "H5FDdsmCommMpi.h"
 
-#ifdef _WIN32
-  #include <windows.h>
-#else
-  extern "C" {
-    #include <pthread.h>
-  }
-#endif
-
 struct H5FDdsmManagerInternals;
 
 class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
@@ -84,8 +76,9 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     H5FDdsmGetStringMacro(DsmConfigFilePath);
 
     // Description:
-    // Only valid after a AcceptConnection call has been made.
-    H5FDdsmInt32 GetAcceptedConnection();
+    // Only valid after a PublishDSM call has been made.
+    H5FDdsmInt32 GetDsmIsConnected();
+    H5FDdsmInt32 WaitForConnected();
 
     // Description:
     // Get/Set the update ready flag which triggers the pipeline update.
@@ -169,13 +162,6 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     H5FDdsmInt32   UpdatePiece;
     H5FDdsmInt32   UpdateNumPieces;
     H5FDdsmInt64   LocalBufferSizeMBytes;
-
-#ifdef _WIN32
-    DWORD          ServiceThread;
-    HANDLE         ServiceThreadHandle;
-#else
-    pthread_t      ServiceThread;
-#endif
 
     MPI_Comm        Communicator;
     H5FDdsmBuffer  *DSMBuffer;

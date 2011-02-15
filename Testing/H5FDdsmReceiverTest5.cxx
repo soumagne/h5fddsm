@@ -80,10 +80,10 @@ main(int argc, char * argv[])
               << std::endl;
   }
 
+  // The output comment below must not be deleted, it allows ctest to detect
+  // when the server is initialized
   std::cout << "Waiting for client..." << std::endl;
-  while (!dsmManager->GetDSMHandle()->GetIsConnected()) {
-    sleep(1000);
-  }
+  dsmManager->WaitForConnected();
 
   while (dsmManager->GetDSMHandle()->GetIsConnected()) {
     if (dsmManager->WaitForUpdateReady() > 0) {

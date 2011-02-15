@@ -186,14 +186,14 @@ public:
 
 #define H5FDdsmDebug(x) \
 { if (H5FDDebugIsOn) { \
-    std::cout << "H5FD_DSM Debug : " /*__FILE__ << " line " << __LINE__ << */ x << std::endl; \
+    std::cout << "H5FD_DSM Debug : " /*__FILE__ << " line " << __LINE__ */ << x << std::endl; \
   } \
 }
 
 #define H5FDdsmExternalDebug(x) \
 { \
   if (H5FDdsmObject::GetGlobalDebug()) { \
-    std::cout << "H5FD_ext Debug : " /*__FILE__ << " line " << __LINE__ << */ x << std::endl; \
+    std::cout << "H5FD_ext Debug : " /*__FILE__ << " line " << __LINE__ */ << x << std::endl; \
   } \
 }
 
