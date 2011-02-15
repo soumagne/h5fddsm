@@ -717,7 +717,7 @@ H5FDdsmBuffer::Release(H5FDdsmInt64 Index){
   return(H5FD_DSM_FAIL);
 }
 //----------------------------------------------------------------------------
-void
+H5FDdsmInt32
 H5FDdsmBuffer::SignalUpdateReady() {
 #ifdef _WIN32
   EnterCriticalSection(&this->UpdateReadyCritSection);
@@ -733,16 +733,18 @@ H5FDdsmBuffer::SignalUpdateReady() {
   H5FDdsmDebug("Sent update ready condition signal");
   pthread_mutex_unlock(&this->UpdateReadyMutex);
 #endif
+  return(H5FD_DSM_SUCCESS);
 }
 //----------------------------------------------------------------------------
-void
+H5FDdsmInt32
 H5FDdsmBuffer::WaitForUpdateReady() {
+  H5FDdsmInt32 ret = H5FD_DSM_FAIL;
 #ifdef _WIN32
   EnterCriticalSection(&this->UpdateReadyCritSection);
 #else
   pthread_mutex_lock(&this->UpdateReadyMutex);
 #endif
-  while (!this->IsUpdateReady) {
+  while (!this->IsUpdateReady && this->IsConnected) {
     H5FDdsmDebug("Thread going into wait for update ready...");
 #ifdef _WIN32
     SleepConditionVariableCS(&this->UpdateReadyCond, &this->UpdateReadyCritSection, INFINITE);
@@ -751,12 +753,16 @@ H5FDdsmBuffer::WaitForUpdateReady() {
 #endif
     H5FDdsmDebug("Thread received update ready signal");
   }
-  this->IsUpdateReady = 0;
+  if (this->IsUpdateReady && this->IsConnected) {
+    this->IsUpdateReady = 0;
+    ret = H5FD_DSM_SUCCESS;
+  }
 #ifdef _WIN32
   LeaveCriticalSection(&this->UpdateReadyCritSection);
 #else
   pthread_mutex_unlock(&this->UpdateReadyMutex);
 #endif
+  return(ret);
 }
 //----------------------------------------------------------------------------
 H5FDdsmInt32

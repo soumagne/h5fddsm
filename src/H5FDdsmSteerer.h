@@ -59,11 +59,11 @@ public:
 
   // Use H5F_ACC_RDONLY    for queries
   // Use H5F_ACC_RDWR    for read/write
-  H5FDdsmInt32 BeginInteractionsCache(unsigned int mode);
-  H5FDdsmInt32 EndInteractionsCache();
-  bool         InteractionsCacheActive();
-  void         BeginHideHDF5Errors();
-  void         EndHideHDF5Errors();
+  H5FDdsmInt32   BeginInteractionsCache(unsigned int mode);
+  H5FDdsmInt32   EndInteractionsCache();
+  H5FDdsmBoolean InteractionsCacheActive();
+  void           BeginHideHDF5Errors();
+  void           EndHideHDF5Errors();
 
   H5FDdsmInt32 IsObjectEnabled(H5FDdsmConstString name);
   H5FDdsmInt32 IsObjectPresent(H5FDdsmConstString name, int &present);

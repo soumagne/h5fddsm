@@ -19,15 +19,6 @@
 #endif
 
 //----------------------------------------------------------------------------
-void ThreadExecute(void *dsm, H5FDdsmInt64 &counter) {
-  H5FDdsmManager *DSM = (H5FDdsmManager*)dsm;
-  if (DSM->GetDsmUpdateReady()) {
-    DSM->H5DumpLight();
-    DSM->ClearDsmUpdateReady();
-    counter ++;
-  }
-};
-//----------------------------------------------------------------------------
 int main (int argc, char* argv[])
 {
   int provided, rank, size;
@@ -111,32 +102,26 @@ int main (int argc, char* argv[])
     std::cout << "DSM server process count  : " <<  (serversize+1) << std::endl;
   }
 
-  sleep(100);
   std::cout << "Waiting for client..." << std::endl;
   while (!dsmManager->GetDSMHandle()->GetIsConnected()) {
     sleep(1000);
   }
 
-  // H5FDdsmInt64   Counter = 0;
-  bool connected = true;
-  while(connected) {
-    dsmManager->WaitForUpdateReady();
-    if (rank == 0) {
-      // std::cout << "Receive count : " << ++Counter << std::endl;
+  while(dsmManager->GetDSMHandle()->GetIsConnected()) {
+    if (dsmManager->WaitForUpdateReady() > 0) {
+      //
+      // H5Dump
+      //
+      // dsmManager->H5DumpLight();
+      //
+      // Sync here
+      //
+      MPI_Barrier(dcomm);
+      //
+      // Clean up for next step
+      //
+      dsmManager->UpdateFinalize();
     }
-    //
-    // H5Dump
-    //
-    // dsmManager->H5DumpLight();
-    //
-    // Sync here
-    //
-    MPI_Barrier(dcomm);
-    //
-    // Clean up for next step
-    //
-    dsmManager->UpdateFinalize();
-    connected = (dsmManager->GetDSMHandle()->GetIsConnected()!=0);
   }
 
   std::cout << "Process number " << rank << " Closing down DSM server" << std::endl;

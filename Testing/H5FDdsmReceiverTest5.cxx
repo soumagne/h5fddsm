@@ -80,25 +80,20 @@ main(int argc, char * argv[])
               << std::endl;
   }
 
-  sleep(100);
   std::cout << "Waiting for client..." << std::endl;
   while (!dsmManager->GetDSMHandle()->GetIsConnected()) {
     sleep(1000);
   }
 
-  bool connected = true;
-  while (connected) {
-    dsmManager->WaitForUpdateReady();
-
-    // H5Dump
-    dsmManager->H5DumpLight();
-
-    // Sync here
-    MPI_Barrier(comm);
-
-    // Clean up for next step
-    dsmManager->UpdateFinalize();
-    connected = (dsmManager->GetDSMHandle()->GetIsConnected() != 0);
+  while (dsmManager->GetDSMHandle()->GetIsConnected()) {
+    if (dsmManager->WaitForUpdateReady() > 0) {
+      // H5Dump
+      dsmManager->H5DumpLight();
+      // Sync here
+      MPI_Barrier(comm);
+      // Clean up for next step
+      dsmManager->UpdateFinalize();
+    }
   }
 
   std::cout << "Process number " << rank << " Closing down DSM server"

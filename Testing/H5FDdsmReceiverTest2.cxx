@@ -134,15 +134,6 @@ double TestParticleRead(const char *filename, int rank, hsize_t N,
   return t2-t1;
 };
 //----------------------------------------------------------------------------
-void ThreadExecute(void *dsm, H5FDdsmInt64 &counter) {
-  H5FDdsmManager *DSM = (H5FDdsmManager*)dsm;
-  if (DSM->GetDsmUpdateReady()) {
-    DSM->H5DumpLight();
-    DSM->ClearDsmUpdateReady();
-    counter ++;
-  }
-};
-//----------------------------------------------------------------------------
 int main (int argc, char* argv[])
 {
   int provided, rank, size, nremoteprocs;
@@ -220,36 +211,30 @@ int main (int argc, char* argv[])
     std::cout << "DSM server process count  : " <<  (serversize+1) << std::endl;
   }
 
-  sleep(100);
   std::cout << "Waiting for client..." << std::endl;
   while (!dsmManager->GetDSMHandle()->GetIsConnected()) {
     sleep(1000);
   }
 
-  // H5FDdsmInt64   Counter = 0;
-  bool connected = true;
-  while(connected) {
-    dsmManager->WaitForUpdateReady();
-    if (rank == 0) {
-      // std::cout << "Receive count : " << ++Counter << std::endl;
+  while(dsmManager->GetDSMHandle()->GetIsConnected()) {
+    if (dsmManager->WaitForUpdateReady() > 0) {
+      // H5Dump
+      // dsmManager->H5DumpLight();
+
+      nremoteprocs = dsmManager->GetDSMHandle()->GetComm()->GetInterSize();
+      numParticles = (hsize_t) (1024*1024*((dsmManager->GetDSMHandle()->GetTotalLength()/(1024.0*1024.0))-1)/(sizeof(double)*nremoteprocs));
+      // Check data
+      if (rank == 0) {
+        // printf("Trying to read %d * %llu particles\n", nremoteprocs, numParticles);
+      }
+      TestParticleRead(fullname, rank, nremoteprocs*numParticles, dcomm, dsmManager->GetDSMHandle());
+
+      // Sync here
+      MPI_Barrier(dcomm);
+
+      // Clean up for next step
+      dsmManager->UpdateFinalize();
     }
-    // H5Dump
-    // dsmManager->H5DumpLight();
-
-    nremoteprocs = dsmManager->GetDSMHandle()->GetComm()->GetInterSize();
-    numParticles = (hsize_t) (1024*1024*((dsmManager->GetDSMHandle()->GetTotalLength()/(1024.0*1024.0))-1)/(sizeof(double)*nremoteprocs));
-    // Check data
-    if (rank == 0) {
-      // printf("Trying to read %d * %llu particles\n", nremoteprocs, numParticles);
-    }
-    TestParticleRead(fullname, rank, nremoteprocs*numParticles, dcomm, dsmManager->GetDSMHandle());
-
-    // Sync here
-    MPI_Barrier(dcomm);
-
-    // Clean up for next step
-    dsmManager->UpdateFinalize();
-    connected = (dsmManager->GetDSMHandle()->GetIsConnected()!=0);
   }
 
   std::cout << "Process number " << rank << " Closing down DSM server" << std::endl;

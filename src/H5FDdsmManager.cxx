@@ -102,45 +102,47 @@ void H5FDdsmManager::SetCommunicator(MPI_Comm comm)
   }
 }
 //----------------------------------------------------------------------------
-int H5FDdsmManager::GetAcceptedConnection()
+H5FDdsmInt32 H5FDdsmManager::GetAcceptedConnection()
 {
-  int ret = 0;
+  H5FDdsmInt32 ret = H5FD_DSM_FALSE;
   if (this->DSMBuffer) {
-    if (this->DSMBuffer->GetIsConnected()) ret = 1;
+    if (this->DSMBuffer->GetIsConnected()) ret = H5FD_DSM_TRUE;
   }
-  return ret;
+  return(ret);
 }
 //----------------------------------------------------------------------------
-int H5FDdsmManager::GetDsmUpdateReady()
+H5FDdsmInt32 H5FDdsmManager::GetDsmUpdateReady()
 {
-  int ret = 0;
+  H5FDdsmInt32 ret = H5FD_DSM_FALSE;
   if (this->DSMBuffer) {
-    if (this->DSMBuffer->GetIsUpdateReady()) ret = 1;
+    if (this->DSMBuffer->GetIsUpdateReady()) ret = H5FD_DSM_TRUE;
   }
-  return ret;
+  return(ret);
 }
 //----------------------------------------------------------------------------
 void H5FDdsmManager::ClearDsmUpdateReady()
 {
   if (this->DSMBuffer) {
-    this->DSMBuffer->SetIsUpdateReady(0);
+    this->DSMBuffer->SetIsUpdateReady(H5FD_DSM_FALSE);
   }
 }
 //----------------------------------------------------------------------------
-void H5FDdsmManager::WaitForUpdateReady()
+H5FDdsmInt32 H5FDdsmManager::WaitForUpdateReady()
 {
+  H5FDdsmInt32 ret = H5FD_DSM_FAIL;
   if (this->DSMBuffer) {
-    this->DSMBuffer->WaitForUpdateReady();
+    ret = this->DSMBuffer->WaitForUpdateReady();
   }
+  return(ret);
 }
 //----------------------------------------------------------------------------
-int H5FDdsmManager::GetDsmIsDataModified()
+H5FDdsmInt32 H5FDdsmManager::GetDsmIsDataModified()
 {
-  int ret = 0;
+  H5FDdsmInt32 ret = H5FD_DSM_FALSE;
   if (this->DSMBuffer) {
-    if (this->DSMBuffer->GetIsDataModified()) ret = 1;
+    if (this->DSMBuffer->GetIsDataModified()) ret = H5FD_DSM_TRUE;
   }
-  return ret;
+  return(ret);
 }
 //----------------------------------------------------------------------------
 void H5FDdsmManager::ClearDsmIsDataModified()
@@ -150,13 +152,13 @@ void H5FDdsmManager::ClearDsmIsDataModified()
   }
 }
 //----------------------------------------------------------------------------
-int H5FDdsmManager::GetDsmUpdateLevel()
+H5FDdsmInt32 H5FDdsmManager::GetDsmUpdateLevel()
 {
-  int ret = 0;
+  H5FDdsmInt32 ret = 0;
   if (this->DSMBuffer) {
     ret = this->DSMBuffer->GetUpdateLevel();
   }
-  return ret;
+  return(ret);
 }
 //----------------------------------------------------------------------------
 void H5FDdsmManager::ClearDsmUpdateLevel()
@@ -175,7 +177,7 @@ void H5FDdsmManager::UpdateFinalize()
   }
 }
 //----------------------------------------------------------------------------
-bool H5FDdsmManager::DestroyDSM()
+H5FDdsmInt32 H5FDdsmManager::DestroyDSM()
 {
   // Watch out that all processes have empty message queues
   // Should be already done during the disconnection
@@ -191,13 +193,11 @@ bool H5FDdsmManager::DestroyDSM()
     this->DSMBuffer = NULL;
   }
 #endif
-  
   if (this->DSMBuffer && 
     this->DSMBuffer->GetIsServer() && this->UpdatePiece == 0) 
   {
     this->DSMBuffer->SendDone();
   }
-
 #ifdef _WIN32
   if (this->ServiceThread) {
       WaitForSingleObject(this->ServiceThreadHandle, INFINITE);
@@ -211,37 +211,30 @@ bool H5FDdsmManager::DestroyDSM()
     this->ServiceThread = 0;
   }
 #endif
-
   if (this->DSMBuffer) {
     delete this->DSMBuffer;
     this->DSMBuffer = NULL;
     H5FDdsmDebug(<<"DSM destroyed on " << this->UpdatePiece);
   }
-
   if (this->DSMComm) {
     delete this->DSMComm;
     this->DSMComm = NULL;
   }
-
   this->SetServerHostName(NULL);
-
-  return true;
+  return(H5FD_DSM_SUCCESS);
 }
 //----------------------------------------------------------------------------
 H5FDdsmBuffer *H5FDdsmManager::GetDSMHandle()
 {
-  return DSMBuffer;
+  return(this->DSMBuffer);
 }
 //----------------------------------------------------------------------------
-bool H5FDdsmManager::CreateDSM()
+H5FDdsmInt32 H5FDdsmManager::CreateDSM()
 {
-  if (this->DSMBuffer) {
-    return true;
-  }
+  if (this->DSMBuffer) return(H5FD_DSM_SUCCESS);
 
   MPI_Comm_size(this->Communicator, &this->UpdateNumPieces);
   MPI_Comm_rank(this->Communicator, &this->UpdatePiece);
-
   //
   // Create DSM communicator
   //
@@ -289,7 +282,6 @@ bool H5FDdsmManager::CreateDSM()
     // Start another thread to handle DSM requests from other nodes
     pthread_create(&this->ServiceThread, NULL, &H5FDdsmBufferServiceThread, (void *) this->DSMBuffer);
 #endif
-
     // Wait for DSM to be ready
     while (!this->DSMBuffer->GetThreadDsmReady()) {
       // Spin until service initialized
@@ -301,8 +293,7 @@ bool H5FDdsmManager::CreateDSM()
     this->DSMBuffer->SetIsServer(false);
     this->DSMBuffer->SetComm(this->DSMComm);
   }
-
-  return true;
+  return(H5FD_DSM_SUCCESS);
 }
 //----------------------------------------------------------------------------
 void H5FDdsmManager::ClearDSM()
@@ -445,7 +436,7 @@ void H5FDdsmManager::PublishDSM()
   if (this->UpdatePiece == 0) {
     H5FDdsmIniFile dsmConfigFile;
     std::string fullDsmConfigFilePath;
-    const char *dsmEnvPath = getenv("H5FD_DSM_CONFIG_PATH");
+    H5FDdsmConstString dsmEnvPath = getenv("H5FD_DSM_CONFIG_PATH");
     if (!dsmEnvPath) dsmEnvPath = getenv("HOME");
     if (dsmEnvPath) {
       this->SetDsmConfigFilePath(dsmEnvPath);
@@ -493,7 +484,6 @@ void H5FDdsmManager::PublishDSM()
   this->DSMBuffer->RequestAccept();
 }
 //----------------------------------------------------------------------------
-
 void H5FDdsmManager::UnpublishDSM()
 {
   if (this->UpdatePiece == 0) H5FDdsmDebug(<< "Closing port...");
@@ -558,10 +548,10 @@ void H5FDdsmManager::SendDSMXML()
   this->DSMBuffer->GetComm()->Barrier();
 }
 //----------------------------------------------------------------------------
-const char *H5FDdsmManager::GetXMLStringReceive()
+H5FDdsmConstString H5FDdsmManager::GetXMLStringReceive()
 {
   if (this->DSMBuffer) return this->DSMBuffer->GetXMLDescription();
-  return NULL;
+  return(NULL);
 }
 //----------------------------------------------------------------------------
 void H5FDdsmManager::ClearXMLStringReceive()
@@ -569,22 +559,22 @@ void H5FDdsmManager::ClearXMLStringReceive()
   this->DSMBuffer->SetXMLDescription(NULL);
 }
 //----------------------------------------------------------------------------
-bool FileExists(const char *fname) 
+H5FDdsmInt32 FileExists(H5FDdsmConstString fname)
 {
-  if( access( fname, 0 ) != -1 ) {
-      return true;
+  if(access(fname, 0) != -1) {
+      return(H5FD_DSM_TRUE);
   } else {
-      return false;
+      return(H5FD_DSM_FALSE);
   }
 }
 //----------------------------------------------------------------------------
-bool H5FDdsmManager::ReadDSMConfigFile()
+H5FDdsmInt32 H5FDdsmManager::ReadDSMConfigFile()
 {
   H5FDdsmIniFile config;
   std::string configPath;
   std::string mode = "client";
-  const char *dsmEnvPath = getenv("H5FD_DSM_CONFIG_PATH");
-  const char *dsmServerEnvPath = getenv("H5FD_DSM_SERVER_CONFIG_PATH");
+  H5FDdsmConstString dsmEnvPath = getenv("H5FD_DSM_CONFIG_PATH");
+  H5FDdsmConstString dsmServerEnvPath = getenv("H5FD_DSM_SERVER_CONFIG_PATH");
 
   if (dsmServerEnvPath) {
     mode = "server";
@@ -621,9 +611,9 @@ bool H5FDdsmManager::ReadDSMConfigFile()
       this->SetDsmCommType(H5FD_DSM_COMM_MPI_RMA);
     }
     this->SetServerHostName(host.c_str());
-    return true;
+    return(H5FD_DSM_SUCCESS);
   }
-  return false;
+  return(H5FD_DSM_FAIL);
 }
 //----------------------------------------------------------------------------
 void H5FDdsmManager::SetSteeringCommand(H5FDdsmString cmd)
@@ -639,7 +629,7 @@ void H5FDdsmManager::SetSteeringCommand(H5FDdsmString cmd)
 void H5FDdsmManager::SetSteeringValues(const char *name, int numberOfElements, int *values)
 {
   if (numberOfElements) {
-    bool entryExists = false;
+    H5FDdsmInt32 entryExists = H5FD_DSM_FALSE;
     // Check if the entry already exists
     H5FDdsmManagerInternals::SteeringEntriesInt::iterator iter =
         this->ManagerInternals->SteeringValuesInt.begin();
@@ -664,21 +654,21 @@ void H5FDdsmManager::SetSteeringValues(const char *name, int numberOfElements, i
   }
 }
 //----------------------------------------------------------------------------
-bool H5FDdsmManager::GetSteeringValues(const char *name, int numberOfElements, int *values)
+H5FDdsmInt32 H5FDdsmManager::GetSteeringValues(const char *name, int numberOfElements, int *values)
 {
-  bool ret = false;
+  H5FDdsmInt32 ret = H5FD_DSM_FALSE;
   if (numberOfElements) {
     this->DSMBuffer->GetSteerer()->BeginInteractionsCache(H5F_ACC_RDONLY);
     ret = (H5FD_DSM_SUCCESS==this->DSMBuffer->GetSteerer()->GetVector(name, H5T_NATIVE_INT, numberOfElements, values));
     this->DSMBuffer->GetSteerer()->EndInteractionsCache();
   }
-  return ret;
+  return(ret);
 }
 //----------------------------------------------------------------------------
 void H5FDdsmManager::SetSteeringValues(const char *name, int numberOfElements, double *values)
 {
   if (numberOfElements) {
-    bool entryExists = false;
+    H5FDdsmBoolean entryExists = false;
     // Check if the entry already exists
     H5FDdsmManagerInternals::SteeringEntriesDouble::iterator iter =
         this->ManagerInternals->SteeringValuesDouble.begin();
@@ -703,28 +693,28 @@ void H5FDdsmManager::SetSteeringValues(const char *name, int numberOfElements, d
   }
 }
 //----------------------------------------------------------------------------
-bool H5FDdsmManager::GetSteeringValues(const char *name, int numberOfElements, double *values)
+H5FDdsmInt32 H5FDdsmManager::GetSteeringValues(const char *name, int numberOfElements, double *values)
 {
-  bool ret = false;
+  H5FDdsmInt32 ret = H5FD_DSM_FALSE;
   if (numberOfElements) {
     this->DSMBuffer->GetSteerer()->BeginInteractionsCache(H5F_ACC_RDONLY);
     ret = (H5FD_DSM_SUCCESS==this->DSMBuffer->GetSteerer()->GetVector(name, H5T_NATIVE_DOUBLE, numberOfElements, values));
     this->DSMBuffer->GetSteerer()->EndInteractionsCache();
   }
-  return ret;
+  return(ret);
 }
 //----------------------------------------------------------------------------
-bool H5FDdsmManager::GetInteractionsGroupPresent()
+H5FDdsmInt32 H5FDdsmManager::GetInteractionsGroupPresent()
 {
-  bool ret = false;
+  H5FDdsmInt32 ret = H5FD_DSM_FALSE;
   if ((this->DSMBuffer != NULL) && (this->DSMBuffer->GetSteerer() != NULL)) {
     ret = (H5FD_DSM_SUCCESS==this->DSMBuffer->GetSteerer()->BeginInteractionsCache(H5F_ACC_RDONLY));
     this->DSMBuffer->GetSteerer()->EndInteractionsCache();
   }
-  return ret;
+  return(ret);
 }
 //----------------------------------------------------------------------------
-void H5FDdsmManager::SetDisabledObject(char *objectName)
+void H5FDdsmManager::SetDisabledObject(H5FDdsmString objectName)
 {
   this->ManagerInternals->RequestedDisabledObjects.push_back(objectName);
 }

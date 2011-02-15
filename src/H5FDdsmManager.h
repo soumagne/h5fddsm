@@ -55,14 +55,14 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
 
     // Description:
     // Set/Get DsmIsServer info
-    H5FDdsmSetValueMacro(DsmIsServer, int);
-    H5FDdsmGetValueMacro(DsmIsServer, int);
+    H5FDdsmSetValueMacro(DsmIsServer, H5FDdsmBoolean);
+    H5FDdsmGetValueMacro(DsmIsServer, H5FDdsmBoolean);
 
     // Description:
     // Set/Get the interprocess communication subsystem
     // Valid values are H5FD_DSM_COMM_MPI, H5FD_DSM_COMM_SOCKET
-    H5FDdsmSetValueMacro(DsmCommType, int);
-    H5FDdsmGetValueMacro(DsmCommType, int);
+    H5FDdsmSetValueMacro(DsmCommType, H5FDdsmInt32);
+    H5FDdsmGetValueMacro(DsmCommType, H5FDdsmInt32);
 
     // Description:
     // Set/Get the published host name of our connection.
@@ -73,8 +73,8 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     // Description:
     // Set/Get the published port of our connection.
     // Real value valid after a PublishDSM call has been made.
-    H5FDdsmSetValueMacro(ServerPort, int);
-    H5FDdsmGetValueMacro(ServerPort, int);
+    H5FDdsmSetValueMacro(ServerPort, H5FDdsmInt32);
+    H5FDdsmGetValueMacro(ServerPort, H5FDdsmInt32);
 
     // Description:
     // Set/Get the DSM configuration file path.
@@ -85,22 +85,22 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
 
     // Description:
     // Only valid after a AcceptConnection call has been made.
-    int GetAcceptedConnection();
+    H5FDdsmInt32 GetAcceptedConnection();
 
     // Description:
     // Get/Set the update ready flag which triggers the pipeline update.
-    int  GetDsmUpdateReady();
+    H5FDdsmInt32  GetDsmUpdateReady();
     void ClearDsmUpdateReady();
-    void WaitForUpdateReady();
+    H5FDdsmInt32 WaitForUpdateReady();
 
     // Description:
     // Get/Set the data modified flag
-    int  GetDsmIsDataModified();
+    H5FDdsmInt32  GetDsmIsDataModified();
     void ClearDsmIsDataModified();
 
     // Description:
     // Get/Set the update level flag
-    int  GetDsmUpdateLevel();
+    H5FDdsmInt32  GetDsmUpdateLevel();
     void ClearDsmUpdateLevel();
 
     // Description:
@@ -115,16 +115,16 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     // Description:
     // Set values and associated name for the corresponding int interaction.
     void SetSteeringValues(const char *name, int numberOfElements, int *values);
-    bool GetSteeringValues(const char *name, int numberOfElements, int *values);
+    H5FDdsmInt32 GetSteeringValues(const char *name, int numberOfElements, int *values);
 
     // Description:
     // Set values and associated name for the corresponding int interaction.
     void SetSteeringValues(const char *name, int numberOfElements, double *values);
-    bool GetSteeringValues(const char *name, int numberOfElements, double *values);
+    H5FDdsmInt32 GetSteeringValues(const char *name, int numberOfElements, double *values);
 
     // Description:
     // Return true if the Interactions group exists, false otherwise
-    bool GetInteractionsGroupPresent();
+    H5FDdsmInt32 GetInteractionsGroupPresent();
 
     // Description:
     // Set/Unset objects
@@ -135,11 +135,11 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     // to the receiver. When receiving, GetXMLDescriptionReceive queries the internal DSMBuffer
     // object to see if a string is present
     H5FDdsmSetStringMacro(XMLStringSend);
-    const char *GetXMLStringReceive();
-    void        ClearXMLStringReceive();
+    H5FDdsmConstString GetXMLStringReceive();
+    void   ClearXMLStringReceive();
 
-    bool   CreateDSM();
-    bool   DestroyDSM();
+    H5FDdsmInt32 CreateDSM();
+    H5FDdsmInt32 DestroyDSM();
     void   ClearDSM();
     void   ConnectDSM();
     void   DisconnectDSM();
@@ -158,7 +158,7 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     // information can be read. This is for use the by a DSM client.
     // DSM servers write their .dsm_config when PublishDSM() is called
     // Returns false if the .dsm_config file is not read
-    bool   ReadDSMConfigFile();
+    H5FDdsmInt32   ReadDSMConfigFile();
 
     H5FDdsmBuffer *GetDSMHandle();
 
@@ -166,8 +166,8 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     //
     // Internal Variables
     //
-    int            UpdatePiece;
-    int            UpdateNumPieces;
+    H5FDdsmInt32   UpdatePiece;
+    H5FDdsmInt32   UpdateNumPieces;
     H5FDdsmInt64   LocalBufferSizeMBytes;
 
 #ifdef _WIN32
@@ -181,13 +181,13 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     H5FDdsmBuffer  *DSMBuffer;
     H5FDdsmComm    *DSMComm;
     //
-    int             DsmIsServer;
-    int             DsmCommType;
-    char           *ServerHostName;
-    int             ServerPort;
-    char           *DsmConfigFilePath;
+    H5FDdsmBoolean  DsmIsServer;
+    H5FDdsmInt32    DsmCommType;
+    H5FDdsmString   ServerHostName;
+    H5FDdsmInt32    ServerPort;
+    H5FDdsmString   DsmConfigFilePath;
     //
-    char           *XMLStringSend;
+    H5FDdsmString   XMLStringSend;
     //
     H5FDdsmManagerInternals *ManagerInternals;
 

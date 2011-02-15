@@ -222,7 +222,7 @@ H5FDdsmInt32 H5FDdsmSteerer::IsObjectEnabled(H5FDdsmConstString name)
   return(ret);
 }
 //----------------------------------------------------------------------------
-bool H5FDdsmSteerer::InteractionsCacheActive()
+H5FDdsmBoolean H5FDdsmSteerer::InteractionsCacheActive()
 {
   return (this->Cache_fapl!=H5I_BADID);
 }
@@ -301,7 +301,7 @@ void H5FDdsmSteerer::EndHideHDF5Errors()
 H5FDdsmInt32 H5FDdsmSteerer::IsObjectPresent(H5FDdsmConstString name, int &present)
 {
   H5FDdsmInt32 ret = H5FD_DSM_SUCCESS;
-  bool usecache = this->InteractionsCacheActive();
+  H5FDdsmBoolean usecache = this->InteractionsCacheActive();
   if (!usecache) {
     if (this->BeginInteractionsCache(H5F_ACC_RDONLY)!=H5FD_DSM_SUCCESS) return H5FD_DSM_FAIL;
   }
@@ -334,7 +334,7 @@ H5FDdsmInt32 H5FDdsmSteerer::IsObjectPresent(H5FDdsmConstString name, int &prese
 H5FDdsmInt32 H5FDdsmSteerer::GetScalar(H5FDdsmConstString name, H5FDdsmInt32 memType, void *data)
 {
   H5FDdsmInt32 ret = H5FD_DSM_SUCCESS;
-  bool usecache = this->InteractionsCacheActive();
+  H5FDdsmBoolean usecache = this->InteractionsCacheActive();
   if (!usecache) {
     if (this->BeginInteractionsCache(H5F_ACC_RDONLY)!=H5FD_DSM_SUCCESS) return H5FD_DSM_FAIL;
   }
@@ -361,7 +361,7 @@ H5FDdsmInt32 H5FDdsmSteerer::GetScalar(H5FDdsmConstString name, H5FDdsmInt32 mem
 H5FDdsmInt32 H5FDdsmSteerer::SetScalar(H5FDdsmConstString name, H5FDdsmInt32 memType, void *data)
 {
   H5FDdsmInt32 ret = H5FD_DSM_SUCCESS;
-  bool usecache = this->InteractionsCacheActive();
+  H5FDdsmBoolean usecache = this->InteractionsCacheActive();
   if (!usecache) {
     if (this->BeginInteractionsCache(H5F_ACC_RDWR)!=H5FD_DSM_SUCCESS) return H5FD_DSM_FAIL;
   }
@@ -390,7 +390,7 @@ H5FDdsmInt32 H5FDdsmSteerer::SetScalar(H5FDdsmConstString name, H5FDdsmInt32 mem
 H5FDdsmInt32 H5FDdsmSteerer::GetVector(H5FDdsmConstString name, H5FDdsmInt32 memType, hsize_t numberOfElements, void *data)
 {
   H5FDdsmInt32 ret = H5FD_DSM_SUCCESS;
-  bool usecache = this->InteractionsCacheActive();
+  H5FDdsmBoolean usecache = this->InteractionsCacheActive();
   if (!usecache) {
     if (this->BeginInteractionsCache(H5F_ACC_RDONLY)!=H5FD_DSM_SUCCESS) return H5FD_DSM_FAIL;
   }
@@ -421,7 +421,7 @@ H5FDdsmInt32 H5FDdsmSteerer::GetVector(H5FDdsmConstString name, H5FDdsmInt32 mem
 H5FDdsmInt32 H5FDdsmSteerer::SetVector(H5FDdsmConstString name, H5FDdsmInt32 memType, hsize_t numberOfElements, void *data)
 {
   H5FDdsmInt32 ret = H5FD_DSM_SUCCESS;
-  bool usecache = this->InteractionsCacheActive();
+  H5FDdsmBoolean usecache = this->InteractionsCacheActive();
   if (!usecache) {
     if (this->BeginInteractionsCache(H5F_ACC_RDWR)!=H5FD_DSM_SUCCESS) return H5FD_DSM_FAIL;
   }
@@ -450,7 +450,7 @@ H5FDdsmInt32 H5FDdsmSteerer::SetVector(H5FDdsmConstString name, H5FDdsmInt32 mem
 H5FDdsmInt32 H5FDdsmSteerer::GetHandle(H5FDdsmConstString name, hid_t *handle)
 {
   H5FDdsmInt32 ret = H5FD_DSM_SUCCESS;
-  bool usecache = this->InteractionsCacheActive();
+  H5FDdsmBoolean usecache = this->InteractionsCacheActive();
   if (!usecache) {
     H5FDdsmError("This function cannot be used without first calling H5FD_dsm_steering_begin_query()");
     return H5FD_DSM_FAIL;
@@ -466,7 +466,7 @@ H5FDdsmInt32 H5FDdsmSteerer::GetHandle(H5FDdsmConstString name, hid_t *handle)
 H5FDdsmInt32 H5FDdsmSteerer::FreeHandle(hid_t handle)
 {
   H5FDdsmInt32 ret = H5FD_DSM_SUCCESS;
-  bool usecache = this->InteractionsCacheActive();
+  H5FDdsmBoolean usecache = this->InteractionsCacheActive();
   if (!usecache) {
     H5FDdsmError("This function cannot be used without first calling H5FD_dsm_steering_begin_query()");
     return H5FD_DSM_FAIL;
@@ -551,7 +551,7 @@ H5FDdsmInt32 H5FDdsmSteerer::CheckCommand(H5FDdsmConstString command)
   std::string stringCommand = command;
 
   if (stringCommand == "pause") {
-    bool lockStatus = this->DsmBuffer->GetIsLocked();
+    H5FDdsmBoolean lockStatus = this->DsmBuffer->GetIsLocked();
     if (lockStatus) {
       // During the pause we don't do anything so we don't need to keep the lock
       this->DsmBuffer->RequestLockRelease();

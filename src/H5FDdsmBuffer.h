@@ -100,8 +100,8 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     // Is the DSMBuffer ready to update
     H5FDdsmGetValueMacro(IsUpdateReady, H5FDdsmBoolean);
     H5FDdsmSetValueMacro(IsUpdateReady, H5FDdsmBoolean);
-    void SignalUpdateReady();
-    void WaitForUpdateReady();
+    H5FDdsmInt32 SignalUpdateReady();
+    H5FDdsmInt32 WaitForUpdateReady();
 
    // Has the data been modified
     H5FDdsmGetValueMacro(IsDataModified, H5FDdsmBoolean);
