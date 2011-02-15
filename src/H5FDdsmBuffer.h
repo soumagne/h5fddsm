@@ -54,6 +54,12 @@
 
 #include "H5FDdsmDriver.h"
 
+#ifdef _WIN32
+  #include <windows.h>
+#else
+  #include <pthread.h>
+#endif
+
 class H5FDdsmSteerer;
 
 #define H5FD_DSM_MAX_LOCKS 32

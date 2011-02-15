@@ -186,7 +186,7 @@ H5FDdsmInt32 H5FDdsmManager::DestroyDSM()
 {
   // Watch out that all processes have empty message queues
   // Should be already done during the disconnection
-#ifdef _WIN32
+#ifdef JBHACK
   // "TODO : Dirty JB hack for standalone mode - FIXME
   if (this->DSMBuffer && 
     !this->DSMBuffer->GetIsConnected() && this->UpdatePiece == 0) 
