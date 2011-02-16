@@ -160,8 +160,8 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     H5FDdsmSteerer *GetSteerer() { return(Steerer); }
 
   protected:
-    volatile H5FDdsmInt32   ThreadDsmReady;
-    volatile H5FDdsmInt32   ThreadRemoteDsmReady;
+    H5FDdsmInt32            ThreadDsmReady;
+    H5FDdsmInt32            ThreadRemoteDsmReady;
 
 #ifdef _WIN32
     DWORD                   ServiceThreadPtr;
