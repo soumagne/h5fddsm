@@ -541,12 +541,6 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
     }
     commSync = 0;
     this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_LOCAL);
-    if (this->IsConnected) {
-      // @TODO RMA is special and the thread may not be necessary
-      if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
-        this->Comm->RemoteCommSync();
-      }
-    }
     if (!this->IsLocked) {
       H5FDdsmLockError("already released");
     } else {
@@ -558,7 +552,15 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
 #else
     pthread_mutex_unlock(&this->Lock);
 #endif
-    if (!this->RemoteServiceThreadPtr) this->StartRemoteService();
+    if (this->IsConnected) {
+      // TODO do RMA properly
+      if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
+        this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_REMOTE);
+        this->Comm->RemoteCommSync();
+      } else {
+        if (!this->RemoteServiceThreadPtr) this->StartRemoteService();
+      }
+    }
     break;
   // H5FD_DSM_ACCEPT
   case H5FD_DSM_ACCEPT:
@@ -568,11 +570,13 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
       this->Comm->RemoteCommSendInfo(&this->Length, &this->TotalLength, &this->StartServerId, &this->EndServerId);
       this->SignalConnected();
     }
-    // @TODO RMA is special and the thread may not be necessary
+    // TODO do RMA properly
     if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
+      this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_REMOTE);
       this->Comm->RemoteCommSync();
+    } else {
+      if (!this->RemoteServiceThreadPtr) this->StartRemoteService();
     }
-    if (!this->RemoteServiceThreadPtr) this->StartRemoteService();
     break;
   // H5FD_DSM_DISCONNECT
   case H5FD_DSM_DISCONNECT:
@@ -625,8 +629,11 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
     // When update ready is found, the server keeps the lock
     // and only releases it when the update is over
     this->ReleaseLockOnClose = false;
+    // TODO do RMA properly
+    if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) this->IsLocked = true;
     H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "Update level " <<
         this->UpdateLevel << ", Switched to Local channel");
+    this->Comm->Barrier();
     this->SignalUpdateReady();
     break;
   // H5FD_DSM_CLEAR_STORAGE
@@ -883,7 +890,8 @@ H5FDdsmBuffer::Put(H5FDdsmInt64 Address, H5FDdsmInt64 aLength, void *Data){
 
     }else{
       H5FDdsmInt32   status;
-      // @TODO For now, one-sided comms are only used with the inter-communicator
+      // TODO do RMA properly
+      // For now, one-sided comms are only used with the inter-communicator
       if ((this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) && (this->Comm->GetCommChannel() == H5FD_DSM_COMM_CHANNEL_REMOTE)) {
         H5FDdsmDebug("PUT request from " << who << " for " << len << " bytes @ " << Address);
         status = this->PutData(who, datap, len, Address - astart);
@@ -935,7 +943,8 @@ H5FDdsmBuffer::Get(H5FDdsmInt64 Address, H5FDdsmInt64 aLength, void *Data){
 
     }else{
       H5FDdsmInt32   status;
-      // @TODO For now, one-sided comms are only used with the inter-communicator
+      // TODO do RMA properly
+      // For now, one-sided comms are only used with the inter-communicator
       if ((this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) && (this->Comm->GetCommChannel() == H5FD_DSM_COMM_CHANNEL_REMOTE)) {
         H5FDdsmDebug("Get request from " << who << " for " << len << " bytes @ " << Address);
         status = this->GetData(who, datap, len, Address - astart);
@@ -974,9 +983,17 @@ H5FDdsmBuffer::RequestLockAcquire() {
     pthread_mutex_lock(&this->Lock);
 #endif
   } else {
-    for (who = this->StartServerId ; who <= this->EndServerId ; who++) {
-      H5FDdsmDebug("Send request LOCK acquire to " << who);
-      status = this->SendCommandHeader(H5FD_DSM_LOCK_ACQUIRE, who, 0, 0);
+    // TODO do RMA properly
+    if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
+      // After possible RMA put / get from the server, need to sync windows before
+      // further operations
+      if (this->IsSyncRequired) this->Comm->RemoteCommSync();
+      this->IsSyncRequired = false;
+    } else {
+      for (who = this->StartServerId ; who <= this->EndServerId ; who++) {
+        H5FDdsmDebug("Send request LOCK acquire to " << who);
+        status = this->SendCommandHeader(H5FD_DSM_LOCK_ACQUIRE, who, 0, 0);
+      }
     }
   }
 
@@ -1007,11 +1024,22 @@ H5FDdsmBuffer::RequestLockRelease() {
 #else
     pthread_mutex_unlock(&this->Lock);
 #endif
-    if (!this->RemoteServiceThreadPtr && this->IsConnected) this->StartRemoteService();
+    if (this->IsConnected) {
+      // TODO do RMA properly
+      if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
+        this->RequestAccept();
+      } else {
+        if (!this->RemoteServiceThreadPtr) this->StartRemoteService();
+      }
+    }
   } else {
-    for (who = this->StartServerId ; who <= this->EndServerId ; who++) {
-      H5FDdsmDebug("Send request LOCK release to " << who);
-      status = this->SendCommandHeader(H5FD_DSM_LOCK_RELEASE, who, 0, 0);
+    if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
+      // TODO do RMA properly
+    } else {
+      for (who = this->StartServerId ; who <= this->EndServerId ; who++) {
+        H5FDdsmDebug("Send request LOCK release to " << who);
+        status = this->SendCommandHeader(H5FD_DSM_LOCK_RELEASE, who, 0, 0);
+      }
     }
   }
 
@@ -1035,8 +1063,8 @@ H5FDdsmBuffer::RequestDisconnect() {
 
   this->RequestLockAcquire();
 
-  if ((this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) &&
-      this->IsSyncRequired) {
+  // TODO do RMA properly
+  if ((this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) && this->IsSyncRequired) {
     this->Comm->RemoteCommSync();
     this->IsSyncRequired = false;
   }
@@ -1054,6 +1082,9 @@ H5FDdsmBuffer::RequestDisconnect() {
 H5FDdsmInt32
 H5FDdsmBuffer::RequestServerUpdate() {
   H5FDdsmInt32 who, status = H5FD_DSM_SUCCESS;
+
+  // TODO do RMA properly
+  if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) this->IsSyncRequired = true;
 
   // No mutex here, only informal since it's the client
   if (!this->IsLocked) {

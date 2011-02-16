@@ -115,7 +115,7 @@ extern "C" {
 // The driver identification number, initialized at runtime
 static hid_t H5FD_DSM_g = 0;
 
-// @TODO Warning, the use of static objects here is very dangerous!
+// TODO Warning, the use of static objects here is very dangerous!
 // This H5FDdsmManager is used only when no DsmBuffer
 // is passed to set_fapl_dsm function
 static H5FDdsmManager *dsmManagerSingleton = NULL;
@@ -547,11 +547,6 @@ H5FD_dsm_server_update(void *dsmBuffer)
   }
 
   if (!buffer->GetIsLocked()) buffer->RequestLockAcquire();
-
-  if (buffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
-    PRINT_DSM_INFO(buffer->GetComm()->GetId(), "SetIsSyncRequired(true)");
-    buffer->SetIsSyncRequired(true);
-  }
   buffer->RequestServerUpdate();
 
 done:
@@ -757,15 +752,6 @@ H5FD_dsm_open(const char *name, unsigned UNUSED flags, hid_t fapl_id, haddr_t ma
 
     if (!file->DsmBuffer->GetIsLocked() && file->DsmBuffer->GetIsConnected()) {
       file->DsmBuffer->RequestLockAcquire();
-    }
-
-    if ((file->DsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI_RMA) &&
-        file->DsmBuffer->GetIsSyncRequired() && !file->DsmBuffer->GetIsServer()) {
-      // After possible RMA put / get from the server, need to sync windows before
-      // further operations
-      file->DsmBuffer->GetComm()->RemoteCommSync();
-      PRINT_INFO("SetIsSyncRequired(false)");
-      file->DsmBuffer->SetIsSyncRequired(false);
     }
 
     if ((H5F_ACC_CREAT & flags) && !file->DsmBuffer->GetIsServer()) {
