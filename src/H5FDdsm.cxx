@@ -862,7 +862,7 @@ H5FD_dsm_close(H5FD_t *_file)
           if (!file->DsmBuffer->GetIsServer()) {
             H5FD_dsm_server_update(file->DsmBuffer);
           } else {
-            file->DsmBuffer->SetIsUpdateReady(true);
+            file->DsmBuffer->SignalUpdateReady();
           }
         }
         file->dirty = FALSE;
