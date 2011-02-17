@@ -189,14 +189,12 @@ H5FDdsmComm::RemoteCommSendReady(){
 }
 
 H5FDdsmInt32
-H5FDdsmComm::RemoteCommRecvInfo(H5FDdsmInt64 *length, H5FDdsmInt64 *totalLength,
-    H5FDdsmInt32 *startServerId, H5FDdsmInt32 *endServerId){
+H5FDdsmComm::RemoteCommRecvInfo(H5FDdsmInfo *dsmInfo){
   return(H5FD_DSM_SUCCESS);
 }
 
 H5FDdsmInt32
-H5FDdsmComm::RemoteCommSendInfo(H5FDdsmInt64 *length, H5FDdsmInt64 *totalLength,
-    H5FDdsmInt32 *startServerId, H5FDdsmInt32 *endServerId){
+H5FDdsmComm::RemoteCommSendInfo(H5FDdsmInfo *dsmInfo){
   return(H5FD_DSM_SUCCESS);
 }
 

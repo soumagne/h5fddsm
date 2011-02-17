@@ -567,7 +567,7 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
     if (!this->IsConnected) {
       this->Comm->RemoteCommAccept(this->DataPointer, this->Length);
       // send DSM information
-      this->Comm->RemoteCommSendInfo(&this->Length, &this->TotalLength, &this->StartServerId, &this->EndServerId);
+      this->SendInfo();
       this->SignalConnected();
     }
     // TODO do RMA properly
@@ -776,96 +776,6 @@ H5FDdsmBuffer::EndRemoteService() {
 }
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBuffer::Acquire(H5FDdsmInt64 Index){
-  H5FDdsmInt32   who, MyId = this->Comm->GetId();
-  H5FDdsmInt32   RemoteStatus;
-
-  who = this->AddressToId(0);
-  H5FDdsmDebug("Acquire :: MyId = " << MyId << " who = " << who);
-  if (who == H5FD_DSM_FAIL){
-    H5FDdsmError("Address Error");
-    return(H5FD_DSM_FAIL);
-  }
-  if ((Index < 0) || (Index >= H5FD_DSM_MAX_LOCKS)){
-    H5FDdsmError("Invalid Sema Request " << Index);
-    return(H5FD_DSM_FAIL);
-  }
-  if (who == MyId){
-    H5FDdsmDebug("Local Locks[" << Index << "] = " << this->Locks[Index]);
-    if ((this->Locks[Index] == -1) || (this->Locks[Index] == MyId)){
-      this->Locks[Index] = MyId;
-      H5FDdsmDebug("P(" << who << ")" << " Acquired own lock " << Index);
-      return(H5FD_DSM_SUCCESS);
-    }else{
-      H5FDdsmDebug("P(" << who << ")" << " did not Acquired own lock " << Index);
-      return(H5FD_DSM_FAIL);
-    }
-  }else{
-    H5FDdsmInt32   status;
-
-    H5FDdsmDebug("Sending Header");
-    status = this->SendCommandHeader(H5FD_DSM_SEMA_ACQUIRE, who, Index, sizeof(H5FDdsmInt64));
-    if (status == H5FD_DSM_FAIL){
-      H5FDdsmError("Failed to send Acquire Header to " << who);
-      return(H5FD_DSM_FAIL);
-    }
-    H5FDdsmDebug("Getting Response");
-    status = this->ReceiveData(who, &RemoteStatus, sizeof(H5FDdsmInt32), H5FD_DSM_RESPONSE_TAG);
-    if (status == H5FD_DSM_FAIL){
-      H5FDdsmError("Failed to Acquire " << Index << " Response From " << who);
-      return(H5FD_DSM_FAIL);
-    }
-    H5FDdsmDebug("RemoteStatus = " << RemoteStatus);
-    return(RemoteStatus);
-  }
-  return(H5FD_DSM_FAIL);
-}
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmBuffer::Release(H5FDdsmInt64 Index){
-  H5FDdsmInt32   who, MyId = this->Comm->GetId();
-  H5FDdsmInt32   RemoteStatus;
-
-  who = this->AddressToId(0);
-  if (who == H5FD_DSM_FAIL){
-    H5FDdsmError("Address Error");
-    return(H5FD_DSM_FAIL);
-  }
-  if ((Index < 0) || (Index >= H5FD_DSM_MAX_LOCKS)){
-    H5FDdsmError("Invalid Sema Request " << Index);
-    return(H5FD_DSM_FAIL);
-  }
-  if (who == MyId){
-    if ((this->Locks[Index] == -1) || (this->Locks[Index] == MyId)){
-      this->Locks[Index] = -1;
-      H5FDdsmDebug("P(" << who << ")" << " Released own lock " << Index);
-      return(H5FD_DSM_SUCCESS);
-    }else{
-      H5FDdsmDebug("P(" << who << ")" << " did not Released own lock " << Index);
-      return(H5FD_DSM_FAIL);
-    }
-  }else{
-    H5FDdsmInt32   status;
-
-    H5FDdsmDebug("Sending Release Header");
-    status = this->SendCommandHeader(H5FD_DSM_SEMA_RELEASE, who, Index, sizeof(H5FDdsmInt64));
-    if (status == H5FD_DSM_FAIL){
-      H5FDdsmError("Failed to send Release Header to " << who);
-      return(H5FD_DSM_FAIL);
-    }
-    H5FDdsmDebug("Receiving Release Response ");
-    status = this->ReceiveData(who, &RemoteStatus, sizeof(H5FDdsmInt32), H5FD_DSM_RESPONSE_TAG);
-    if (status == H5FD_DSM_FAIL){
-      H5FDdsmError("Failed to Release " << Index << " Response From " << who);
-      return(H5FD_DSM_FAIL);
-    }
-    H5FDdsmDebug("Release Response = " << RemoteStatus);
-    return(RemoteStatus);
-  }
-  return(H5FD_DSM_FAIL);
-}
-//----------------------------------------------------------------------------
-H5FDdsmInt32
 H5FDdsmBuffer::Put(H5FDdsmInt64 Address, H5FDdsmInt64 aLength, void *Data){
   H5FDdsmInt32   who, MyId = this->Comm->GetId();
   H5FDdsmInt64       astart, aend;
@@ -970,6 +880,96 @@ H5FDdsmBuffer::Get(H5FDdsmInt64 Address, H5FDdsmInt64 aLength, void *Data){
     datap += len;
   }
   return(H5FD_DSM_SUCCESS);
+}
+//----------------------------------------------------------------------------
+H5FDdsmInt32
+H5FDdsmBuffer::Acquire(H5FDdsmInt64 Index){
+  H5FDdsmInt32   who, MyId = this->Comm->GetId();
+  H5FDdsmInt32   RemoteStatus;
+
+  who = this->AddressToId(0);
+  H5FDdsmDebug("Acquire :: MyId = " << MyId << " who = " << who);
+  if (who == H5FD_DSM_FAIL){
+    H5FDdsmError("Address Error");
+    return(H5FD_DSM_FAIL);
+  }
+  if ((Index < 0) || (Index >= H5FD_DSM_MAX_LOCKS)){
+    H5FDdsmError("Invalid Sema Request " << Index);
+    return(H5FD_DSM_FAIL);
+  }
+  if (who == MyId){
+    H5FDdsmDebug("Local Locks[" << Index << "] = " << this->Locks[Index]);
+    if ((this->Locks[Index] == -1) || (this->Locks[Index] == MyId)){
+      this->Locks[Index] = MyId;
+      H5FDdsmDebug("P(" << who << ")" << " Acquired own lock " << Index);
+      return(H5FD_DSM_SUCCESS);
+    }else{
+      H5FDdsmDebug("P(" << who << ")" << " did not Acquired own lock " << Index);
+      return(H5FD_DSM_FAIL);
+    }
+  }else{
+    H5FDdsmInt32   status;
+
+    H5FDdsmDebug("Sending Header");
+    status = this->SendCommandHeader(H5FD_DSM_SEMA_ACQUIRE, who, Index, sizeof(H5FDdsmInt64));
+    if (status == H5FD_DSM_FAIL){
+      H5FDdsmError("Failed to send Acquire Header to " << who);
+      return(H5FD_DSM_FAIL);
+    }
+    H5FDdsmDebug("Getting Response");
+    status = this->ReceiveData(who, &RemoteStatus, sizeof(H5FDdsmInt32), H5FD_DSM_RESPONSE_TAG);
+    if (status == H5FD_DSM_FAIL){
+      H5FDdsmError("Failed to Acquire " << Index << " Response From " << who);
+      return(H5FD_DSM_FAIL);
+    }
+    H5FDdsmDebug("RemoteStatus = " << RemoteStatus);
+    return(RemoteStatus);
+  }
+  return(H5FD_DSM_FAIL);
+}
+//----------------------------------------------------------------------------
+H5FDdsmInt32
+H5FDdsmBuffer::Release(H5FDdsmInt64 Index){
+  H5FDdsmInt32   who, MyId = this->Comm->GetId();
+  H5FDdsmInt32   RemoteStatus;
+
+  who = this->AddressToId(0);
+  if (who == H5FD_DSM_FAIL){
+    H5FDdsmError("Address Error");
+    return(H5FD_DSM_FAIL);
+  }
+  if ((Index < 0) || (Index >= H5FD_DSM_MAX_LOCKS)){
+    H5FDdsmError("Invalid Sema Request " << Index);
+    return(H5FD_DSM_FAIL);
+  }
+  if (who == MyId){
+    if ((this->Locks[Index] == -1) || (this->Locks[Index] == MyId)){
+      this->Locks[Index] = -1;
+      H5FDdsmDebug("P(" << who << ")" << " Released own lock " << Index);
+      return(H5FD_DSM_SUCCESS);
+    }else{
+      H5FDdsmDebug("P(" << who << ")" << " did not Released own lock " << Index);
+      return(H5FD_DSM_FAIL);
+    }
+  }else{
+    H5FDdsmInt32   status;
+
+    H5FDdsmDebug("Sending Release Header");
+    status = this->SendCommandHeader(H5FD_DSM_SEMA_RELEASE, who, Index, sizeof(H5FDdsmInt64));
+    if (status == H5FD_DSM_FAIL){
+      H5FDdsmError("Failed to send Release Header to " << who);
+      return(H5FD_DSM_FAIL);
+    }
+    H5FDdsmDebug("Receiving Release Response ");
+    status = this->ReceiveData(who, &RemoteStatus, sizeof(H5FDdsmInt32), H5FD_DSM_RESPONSE_TAG);
+    if (status == H5FD_DSM_FAIL){
+      H5FDdsmError("Failed to Release " << Index << " Response From " << who);
+      return(H5FD_DSM_FAIL);
+    }
+    H5FDdsmDebug("Release Response = " << RemoteStatus);
+    return(RemoteStatus);
+  }
+  return(H5FD_DSM_FAIL);
 }
 //----------------------------------------------------------------------------
 H5FDdsmInt32

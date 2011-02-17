@@ -364,25 +364,7 @@ DsmBufferConnect(H5FDdsmBuffer *dsmBuffer)
     if (dsmBuffer->GetComm()->RemoteCommConnect() == H5FD_DSM_SUCCESS) {
       PRINT_DSM_INFO(dsmBuffer->GetComm()->GetId(), "Connected!");
       dsmBuffer->SetIsConnected(true);
-
-      // Receive DSM info
-      H5FDdsmInt64 length;
-      H5FDdsmInt64 totalLength;
-      H5FDdsmInt32 startServerId, endServerId;
-
-      dsmBuffer->GetComm()->RemoteCommRecvInfo(&length, &totalLength, &startServerId, &endServerId);
-
-      dsmBuffer->SetLength(length, 0);
-      PRINT_DSM_INFO(dsmBuffer->GetComm()->GetId(), "Length received: " << dsmBuffer->GetLength());
-
-      dsmBuffer->SetTotalLength(totalLength);
-      PRINT_DSM_INFO(dsmBuffer->GetComm()->GetId(), "totalLength received: " << dsmBuffer->GetTotalLength());
-
-      dsmBuffer->SetStartServerId(startServerId);
-      PRINT_DSM_INFO(dsmBuffer->GetComm()->GetId(), "startServerId received: " << dsmBuffer->GetStartServerId());
-
-      dsmBuffer->SetEndServerId(endServerId);
-      PRINT_DSM_INFO(dsmBuffer->GetComm()->GetId(), "endServerId received: " << dsmBuffer->GetEndServerId());
+      dsmBuffer->ReceiveInfo();
     }
     else {
       PRINT_DSM_INFO(dsmBuffer->GetComm()->GetId(), "DSMBuffer Comm_connect returned FAIL");

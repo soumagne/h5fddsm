@@ -140,7 +140,30 @@ H5FDdsmDriver::ConfigureUniform(H5FDdsmComm *aComm, H5FDdsmInt64 aLength, H5FDds
     }else{
         this->Length = aLength;
     }
-//    this->ServiceMsg->Source = this->Msg->Source = this->RemoteServiceMsg->Source = this->Comm->GetId();
+    // this->ServiceMsg->Source = this->Msg->Source = this->RemoteServiceMsg->Source = this->Comm->GetId();
+    this->TotalLength = aLength * (EndId - StartId + 1);
+    return(H5FD_DSM_SUCCESS);
+}
+
+H5FDdsmInt32
+H5FDdsmDriver::ConfigureBlockCyclic(H5FDdsmComm *aComm, H5FDdsmInt64 aLength, H5FDdsmInt64 aBlockLength, H5FDdsmInt32 StartId, H5FDdsmInt32 EndId){
+    if(StartId < 0) StartId = 0;
+    if(EndId < 0) EndId = aComm->GetTotalSize() - 1;
+    this->SetDsmType(H5FD_DSM_TYPE_BLOCK_CYCLIC);
+    this->SetStartServerId(StartId);
+    this->SetEndServerId(EndId);
+    this->SetComm(aComm);
+    if(aBlockLength < 0) aBlockLength = H5FD_DSM_DEFAULT_BLOCK_LENGTH;
+    this->SetBlockLength(aBlockLength);
+    if((aComm->GetId() >= StartId) && (aComm->GetId() <= EndId)){
+        this->Storage->SetComm(aComm);
+        // For optimization we make the DSM length fit to a multiple of block size
+        this->SetLength((H5FDdsmInt64(aLength/this->BlockLength))*this->BlockLength, 1);
+        this->StartAddress = (aComm->GetId() - StartId) * aLength;
+        this->EndAddress = this->StartAddress + aLength - 1;
+    }else{
+        this->Length = aLength;
+    }
     this->TotalLength = aLength * (EndId - StartId + 1);
     return(H5FD_DSM_SUCCESS);
 }
@@ -155,8 +178,8 @@ H5FDdsmDriver::GetAddressRangeForId(H5FDdsmInt32 Id, H5FDdsmInt64 *Start, H5FDds
             *End = *Start + Length - 1;
             break;
         case H5FD_DSM_TYPE_BLOCK_CYCLIC :
-          *Start = ((H5FDdsmInt32)(Address / H5FD_DSM_BLOCK_LENGTH)) * H5FD_DSM_BLOCK_LENGTH;
-          *End = ((H5FDdsmInt32)(Address / H5FD_DSM_BLOCK_LENGTH) + 1) * H5FD_DSM_BLOCK_LENGTH - 1;
+          *Start = ((H5FDdsmInt32)(Address / this->BlockLength)) * this->BlockLength;
+          *End = ((H5FDdsmInt32)(Address / this->BlockLength) + 1) * this->BlockLength - 1;
           break;
         default :
             // Not Implemented
@@ -164,6 +187,7 @@ H5FDdsmDriver::GetAddressRangeForId(H5FDdsmInt32 Id, H5FDdsmInt64 *Start, H5FDds
             return(H5FD_DSM_FAIL);
             break;
     }
+    H5FDdsmDebug("Address Range for id" << Id << ": start = " << *Start << " , end = " << *End);
     return(H5FD_DSM_SUCCESS);
 }
 
@@ -185,7 +209,7 @@ H5FDdsmDriver::AddressToId(H5FDdsmInt64 Address){
           if (Address > this->EndAddress*(this->EndServerId - this->StartServerId + 1)) {
             H5FDdsmError("Address " << Address << " is larger than end address of EndServerId " << this->EndServerId);
           }
-          ServerId = this->StartServerId + ((H5FDdsmInt32)(Address / H5FD_DSM_BLOCK_LENGTH) % (this->EndServerId - this->StartServerId + 1));
+          ServerId = this->StartServerId + ((H5FDdsmInt32)(Address / this->BlockLength) % (this->EndServerId - this->StartServerId + 1));
           break;
         default :
             // Not Implemented
@@ -202,6 +226,7 @@ H5FDdsmDriver::SendDone(){
     switch(this->DsmType) {
         case H5FD_DSM_TYPE_UNIFORM :
         case H5FD_DSM_TYPE_UNIFORM_RANGE :
+        case H5FD_DSM_TYPE_BLOCK_CYCLIC :
             for(who = this->StartServerId ; who <= this->EndServerId ; who++){
                 status = this->SendCommandHeader(H5FD_DSM_OPCODE_DONE, who, 0, 0);
             }
@@ -298,6 +323,50 @@ H5FDdsmDriver::ReceiveCommandHeader(H5FDdsmInt32 *Opcode, H5FDdsmInt32 *Source, 
         }
     }
     return(status);
+}
+
+H5FDdsmInt32
+H5FDdsmDriver::SendInfo(){
+
+  H5FDdsmInfo dsmInfo;
+
+  dsmInfo.type = this->DsmType;
+  dsmInfo.length = this->Length;
+  dsmInfo.total_length = this->TotalLength;
+  dsmInfo.block_length = this->BlockLength;
+  dsmInfo.start_server_id = this->StartServerId;
+  dsmInfo.end_server_id = this->EndServerId;
+
+  return(this->Comm->RemoteCommSendInfo(&dsmInfo));
+}
+
+H5FDdsmInt32
+H5FDdsmDriver::ReceiveInfo(){
+
+  H5FDdsmInfo dsmInfo;
+
+  if(this->Comm->RemoteCommRecvInfo(&dsmInfo) != H5FD_DSM_SUCCESS) {
+    return(H5FD_DSM_FAIL);
+  }
+  this->SetDsmType(dsmInfo.type);
+  H5FDdsmDebug("Type received: " << this->GetDsmType());
+
+  this->SetLength(dsmInfo.length, 0);
+  H5FDdsmDebug("Length received: " << this->GetLength());
+
+  this->SetTotalLength(dsmInfo.total_length);
+  H5FDdsmDebug("totalLength received: " << this->GetTotalLength());
+
+  this->SetBlockLength(dsmInfo.block_length);
+  H5FDdsmDebug("blockLength received: " << this->GetBlockLength());
+
+  this->SetStartServerId(dsmInfo.start_server_id);
+  H5FDdsmDebug("startServerId received: " << this->GetStartServerId());
+
+  this->SetEndServerId(dsmInfo.end_server_id);
+  H5FDdsmDebug("endServerId received: " << this->GetEndServerId());
+
+  return(H5FD_DSM_SUCCESS);
 }
 
 H5FDdsmInt32

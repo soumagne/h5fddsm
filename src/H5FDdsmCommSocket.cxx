@@ -359,73 +359,31 @@ H5FDdsmCommSocket::RemoteCommSendReady()
 }
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmCommSocket::RemoteCommRecvInfo(H5FDdsmInt64 *length, H5FDdsmInt64 *totalLength,
-                                      H5FDdsmInt32 *startServerId, H5FDdsmInt32 *endServerId)
+H5FDdsmCommSocket::RemoteCommRecvInfo(H5FDdsmInfo *dsmInfo)
 {
-  if (H5FDdsmComm::RemoteCommRecvInfo(length, totalLength, startServerId, endServerId) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+  if (H5FDdsmComm::RemoteCommRecvInfo(dsmInfo) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
   if (this->Id == 0) {
-    this->InterComm[0]->Receive(length, sizeof(H5FDdsmInt64));
-    H5FDdsmDebug("Recv DSM length: " << *length);
+    H5FDdsmDebug("Receiving DSM Info...");
+    this->InterComm[0]->Receive(dsmInfo, sizeof(H5FDdsmInfo));
+    H5FDdsmDebug("Recv DSM Info Completed");
   }
-  if (MPI_Bcast(length, sizeof(H5FDdsmInt64), MPI_UNSIGNED_CHAR, 0, this->Comm) != MPI_SUCCESS) {
-    H5FDdsmError("Id = " << this->Id << " MPI_Bcast of length failed");
+  if (MPI_Bcast(dsmInfo, sizeof(H5FDdsmInfo), MPI_UNSIGNED_CHAR, 0, this->Comm) != MPI_SUCCESS) {
+    H5FDdsmError("Id = " << this->Id << " MPI_Bcast of Info failed");
     return(H5FD_DSM_FAIL);
   }
-
-  if (this->Id == 0) {
-    this->InterComm[0]->Receive(totalLength, sizeof(H5FDdsmInt64));
-    H5FDdsmDebug("Recv DSM totalLength: " << *totalLength);
-  }
-  if (MPI_Bcast(totalLength, sizeof(H5FDdsmInt64), MPI_UNSIGNED_CHAR, 0, this->Comm) != MPI_SUCCESS) {
-    H5FDdsmError("Id = " << this->Id << " MPI_Bcast of totalLength failed");
-    return(H5FD_DSM_FAIL);
-  }
-
-  if (this->Id == 0) {
-    this->InterComm[0]->Receive(startServerId, sizeof(H5FDdsmInt32));
-    H5FDdsmDebug("Recv DSM startServerId: " << *startServerId);
-  }
-  if (MPI_Bcast(startServerId, sizeof(H5FDdsmInt32), MPI_UNSIGNED_CHAR, 0, this->Comm) != MPI_SUCCESS) {
-    H5FDdsmError("Id = " << this->Id << " MPI_Bcast of startServerId failed");
-    return(H5FD_DSM_FAIL);
-  }
-
-  if (this->Id == 0) {
-    this->InterComm[0]->Receive(endServerId, sizeof(H5FDdsmInt32));
-    H5FDdsmDebug("Recv DSM endServerId: " << *endServerId);
-  }
-  if (MPI_Bcast(endServerId, sizeof(H5FDdsmInt32), MPI_UNSIGNED_CHAR, 0, this->Comm) != MPI_SUCCESS) {
-    H5FDdsmError("Id = " << this->Id << " MPI_Bcast of endServerId failed");
-    return(H5FD_DSM_FAIL);
-  }
-  H5FDdsmDebug("Recv DSM Info Completed");
 
   return(H5FD_DSM_SUCCESS);
 }
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmCommSocket::RemoteCommSendInfo(H5FDdsmInt64 *length, H5FDdsmInt64 *totalLength,
-                                      H5FDdsmInt32 *startServerId, H5FDdsmInt32 *endServerId)
+H5FDdsmCommSocket::RemoteCommSendInfo(H5FDdsmInfo *dsmInfo)
 {
-  if (H5FDdsmComm::RemoteCommSendInfo(length, totalLength, startServerId, endServerId) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+  if (H5FDdsmComm::RemoteCommSendInfo(dsmInfo) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
   if (this->Id == 0) {
-    // Length
-    H5FDdsmDebug("Send DSM length: " << *length);
-    this->InterComm[0]->Send(length, sizeof(H5FDdsmInt64));
-
-    // TotalLength
-    H5FDdsmDebug("Send DSM totalLength: " << *totalLength);
-    this->InterComm[0]->Send(totalLength, sizeof(H5FDdsmInt64));
-
-    // StartServerId
-    H5FDdsmDebug("Send DSM startServerId: " << *startServerId);
-    this->InterComm[0]->Send(startServerId, sizeof(H5FDdsmInt32));
-
-    // EndServerId
-    H5FDdsmDebug("Send DSM endServerId: " << *endServerId);
-    this->InterComm[0]->Send(endServerId, sizeof(H5FDdsmInt32));
+    H5FDdsmDebug("Sending DSM Info...");
+    this->InterComm[0]->Send(dsmInfo, sizeof(H5FDdsmInfo));
     H5FDdsmDebug("Send DSM Info Completed");
   }
   this->Barrier();

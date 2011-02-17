@@ -52,6 +52,17 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
 
     // Description:
     // Set/Get the interprocess communication subsystem
+    // Valid values are H5FD_DSM_TYPE_UNIFORM, H5FD_DSM_TYPE_BLOCK_CYCLIC
+    H5FDdsmSetValueMacro(DsmType, H5FDdsmInt32);
+    H5FDdsmGetValueMacro(DsmType, H5FDdsmInt32);
+
+    // Description:
+    // Set/Get the DSM block length when using H5FD_DSM_TYPE_BLOCK_CYCLIC
+    H5FDdsmSetValueMacro(DsmBlockLength, H5FDdsmInt64);
+    H5FDdsmGetValueMacro(DsmBlockLength, H5FDdsmInt64);
+
+    // Description:
+    // Set/Get the interprocess communication subsystem
     // Valid values are H5FD_DSM_COMM_MPI, H5FD_DSM_COMM_SOCKET
     H5FDdsmSetValueMacro(DsmCommType, H5FDdsmInt32);
     H5FDdsmGetValueMacro(DsmCommType, H5FDdsmInt32);
@@ -168,6 +179,8 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     H5FDdsmComm    *DSMComm;
     //
     H5FDdsmBoolean  DsmIsServer;
+    H5FDdsmInt32    DsmType;
+    H5FDdsmInt64    DsmBlockLength;
     H5FDdsmInt32    DsmCommType;
     H5FDdsmString   ServerHostName;
     H5FDdsmInt32    ServerPort;

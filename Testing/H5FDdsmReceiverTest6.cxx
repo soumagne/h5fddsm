@@ -23,11 +23,11 @@ main(int argc, char * argv[])
 {
   int rank, size, provided;
   MPI_Comm comm = MPI_COMM_WORLD;
-  long DSMSize = 16; // default MB
+  long dsmSize = 16; // default MB
   int commType = H5FD_DSM_COMM_SOCKET;
 
   if (argc > 1) {
-    DSMSize = atol(argv[1]);
+    dsmSize = atol(argv[1]);
   }
 
   if (argc > 2) {
@@ -63,7 +63,7 @@ main(int argc, char * argv[])
   H5FDdsmManager * dsmManager = new H5FDdsmManager();
   dsmManager->SetGlobalDebug(0);
   dsmManager->SetCommunicator(comm);
-  dsmManager->SetLocalBufferSizeMBytes(DSMSize);
+  dsmManager->SetLocalBufferSizeMBytes(dsmSize);
   dsmManager->SetDsmCommType(commType);
   dsmManager->SetDsmIsServer(1);
   dsmManager->SetServerHostName("default");

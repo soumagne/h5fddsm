@@ -71,7 +71,7 @@ class H5FDdsmStorage;
 #define H5FD_DSM_TYPE_BLOCK_CYCLIC  3
 
 #define H5FD_DSM_DEFAULT_LENGTH 10000
-#define H5FD_DSM_BLOCK_LENGTH 1024
+#define H5FD_DSM_DEFAULT_BLOCK_LENGTH 1024
 
 typedef struct
 {
@@ -123,9 +123,13 @@ class H5FDdsm_EXPORT H5FDdsmDriver : public H5FDdsmObject {
     H5FDdsmGetValueMacro(Length, H5FDdsmInt64);
     H5FDdsmInt32 SetLength(H5FDdsmInt64 Length, H5FDdsmBoolean AllowAllocate=1);
 
-  //! totalLength
+  //! TotalLength
     H5FDdsmGetValueMacro(TotalLength, H5FDdsmInt64);
     H5FDdsmSetValueMacro(TotalLength, H5FDdsmInt64);
+
+  //! BlockLength
+    H5FDdsmGetValueMacro(BlockLength, H5FDdsmInt64);
+    H5FDdsmSetValueMacro(BlockLength, H5FDdsmInt64);
 
   //! Storage
     H5FDdsmGetValueMacro(Storage, H5FDdsmStorage *);
@@ -141,12 +145,19 @@ class H5FDdsm_EXPORT H5FDdsmDriver : public H5FDdsmObject {
 
     //! Configure the system. Set the Comm and ServerIds
     H5FDdsmInt32   ConfigureUniform(H5FDdsmComm *Comm, H5FDdsmInt64 Length, H5FDdsmInt32 StartId=-1, H5FDdsmInt32 EndId=-1);
+    //! Configure the system. Set the Comm and ServerIds
+    H5FDdsmInt32   ConfigureBlockCyclic(H5FDdsmComm *Comm, H5FDdsmInt64 Length, H5FDdsmInt64 BlockLength=-1, H5FDdsmInt32 StartId=-1, H5FDdsmInt32 EndId=-1);
     
     H5FDdsmInt32   AddressToId(H5FDdsmInt64 Address);
 
     H5FDdsmInt32   ProbeCommandHeader(H5FDdsmInt32 *Source);
     H5FDdsmInt32   SendCommandHeader(H5FDdsmInt32 Opcode, H5FDdsmInt32 Dest, H5FDdsmInt64 Address, H5FDdsmInt32 Length);
     H5FDdsmInt32   ReceiveCommandHeader(H5FDdsmInt32 *Opcode, H5FDdsmInt32 *Source, H5FDdsmInt64 *Address, H5FDdsmInt32 *Length, H5FDdsmInt32 IsRemoteService=0, H5FDdsmInt32 RemoteSource=-1, H5FDdsmInt32 Block=1);
+
+    // Send/Recv Methods for point-to-point exchange of DSM information between
+    // two different jobs/applications
+    H5FDdsmInt32   SendInfo();
+    H5FDdsmInt32   ReceiveInfo();
 
     // Send/Recv Methods for point-to-point comm
     H5FDdsmInt32   SendData(H5FDdsmInt32 Dest, void *Data, H5FDdsmInt32 Length, H5FDdsmInt32 Tag);
@@ -169,6 +180,7 @@ class H5FDdsm_EXPORT H5FDdsmDriver : public H5FDdsmObject {
     H5FDdsmInt64    EndAddress;
     H5FDdsmInt64    Length;
     H5FDdsmInt64    TotalLength;
+    H5FDdsmInt64    BlockLength;
     H5FDdsmInt64   *Locks;
     H5FDdsmStorage *Storage;
     H5FDdsmComm    *Comm;

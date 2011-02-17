@@ -69,6 +69,8 @@ H5FDdsmManager::H5FDdsmManager()
   //
   this->DSMBuffer               = NULL;
   this->DSMComm                 = NULL;
+  this->DsmType                 = H5FD_DSM_TYPE_UNIFORM;
+  this->DsmBlockLength          = -1;
   this->DsmCommType             = H5FD_DSM_COMM_MPI;
   this->DsmIsServer             = 1;
   this->ServerHostName          = NULL;
@@ -213,31 +215,47 @@ H5FDdsmInt32 H5FDdsmManager::CreateDSM()
   //
   // Create DSM communicator
   //
-  if ((this->GetDsmCommType() == H5FD_DSM_COMM_MPI) ||
-      (this->GetDsmCommType() == H5FD_DSM_COMM_MPI_RMA)) {
+  switch (this->GetDsmCommType()) {
+  case H5FD_DSM_COMM_MPI:
+  case H5FD_DSM_COMM_MPI_RMA:
     this->DSMComm = new H5FDdsmCommMpi();
-    if (this->GetDsmCommType() == H5FD_DSM_COMM_MPI) H5FDdsmDebug("Using MPI Intercomm...");
-    if (this->GetDsmCommType() == H5FD_DSM_COMM_MPI_RMA) {
-      this->DSMComm->SetCommType(H5FD_DSM_COMM_MPI_RMA);
-      H5FDdsmDebug("Using MPI RMA Intercomm...");
-    }
+    this->DSMComm->SetCommType(this->GetDsmCommType());
     dynamic_cast<H5FDdsmCommMpi*> (this->DSMComm)->DupComm(this->Communicator);
-  }
-  else if (this->GetDsmCommType() == H5FD_DSM_COMM_SOCKET) {
+    H5FDdsmDebug("Using MPI Intercomm...");
+    if (this->GetDsmCommType() == H5FD_DSM_COMM_MPI_RMA) H5FDdsmDebug("Using RMA Intercomm...");
+    break;
+  case H5FD_DSM_COMM_SOCKET:
     this->DSMComm = new H5FDdsmCommSocket();
-    H5FDdsmDebug("Using Socket Intercomm...");
     dynamic_cast<H5FDdsmCommSocket*> (this->DSMComm)->DupComm(this->Communicator);
+    H5FDdsmDebug("Using Socket Intercomm...");
+    break;
+  default:
+    H5FDdsmError("DSM communication type not supported");
+    return(H5FD_DSM_FAIL);
+    break;
   }
   this->DSMComm->Init();
   //
   // Create the DSM buffer
   //
   this->DSMBuffer = new H5FDdsmBuffer();
-
+  //
   if (this->DsmIsServer) {
     // Uniform Dsm : every node has a buffer the same size. (Addresses are sequential)
     H5FDdsmInt64 length = this->GetLocalBufferSizeMBytes()*1024*1024;
-    this->DSMBuffer->ConfigureUniform(this->DSMComm, length, -1, -1);
+    switch (this->DsmType) {
+    case H5FD_DSM_TYPE_UNIFORM:
+    case H5FD_DSM_TYPE_UNIFORM_RANGE:
+      this->DSMBuffer->ConfigureUniform(this->DSMComm, length, -1, -1);
+      break;
+    case H5FD_DSM_TYPE_BLOCK_CYCLIC:
+      this->DSMBuffer->ConfigureBlockCyclic(this->DSMComm, length, this->DsmBlockLength, -1, -1);
+      break;
+    default:
+      H5FDdsmError("DSM configuration type not supported");
+      return(H5FD_DSM_FAIL);
+      break;
+    }
     if (this->UpdatePiece == 0) {
       H5FDdsmDebug("Length set: " << this->DSMBuffer->GetLength() <<
          ", totalLength set: " << this->DSMBuffer->GetTotalLength() <<
@@ -249,12 +267,12 @@ H5FDdsmInt32 H5FDdsmManager::CreateDSM()
     //
     this->DSMBuffer->StartService();
     H5FDdsmDebug("DSM Service Ready on " << this->UpdatePiece);
-    this->DSMBuffer->SetIsServer(true);
   }
   else {
-    this->DSMBuffer->SetIsServer(false);
+    this->DSMBuffer->SetDsmType(this->GetDsmType());
     this->DSMBuffer->SetComm(this->DSMComm);
   }
+  this->DSMBuffer->SetIsServer(this->DsmIsServer);
   return(H5FD_DSM_SUCCESS);
 }
 //----------------------------------------------------------------------------
@@ -349,25 +367,7 @@ void H5FDdsmManager::ConnectDSM()
     if (this->DSMBuffer->GetComm()->RemoteCommConnect() == H5FD_DSM_SUCCESS) {
       H5FDdsmDebug("Connected!");
       this->DSMBuffer->SetIsConnected(true);
-
-      // Receive DSM info
-      H5FDdsmInt64 length;
-      H5FDdsmInt64 totalLength;
-      H5FDdsmInt32 startServerId, endServerId;
-
-      this->DSMBuffer->GetComm()->RemoteCommRecvInfo(&length, &totalLength, &startServerId, &endServerId);
-
-      this->DSMBuffer->SetLength(length, 0);
-      H5FDdsmDebug("Length received: " << this->DSMBuffer->GetLength());
-
-      this->DSMBuffer->SetTotalLength(totalLength);
-      H5FDdsmDebug("totalLength received: " << this->DSMBuffer->GetTotalLength());
-
-      this->DSMBuffer->SetStartServerId(startServerId);
-      H5FDdsmDebug("startServerId received: " << this->DSMBuffer->GetStartServerId());
-
-      this->DSMBuffer->SetEndServerId(endServerId);
-      H5FDdsmDebug("endServerId received: " << this->DSMBuffer->GetEndServerId());
+      this->DSMBuffer->ReceiveInfo();
     }
     else {
       H5FDdsmDebug("DSMBuffer Comm_connect returned FAIL");

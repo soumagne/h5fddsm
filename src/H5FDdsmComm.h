@@ -67,6 +67,15 @@
 #define H5FD_DSM_COMM_CHANNEL_LOCAL  0x20
 #define H5FD_DSM_COMM_CHANNEL_REMOTE 0x21
 
+typedef struct {
+  H5FDdsmInt32 type;
+  H5FDdsmInt64 length;
+  H5FDdsmInt64 total_length;
+  H5FDdsmInt64 block_length;
+  H5FDdsmInt32 start_server_id;
+  H5FDdsmInt32 end_server_id;
+} H5FDdsmInfo;
+
 class H5FDdsmMsg;
 
 class H5FDdsm_EXPORT H5FDdsmComm : public H5FDdsmObject {
@@ -116,10 +125,8 @@ public:
     virtual H5FDdsmInt32   RemoteCommRecvReady();
     virtual H5FDdsmInt32   RemoteCommSendReady();
 
-    virtual H5FDdsmInt32   RemoteCommRecvInfo(H5FDdsmInt64 *length, H5FDdsmInt64 *totalLength,
-        H5FDdsmInt32 *startServerId, H5FDdsmInt32 *endServerId);
-    virtual H5FDdsmInt32   RemoteCommSendInfo(H5FDdsmInt64 *length, H5FDdsmInt64 *totalLength,
-        H5FDdsmInt32 *startServerId, H5FDdsmInt32 *endServerId);
+    virtual H5FDdsmInt32   RemoteCommRecvInfo(H5FDdsmInfo *dsmInfo);
+    virtual H5FDdsmInt32   RemoteCommSendInfo(H5FDdsmInfo *dsmInfo);
 
     virtual H5FDdsmInt32   RemoteCommSendXML(H5FDdsmString file, H5FDdsmInt32 dest);
     virtual H5FDdsmInt32   RemoteCommRecvXML(H5FDdsmString *file);

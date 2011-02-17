@@ -23,11 +23,13 @@ int main (int argc, char* argv[])
 {
   int provided, rank, size;
   MPI_Comm dcomm = MPI_COMM_WORLD;
-  long DSMSize = 16;
+  long dsmSize = 16; // default MB
   int commType = H5FD_DSM_COMM_SOCKET;
+  int dsmType = H5FD_DSM_TYPE_UNIFORM;
+  long dsmBlockSize = 1024;
 
   if (argc > 1) {
-    DSMSize = atol(argv[1]);
+    dsmSize = atol(argv[1]);
   }
 
   if (argc > 2) {
@@ -43,6 +45,16 @@ int main (int argc, char* argv[])
       commType = H5FD_DSM_COMM_MPI_RMA;
       std::cout << "MPI_RMA Inter-Communicator selected" << std::endl;
     }
+  }
+
+  if (argc > 3) {
+    if (!strcmp(argv[3], "Block")) {
+      dsmType = H5FD_DSM_TYPE_BLOCK_CYCLIC;
+    }
+  }
+
+  if (argc > 4) {
+    dsmBlockSize = atol(argv[4]);
   }
 
   //
@@ -85,7 +97,9 @@ int main (int argc, char* argv[])
   //
   H5FDdsmManager *dsmManager = new H5FDdsmManager();
   dsmManager->SetCommunicator(dcomm);
-  dsmManager->SetLocalBufferSizeMBytes(DSMSize/size);
+  dsmManager->SetLocalBufferSizeMBytes(dsmSize/size);
+  dsmManager->SetDsmType(dsmType);
+  dsmManager->SetDsmBlockLength(dsmBlockSize);
   dsmManager->SetDsmCommType(commType);
   dsmManager->SetDsmIsServer(1);
   dsmManager->SetServerHostName("default");

@@ -397,98 +397,36 @@ H5FDdsmCommMpi::RemoteCommSendReady() {
 }
 
 H5FDdsmInt32
-H5FDdsmCommMpi::RemoteCommRecvInfo(H5FDdsmInt64 *length, H5FDdsmInt64 *totalLength,
-    H5FDdsmInt32 *startServerId, H5FDdsmInt32 *endServerId) {
+H5FDdsmCommMpi::RemoteCommRecvInfo(H5FDdsmInfo *dsmInfo) {
 
-  if(H5FDdsmComm::RemoteCommRecvInfo(length, totalLength, startServerId, endServerId) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
-
-  if (this->Id == 0) {
-    MPI_Status status;
-    if (MPI_Recv(length, sizeof(H5FDdsmInt64), MPI_UNSIGNED_CHAR, 0, H5FD_DSM_EXCHANGE_TAG, this->InterComm, &status) != MPI_SUCCESS){
-      H5FDdsmError("Id = " << this->Id << " MPI_Recv of length failed");
-      return(H5FD_DSM_FAIL);
-    }
-    H5FDdsmDebug("Recv DSM length: " << *length);
-  }
-  if (MPI_Bcast(length, sizeof(H5FDdsmInt64), MPI_UNSIGNED_CHAR, 0, this->Comm) != MPI_SUCCESS){
-    H5FDdsmError("Id = " << this->Id << " MPI_Bcast of length failed");
-    return(H5FD_DSM_FAIL);
-  }
+  if(H5FDdsmComm::RemoteCommRecvInfo(dsmInfo) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
   if (this->Id == 0) {
     MPI_Status status;
-    if (MPI_Recv(totalLength, sizeof(H5FDdsmInt64), MPI_UNSIGNED_CHAR, 0, H5FD_DSM_EXCHANGE_TAG, this->InterComm, &status) != MPI_SUCCESS){
-      H5FDdsmError("Id = " << this->Id << " MPI_Recv of totalLength failed");
+    H5FDdsmDebug("Receiving DSM Info...");
+    if (MPI_Recv(dsmInfo, sizeof(H5FDdsmInfo), MPI_UNSIGNED_CHAR, 0, H5FD_DSM_EXCHANGE_TAG, this->InterComm, &status) != MPI_SUCCESS){
+      H5FDdsmError("Id = " << this->Id << " MPI_Recv of Info failed");
       return(H5FD_DSM_FAIL);
     }
-    H5FDdsmDebug("Recv DSM totalLength: " << *totalLength);
+    H5FDdsmDebug("Recv DSM Info Completed");
   }
-  if (MPI_Bcast(totalLength, sizeof(H5FDdsmInt64), MPI_UNSIGNED_CHAR, 0, this->Comm) != MPI_SUCCESS){
-    H5FDdsmError("Id = " << this->Id << " MPI_Bcast of totalLength failed");
+  if (MPI_Bcast(dsmInfo, sizeof(H5FDdsmInfo), MPI_UNSIGNED_CHAR, 0, this->Comm) != MPI_SUCCESS){
+    H5FDdsmError("Id = " << this->Id << " MPI_Bcast of Info failed");
     return(H5FD_DSM_FAIL);
   }
-
-  if (this->Id == 0) {
-    MPI_Status status;
-    if (MPI_Recv(startServerId, sizeof(H5FDdsmInt32), MPI_UNSIGNED_CHAR, 0, H5FD_DSM_EXCHANGE_TAG, this->InterComm, &status) != MPI_SUCCESS){
-      H5FDdsmError("Id = " << this->Id << " MPI_Recv of startServerId failed");
-      return(H5FD_DSM_FAIL);
-    }
-    H5FDdsmDebug("Recv DSM startServerId: " << *startServerId);
-  }
-  if (MPI_Bcast(startServerId, sizeof(H5FDdsmInt32), MPI_UNSIGNED_CHAR, 0, this->Comm) != MPI_SUCCESS){
-    H5FDdsmError("Id = " << this->Id << " MPI_Bcast of startServerId failed");
-    return(H5FD_DSM_FAIL);
-  }
-
-  if (this->Id == 0) {
-    MPI_Status status;
-    if (MPI_Recv(endServerId, sizeof(H5FDdsmInt32), MPI_UNSIGNED_CHAR, 0, H5FD_DSM_EXCHANGE_TAG, this->InterComm, &status) != MPI_SUCCESS){
-      H5FDdsmError("Id = " << this->Id << " MPI_Recv of endServerId failed");
-      return(H5FD_DSM_FAIL);
-    }
-    H5FDdsmDebug("Recv DSM endServerId: " << *endServerId);
-  }
-  if (MPI_Bcast(endServerId, sizeof(H5FDdsmInt32), MPI_UNSIGNED_CHAR, 0, this->Comm) != MPI_SUCCESS){
-    H5FDdsmError("Id = " << this->Id << " MPI_Bcast of endServerId failed");
-    return(H5FD_DSM_FAIL);
-  }
-  H5FDdsmDebug("Recv DSM Info Completed");
 
   return(H5FD_DSM_SUCCESS);
 }
 
 H5FDdsmInt32
-H5FDdsmCommMpi::RemoteCommSendInfo(H5FDdsmInt64 *length, H5FDdsmInt64 *totalLength,
-    H5FDdsmInt32 *startServerId, H5FDdsmInt32 *endServerId) {
+H5FDdsmCommMpi::RemoteCommSendInfo(H5FDdsmInfo *dsmInfo) {
 
-  if(H5FDdsmComm::RemoteCommSendInfo(length, totalLength, startServerId, endServerId) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+  if(H5FDdsmComm::RemoteCommSendInfo(dsmInfo) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
   if (this->Id == 0) {
-    // Length
-    H5FDdsmDebug("Send DSM length: " << *length);
-    if (MPI_Send(length, sizeof(H5FDdsmInt64), MPI_UNSIGNED_CHAR, 0, H5FD_DSM_EXCHANGE_TAG, this->InterComm) != MPI_SUCCESS){
-      H5FDdsmError("Id = " << this->Id << " MPI_Send of length failed");
-      return(H5FD_DSM_FAIL);
-    }
-    // TotalLength
-    H5FDdsmDebug("Send DSM totalLength: " << *totalLength);
-    if (MPI_Send(totalLength, sizeof(H5FDdsmInt64), MPI_UNSIGNED_CHAR, 0, H5FD_DSM_EXCHANGE_TAG, this->InterComm) != MPI_SUCCESS){
-      H5FDdsmError("Id = " << this->Id << " MPI_Send of totalLength failed");
-      return(H5FD_DSM_FAIL);
-    }
-
-    // StartServerId
-    H5FDdsmDebug("Send DSM startServerId: " << *startServerId);
-    if (MPI_Send(startServerId, sizeof(H5FDdsmInt32), MPI_UNSIGNED_CHAR, 0, H5FD_DSM_EXCHANGE_TAG, this->InterComm) != MPI_SUCCESS){
-      H5FDdsmError("Id = " << this->Id << " MPI_Send of startServerId failed");
-      return(H5FD_DSM_FAIL);
-    }
-
-    // EndServerId
-    H5FDdsmDebug("Send DSM endServerId: " << *endServerId);
-    if (MPI_Send(endServerId, sizeof(H5FDdsmInt32), MPI_UNSIGNED_CHAR, 0, H5FD_DSM_EXCHANGE_TAG, this->InterComm) != MPI_SUCCESS){
-      H5FDdsmError("Id = " << this->Id << " MPI_Send of endServerId failed");
+    H5FDdsmDebug("Sending DSM Info...");
+    if (MPI_Send(dsmInfo, sizeof(H5FDdsmInfo), MPI_UNSIGNED_CHAR, 0, H5FD_DSM_EXCHANGE_TAG, this->InterComm) != MPI_SUCCESS){
+      H5FDdsmError("Id = " << this->Id << " MPI_Send of Info failed");
       return(H5FD_DSM_FAIL);
     }
     H5FDdsmDebug("Send DSM Info Completed");
