@@ -789,7 +789,7 @@ H5FDdsmBuffer::Put(H5FDdsmInt64 Address, H5FDdsmInt64 aLength, void *Data){
       H5FDdsmError("Address Error");
       return(H5FD_DSM_FAIL);
     }
-    this->GetAddressRangeForId(who, &astart, &aend);
+    this->GetAddressRangeForId(who, &astart, &aend, Address);
     len = static_cast<H5FDdsmInt32>(min(aLength, aend - Address + 1));
     H5FDdsmDebug("Put " << len << " Bytes to Address " << Address << " Id = " << who);
     if (who == MyId && !this->IsConnected) { // check if a remote DSM is connected
@@ -842,7 +842,7 @@ H5FDdsmBuffer::Get(H5FDdsmInt64 Address, H5FDdsmInt64 aLength, void *Data){
       H5FDdsmError("Address Error");
       return(H5FD_DSM_FAIL);
     }
-    this->GetAddressRangeForId(who, &astart, &aend);
+    this->GetAddressRangeForId(who, &astart, &aend, Address);
     len = static_cast<H5FDdsmInt32>(min(aLength, aend - Address + 1));
     H5FDdsmDebug("Get " << len << " Bytes from Address " << Address << " Id = " << who);
     if ((who == MyId) && (!this->IsConnected || this->IsServer)){

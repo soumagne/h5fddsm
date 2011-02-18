@@ -159,12 +159,12 @@ H5FDdsmDriver::ConfigureBlockCyclic(H5FDdsmComm *aComm, H5FDdsmInt64 aLength, H5
         this->Storage->SetComm(aComm);
         // For optimization we make the DSM length fit to a multiple of block size
         this->SetLength((H5FDdsmInt64(aLength/this->BlockLength))*this->BlockLength, 1);
-        this->StartAddress = (aComm->GetId() - StartId) * aLength;
-        this->EndAddress = this->StartAddress + aLength - 1;
+        this->StartAddress = (aComm->GetId() - StartId) * this->Length;
+        this->EndAddress = this->StartAddress + this->Length - 1;
     }else{
-        this->Length = aLength;
+        this->Length = (H5FDdsmInt64(aLength/this->BlockLength))*this->BlockLength;
     }
-    this->TotalLength = aLength * (EndId - StartId + 1);
+    this->TotalLength = this->Length * (EndId - StartId + 1);
     return(H5FD_DSM_SUCCESS);
 }
 
@@ -206,9 +206,9 @@ H5FDdsmDriver::AddressToId(H5FDdsmInt64 Address){
             break;
         case H5FD_DSM_TYPE_BLOCK_CYCLIC :
           // Keep a uniform DSM but add block cyclic distribution
-          if (Address > this->EndAddress*(this->EndServerId - this->StartServerId + 1)) {
-            H5FDdsmError("Address " << Address << " is larger than end address of EndServerId " << this->EndServerId);
-          }
+//          if (Address > this->EndAddress*(this->EndServerId - this->StartServerId + 1)) {
+//            H5FDdsmError("Address " << Address << " is larger than end address " << this->EndAddress << " of EndServerId " << this->EndServerId);
+//          }
           ServerId = this->StartServerId + ((H5FDdsmInt32)(Address / this->BlockLength) % (this->EndServerId - this->StartServerId + 1));
           break;
         default :
