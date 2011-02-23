@@ -242,7 +242,6 @@ H5FDdsmCommMpi::RemoteCommAccept(void *storagePointer, H5FDdsmInt64 storageSize)
   if(H5FDdsmComm::RemoteCommAccept(storagePointer, storageSize) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
   // this->DsmMasterHostName internally used on root
   MPI_Comm_accept(this->DsmMasterHostName, MPI_INFO_NULL, 0, this->Comm, &this->InterComm);
-//  this->CommChannel = H5FD_DSM_COMM_CHANNEL_REMOTE;
 
   if (this->Id == 0) {
     MPI_Status status;

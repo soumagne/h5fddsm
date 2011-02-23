@@ -166,14 +166,43 @@ H5FDdsmComm::RemoteCommSync(){
 }
 
 H5FDdsmInt32
-H5FDdsmComm::RemoteCommChannelSynced(H5FDdsmInt32 *sem){
+H5FDdsmComm::RemoteCommChannelSynced(H5FDdsmInt32 who, H5FDdsmInt32 *syncId){
   H5FDdsmInt32 ret = H5FD_DSM_FALSE;
 
-  (*sem)++;
-  if (*sem == this->InterSize) {
-    H5FDdsmDebug("Channels cleared: " << *sem << "/" << this->InterSize);
-    *sem = 0;
+  this->SyncChannels++;
+  if (this->SyncChannels == this->InterSize) {
+    H5FDdsmDebug("Channels cleared: " << this->SyncChannels << "/" << this->InterSize);
+    this->SyncChannels = 0;
+    if (this->CommType != H5FD_DSM_COMM_MPI_RMA) {
+    if (!this->SyncQueue.empty()) {
+      H5FDdsmDebug("(" << this->Id << ") " << "pop sync queue from " << who);
+      if (this->SyncQueue.front() != who) {
+        H5FDdsmError("(" << this->Id << ") " << "Mismatched IDs in sync queue ");
+      }
+      this->SyncQueue.pop();
+      if (!this->SyncQueue.empty()) {
+        H5FDdsmError("(" << this->Id << ") " << "Sync queue should be empty!! " << this->SyncQueue.front());
+      }
+    }
+    }
+    *syncId = -1;
     ret = H5FD_DSM_TRUE;
+  } else {
+    if (this->CommType != H5FD_DSM_COMM_MPI_RMA) {
+      if (this->SyncQueue.empty()) {
+        H5FDdsmDebug("(" << this->Id << ") " << "filling sync queue from " << who);
+        for (int i=0; i<this->InterSize; i++) {
+          if (i != who) this->SyncQueue.push(i);
+        }
+      } else {
+        H5FDdsmDebug("(" << this->Id << ") " << "pop sync queue from " << this->SyncQueue.front());
+        if (this->SyncQueue.front() != who) {
+          H5FDdsmError("(" << this->Id << ") " << "Mismatched IDs in sync queue ");
+        }
+        this->SyncQueue.pop();
+      }
+      *syncId = this->SyncQueue.front();
+    }
   }
   return(ret);
 }

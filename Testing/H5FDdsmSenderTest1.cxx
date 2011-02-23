@@ -167,8 +167,8 @@ void TestParticleClose()
 //----------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------
-#define LOOPS       10
-#define AVERAGE     10
+#define LOOPS       5
+#define AVERAGE     5
 #define TYPES       1 // 2 if disk output test required
 
 int main(int argc, char **argv)
@@ -219,7 +219,7 @@ int main(int argc, char **argv)
   //
   // Connect to receiver
   //
-  dsmManager->ConnectDSM();
+  dsmManager->ConnectDSM(true);
 
   //
   // We have configured everything manually using the DSM manager, so pass the buffer

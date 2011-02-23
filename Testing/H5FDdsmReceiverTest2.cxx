@@ -19,18 +19,6 @@ typedef struct ParticleBuffer {
 
 #define H5CHECK_ERROR(var, msg) if (var<0) printf("Error %s", msg);
 
-// Sleep  in milliseconds
-#ifdef _WIN32
-  #include <windows.h> 
-  #define sleep(a) ::Sleep(a)
-#else
-  void mySleep(int ms) {
-    usleep(ms*1000); //convert to microseconds
-    return;
-  }
-  #define sleep(a) mySleep(a)
-#endif
-
 //----------------------------------------------------------------------------
 void particle_read(
     ParticleBuffer_t *buf, const char *filename, int rank,
@@ -200,9 +188,6 @@ int main (int argc, char* argv[])
   }
 #endif
 
-  // Sync here
-  MPI_Barrier(dcomm);
-
   // Create a DSM manager
   H5FDdsmManager *dsmManager = new H5FDdsmManager();
   dsmManager->SetCommunicator(dcomm);
@@ -227,7 +212,7 @@ int main (int argc, char* argv[])
 
   // The output comment below must not be deleted, it allows ctest to detect
   // when the server is initialized
-  sleep(100);
+  MPI_Barrier(dcomm);
   std::cout << "Waiting for client..." << std::endl;
   dsmManager->WaitForConnected();
 

@@ -319,8 +319,10 @@ void H5FDdsmManager::UpdateSteeredObjects()
   this->DSMBuffer->GetSteerer()->UpdateDisabledObjects();
 }
 //----------------------------------------------------------------------------
-void H5FDdsmManager::ConnectDSM()
+void H5FDdsmManager::ConnectDSM(H5FDdsmBoolean persist)
 {
+  H5FDdsmInt32 status;
+
   if (this->UpdatePiece == 0) H5FDdsmDebug("Connect DSM");
 
   if (!this->DSMBuffer->GetIsConnected()) {
@@ -364,14 +366,23 @@ void H5FDdsmManager::ConnectDSM()
       H5FDdsmDebug(<<"DSM driver connecting on: " << hostName);
     }
 #endif
-    if (this->DSMBuffer->GetComm()->RemoteCommConnect() == H5FD_DSM_SUCCESS) {
-      H5FDdsmDebug("Connected!");
-      this->DSMBuffer->SetIsConnected(true);
-      this->DSMBuffer->ReceiveInfo();
-    }
-    else {
-      H5FDdsmDebug("DSMBuffer Comm_connect returned FAIL");
-    }
+
+    do {
+      status = this->DSMBuffer->GetComm()->RemoteCommConnect();
+      if (status == H5FD_DSM_SUCCESS) {
+        H5FDdsmDebug("Connected!");
+        this->DSMBuffer->SetIsConnected(true);
+        this->DSMBuffer->ReceiveInfo();
+      }
+      else {
+#ifdef _WIN32
+        Sleep(1000);
+#else
+        sleep(1);
+#endif
+        H5FDdsmDebug("DSMBuffer Comm_connect returned FAIL");
+      }
+    } while (persist && (status != H5FD_DSM_SUCCESS));
   }
 }
 //----------------------------------------------------------------------------

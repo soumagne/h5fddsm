@@ -81,6 +81,9 @@ protected:
   H5FDdsmSocket       *DsmMasterSocket; // Used for initializing connection and send comm orders
   H5FDdsmByte          DsmMasterHostName[MPI_MAX_PORT_NAME];
   H5FDdsmInt32         DsmMasterPort;
+
+private:
+  H5FDdsmInt32         InterCommSockets[H5FD_DSM_MAX_SOCKET];
 };
 
 #endif // __H5FDdsmCommSocket_h

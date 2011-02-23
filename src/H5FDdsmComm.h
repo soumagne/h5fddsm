@@ -54,6 +54,7 @@
 
 #include "H5FDdsmObject.h"
 
+#include <queue>
 
 //! Base comm object for Distributed Shared Memory implementation
 
@@ -121,7 +122,7 @@ public:
     virtual H5FDdsmInt32   RemoteCommDisconnect();
 
     virtual H5FDdsmInt32   RemoteCommSync();
-    virtual H5FDdsmInt32   RemoteCommChannelSynced(H5FDdsmInt32 *sem);
+    virtual H5FDdsmInt32   RemoteCommChannelSynced(H5FDdsmInt32 who, H5FDdsmInt32 *syncId);
     virtual H5FDdsmInt32   RemoteCommRecvReady();
     virtual H5FDdsmInt32   RemoteCommSendReady();
 
@@ -137,6 +138,9 @@ protected:
     H5FDdsmInt32       InterSize;
     H5FDdsmInt32       CommType;
     H5FDdsmInt32       CommChannel;
+
+    std::queue<H5FDdsmInt32> SyncQueue;
+    H5FDdsmInt32             SyncChannels;
 };
 
 #endif // __H5FDdsmComm_h

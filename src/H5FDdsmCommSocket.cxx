@@ -130,14 +130,9 @@ H5FDdsmCommSocket::Receive(H5FDdsmMsg *Msg, H5FDdsmInt32 Channel)
       // TODO when modifying then dynamically the socket array, should be careful not to change it
       // while doing a select on it
       int selectedIndex;
-      int *socketsToSelect = new int[this->InterSize];
-      for (int i=0; i<this->InterSize; i++) {
-        socketsToSelect[i] = (int) this->InterComm[i]->GetClientSocketDescriptor();
-      }
       // if ANY_SOURCE use select on the whole list of sockets descriptors
-      this->InterComm[0]->SelectSockets(socketsToSelect, this->InterSize, 0, &selectedIndex);
+      this->InterComm[0]->SelectSockets(this->InterCommSockets, this->InterSize, 0, &selectedIndex);
       this->InterComm[selectedIndex]->Receive(Msg->Data, Msg->Length);
-      delete []socketsToSelect;
     }
   }
   else {
@@ -238,7 +233,7 @@ H5FDdsmCommSocket::RemoteCommAccept(void *storagePointer, H5FDdsmInt64 storageSi
 {
   if (H5FDdsmComm::RemoteCommAccept(storagePointer, storageSize) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
-  // Needed if we want to insert a timeout
+  // TODO Needed if we want to insert a timeout
   // if (this->MasterSocket->Select(100) <= 0 ) return(H5FD_DSM_FAIL);
 
   if (this->Id == 0) {
@@ -259,7 +254,9 @@ H5FDdsmCommSocket::RemoteCommAccept(void *storagePointer, H5FDdsmInt64 storageSi
     return(H5FD_DSM_FAIL);
   }
 
-//  this->CommChannel = H5FD_DSM_COMM_CHANNEL_REMOTE;
+  for (int i=0; i<this->InterSize; i++) {
+      this->InterCommSockets[i] = this->InterComm[i]->GetClientSocketDescriptor();
+  }
 
   return(H5FD_DSM_SUCCESS);
 }

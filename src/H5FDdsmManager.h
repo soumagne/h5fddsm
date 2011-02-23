@@ -145,7 +145,7 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     H5FDdsmInt32 CreateDSM();
     H5FDdsmInt32 DestroyDSM();
     void   ClearDSM();
-    void   ConnectDSM();
+    void   ConnectDSM(H5FDdsmBoolean persist = false);
     void   DisconnectDSM();
     void   PublishDSM();
     void   UnpublishDSM();

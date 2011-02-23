@@ -397,23 +397,11 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
   H5FDdsmInt32        aLength;
   H5FDdsmInt64        Address;
   H5FDdsmByte        *datap;
-  static H5FDdsmInt32 updateSync = 0;
-  static H5FDdsmInt32 releaseSync = 0;
-  static H5FDdsmInt32 disconnectSync = 0;
-  static H5FDdsmInt32 clearStorageSync = 0;
-  static H5FDdsmInt32 commSync = 0;
-  static std::queue<H5FDdsmInt32> syncQueue;
+  static H5FDdsmInt32 syncId = -1;
 
-  //    while (this->ProbeCommandHeader(&who) == H5FD_DSM_FAIL) {
-  //#ifdef _WIN32
-  //      SwitchToThread();
-  //#else
-  //      pthread_yield();
-  //#endif
-  //    }
-  if (commSync) {
-    H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "Receiving command header from " << syncQueue.front());
-    status = this->ReceiveCommandHeader(&Opcode, &who, &Address, &aLength, 0, syncQueue.front());
+  if (syncId >= 0) {
+    H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "Receiving command header from " << syncId);
+    status = this->ReceiveCommandHeader(&Opcode, &who, &Address, &aLength, 0, syncId);
   } else {
     H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "Receiving command header from anyone");
     status = this->ReceiveCommandHeader(&Opcode, &who, &Address, &aLength);
@@ -518,28 +506,7 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
     break;
   // H5FD_DSM_LOCK_RELEASE
   case H5FD_DSM_LOCK_RELEASE:
-    if (!this->Comm->RemoteCommChannelSynced(&releaseSync) && this->IsConnected ) {
-      if (!commSync) {
-        commSync = 1;
-        if (!syncQueue.empty()) {
-          H5FDdsmError("(" << this->Comm->GetId() << ") " << "Sync queue should be empty!! " << syncQueue.front());
-        }
-        for (int i=0; i<this->Comm->GetInterSize(); i++) if (i != who) syncQueue.push(i);
-      } else {
-        if (syncQueue.front() != who) H5FDdsmError("(" << this->Comm->GetId() << ") " << "Mismatched IDs in sync queue ");
-        syncQueue.pop();
-      }
-      H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "LOCK being released ");
-      break;
-    }
-    if (!syncQueue.empty()) {
-      H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "pop sync queue from " << who);
-      if (syncQueue.front() != who) {
-        H5FDdsmError("(" << this->Comm->GetId() << ") " << "Mismatched IDs in sync queue ");
-      }
-      syncQueue.pop();
-    }
-    commSync = 0;
+    if (this->Comm->RemoteCommChannelSynced(who, &syncId) || !this->IsConnected) {
     this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_LOCAL);
     if (!this->IsLocked) {
       H5FDdsmLockError("already released");
@@ -552,6 +519,7 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
 #else
     pthread_mutex_unlock(&this->Lock);
 #endif
+    this->Comm->Barrier();
     if (this->IsConnected) {
       // TODO do RMA properly
       if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
@@ -560,6 +528,7 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
       } else {
         if (!this->RemoteServiceThreadPtr) this->StartRemoteService();
       }
+    }
     }
     break;
   // H5FD_DSM_ACCEPT
@@ -580,7 +549,7 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
     break;
   // H5FD_DSM_DISCONNECT
   case H5FD_DSM_DISCONNECT:
-    if (this->Comm->RemoteCommChannelSynced(&disconnectSync)) {
+    if (this->Comm->RemoteCommChannelSynced(who, &syncId)) {
       H5FDdsmDebug("( " << this->Comm->GetId() << " ) Freeing now remote channel");
       this->Comm->RemoteCommDisconnect();
       this->IsConnected = false;
@@ -591,34 +560,7 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
     break;
   // H5FD_DSM_SERVER_UPDATE
   case H5FD_DSM_SERVER_UPDATE:
-    if (!this->Comm->RemoteCommChannelSynced(&updateSync) && this->IsConnected) {
-      if (!commSync) {
-        commSync = 1;
-        if (!syncQueue.empty()) {
-          H5FDdsmError("(" << this->Comm->GetId() << ") " << "Sync queue should be empty!! " << syncQueue.front());
-        }
-        H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "filling sync queue from " << who);
-        for (int i=0; i<this->Comm->GetInterSize(); i++) {
-          if (i != who) syncQueue.push(i);
-        }
-      } else {
-        H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "pop sync queue from " << who);
-        if (syncQueue.front() != who) {
-          H5FDdsmError("(" << this->Comm->GetId() << ") " << "Mismatched IDs in sync queue ");
-        }
-        syncQueue.pop();
-      }
-      H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "LOCK being released ");
-      break;
-    }
-    if (!syncQueue.empty()) {
-      H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "pop sync queue from " << who);
-      if (syncQueue.front() != who) {
-        H5FDdsmError("(" << this->Comm->GetId() << ") " << "Mismatched IDs in sync queue ");
-      }
-      syncQueue.pop();
-    }
-    commSync = 0;
+    if (this->Comm->RemoteCommChannelSynced(who, &syncId)) {
     this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_LOCAL);
     if (Address & H5FD_DSM_DATA_MODIFIED) {
       this->IsDataModified = true;
@@ -635,10 +577,11 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
         this->UpdateLevel << ", Switched to Local channel");
     this->Comm->Barrier();
     this->SignalUpdateReady();
+    }
     break;
   // H5FD_DSM_CLEAR_STORAGE
   case H5FD_DSM_CLEAR_STORAGE:
-    if (this->Comm->RemoteCommChannelSynced(&clearStorageSync)) {
+    if (this->Comm->RemoteCommChannelSynced(who, &syncId)) {
       this->ClearStorage();
     }
     break;
@@ -695,7 +638,7 @@ H5FDdsmBuffer::RemoteService(H5FDdsmInt32 *ReturnOpcode){
   H5FDdsmInt32        Opcode, who, status = H5FD_DSM_FAIL;
   H5FDdsmInt32        aLength;
   H5FDdsmInt64        Address;
-  H5FDdsmInt32        lockSync = 0;
+  H5FDdsmInt32        syncId = -1;
 
   for (int i = 0; i < this->Comm->GetInterSize(); i++) {
     // This receive always gets data from the inter-communicator
@@ -709,7 +652,7 @@ H5FDdsmBuffer::RemoteService(H5FDdsmInt32 *ReturnOpcode){
 
     switch(Opcode){
     case H5FD_DSM_LOCK_ACQUIRE:
-      if (this->Comm->RemoteCommChannelSynced(&lockSync)) {
+      if (this->Comm->RemoteCommChannelSynced(who, &syncId)) {
 #ifdef _WIN32
         WaitForSingleObject(this->Lock, INFINITE);
 #else

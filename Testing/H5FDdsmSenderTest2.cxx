@@ -148,8 +148,8 @@ void TestParticleClose()
   H5close();
 }
 //----------------------------------------------------------------------------
-#define LOOPS       10
-#define AVERAGE     10
+#define LOOPS       5
+#define AVERAGE     5
 #define TYPES       1 // 2 if disk output test required
 
 int main(int argc, char **argv)
@@ -192,7 +192,7 @@ int main(int argc, char **argv)
   dsmManager->CreateDSM();
 
   // Connect to receiver
-  dsmManager->ConnectDSM();
+  dsmManager->ConnectDSM(true);
 
   // We have configured everything manually using the DSM manager, so pass the buffer
   // into the read/write code so that we can use the dsm that we have setup

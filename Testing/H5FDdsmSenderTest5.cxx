@@ -25,7 +25,7 @@ main(int argc, char * argv[])
   dsmManager->CreateDSM();
 
   // Connect to Server
-  dsmManager->ConnectDSM();
+  dsmManager->ConnectDSM(true);
 
   H5FDdsmBuffer * dsmBuffer = dsmManager->GetDSMHandle();
 

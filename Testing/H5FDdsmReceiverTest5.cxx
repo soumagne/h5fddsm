@@ -5,18 +5,6 @@
 #include <iostream>
 #include <cstdlib>
 
-// Sleep  in milliseconds
-#ifdef _WIN32
-  #include <windows.h>
-  #define sleep(a) ::Sleep(a)
-#else
-  void mySleep(int ms) {
-    usleep(ms*1000); //convert to microseconds
-    return;
-  }
-  #define sleep(a) mySleep(a)
-#endif
-
 int
 main(int argc, char * argv[])
 {
@@ -82,7 +70,7 @@ main(int argc, char * argv[])
 
   // The output comment below must not be deleted, it allows ctest to detect
   // when the server is initialized
-  sleep(100);
+  MPI_Barrier(comm);
   std::cout << "Waiting for client..." << std::endl;
   dsmManager->WaitForConnected();
 
