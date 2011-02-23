@@ -507,28 +507,28 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
   // H5FD_DSM_LOCK_RELEASE
   case H5FD_DSM_LOCK_RELEASE:
     if (this->Comm->RemoteCommChannelSynced(who, &syncId) || !this->IsConnected) {
-    this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_LOCAL);
-    if (!this->IsLocked) {
-      H5FDdsmLockError("already released");
-    } else {
-      this->IsLocked = false;
-      H5FDdsmLockDebug("released");
-    }
-#ifdef _WIN32
-    ReleaseMutex(this->Lock);
-#else
-    pthread_mutex_unlock(&this->Lock);
-#endif
-    this->Comm->Barrier();
-    if (this->IsConnected) {
-      // TODO do RMA properly
-      if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
-        this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_REMOTE);
-        this->Comm->RemoteCommSync();
+      this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_LOCAL);
+      if (!this->IsLocked) {
+        H5FDdsmLockError("already released");
       } else {
-        if (!this->RemoteServiceThreadPtr) this->StartRemoteService();
+        this->IsLocked = false;
+        H5FDdsmLockDebug("released");
       }
-    }
+#ifdef _WIN32
+      ReleaseMutex(this->Lock);
+#else
+      pthread_mutex_unlock(&this->Lock);
+#endif
+      this->Comm->Barrier();
+      if (this->IsConnected) {
+        // TODO do RMA properly
+        if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
+          this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_REMOTE);
+          this->Comm->RemoteCommSync();
+        } else {
+          if (!this->RemoteServiceThreadPtr) this->StartRemoteService();
+        }
+      }
     }
     break;
   // H5FD_DSM_ACCEPT
@@ -561,22 +561,22 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
   // H5FD_DSM_SERVER_UPDATE
   case H5FD_DSM_SERVER_UPDATE:
     if (this->Comm->RemoteCommChannelSynced(who, &syncId)) {
-    this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_LOCAL);
-    if (Address & H5FD_DSM_DATA_MODIFIED) {
-      this->IsDataModified = true;
-      this->UpdateLevel = (H5FDdsmInt32)Address - H5FD_DSM_DATA_MODIFIED;
-    } else {
-      this->UpdateLevel = (H5FDdsmInt32)Address;
-    }
-    // When update ready is found, the server keeps the lock
-    // and only releases it when the update is over
-    this->ReleaseLockOnClose = false;
-    // TODO do RMA properly
-    if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) this->IsLocked = true;
-    H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "Update level " <<
-        this->UpdateLevel << ", Switched to Local channel");
-    this->Comm->Barrier();
-    this->SignalUpdateReady();
+      this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_LOCAL);
+      if (Address & H5FD_DSM_DATA_MODIFIED) {
+        this->IsDataModified = true;
+        this->UpdateLevel = (H5FDdsmInt32)Address - H5FD_DSM_DATA_MODIFIED;
+      } else {
+        this->UpdateLevel = (H5FDdsmInt32)Address;
+      }
+      // When update ready is found, the server keeps the lock
+      // and only releases it when the update is over
+      this->ReleaseLockOnClose = false;
+      // TODO do RMA properly
+      if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) this->IsLocked = true;
+      H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "Update level " <<
+          this->UpdateLevel << ", Switched to Local channel");
+      this->Comm->Barrier();
+      this->SignalUpdateReady();
     }
     break;
   // H5FD_DSM_CLEAR_STORAGE
