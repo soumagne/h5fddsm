@@ -744,8 +744,7 @@ H5FDdsmBuffer::Put(H5FDdsmInt64 Address, H5FDdsmInt64 aLength, void *Data){
     }else{
       H5FDdsmInt32   status;
       // TODO do RMA properly
-      // For now, one-sided comms are only used with the inter-communicator
-      if ((this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) && (this->Comm->GetCommChannel() == H5FD_DSM_COMM_CHANNEL_REMOTE)) {
+      if ((this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA)) {
         H5FDdsmDebug("PUT request from " << who << " for " << len << " bytes @ " << Address);
         status = this->PutData(who, datap, len, Address - astart);
         if (status == H5FD_DSM_FAIL){
@@ -797,8 +796,7 @@ H5FDdsmBuffer::Get(H5FDdsmInt64 Address, H5FDdsmInt64 aLength, void *Data){
     }else{
       H5FDdsmInt32   status;
       // TODO do RMA properly
-      // For now, one-sided comms are only used with the inter-communicator
-      if ((this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) && (this->Comm->GetCommChannel() == H5FD_DSM_COMM_CHANNEL_REMOTE)) {
+      if ((this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA)) {
         H5FDdsmDebug("Get request from " << who << " for " << len << " bytes @ " << Address);
         status = this->GetData(who, datap, len, Address - astart);
         if (status == H5FD_DSM_FAIL){
