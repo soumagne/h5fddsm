@@ -173,17 +173,23 @@ class H5FDdsm_EXPORT H5FDdsmDriver : public H5FDdsmObject {
 
   protected:
     H5FDdsmInt32    DsmType;
+
+    H5FDdsmInt64    EndAddress;
+    H5FDdsmInt64    StartAddress;
+
     H5FDdsmInt32    StartServerId;
     H5FDdsmInt32    EndServerId;
-    H5FDdsmInt32    StorageIsMine;
-    H5FDdsmInt64    StartAddress;
-    H5FDdsmInt64    EndAddress;
+
     H5FDdsmInt64    Length;
     H5FDdsmInt64    TotalLength;
     H5FDdsmInt64    BlockLength;
-    H5FDdsmInt64   *Locks;
+
     H5FDdsmStorage *Storage;
+    H5FDdsmInt32    StorageIsMine;
+
     H5FDdsmComm    *Comm;
+
+    H5FDdsmInt64   *Locks;
     H5FDdsmByte    *DataPointer;
 };
 

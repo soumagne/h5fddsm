@@ -54,6 +54,7 @@
 
 
 H5FDdsmComm::H5FDdsmComm() {
+  this->SyncChannels = 0;
 }
 
 H5FDdsmComm::~H5FDdsmComm() {

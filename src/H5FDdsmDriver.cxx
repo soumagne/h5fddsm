@@ -66,17 +66,17 @@ typedef struct {
 
 H5FDdsmDriver::H5FDdsmDriver() {
     this->DsmType = H5FD_DSM_TYPE_UNIFORM;
-    this->Storage = new H5FDdsmStorage;
-    this->StorageIsMine = 1;
-    this->Locks = 0;
+    this->StartAddress = this->EndAddress = 0;
+    this->StartServerId = this->EndServerId = -1;
     // For Alignment
     this->Length = 0;
     this->TotalLength = 0;
     this->BlockLength = 0;
-    this->DataPointer = (H5FDdsmByte *)this->Storage->GetDataPointer();
-    this->StartAddress = this->EndAddress = 0;
+    this->Storage = new H5FDdsmStorage;
+    this->StorageIsMine = 1;
     this->Comm = 0;
-    this->StartServerId = this->EndServerId = -1;
+    this->Locks = 0;
+    this->DataPointer = (H5FDdsmByte *)this->Storage->GetDataPointer();
 }
 
 H5FDdsmDriver::~H5FDdsmDriver() {
