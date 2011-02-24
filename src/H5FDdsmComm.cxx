@@ -177,16 +177,16 @@ H5FDdsmComm::RemoteCommChannelSynced(H5FDdsmInt32 who, H5FDdsmInt32 *syncId){
     H5FDdsmDebug("Channels cleared: " << this->SyncChannels << "/" << this->InterSize);
     this->SyncChannels = 0;
     if (this->CommType != H5FD_DSM_COMM_MPI_RMA) {
-    if (!syncQueue.empty()) {
-      H5FDdsmDebug("(" << this->Id << ") " << "pop sync queue from " << who);
-      if (syncQueue.front() != who) {
-        H5FDdsmError("(" << this->Id << ") " << "Mismatched IDs in sync queue ");
-      }
-      syncQueue.pop();
       if (!syncQueue.empty()) {
-        H5FDdsmError("(" << this->Id << ") " << "Sync queue should be empty!! " << syncQueue.front());
+        H5FDdsmDebug("(" << this->Id << ") " << "pop sync queue from " << who);
+        if (syncQueue.front() != who) {
+          H5FDdsmError("(" << this->Id << ") " << "Mismatched IDs in sync queue ");
+        }
+        syncQueue.pop();
+        if (!syncQueue.empty()) {
+          H5FDdsmError("(" << this->Id << ") " << "Sync queue should be empty!! " << syncQueue.front());
+        }
       }
-    }
     }
     *syncId = -1;
     ret = H5FD_DSM_TRUE;
