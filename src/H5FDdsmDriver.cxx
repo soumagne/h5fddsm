@@ -71,6 +71,8 @@ H5FDdsmDriver::H5FDdsmDriver() {
     this->Locks = 0;
     // For Alignment
     this->Length = 0;
+    this->TotalLength = 0;
+    this->BlockLength = 0;
     this->DataPointer = (H5FDdsmByte *)this->Storage->GetDataPointer();
     this->StartAddress = this->EndAddress = 0;
     this->Comm = 0;

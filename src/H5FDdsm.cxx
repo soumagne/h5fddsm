@@ -570,8 +570,7 @@ H5Pset_fapl_dsm(hid_t fapl_id, MPI_Comm dsmComm, void *dsmBuffer)
   else {
     if (dsmManagerSingleton == NULL) DsmAutoAlloc(dsmComm);
     fa.buffer = dsmManagerSingleton->GetDSMHandle();
-    if (!dsmManagerSingleton->GetDSMHandle()->GetIsConnected()) {
-      dsmManagerSingleton->ReadDSMConfigFile();
+    if (!dsmManagerSingleton->GetDsmIsConnected()) {
       dsmManagerSingleton->ConnectDSM();
     }
   }
