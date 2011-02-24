@@ -52,6 +52,7 @@
 #include "H5FDdsmComm.h"
 #include "H5FDdsmMsg.h"
 
+#include <queue>
 
 H5FDdsmComm::H5FDdsmComm() {
   this->SyncChannels = 0;
@@ -168,6 +169,7 @@ H5FDdsmComm::RemoteCommSync(){
 
 H5FDdsmInt32
 H5FDdsmComm::RemoteCommChannelSynced(H5FDdsmInt32 who, H5FDdsmInt32 *syncId){
+  static std::queue<H5FDdsmInt32> syncQueue;
   H5FDdsmInt32 ret = H5FD_DSM_FALSE;
 
   this->SyncChannels++;
@@ -175,14 +177,14 @@ H5FDdsmComm::RemoteCommChannelSynced(H5FDdsmInt32 who, H5FDdsmInt32 *syncId){
     H5FDdsmDebug("Channels cleared: " << this->SyncChannels << "/" << this->InterSize);
     this->SyncChannels = 0;
     if (this->CommType != H5FD_DSM_COMM_MPI_RMA) {
-    if (!this->SyncQueue.empty()) {
+    if (!syncQueue.empty()) {
       H5FDdsmDebug("(" << this->Id << ") " << "pop sync queue from " << who);
-      if (this->SyncQueue.front() != who) {
+      if (syncQueue.front() != who) {
         H5FDdsmError("(" << this->Id << ") " << "Mismatched IDs in sync queue ");
       }
-      this->SyncQueue.pop();
-      if (!this->SyncQueue.empty()) {
-        H5FDdsmError("(" << this->Id << ") " << "Sync queue should be empty!! " << this->SyncQueue.front());
+      syncQueue.pop();
+      if (!syncQueue.empty()) {
+        H5FDdsmError("(" << this->Id << ") " << "Sync queue should be empty!! " << syncQueue.front());
       }
     }
     }
@@ -190,19 +192,19 @@ H5FDdsmComm::RemoteCommChannelSynced(H5FDdsmInt32 who, H5FDdsmInt32 *syncId){
     ret = H5FD_DSM_TRUE;
   } else {
     if (this->CommType != H5FD_DSM_COMM_MPI_RMA) {
-      if (this->SyncQueue.empty()) {
+      if (syncQueue.empty()) {
         H5FDdsmDebug("(" << this->Id << ") " << "filling sync queue from " << who);
         for (int i=0; i<this->InterSize; i++) {
-          if (i != who) this->SyncQueue.push(i);
+          if (i != who) syncQueue.push(i);
         }
       } else {
-        H5FDdsmDebug("(" << this->Id << ") " << "pop sync queue from " << this->SyncQueue.front());
-        if (this->SyncQueue.front() != who) {
+        H5FDdsmDebug("(" << this->Id << ") " << "pop sync queue from " << syncQueue.front());
+        if (syncQueue.front() != who) {
           H5FDdsmError("(" << this->Id << ") " << "Mismatched IDs in sync queue ");
         }
-        this->SyncQueue.pop();
+        syncQueue.pop();
       }
-      *syncId = this->SyncQueue.front();
+      *syncId = syncQueue.front();
     }
   }
   return(ret);

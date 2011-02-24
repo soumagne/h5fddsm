@@ -54,8 +54,6 @@
 
 #include "H5FDdsmObject.h"
 
-#include <queue>
-
 //! Base comm object for Distributed Shared Memory implementation
 
 // Macros to choose communication system to use
@@ -139,7 +137,6 @@ protected:
     H5FDdsmInt32       CommType;
     H5FDdsmInt32       CommChannel;
 
-    std::queue<H5FDdsmInt32> SyncQueue;
     H5FDdsmInt32             SyncChannels;
 };
 
