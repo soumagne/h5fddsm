@@ -632,7 +632,7 @@ H5FDdsmInt32 H5FDdsmManager::GetSteeringValues(const char *name, int numberOfEle
   H5FDdsmInt32 ret = H5FD_DSM_FALSE;
   if (numberOfElements) {
     this->DSMBuffer->GetSteerer()->BeginInteractionsCache(H5F_ACC_RDONLY);
-    ret = (H5FD_DSM_SUCCESS==this->DSMBuffer->GetSteerer()->GetVector(name, H5T_NATIVE_INT, numberOfElements, values));
+    ret = (H5FD_DSM_SUCCESS==this->DSMBuffer->GetSteerer()->ReadInteractions(name, numberOfElements, values));
     this->DSMBuffer->GetSteerer()->EndInteractionsCache();
   }
   return(ret);
@@ -671,7 +671,7 @@ H5FDdsmInt32 H5FDdsmManager::GetSteeringValues(const char *name, int numberOfEle
   H5FDdsmInt32 ret = H5FD_DSM_FALSE;
   if (numberOfElements) {
     this->DSMBuffer->GetSteerer()->BeginInteractionsCache(H5F_ACC_RDONLY);
-    ret = (H5FD_DSM_SUCCESS==this->DSMBuffer->GetSteerer()->GetVector(name, H5T_NATIVE_DOUBLE, numberOfElements, values));
+    ret = (H5FD_DSM_SUCCESS==this->DSMBuffer->GetSteerer()->ReadInteractions(name, numberOfElements, values));
     this->DSMBuffer->GetSteerer()->EndInteractionsCache();
   }
   return(ret);

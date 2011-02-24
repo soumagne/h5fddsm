@@ -82,6 +82,9 @@ protected:
   H5FDdsmInt32 WriteInteractions(H5FDdsmConstString name, hsize_t numberOfElements, int *data);
   H5FDdsmInt32 WriteInteractions(H5FDdsmConstString name, hsize_t numberOfElements, double *data);
 
+  H5FDdsmInt32 ReadInteractions(H5FDdsmConstString name, hsize_t numberOfElements, int *data);
+  H5FDdsmInt32 ReadInteractions(H5FDdsmConstString name, hsize_t numberOfElements, double *data);
+
   void SetDisabledObject(H5FDdsmConstString objectName);
 
   H5FDdsmInt32 CheckCommand(H5FDdsmConstString command);

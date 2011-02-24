@@ -366,20 +366,20 @@ H5FDdsmInt32 H5FDdsmSteerer::SetScalar(H5FDdsmConstString name, H5FDdsmInt32 mem
     if (this->BeginInteractionsCache(H5F_ACC_RDWR)!=H5FD_DSM_SUCCESS) return H5FD_DSM_FAIL;
   }
   // we don't hide errors when writing, we need to know if something has failed
-//  this->BeginHideHDF5Errors();
 
-  if (H5Tequal(memType,H5T_NATIVE_INT)) {
-    if (this->WriteInteractions(name, 1, static_cast<int*>(data))<0) {
+  hid_t memspaceId = H5Screate(H5S_SCALAR);
+  hid_t attributeId = H5Acreate(this->Cache_interactionGroupId, name, memType,
+      memspaceId, H5P_DEFAULT, H5P_DEFAULT);
+  if (attributeId < 0) {
+    ret = H5FD_DSM_FAIL;
+  } else {
+    if (H5Awrite(attributeId, memType, data) < 0) {
       ret = H5FD_DSM_FAIL;
     }
+    this->DsmBuffer->GetComm()->Barrier();
+    H5Aclose(attributeId);
   }
-  else if (H5Tequal(memType,H5T_NATIVE_DOUBLE)) {
-    if (this->WriteInteractions(name, 1, static_cast<double*>(data))<0) {
-      ret = H5FD_DSM_FAIL;
-    }
-  }
-
-//  this->EndHideHDF5Errors();
+  H5Sclose(memspaceId);
   // Clean up
   if (!usecache) {
     if (this->EndInteractionsCache()!=H5FD_DSM_SUCCESS) ret = H5FD_DSM_FAIL;
@@ -406,10 +406,9 @@ H5FDdsmInt32 H5FDdsmSteerer::GetVector(H5FDdsmConstString name, H5FDdsmInt32 mem
       H5Eprint(H5E_DEFAULT, stderr);
       ret = H5FD_DSM_FAIL;
     }
+    H5Dclose(datasetId);
   }
-  H5Dclose(datasetId);
   H5Sclose(memspaceId);
-
   // Clean up
   if (!usecache) {
     if (this->EndInteractionsCache()!=H5FD_DSM_SUCCESS) ret = H5FD_DSM_FAIL;
@@ -426,20 +425,20 @@ H5FDdsmInt32 H5FDdsmSteerer::SetVector(H5FDdsmConstString name, H5FDdsmInt32 mem
     if (this->BeginInteractionsCache(H5F_ACC_RDWR)!=H5FD_DSM_SUCCESS) return H5FD_DSM_FAIL;
   }
   // we don't hide errors when writing, we need to know if something has failed
-//  this->BeginHideHDF5Errors();
 
-  if (H5Tequal(memType,H5T_NATIVE_INT)) {
-    if (this->WriteInteractions(name, numberOfElements, static_cast<int*>(data))<0) {
+  hsize_t arraySize = numberOfElements;
+  hid_t memspaceId = H5Screate_simple(1, &arraySize, NULL);
+  hid_t datasetId = H5Dcreate(this->Cache_interactionGroupId, name, memType, memspaceId,
+      H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  if (datasetId < 0) {
+    ret = H5FD_DSM_FAIL;
+  } else {
+    if (H5Dwrite(datasetId, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, data) < 0) {
       ret = H5FD_DSM_FAIL;
     }
+    H5Dclose(datasetId);
   }
-  else if (H5Tequal(memType,H5T_NATIVE_DOUBLE)) {
-    if (this->WriteInteractions(name, numberOfElements, static_cast<double*>(data))<0) {
-      ret = H5FD_DSM_FAIL;
-    }
-  }
-
-//  this->EndHideHDF5Errors();
+  H5Sclose(memspaceId);
   // Clean up
   if (!usecache) {
     if (this->EndInteractionsCache()!=H5FD_DSM_SUCCESS) ret = H5FD_DSM_FAIL;
@@ -490,60 +489,58 @@ H5FDdsmInt32 H5FDdsmSteerer::DsmDump()
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmSteerer::WriteInteractions(H5FDdsmConstString name, hsize_t numberOfElements, int *data)
 {
+  H5FDdsmInt32 ret = H5FD_DSM_FAIL;
+
   if (numberOfElements > 1) {
-    hsize_t arraySize = numberOfElements;
-    hid_t memspace = H5Screate_simple(1, &arraySize, NULL);
-    hid_t dataset = H5Dcreate(this->Cache_interactionGroupId, name, H5T_NATIVE_INT, memspace,
-        H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    if (H5Dwrite(dataset, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, data) < 0) {
-      return(H5FD_DSM_FAIL);
-    }
-    H5Sclose(memspace);
-    H5Dclose(dataset);
+    ret = this->SetVector(name, H5T_NATIVE_INT, numberOfElements, data);
   } else {
     if (numberOfElements) {
-      hid_t memspace = H5Screate(H5S_SCALAR);
-      hid_t attribute = H5Acreate(this->Cache_interactionGroupId, name, H5T_NATIVE_INT,
-          memspace, H5P_DEFAULT, H5P_DEFAULT);
-      if (this->DsmBuffer->GetComm()->GetId() == 0) {
-        if (H5Awrite(attribute, H5T_NATIVE_INT, data) < 0) {
-          return(H5FD_DSM_FAIL);
-        }
-      }
-      H5Aclose(attribute);
-      H5Sclose(memspace);
+    ret = this->SetScalar(name, H5T_NATIVE_INT, data);
     }
   }
-  return(H5FD_DSM_SUCCESS);
+  return(ret);
 }
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmSteerer::WriteInteractions(H5FDdsmConstString name, hsize_t numberOfElements, double *data)
 {
+  H5FDdsmInt32 ret = H5FD_DSM_FAIL;
+
   if (numberOfElements > 1) {
-    hsize_t arraySize = numberOfElements;
-    hid_t memspace = H5Screate_simple(1, &arraySize, NULL);
-    hid_t dataset = H5Dcreate(this->Cache_interactionGroupId, name, H5T_NATIVE_DOUBLE, memspace,
-        H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-    if (H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, data) < 0) {
-      return(H5FD_DSM_FAIL);
-    }
-    H5Sclose(memspace);
-    H5Dclose(dataset);
+    ret = this->SetVector(name, H5T_NATIVE_DOUBLE, numberOfElements, data);
   } else {
     if (numberOfElements) {
-      hid_t memspace = H5Screate(H5S_SCALAR);
-      hid_t attribute = H5Acreate(this->Cache_interactionGroupId, name, H5T_NATIVE_DOUBLE,
-          memspace, H5P_DEFAULT, H5P_DEFAULT);
-      if (this->DsmBuffer->GetComm()->GetId() == 0) {
-        if (H5Awrite(attribute, H5T_NATIVE_DOUBLE, data) < 0) {
-          return(H5FD_DSM_FAIL);
-        }
-      }
-      H5Aclose(attribute);
-      H5Sclose(memspace);
+    ret = this->SetScalar(name, H5T_NATIVE_DOUBLE, data);
     }
   }
-  return(H5FD_DSM_SUCCESS);
+  return(ret);
+}
+//----------------------------------------------------------------------------
+H5FDdsmInt32 H5FDdsmSteerer::ReadInteractions(H5FDdsmConstString name, hsize_t numberOfElements, int *data)
+{
+  H5FDdsmInt32 ret = H5FD_DSM_FAIL;
+
+  if (numberOfElements > 1) {
+    ret = this->GetVector(name, H5T_NATIVE_INT, numberOfElements, data);
+  } else {
+    if (numberOfElements) {
+    ret = this->GetScalar(name, H5T_NATIVE_INT, data);
+    }
+  }
+  return(ret);
+}
+//----------------------------------------------------------------------------
+H5FDdsmInt32 H5FDdsmSteerer::ReadInteractions(H5FDdsmConstString name, hsize_t numberOfElements, double *data)
+{
+  H5FDdsmInt32 ret = H5FD_DSM_FAIL;
+
+  if (numberOfElements > 1) {
+    ret = this->GetVector(name, H5T_NATIVE_DOUBLE, numberOfElements, data);
+  } else {
+    if (numberOfElements) {
+    ret = this->GetScalar(name, H5T_NATIVE_DOUBLE, data);
+    }
+  }
+  return(ret);
 }
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmSteerer::CheckCommand(H5FDdsmConstString command)
