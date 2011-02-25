@@ -322,7 +322,6 @@ H5FDdsmInt32 H5FDdsmSteerer::IsObjectPresent(H5FDdsmConstString name, int &prese
     present = 1;
     H5Aclose(attributeId);
   }
-  
   // Clean up
   if (!usecache) {
     if (this->EndInteractionsCache()!=H5FD_DSM_SUCCESS) ret = H5FD_DSM_FAIL;
@@ -433,7 +432,7 @@ H5FDdsmInt32 H5FDdsmSteerer::SetVector(H5FDdsmConstString name, H5FDdsmInt32 mem
   if (datasetId < 0) {
     ret = H5FD_DSM_FAIL;
   } else {
-    if (H5Dwrite(datasetId, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, data) < 0) {
+    if (H5Dwrite(datasetId, memType, H5S_ALL, H5S_ALL, H5P_DEFAULT, data) < 0) {
       ret = H5FD_DSM_FAIL;
     }
     H5Dclose(datasetId);
