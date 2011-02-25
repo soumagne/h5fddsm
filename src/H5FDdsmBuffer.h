@@ -174,6 +174,7 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
 #endif
 
     H5FDdsmBoolean          IsServer;
+    H5FDdsmBoolean          IsConnecting;
     H5FDdsmBoolean          IsConnected;
 #ifdef _WIN32
     CRITICAL_SECTION        ConnectedCritSection;

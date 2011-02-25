@@ -148,8 +148,9 @@ H5FDdsmBuffer::H5FDdsmBuffer() {
   this->RemoteServiceThreadHandle    = NULL;
 #endif
 
-  this->IsServer    = true;
-  this->IsConnected = false;
+  this->IsServer     = true;
+  this->IsConnecting = false;
+  this->IsConnected  = false;
 #ifdef _WIN32
   InitializeCriticalSection  (&this->ConnectedCritSection);
   InitializeConditionVariable(&this->ConnectedCond);
@@ -534,7 +535,9 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
   // H5FD_DSM_ACCEPT
   case H5FD_DSM_ACCEPT:
     if (!this->IsConnected) {
+      this->IsConnecting = true;
       this->Comm->RemoteCommAccept(this->DataPointer, this->Length);
+      this->IsConnecting = false;
       // send DSM information
       this->SendInfo();
       this->SignalConnected();
@@ -618,16 +621,24 @@ H5FDdsmInt32 H5FDdsmBuffer::StartService(){
 H5FDdsmInt32 H5FDdsmBuffer::EndService(){
 
   if (this->ServiceThreadPtr) {
-    if (this->Comm->GetId() == 0) this->SendDone();
+    if (this->IsConnecting && !this->IsConnected) {
 #ifdef _WIN32
-    WaitForSingleObject(this->ServiceThreadHandle, INFINITE);
+      WaitForSingleObject(this->ServiceThreadHandle, 0);
+#else
+      pthread_cancel(this->ServiceThreadPtr);
+#endif
+    } else {
+      if (this->Comm->GetId() == 0) this->SendDone();
+#ifdef _WIN32
+      WaitForSingleObject(this->ServiceThreadHandle, INFINITE);
+    }
     CloseHandle(this->ServiceThreadHandle);
-    this->ServiceThreadPtr = 0;
     this->ServiceThreadHandle = NULL;
 #else
-    pthread_join(this->ServiceThreadPtr, NULL);
-    this->ServiceThreadPtr = 0;
+      pthread_join(this->ServiceThreadPtr, NULL);
+    }
 #endif
+    this->ServiceThreadPtr = 0;
   }
   return(H5FD_DSM_SUCCESS);
 }
