@@ -390,7 +390,7 @@ int_f nh5fd_dsm_dump_c()
      /*
       * Call H5FD_dsm_dump function.
       */
-     ret = H5FD_dsm_dump(NULL);
+     ret = H5FD_dsm_dump();
      if (ret < 0) return ret_value;
      ret_value = 0;
      return ret_value;
