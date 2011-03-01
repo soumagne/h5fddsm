@@ -367,8 +367,13 @@ H5FDdsmInt32 H5FDdsmSteerer::SetScalar(H5FDdsmConstString name, H5FDdsmInt32 mem
   // we don't hide errors when writing, we need to know if something has failed
 
   hid_t memspaceId = H5Screate(H5S_SCALAR);
-  hid_t attributeId = H5Acreate(this->Cache_interactionGroupId, name, memType,
-      memspaceId, H5P_DEFAULT, H5P_DEFAULT);
+  hid_t attributeId;
+  if (H5Aexists(this->Cache_interactionGroupId, name)>0) {
+    attributeId = H5Aopen(this->Cache_interactionGroupId, name, H5P_DEFAULT);
+  }
+  else {
+    attributeId = H5Acreate(this->Cache_interactionGroupId, name, memType,memspaceId, H5P_DEFAULT, H5P_DEFAULT);
+  }
   if (attributeId < 0) {
     ret = H5FD_DSM_FAIL;
   } else {
