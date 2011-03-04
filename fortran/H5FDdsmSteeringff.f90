@@ -95,13 +95,13 @@ MODULE H5FDDSM_STEERING
 !               NONE
 !
 !----------------------------------------------------------------------
-  SUBROUTINE h5fd_dsm_steering_udpate_f(hdferr)
+  SUBROUTINE h5fd_dsm_steering_update_f(hdferr)
     IMPLICIT NONE
     INTEGER, INTENT(OUT) :: hdferr       ! Error code
 
     INTEGER, EXTERNAL :: h5fd_dsm_steering_update_c
     hdferr = h5fd_dsm_steering_update_c()
-  END SUBROUTINE h5fd_dsm_steering_udpate_f
+  END SUBROUTINE h5fd_dsm_steering_update_f
 
 !----------------------------------------------------------------------
 ! Name:     h5fd_dsm_steering_is_enabled_f
