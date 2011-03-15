@@ -522,7 +522,6 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
 #endif
       this->Comm->Barrier();
       if (this->IsConnected) {
-        // TODO do RMA properly
         if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
           this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_REMOTE);
           this->Comm->RemoteCommSync();
@@ -542,7 +541,6 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
       this->SendInfo();
       this->SignalConnected();
     }
-    // TODO do RMA properly
     if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
       this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_REMOTE);
       this->Comm->RemoteCommSync();
@@ -574,7 +572,6 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
       // When update ready is found, the server keeps the lock
       // and only releases it when the update is over
       this->ReleaseLockOnClose = false;
-      // TODO do RMA properly
       if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) this->IsLocked = true;
       H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "Update level " <<
           this->UpdateLevel << ", Switched to Local channel");
@@ -754,8 +751,7 @@ H5FDdsmBuffer::Put(H5FDdsmInt64 Address, H5FDdsmInt64 aLength, void *Data){
 
     }else{
       H5FDdsmInt32   status;
-      // TODO do RMA properly
-      if ((this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA)) {
+      if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
         H5FDdsmDebug("PUT request from " << who << " for " << len << " bytes @ " << Address);
         status = this->PutData(who, datap, len, Address - astart);
         if (status == H5FD_DSM_FAIL){
@@ -806,8 +802,7 @@ H5FDdsmBuffer::Get(H5FDdsmInt64 Address, H5FDdsmInt64 aLength, void *Data){
 
     }else{
       H5FDdsmInt32   status;
-      // TODO do RMA properly
-      if ((this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA)) {
+      if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
         H5FDdsmDebug("Get request from " << who << " for " << len << " bytes @ " << Address);
         status = this->GetData(who, datap, len, Address - astart);
         if (status == H5FD_DSM_FAIL){
@@ -935,10 +930,8 @@ H5FDdsmBuffer::RequestLockAcquire() {
     pthread_mutex_lock(&this->Lock);
 #endif
   } else {
-    // TODO do RMA properly
     if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
-      // After possible RMA put / get from the server, need to sync windows before
-      // further operations
+      // After possible RMA put, need to sync windows before further operations
       if (this->IsSyncRequired) this->Comm->RemoteCommSync();
       this->IsSyncRequired = false;
     } else {
@@ -977,7 +970,6 @@ H5FDdsmBuffer::RequestLockRelease() {
     pthread_mutex_unlock(&this->Lock);
 #endif
     if (this->IsConnected) {
-      // TODO do RMA properly
       if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
         this->RequestAccept();
       } else {
@@ -986,7 +978,7 @@ H5FDdsmBuffer::RequestLockRelease() {
     }
   } else {
     if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
-      // TODO do RMA properly
+      // Nothing for now
     } else {
       for (who = this->StartServerId ; who <= this->EndServerId ; who++) {
         H5FDdsmDebug("Send request LOCK release to " << who);
@@ -1015,12 +1007,6 @@ H5FDdsmBuffer::RequestDisconnect() {
 
   this->RequestLockAcquire();
 
-  // TODO do RMA properly
-  if ((this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) && this->IsSyncRequired) {
-    this->Comm->RemoteCommSync();
-    this->IsSyncRequired = false;
-  }
-
   for (who = this->StartServerId ; who <= this->EndServerId ; who++) {
     H5FDdsmDebug("Send disconnection request to " << who);
     status = this->SendCommandHeader(H5FD_DSM_DISCONNECT, who, 0, 0);
@@ -1035,7 +1021,7 @@ H5FDdsmInt32
 H5FDdsmBuffer::RequestServerUpdate() {
   H5FDdsmInt32 who, status = H5FD_DSM_SUCCESS;
 
-  // TODO do RMA properly
+  // On next lock acquire, a synchronization is required
   if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) this->IsSyncRequired = true;
 
   // No mutex here, only informal since it's the client
