@@ -6,30 +6,32 @@
 #define __H5FDdsmConfig_h
 
 #ifdef _WIN32
-  # define H5FDdsm_ABI_IMPORT __declspec(dllimport)
-  # define H5FDdsm_ABI_EXPORT __declspec(dllexport)
-  # define H5FDdsm_ABI_HIDDEN
+  #define H5FDdsm_ABI_IMPORT __declspec(dllimport)
+  #define H5FDdsm_ABI_EXPORT __declspec(dllexport)
+  #define H5FDdsm_ABI_HIDDEN
 #elif __GNUC__ >= 4
-  # define H5FDdsm_ABI_IMPORT __attribute__ ((visibility("default")))
-  # define H5FDdsm_ABI_EXPORT __attribute__ ((visibility("default")))
-  # define H5FDdsm_ABI_HIDDEN __attribute__ ((visibility("hidden")))
+  #define H5FDdsm_ABI_IMPORT __attribute__ ((visibility("default")))
+  #define H5FDdsm_ABI_EXPORT __attribute__ ((visibility("default")))
+  #define H5FDdsm_ABI_HIDDEN __attribute__ ((visibility("hidden")))
 #else
-  # define H5FDdsm_ABI_IMPORT
-  # define H5FDdsm_ABI_EXPORT
-  # define H5FDdsm_ABI_HIDDEN
+  #define H5FDdsm_ABI_IMPORT
+  #define H5FDdsm_ABI_EXPORT
+  #define H5FDdsm_ABI_HIDDEN
 #endif
 
-#cmakedefine H5FDdsm_BUILD_SHARED_LIBS
 #define H5_HAVE_DSM
+#cmakedefine H5FD_DSM_STATIC_COMM
 
-#if defined (H5FDdsm_BUILD_SHARED_LIBS)
-  #if defined(H5FDdsm_EXPORTS) 
+#cmakedefine H5FDdsm_BUILD_SHARED_LIBS
+
+#ifdef H5FDdsm_BUILD_SHARED_LIBS
+  #ifdef H5FDdsm_EXPORTS
     #define H5FDdsm_EXPORT H5FDdsm_ABI_EXPORT 
   #else
     #define H5FDdsm_EXPORT H5FDdsm_ABI_IMPORT 
   #endif
 #else
-  # define H5FDdsm_EXPORT
+  #define H5FDdsm_EXPORT
 #endif
 
 #endif /* __H5FDConfig_h */

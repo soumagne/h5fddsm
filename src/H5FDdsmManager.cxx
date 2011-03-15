@@ -471,6 +471,21 @@ void H5FDdsmManager::UnpublishDSM()
   if (this->UpdatePiece == 0) H5FDdsmDebug("Port closed");
 }
 //----------------------------------------------------------------------------
+void H5FDdsmManager::CreateInterComm()
+{
+  H5FDdsmInt32 status = H5FD_DSM_FAIL;
+  if (this->DsmIsServer) {
+    this->DSMBuffer->RequestAccept();
+  } else {
+//    status = this->DSMBuffer->GetComm()->CreateInterComm();
+    if (status == H5FD_DSM_SUCCESS) {
+      H5FDdsmDebug("Connected!");
+      this->DSMBuffer->SetIsConnected(true);
+      this->DSMBuffer->ReceiveInfo();
+    }
+  }
+}
+//----------------------------------------------------------------------------
 void H5FDdsmManager::H5Dump()
 {  
   if (this->DSMBuffer) {

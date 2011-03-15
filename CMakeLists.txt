@@ -76,6 +76,11 @@ ELSE(BUILD_SHARED_LIBS)
   SET(H5FDdsm_BUILD_SHARED_LIBS 0)
 ENDIF(BUILD_SHARED_LIBS)
 
+#-----------------------------------------------------------------------------
+# Choose dynamic or static communication model.
+#-----------------------------------------------------------------------------
+OPTION(H5FD_DSM_STATIC_COMM "Build with static communication model." OFF)
+
 #-------------------------------------------------------------------------------
 MACRO (SET_LIB_OPTIONS libtarget)
   IF (BUILD_SHARED_LIBS)
@@ -238,7 +243,7 @@ SET_LIB_OPTIONS(H5FDdsm)
 # Option to build Fortran bindings
 # We will use the name mangling and type checks from the HDF5 project
 #-----------------------------------------------------------------------------
-OPTION (H5FD_DSM_BUILD_FORTRAN "Build FORTRAN bindings" OFF)
+OPTION (H5FD_DSM_BUILD_FORTRAN "Build FORTRAN bindings." OFF)
 IF (H5FD_DSM_BUILD_FORTRAN)
   INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR_FORTRAN})
   ADD_SUBDIRECTORY (${H5FDdsm_SOURCE_DIR}/fortran ${PROJECT_BINARY_DIR}/fortran)
@@ -247,7 +252,7 @@ ENDIF (H5FD_DSM_BUILD_FORTRAN)
 #-----------------------------------------------------------------------------
 # Testing
 #-----------------------------------------------------------------------------
-OPTION(H5FD_DSM_BUILD_TESTING "Build Testing code" ON)
+OPTION(H5FD_DSM_BUILD_TESTING "Build Testing code." ON)
 
 IF(H5FD_DSM_BUILD_TESTING)
   ENABLE_TESTING()

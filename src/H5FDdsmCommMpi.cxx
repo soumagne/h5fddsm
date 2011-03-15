@@ -280,7 +280,7 @@ H5FDdsmCommMpi::RemoteCommConnect() {
 
   //
   // Set Error handler to return so that a connection failure doesn't terminate the app
-  MPI_Errhandler_set(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
+  MPI_Errhandler_set(this->Comm, MPI_ERRORS_RETURN);
   int error_code = MPI_Comm_connect(this->DsmMasterHostName, MPI_INFO_NULL, 0, this->Comm, &this->InterComm);
   if (error_code == MPI_SUCCESS) {
     H5FDdsmDebug("Id = " << this->Id << " MPI_Comm_connect returned SUCCESS");
@@ -292,7 +292,7 @@ H5FDdsmCommMpi::RemoteCommConnect() {
    H5FDdsmDebug("\nMPI_Comm_connect failed with error : \n" << error_string << "\n\n");
   }
   // reset to MPI_ERRORS_ARE_FATAL for normal debug purposes
-  MPI_Errhandler_set(MPI_COMM_WORLD, MPI_ERRORS_ARE_FATAL);
+  MPI_Errhandler_set(this->Comm, MPI_ERRORS_ARE_FATAL);
 
   if (isConnected == H5FD_DSM_SUCCESS) {
     this->CommChannel = H5FD_DSM_COMM_CHANNEL_REMOTE;
