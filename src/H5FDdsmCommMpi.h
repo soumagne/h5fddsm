@@ -75,6 +75,10 @@ public:
 
     H5FDdsmGetValueMacro(InterComm, MPI_Comm);
 
+    // If set to true, do not use dynamic connection
+    H5FDdsmSetValueMacro(UseStaticInterComm, H5FDdsmBoolean);
+    H5FDdsmGetValueMacro(UseStaticInterComm, H5FDdsmBoolean);
+
     H5FDdsmGetStringMacro(DsmMasterHostName);
     void SetDsmMasterHostName(H5FDdsmConstString hostName);
 
@@ -108,6 +112,7 @@ public:
 
 protected:
     MPI_Comm       Comm;
+    H5FDdsmBoolean UseStaticInterComm;
     MPI_Comm       InterComm;
     MPI_Win        Win;
     H5FDdsmByte    DsmMasterHostName[MPI_MAX_PORT_NAME];

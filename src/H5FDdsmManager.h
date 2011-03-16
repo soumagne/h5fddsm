@@ -68,6 +68,12 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     H5FDdsmGetValueMacro(DsmCommType, H5FDdsmInt32);
 
     // Description:
+    // Set/Get UseStaticInterComm -- Force to use static MPI comm model
+    // when dynamic MPI communication is not supported by the system
+    H5FDdsmSetValueMacro(DsmUseStaticInterComm, H5FDdsmBoolean);
+    H5FDdsmGetValueMacro(DsmUseStaticInterComm, H5FDdsmBoolean);
+
+    // Description:
     // Set/Get the published host name of our connection.
     // Real value valid after a PublishDSM call has been made.
     H5FDdsmSetStringMacro(ServerHostName);
@@ -146,10 +152,10 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     H5FDdsmInt32 DestroyDSM();
     void   ClearDSM();
     void   ConnectDSM(H5FDdsmBoolean persist = false);
+    void   ConnectInterCommDSM();
     void   DisconnectDSM();
     void   PublishDSM();
     void   UnpublishDSM();
-    void   CreateInterComm();
     void   H5Dump();
     void   H5DumpLight();
     void   H5DumpXML();
@@ -183,6 +189,7 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     H5FDdsmInt32    DsmType;
     H5FDdsmInt64    DsmBlockLength;
     H5FDdsmInt32    DsmCommType;
+    H5FDdsmBoolean  DsmUseStaticInterComm;
     H5FDdsmString   ServerHostName;
     H5FDdsmInt32    ServerPort;
     H5FDdsmString   DsmConfigFilePath;

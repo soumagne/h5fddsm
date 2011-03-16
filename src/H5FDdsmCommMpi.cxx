@@ -57,6 +57,7 @@
 H5FDdsmCommMpi::H5FDdsmCommMpi() {
     this->Comm = MPI_COMM_WORLD;
     this->CommType = H5FD_DSM_COMM_MPI;
+    this->UseStaticInterComm = 0;
     this->InterComm = MPI_COMM_NULL;
     this->CommChannel = H5FD_DSM_COMM_CHANNEL_LOCAL;
     this->Win = MPI_WIN_NULL;
@@ -240,25 +241,19 @@ H5FDdsmInt32
 H5FDdsmCommMpi::RemoteCommAccept(void *storagePointer, H5FDdsmInt64 storageSize) {
 
   if(H5FDdsmComm::RemoteCommAccept(storagePointer, storageSize) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
-  // this->DsmMasterHostName internally used on root
-  MPI_Comm_accept(this->DsmMasterHostName, MPI_INFO_NULL, 0, this->Comm, &this->InterComm);
 
-  if (this->Id == 0) {
-    MPI_Status status;
-    if (MPI_Recv(&this->InterSize, sizeof(H5FDdsmInt32), MPI_UNSIGNED_CHAR, 0, H5FD_DSM_EXCHANGE_TAG, this->InterComm, &status) != MPI_SUCCESS){
-      H5FDdsmError("Id = " << this->Id << " MPI_Recv of InterSize failed");
-      return(H5FD_DSM_FAIL);
-    }
-    if (MPI_Send(&this->TotalSize, sizeof(H5FDdsmInt32), MPI_UNSIGNED_CHAR, 0, H5FD_DSM_EXCHANGE_TAG, this->InterComm) != MPI_SUCCESS){
-      H5FDdsmError("Id = " << this->Id << " MPI_Send of TotalSize failed");
-      return(H5FD_DSM_FAIL);
-    }
+  if (this->UseStaticInterComm) {
+    H5FDdsmInt32 global_size;
+    MPI_Comm_size(MPI_COMM_WORLD, &global_size);
+    MPI_Intercomm_create(this->Comm, 0, MPI_COMM_WORLD, global_size - (global_size - this->TotalSize), H5FD_DSM_DEFAULT_TAG, &this->InterComm);
+  } else {
+    // this->DsmMasterHostName internally used on root
+    MPI_Comm_accept(this->DsmMasterHostName, MPI_INFO_NULL, 0, this->Comm, &this->InterComm);
   }
-  if (MPI_Bcast(&this->InterSize, sizeof(H5FDdsmInt32), MPI_UNSIGNED_CHAR, 0, this->Comm) != MPI_SUCCESS){
-    H5FDdsmError("Id = " << this->Id << " MPI_Bcast of InterSize failed");
-    return(H5FD_DSM_FAIL);
-  }
-  H5FDdsmDebug("InterComm size: " << this->InterSize);
+
+  MPI_Comm_remote_size(this->InterComm, &this->InterSize);
+  H5FDdsmDebug("Server InterComm size: " << this->InterSize);
+
   if (this->CommType == H5FD_DSM_COMM_MPI_RMA) {
     MPI_Comm winComm;
     MPI_Intercomm_merge(this->InterComm, 0, &winComm);
@@ -275,44 +270,40 @@ H5FDdsmInt32
 H5FDdsmCommMpi::RemoteCommConnect() {
 
   H5FDdsmInt32 isConnected = H5FD_DSM_FAIL;
+  H5FDdsmInt32 status;
 
   if(H5FDdsmComm::RemoteCommConnect() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
-  //
-  // Set Error handler to return so that a connection failure doesn't terminate the app
-  MPI_Errhandler_set(this->Comm, MPI_ERRORS_RETURN);
-  int error_code = MPI_Comm_connect(this->DsmMasterHostName, MPI_INFO_NULL, 0, this->Comm, &this->InterComm);
-  if (error_code == MPI_SUCCESS) {
-    H5FDdsmDebug("Id = " << this->Id << " MPI_Comm_connect returned SUCCESS");
-    isConnected = H5FD_DSM_SUCCESS;
+  if (this->UseStaticInterComm) {
+    status = MPI_Intercomm_create(this->Comm, 0, MPI_COMM_WORLD, 0, H5FD_DSM_DEFAULT_TAG, &this->InterComm);
+    if (status == MPI_SUCCESS) {
+      H5FDdsmDebug("Id = " << this->Id << " MPI_Intercomm_create returned SUCCESS");
+      isConnected = H5FD_DSM_SUCCESS;
+    }
   } else {
-   char error_string[1024];
-   int length_of_error_string;
-   MPI_Error_string(error_code, error_string, &length_of_error_string);
-   H5FDdsmDebug("\nMPI_Comm_connect failed with error : \n" << error_string << "\n\n");
+    //
+    // Set Error handler to return so that a connection failure doesn't terminate the app
+    MPI_Errhandler_set(this->Comm, MPI_ERRORS_RETURN);
+    status = MPI_Comm_connect(this->DsmMasterHostName, MPI_INFO_NULL, 0, this->Comm, &this->InterComm);
+    if (status == MPI_SUCCESS) {
+      H5FDdsmDebug("Id = " << this->Id << " MPI_Comm_connect returned SUCCESS");
+      isConnected = H5FD_DSM_SUCCESS;
+    } else {
+      char error_string[1024];
+      int length_of_error_string;
+      MPI_Error_string(status, error_string, &length_of_error_string);
+      H5FDdsmDebug("\nMPI_Comm_connect failed with error : \n" << error_string << "\n\n");
+    }
+    // reset to MPI_ERRORS_ARE_FATAL for normal debug purposes
+    MPI_Errhandler_set(this->Comm, MPI_ERRORS_ARE_FATAL);
   }
-  // reset to MPI_ERRORS_ARE_FATAL for normal debug purposes
-  MPI_Errhandler_set(this->Comm, MPI_ERRORS_ARE_FATAL);
 
   if (isConnected == H5FD_DSM_SUCCESS) {
     this->CommChannel = H5FD_DSM_COMM_CHANNEL_REMOTE;
 
-    if (this->Id == 0) {
-      MPI_Status status;
-      if (MPI_Send(&this->TotalSize, sizeof(H5FDdsmInt32), MPI_UNSIGNED_CHAR, 0, H5FD_DSM_EXCHANGE_TAG, this->InterComm) != MPI_SUCCESS){
-        H5FDdsmError("Id = " << this->Id << " MPI_Send of TotalSize failed");
-        return(H5FD_DSM_FAIL);
-      }
-      if (MPI_Recv(&this->InterSize, sizeof(H5FDdsmInt32), MPI_UNSIGNED_CHAR, 0, H5FD_DSM_EXCHANGE_TAG, this->InterComm, &status) != MPI_SUCCESS){
-        H5FDdsmError("Id = " << this->Id << " MPI_Recv of InterSize failed");
-        return(H5FD_DSM_FAIL);
-      }
-    }
-    if (MPI_Bcast(&this->InterSize, sizeof(H5FDdsmInt32), MPI_UNSIGNED_CHAR, 0, this->Comm) != MPI_SUCCESS){
-      H5FDdsmError("Id = " << this->Id << " MPI_Bcast of InterSize failed");
-      return(H5FD_DSM_FAIL);
-    }
-    H5FDdsmDebug("InterComm size: " << this->InterSize);
+    MPI_Comm_remote_size(this->InterComm, &this->InterSize);
+    H5FDdsmDebug("Client InterComm size: " << this->InterSize);
+
     if (this->CommType == H5FD_DSM_COMM_MPI_RMA) {
       MPI_Comm winComm;
       MPI_Intercomm_merge(this->InterComm, 1, &winComm);
@@ -338,7 +329,11 @@ H5FDdsmCommMpi::RemoteCommDisconnect() {
     this->Win = MPI_WIN_NULL;
   }
   if (this->InterComm != MPI_COMM_NULL) {
-    MPI_Comm_disconnect(&this->InterComm);
+    if (this->UseStaticInterComm) {
+      MPI_Comm_free(&this->InterComm);
+    } else {
+      MPI_Comm_disconnect(&this->InterComm);
+    }
     this->InterComm = MPI_COMM_NULL;
   }
   this->CommChannel = H5FD_DSM_COMM_CHANNEL_LOCAL;

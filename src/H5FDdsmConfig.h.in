@@ -20,7 +20,6 @@
 #endif
 
 #define H5_HAVE_DSM
-#cmakedefine H5FD_DSM_STATIC_COMM
 
 #cmakedefine H5FDdsm_BUILD_SHARED_LIBS
 

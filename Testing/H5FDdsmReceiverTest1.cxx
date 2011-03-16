@@ -15,9 +15,7 @@ int main (int argc, char* argv[])
   int commType = H5FD_DSM_COMM_SOCKET;
   int dsmType = H5FD_DSM_TYPE_UNIFORM;
   long dsmBlockSize = 1024;
-#ifdef H5FD_DSM_STATIC_COMM
-  bool comm_split = false;
-#endif
+  bool staticInterComm = false;
 
   //
   // Receiver will spawn a thread to handle incoming data Put/Get requests
@@ -62,13 +60,6 @@ int main (int argc, char* argv[])
       std::cout << "MPI Inter-Communicator selected" << std::endl;
     }
     else if (!strcmp(argv[2], "MPI_RMA")) {
-#ifdef H5FD_DSM_STATIC_COMM
-      int color = 1; // 1 for server, 2 for client
-      MPI_Comm_split(MPI_COMM_WORLD, color, rank, &dcomm);
-      comm_split = true;
-      MPI_Comm_rank(dcomm, &rank);
-      MPI_Comm_size(dcomm, &size);
-#endif
       commType = H5FD_DSM_COMM_MPI_RMA;
       std::cout << "MPI_RMA Inter-Communicator selected" << std::endl;
     }
@@ -77,6 +68,13 @@ int main (int argc, char* argv[])
   if (argc > 3) {
     if (!strcmp(argv[3], "Block")) {
       dsmType = H5FD_DSM_TYPE_BLOCK_CYCLIC;
+    }
+    else if (!strcmp(argv[3], "Static") && (commType != H5FD_DSM_COMM_SOCKET)) {
+      int color = 1; // 1 for server, 2 for client
+      MPI_Comm_split(MPI_COMM_WORLD, color, rank, &dcomm);
+      staticInterComm = true;
+      MPI_Comm_rank(dcomm, &rank);
+      MPI_Comm_size(dcomm, &size);
     }
   }
 
@@ -96,18 +94,18 @@ int main (int argc, char* argv[])
   dsmManager->SetDsmBlockLength(dsmBlockSize);
   dsmManager->SetDsmCommType(commType);
   dsmManager->SetDsmIsServer(1);
+  if (staticInterComm) dsmManager->SetDsmUseStaticInterComm(1);
   dsmManager->SetServerHostName("default");
   dsmManager->SetServerPort(22000);
   dsmManager->CreateDSM();
 
-#ifdef H5FD_DSM_STATIC_COMM
-  dsmManager->CreateInterComm();
-#else
-  // Publish writes .dsm_config file with server name/port/mode in
-  // then spawns thread which waits for incoming connections
-  dsmManager->PublishDSM();
-#endif
-
+  if (staticInterComm) {
+    dsmManager->ConnectInterCommDSM();
+  } else {
+    // Publish writes .dsm_config file with server name/port/mode in
+    // then spawns thread which waits for incoming connections
+    dsmManager->PublishDSM();
+  }
   //
   int totalMB = static_cast<int>(dsmManager->GetDSMHandle()->GetTotalLength()/(1024*1024));
   int serversize = dsmManager->GetDSMHandle()->GetEndServerId();
@@ -140,23 +138,20 @@ int main (int argc, char* argv[])
   //
   MPI_Barrier(dcomm);
 
-#ifndef H5FD_DSM_STATIC_COMM
   //
   // Closes ports or MPI communicators
   //
-  dsmManager->UnpublishDSM();
-#endif
+  if (!staticInterComm) dsmManager->UnpublishDSM();
 
   //
   // Clean up everything
   // 
   delete dsmManager;
 
-#ifdef H5FD_DSM_STATIC_COMM
-  if (comm_split) {
+  if (staticInterComm) {
    MPI_Comm_free(&dcomm);
   }
-#endif
+
   MPI_Finalize();
   return(EXIT_SUCCESS);
 }

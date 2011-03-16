@@ -178,9 +178,7 @@ int main(int argc, char **argv)
   double         remoteMB, MBytes, GBytes, Bytes, SendBytes, bandwidth;
   double         totaltime;
   char           fullname[256] = "dsm";
-#ifdef H5FD_DSM_STATIC_COMM
-  bool           comm_split = false;
-#endif
+  bool           staticInterComm = false;
 
   //
   // Sender does not use any special threads so MPI_Init is ok
@@ -215,27 +213,25 @@ int main(int argc, char **argv)
   //
   H5FDdsmManager *dsmManager = new H5FDdsmManager();
   dsmManager->ReadDSMConfigFile();
-#ifdef H5FD_DSM_STATIC_COMM
-  if (dsmManager->GetDsmCommType() == H5FD_DSM_COMM_MPI_RMA) {
+  if (dsmManager->GetDsmUseStaticInterComm()) {
     int color = 2; // 1 for server, 2 for client
     MPI_Comm_split(MPI_COMM_WORLD, color, rank, &dcomm);
     MPI_Comm_rank(dcomm, &rank);
     MPI_Comm_size(dcomm, &size);
-    comm_split = true;
+    staticInterComm = true;
   }
-#endif
   dsmManager->SetCommunicator(dcomm);
   dsmManager->SetDsmIsServer(0);
   dsmManager->CreateDSM();
 
-#ifdef H5FD_DSM_STATIC_COMM
-  dsmManager->CreateInterComm();
-#else
-  //
-  // Connect to receiver
-  //
-  dsmManager->ConnectDSM(true);
-#endif
+  if (staticInterComm) {
+    dsmManager->ConnectInterCommDSM();
+  } else {
+    //
+    // Connect to receiver
+    //
+    dsmManager->ConnectDSM(true);
+  }
 
   //
   // We have configured everything manually using the DSM manager, so pass the buffer
@@ -293,18 +289,14 @@ int main(int argc, char **argv)
     }
   }
 
-#ifndef H5FD_DSM_STATIC_COMM
   dsmManager->DisconnectDSM();
-#endif
 
   TestParticleClose();
   delete dsmManager;
 
-#ifdef H5FD_DSM_STATIC_COMM
-  if (comm_split) {
+  if (staticInterComm) {
    MPI_Comm_free(&dcomm);
   }
-#endif
   MPI_Finalize();
 
   return(EXIT_SUCCESS);

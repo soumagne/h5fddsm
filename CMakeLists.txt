@@ -76,11 +76,6 @@ ELSE(BUILD_SHARED_LIBS)
   SET(H5FDdsm_BUILD_SHARED_LIBS 0)
 ENDIF(BUILD_SHARED_LIBS)
 
-#-----------------------------------------------------------------------------
-# Choose dynamic or static communication model.
-#-----------------------------------------------------------------------------
-OPTION(H5FD_DSM_STATIC_COMM "Build with static communication model." OFF)
-
 #-------------------------------------------------------------------------------
 MACRO (SET_LIB_OPTIONS libtarget)
   IF (BUILD_SHARED_LIBS)
