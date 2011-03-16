@@ -82,7 +82,7 @@ int main (int argc, char* argv[])
     dsmBlockSize = atol(argv[4]);
   }
 
-  std::cout << "Process number " << rank << " of " << size << std::endl;
+  std::cout << "Process number " << rank << " of " << size - 1 << std::endl;
 
   //
   // Create a DSM manager

@@ -227,9 +227,7 @@ int main(int argc, char **argv)
   if (staticInterComm) {
     dsmManager->ConnectInterCommDSM();
   } else {
-    //
     // Connect to receiver
-    //
     dsmManager->ConnectDSM(true);
   }
 
