@@ -9,13 +9,13 @@
 //----------------------------------------------------------------------------
 int main (int argc, char* argv[])
 {
-  int provided, rank, size;
+  H5FDdsmInt32 provided, rank, size;
   MPI_Comm dcomm = MPI_COMM_WORLD;
-  long dsmSize = 16; // default MB
-  int commType = H5FD_DSM_COMM_SOCKET;
-  int dsmType = H5FD_DSM_TYPE_UNIFORM;
-  long dsmBlockSize = 1024;
-  bool staticInterComm = false;
+  H5FDdsmInt64 dsmSize = 16; // default MB
+  H5FDdsmInt32 commType = H5FD_DSM_COMM_SOCKET;
+  H5FDdsmInt32 dsmType = H5FD_DSM_TYPE_UNIFORM;
+  H5FDdsmInt64 dsmBlockSize = 1024;
+  H5FDdsmBoolean staticInterComm = false;
 
   //
   // Receiver will spawn a thread to handle incoming data Put/Get requests
@@ -70,7 +70,7 @@ int main (int argc, char* argv[])
       dsmType = H5FD_DSM_TYPE_BLOCK_CYCLIC;
     }
     else if (!strcmp(argv[3], "Static") && (commType != H5FD_DSM_COMM_SOCKET)) {
-      int color = 1; // 1 for server, 2 for client
+      H5FDdsmInt32 color = 1; // 1 for server, 2 for client
       MPI_Comm_split(MPI_COMM_WORLD, color, rank, &dcomm);
       staticInterComm = true;
       MPI_Comm_rank(dcomm, &rank);
@@ -107,11 +107,12 @@ int main (int argc, char* argv[])
     dsmManager->PublishDSM();
   }
   //
-  int totalMB = static_cast<int>(dsmManager->GetDSMHandle()->GetTotalLength()/(1024*1024));
-  int serversize = dsmManager->GetDSMHandle()->GetEndServerId();
+  H5FDdsmFloat64 totalMB = dsmManager->GetDSMHandle()->GetTotalLength()/(1024*1024);
+  H5FDdsmInt64 serversize = (dsmManager->GetDSMHandle()->GetEndServerId() -
+      dsmManager->GetDSMHandle()->GetStartServerId() + 1);
   if (rank == 0) {
     std::cout << "DSM server memory size is : " << totalMB << " MB" << std::endl;
-    std::cout << "DSM server process count  : " <<  (serversize+1) << std::endl;
+    std::cout << "DSM server process count  : " <<  serversize << std::endl;
   }
 
   // The output comment below must not be deleted, it allows ctest to detect

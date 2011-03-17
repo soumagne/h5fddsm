@@ -22,11 +22,11 @@
 /*******************************************************************/
 // used for comparing H5Part with Compound H5SPH
 typedef struct EcritParticuleHDFTesting {
-  double *Ddata;
+  H5FDdsmFloat64 *Ddata;
 } EcritParticuleHDFTesting;
 
 /* names of above arrays for convenience when using H5Part IO */
-const char ArrayNames[] = "Position";
+H5FDdsmConstString ArrayNames = "Position";
 
 #define H5CHECK_ERROR(var, msg) if (var<0) printf("Error %s", msg);
 
@@ -37,8 +37,8 @@ const char ArrayNames[] = "Position";
 /* collective : 1=collective IO, 0=independent (default 0)         */
 /*******************************************************************/
 void write_ecrit_particule(
-    EcritParticuleHDFTesting *buf, const char *filename,
-    int len,  int start, int total, H5FDdsmBuffer *dsmBuffer)
+    EcritParticuleHDFTesting *buf, H5FDdsmConstString filename,
+    H5FDdsmInt64 len,  H5FDdsmInt64 start, H5FDdsmInt64 total, H5FDdsmBuffer *dsmBuffer)
 {
   hid_t      file_id, group_id, dataset_id, xfer_plist_id;
   hid_t      file_space_id, mem_space_id;
@@ -126,12 +126,12 @@ void freeBuffer(EcritParticuleHDFTesting *buffer) {
   if ((*buffer).Ddata) free((*buffer).Ddata);
 }
 //----------------------------------------------------------------------------
-double TestParticleWrite(const char *filename, int N, int mpiId, int mpiNum,
+H5FDdsmFloat64 TestParticleWrite(H5FDdsmConstString filename, H5FDdsmInt64 N, H5FDdsmInt32 mpiId, H5FDdsmInt32 mpiNum,
     MPI_Comm dcomm, H5FDdsmBuffer *dsmBuffer)
 {
   EcritParticuleHDFTesting WriteBuffer;
-  int       i, start, total, memsize;
-  double   *doublearray;
+  H5FDdsmInt64 i, start, total;
+  H5FDdsmFloat64 *doublearray;
 
   start = N*mpiId;
   total = N*mpiNum;
@@ -139,8 +139,7 @@ double TestParticleWrite(const char *filename, int N, int mpiId, int mpiNum,
   initBuffer(&WriteBuffer);
 
   // create arrays for the test vars we selected above
-  memsize = sizeof(double)*N;
-  doublearray = (double*)malloc(memsize*3);
+  doublearray = (H5FDdsmFloat64*)malloc(sizeof(H5FDdsmFloat64)*3*N);
   for (i=0; i<N; i++) {
     doublearray[3*i]   = 0.1*i;
     doublearray[3*i+1] = 0.1*i;
@@ -150,10 +149,10 @@ double TestParticleWrite(const char *filename, int N, int mpiId, int mpiNum,
 
   // call the write routine with our dummy buffer
   MPI_Barrier(dcomm);
-  double t1 = MPI_Wtime();
+  H5FDdsmFloat64 t1 = MPI_Wtime();
   write_ecrit_particule(&WriteBuffer, filename, N, start, total, dsmBuffer);
   MPI_Barrier(dcomm);
-  double t2 = MPI_Wtime();
+  H5FDdsmFloat64 t2 = MPI_Wtime();
 
   // free all array pointers
   freeBuffer(&WriteBuffer);
@@ -173,12 +172,12 @@ void TestParticleClose()
 
 int main(int argc, char **argv)
 {
-  int            nlocalprocs, rank;
+  H5FDdsmInt32   nlocalprocs, rank;
   MPI_Comm       dcomm = MPI_COMM_WORLD;
-  double         remoteMB, MBytes, GBytes, Bytes, SendBytes, bandwidth;
-  double         totaltime;
-  char           fullname[256] = "dsm";
-  bool           staticInterComm = false;
+  H5FDdsmFloat64 remoteMB, MBytes, Bytes, SendBytes, bandwidth;
+  H5FDdsmFloat64 totaltime;
+  H5FDdsmConstString fullname = "dsm";
+  H5FDdsmBoolean staticInterComm = false;
 
   //
   // Sender does not use any special threads so MPI_Init is ok
@@ -199,7 +198,7 @@ int main(int argc, char **argv)
   MPI_Barrier(dcomm);
 #endif
 
-  const char *dsm_env = getenv("H5FD_DSM_CONFIG_PATH");
+  H5FDdsmConstString dsm_env = getenv("H5FD_DSM_CONFIG_PATH");
   std::string hdffile;
   if (dsm_env) {
     hdffile = std::string(dsm_env) + std::string("/hdf-output.h5");
@@ -214,7 +213,7 @@ int main(int argc, char **argv)
   H5FDdsmManager *dsmManager = new H5FDdsmManager();
   dsmManager->ReadDSMConfigFile();
   if (dsmManager->GetDsmUseStaticInterComm()) {
-    int color = 2; // 1 for server, 2 for client
+    H5FDdsmInt32 color = 2; // 1 for server, 2 for client
     MPI_Comm_split(MPI_COMM_WORLD, color, rank, &dcomm);
     MPI_Comm_rank(dcomm, &rank);
     MPI_Comm_size(dcomm, &nlocalprocs);
@@ -242,10 +241,10 @@ int main(int argc, char **argv)
   // Get info from remote server
   //
   remoteMB = dsmBuffer->GetTotalLength()/(1024.0*1024.0);
-  double numServers = dsmBuffer->GetEndServerId()+1;
+  H5FDdsmInt32 numServers = dsmBuffer->GetEndServerId()-dsmBuffer->GetStartServerId()+1;
   if (rank == 0) {
-    std::cout << "DSM server memory size is : " << (int)remoteMB << " MB" << std::endl;
-    std::cout << "DSM server process count  : " <<  (int)numServers << std::endl;
+    std::cout << "DSM server memory size is : " << remoteMB << " MB" << std::endl;
+    std::cout << "DSM server process count  : " << numServers << std::endl;
   }
 
   for (int type=0; type<TYPES; type++) {
@@ -256,27 +255,26 @@ int main(int argc, char **argv)
       std::cout << "Writing to Disk" << std::endl;
     }
     for (int loop=0; loop<LOOPS; loop++) {
-      double numParticles = 1024*1024*(remoteMB-1)/(sizeof(double)*3.0*nlocalprocs);
+      H5FDdsmInt64 numParticles = 1024*1024*(remoteMB-1)/(sizeof(H5FDdsmFloat64)*3.0*nlocalprocs);
       // double numParticles = Lengths[length];
 
-      Bytes       = numParticles*sizeof(double)*3.0; // 3 = {x,y,z}
-      SendBytes   = Bytes*(double)nlocalprocs;
+      Bytes       = numParticles*sizeof(H5FDdsmFloat64)*3.0; // 3 = {x,y,z}
+      SendBytes   = Bytes*nlocalprocs;
       MBytes      = SendBytes/(1024.0*1024.0);
-      GBytes      = MBytes/(1024.0);
       if (MBytes<remoteMB) {
         totaltime = 0;
         for (int avg=0; avg<AVERAGE; avg++) {
           if (type==0) {
-            totaltime += TestParticleWrite(fullname, (int)numParticles, rank, nlocalprocs, dcomm, dsmBuffer);
+            totaltime += TestParticleWrite(fullname, numParticles, rank, nlocalprocs, dcomm, dsmBuffer);
           }
           else if (type==1) {
-            totaltime += TestParticleWrite(hdffile.c_str(), (int)numParticles, rank, nlocalprocs, dcomm, NULL);
+            totaltime += TestParticleWrite(hdffile.c_str(), numParticles, rank, nlocalprocs, dcomm, NULL);
           }
         }
         totaltime = totaltime/AVERAGE;
         bandwidth = (MBytes/totaltime);
         if (rank==0) {
-          std::cout << "Particles, "        << numParticles << ", "
+          std::cout << "Particles/proc, "        << numParticles << ", "
                     << "NumArrays, "        << 3            << ", "
                     << "NProcs, "           << nlocalprocs  << ", "
                     << "Mbytes, "           << MBytes       << ", "
