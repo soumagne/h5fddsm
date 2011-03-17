@@ -437,7 +437,7 @@ void H5FDdsmManager::PublishDSM()
       dsmConfigFile.Create(fullDsmConfigFilePath);
       dsmConfigFile.AddSection("Comm", fullDsmConfigFilePath);
 
-      std::cout << "Written " << fullDsmConfigFilePath.c_str() << std::endl;
+      H5FDdsmDebug("Written " << fullDsmConfigFilePath.c_str());
 
     }
     if ((this->GetDsmCommType() == H5FD_DSM_COMM_MPI) || (this->GetDsmCommType() == H5FD_DSM_COMM_MPI_RMA)) {
@@ -571,7 +571,7 @@ H5FDdsmInt32 H5FDdsmManager::ReadDSMConfigFile()
   }
   if (FileExists(configPath.c_str())) {
     if (this->UpdatePiece == 0) {
-      std::cout << "Reading from " << configPath.c_str() << std::endl;
+      H5FDdsmDebug("Reading from " << configPath.c_str());
     }
     std::string size = config.GetValue("DSM_INIT_SIZE",   "General", configPath);
 

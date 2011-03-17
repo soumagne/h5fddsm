@@ -53,15 +53,15 @@ int main (int argc, char* argv[])
   if (argc > 2) {
     if (!strcmp(argv[2], "Socket")) {
       commType = H5FD_DSM_COMM_SOCKET;
-      std::cout << "SOCKET Inter-Communicator selected" << std::endl;
+      if (rank == 0) std::cout << "SOCKET Inter-Communicator selected" << std::endl;
     }
     else if (!strcmp(argv[2], "MPI")) {
       commType = H5FD_DSM_COMM_MPI;
-      std::cout << "MPI Inter-Communicator selected" << std::endl;
+      if (rank == 0) std::cout << "MPI Inter-Communicator selected" << std::endl;
     }
     else if (!strcmp(argv[2], "MPI_RMA")) {
       commType = H5FD_DSM_COMM_MPI_RMA;
-      std::cout << "MPI_RMA Inter-Communicator selected" << std::endl;
+      if (rank == 0) std::cout << "MPI_RMA Inter-Communicator selected" << std::endl;
     }
   }
 
@@ -82,7 +82,7 @@ int main (int argc, char* argv[])
     dsmBlockSize = atol(argv[4]);
   }
 
-  std::cout << "Process number " << rank << " of " << size - 1 << std::endl;
+  //std::cout << "Process number " << rank << " of " << size - 1 << std::endl;
 
   //
   // Create a DSM manager
@@ -117,7 +117,7 @@ int main (int argc, char* argv[])
   // The output comment below must not be deleted, it allows ctest to detect
   // when the server is initialized
   MPI_Barrier(dcomm);
-  std::cout << "Waiting for client..." << std::endl;
+  if (rank == 0) std::cout << "Waiting for client..." << std::endl;
   dsmManager->WaitForConnected();
 
   while(dsmManager->GetDsmIsConnected()) {
@@ -131,7 +131,7 @@ int main (int argc, char* argv[])
     }
   }
 
-  std::cout << "Process number " << rank << " Closing down DSM server" << std::endl;
+  // std::cout << "Process number " << rank << " Closing down DSM server" << std::endl;
 
   //
   // Sync here
