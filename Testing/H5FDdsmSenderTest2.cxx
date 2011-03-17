@@ -154,7 +154,7 @@ void TestParticleClose()
 
 int main(int argc, char **argv)
 {
-  int            nlocalprocs, rank, size;
+  int            nlocalprocs, rank;
   MPI_Comm       dcomm = MPI_COMM_WORLD;
   double         remoteMB, MBytes, GBytes, Bytes, SendBytes, bandwidth;
   double         totaltime;
@@ -192,7 +192,7 @@ int main(int argc, char **argv)
     int color = 2; // 1 for server, 2 for client
     MPI_Comm_split(MPI_COMM_WORLD, color, rank, &dcomm);
     MPI_Comm_rank(dcomm, &rank);
-    MPI_Comm_size(dcomm, &size);
+    MPI_Comm_size(dcomm, &nlocalprocs);
     staticInterComm = true;
   }
   dsmManager->SetCommunicator(dcomm);

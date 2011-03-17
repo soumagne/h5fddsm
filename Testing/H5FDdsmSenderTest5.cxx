@@ -11,6 +11,7 @@ main(int argc, char * argv[])
   MPI_Init(&argc, &argv);
 
   int rank, size;
+  bool staticInterComm = false;
 
   MPI_Comm comm = MPI_COMM_WORLD;
   MPI_Comm_rank(comm, &rank);
@@ -18,14 +19,24 @@ main(int argc, char * argv[])
 
   // Create DSM Client
   H5FDdsmManager * dsmManager = new H5FDdsmManager();
-  dsmManager->SetGlobalDebug(0);
+  dsmManager->ReadDSMConfigFile();
+  if (dsmManager->GetDsmUseStaticInterComm()) {
+    int color = 2; // 1 for server, 2 for client
+    MPI_Comm_split(MPI_COMM_WORLD, color, rank, &comm);
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &size);
+    staticInterComm = true;
+  }
   dsmManager->SetCommunicator(comm);
   dsmManager->SetDsmIsServer(0);
-  dsmManager->ReadDSMConfigFile();
   dsmManager->CreateDSM();
 
-  // Connect to Server
-  dsmManager->ConnectDSM(true);
+  if (staticInterComm) {
+    dsmManager->ConnectInterCommDSM();
+  } else {
+    // Connect to Server
+    dsmManager->ConnectDSM(true);
+  }
 
   H5FDdsmBuffer * dsmBuffer = dsmManager->GetDSMHandle();
 
@@ -94,6 +105,10 @@ main(int argc, char * argv[])
   dsmManager->DisconnectDSM();
 
   delete dsmManager;
+
+  if (staticInterComm) {
+   MPI_Comm_free(&comm);
+  }
 
   MPI_Finalize();
 

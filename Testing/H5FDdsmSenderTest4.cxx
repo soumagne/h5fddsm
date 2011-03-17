@@ -11,6 +11,7 @@ main(int argc, char * argv[])
   MPI_Init(&argc, &argv);
 
   int rank, size;
+  bool staticInterComm = false;
 
   MPI_Comm comm = MPI_COMM_WORLD;
   MPI_Comm_rank(comm, &rank);
@@ -18,14 +19,24 @@ main(int argc, char * argv[])
 
   // Create DSM Client
   H5FDdsmManager * dsmManager = new H5FDdsmManager();
-  dsmManager->SetGlobalDebug(0);
+  dsmManager->ReadDSMConfigFile();
+  if (dsmManager->GetDsmUseStaticInterComm()) {
+    int color = 2; // 1 for server, 2 for client
+    MPI_Comm_split(MPI_COMM_WORLD, color, rank, &comm);
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &size);
+    staticInterComm = true;
+  }
   dsmManager->SetCommunicator(comm);
   dsmManager->SetDsmIsServer(0);
-  dsmManager->ReadDSMConfigFile();
   dsmManager->CreateDSM();
 
-  // Connect to Server
-  dsmManager->ConnectDSM(true);
+  if (staticInterComm) {
+    dsmManager->ConnectInterCommDSM();
+  } else {
+    // Connect to Server
+    dsmManager->ConnectDSM(true);
+  }
 
   H5FDdsmBuffer * dsmBuffer = dsmManager->GetDSMHandle();
 
@@ -41,6 +52,7 @@ main(int argc, char * argv[])
 
   // Create Array
   int array[3] = { 1, 2, 3 };
+  int read_array[3];
   hsize_t arraySize = 3;
 
   // Set file access property list for DSM
@@ -90,6 +102,12 @@ main(int argc, char * argv[])
   hid_t datatype = H5Dget_type(dataset);
 
   std::cout << "Number of Values Read: " << numVals << std::endl;
+  H5Dread(dataset, datatype, H5S_ALL, dataspace, H5P_DEFAULT, &read_array);
+  for(unsigned int i=0; i<numVals; ++i) {
+    if (array[i] != read_array[i]) {
+      fprintf(stderr," read_array[%d] is %d, should be %d\n", i, read_array[i], array[i]);
+    }
+  }
 
   H5Tclose(datatype);
   H5Sclose(dataspace);
@@ -100,6 +118,10 @@ main(int argc, char * argv[])
   dsmManager->DisconnectDSM();
 
   delete dsmManager;
+
+  if (staticInterComm) {
+   MPI_Comm_free(&comm);
+  }
 
   MPI_Finalize();
 

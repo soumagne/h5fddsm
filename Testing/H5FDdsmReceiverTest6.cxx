@@ -13,6 +13,20 @@ main(int argc, char * argv[])
   MPI_Comm comm = MPI_COMM_WORLD;
   long dsmSize = 16; // default MB
   int commType = H5FD_DSM_COMM_SOCKET;
+  bool staticInterComm = false;
+
+  MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
+  MPI_Comm_rank(comm, &rank);
+  if (rank == 0) {
+    if (provided != MPI_THREAD_MULTIPLE) {
+      std::cout << "MPI_THREAD_MULTIPLE not set, you may need to recompile your "
+        << "MPI distribution with threads enabled" << std::endl;
+    }
+    else {
+      std::cout << "MPI_THREAD_MULTIPLE is OK" << std::endl;
+    }
+  }
+  MPI_Comm_size(comm, &size);
 
   if (argc > 1) {
     dsmSize = atol(argv[1]);
@@ -33,19 +47,17 @@ main(int argc, char * argv[])
     }
   }
 
-  MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
-  MPI_Comm_rank(comm, &rank);
-  if (rank == 0) {
-    if (provided != MPI_THREAD_MULTIPLE) {
-      std::cout << "MPI_THREAD_MULTIPLE not set, you may need to recompile your "
-        << "MPI distribution with threads enabled" << std::endl;
-    }
-    else {
-      std::cout << "MPI_THREAD_MULTIPLE is OK" << std::endl;
+  if (argc > 3) {
+    if (!strcmp(argv[3], "Static") && (commType != H5FD_DSM_COMM_SOCKET)) {
+      int color = 1; // 1 for server, 2 for client
+      MPI_Comm_split(MPI_COMM_WORLD, color, rank, &comm);
+      staticInterComm = true;
+      MPI_Comm_rank(comm, &rank);
+      MPI_Comm_size(comm, &size);
     }
   }
-  MPI_Comm_size(comm, &size);
-  std::cout << "Process number " << rank << " of " << size << std::endl;
+
+  std::cout << "Process number " << rank << " of " << size - 1 << std::endl;
 
   // Publish DSM Server
   H5FDdsmManager * dsmManager = new H5FDdsmManager();
@@ -54,10 +66,16 @@ main(int argc, char * argv[])
   dsmManager->SetLocalBufferSizeMBytes(dsmSize);
   dsmManager->SetDsmCommType(commType);
   dsmManager->SetDsmIsServer(1);
+  if (staticInterComm) dsmManager->SetDsmUseStaticInterComm(1);
   dsmManager->SetServerHostName("default");
   dsmManager->SetServerPort(22000);
   dsmManager->CreateDSM();
-  dsmManager->PublishDSM();
+
+  if (staticInterComm) {
+    dsmManager->ConnectInterCommDSM();
+  } else {
+    dsmManager->PublishDSM();
+  }
 
   int totalMB = static_cast<int> (dsmManager->GetDSMHandle()->GetTotalLength()
       / (1024 * 1024));
@@ -107,10 +125,14 @@ main(int argc, char * argv[])
   MPI_Barrier(comm);
 
   // Closes ports or MPI communicators
-  dsmManager->UnpublishDSM();
+  if (!staticInterComm) dsmManager->UnpublishDSM();
 
   // Clean up everything
   delete dsmManager;
+
+  if (staticInterComm) {
+   MPI_Comm_free(&comm);
+  }
 
   MPI_Finalize();
 
