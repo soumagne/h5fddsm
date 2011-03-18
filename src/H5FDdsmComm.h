@@ -67,12 +67,12 @@
 #define H5FD_DSM_COMM_CHANNEL_REMOTE 0x21
 
 typedef struct {
-  H5FDdsmInt32 type;
-  H5FDdsmInt64 length;
-  H5FDdsmInt64 total_length;
-  H5FDdsmInt64 block_length;
-  H5FDdsmInt32 start_server_id;
-  H5FDdsmInt32 end_server_id;
+  H5FDdsmInt32  type;
+  H5FDdsmUInt64 length;
+  H5FDdsmUInt64 total_length;
+  H5FDdsmUInt64 block_length;
+  H5FDdsmInt32  start_server_id;
+  H5FDdsmInt32  end_server_id;
 } H5FDdsmInfo;
 
 class H5FDdsmMsg;
@@ -115,7 +115,8 @@ public:
 
     virtual H5FDdsmInt32   OpenPort();
     virtual H5FDdsmInt32   ClosePort();
-    virtual H5FDdsmInt32   RemoteCommAccept(void *storagePointer, H5FDdsmInt64 storageSize);
+    virtual H5FDdsmInt32   RemoteCommAccept();
+    virtual H5FDdsmInt32   RemoteCommAccept(void *storagePointer, H5FDdsmUInt64 storageSize);
     virtual H5FDdsmInt32   RemoteCommConnect();
     virtual H5FDdsmInt32   RemoteCommDisconnect();
 

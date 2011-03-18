@@ -56,12 +56,12 @@
 
 // Align
 typedef struct {
-    H5FDdsmInt32   Opcode;
-    H5FDdsmInt32   Source;
-    H5FDdsmInt32   Target;
-    H5FDdsmInt64   Address;
-    H5FDdsmInt32   Length;
-    H5FDdsmInt64   Parameters[10];
+    H5FDdsmInt32 Opcode;
+    H5FDdsmInt32 Source;
+    H5FDdsmInt32 Target;
+    H5FDdsmAddr  Address;
+    H5FDdsmInt32 Length;
+    H5FDdsmInt64 Parameters[10];
 } H5FDdsmCommand;
 
 H5FDdsmDriver::H5FDdsmDriver() {
@@ -124,7 +124,7 @@ H5FDdsmDriver::ClearStorage() {
 }
 
 H5FDdsmInt32
-H5FDdsmDriver::ConfigureUniform(H5FDdsmComm *aComm, H5FDdsmInt64 aLength, H5FDdsmInt32 StartId, H5FDdsmInt32 EndId){
+H5FDdsmDriver::ConfigureUniform(H5FDdsmComm *aComm, H5FDdsmUInt64 aLength, H5FDdsmInt32 StartId, H5FDdsmInt32 EndId){
     if(StartId < 0) StartId = 0;
     if(EndId < 0) EndId = aComm->GetTotalSize() - 1;
     this->SetDsmType(H5FD_DSM_TYPE_UNIFORM_RANGE);
@@ -148,30 +148,30 @@ H5FDdsmDriver::ConfigureUniform(H5FDdsmComm *aComm, H5FDdsmInt64 aLength, H5FDds
 }
 
 H5FDdsmInt32
-H5FDdsmDriver::ConfigureBlockCyclic(H5FDdsmComm *aComm, H5FDdsmInt64 aLength, H5FDdsmInt64 aBlockLength, H5FDdsmInt32 StartId, H5FDdsmInt32 EndId){
+H5FDdsmDriver::ConfigureBlockCyclic(H5FDdsmComm *aComm, H5FDdsmUInt64 aLength, H5FDdsmUInt64 aBlockLength, H5FDdsmInt32 StartId, H5FDdsmInt32 EndId){
     if(StartId < 0) StartId = 0;
     if(EndId < 0) EndId = aComm->GetTotalSize() - 1;
     this->SetDsmType(H5FD_DSM_TYPE_BLOCK_CYCLIC);
     this->SetStartServerId(StartId);
     this->SetEndServerId(EndId);
     this->SetComm(aComm);
-    if(aBlockLength < 0) aBlockLength = H5FD_DSM_DEFAULT_BLOCK_LENGTH;
+    if(aBlockLength == 0) aBlockLength = H5FD_DSM_DEFAULT_BLOCK_LENGTH;
     this->SetBlockLength(aBlockLength);
     if((aComm->GetId() >= StartId) && (aComm->GetId() <= EndId)){
         this->Storage->SetComm(aComm);
         // For optimization we make the DSM length fit to a multiple of block size
-        this->SetLength((H5FDdsmInt64(aLength/this->BlockLength))*this->BlockLength, 1);
+        this->SetLength((H5FDdsmUInt64(aLength/this->BlockLength))*this->BlockLength, 1);
         this->StartAddress = (aComm->GetId() - StartId) * this->Length;
         this->EndAddress = this->StartAddress + this->Length - 1;
     }else{
-        this->Length = (H5FDdsmInt64(aLength/this->BlockLength))*this->BlockLength;
+        this->Length = (H5FDdsmUInt64(aLength/this->BlockLength))*this->BlockLength;
     }
     this->TotalLength = this->Length * (EndId - StartId + 1);
     return(H5FD_DSM_SUCCESS);
 }
 
 H5FDdsmInt32
-H5FDdsmDriver::GetAddressRangeForId(H5FDdsmInt32 Id, H5FDdsmInt64 *Start, H5FDdsmInt64 *End, H5FDdsmInt64 Address){
+H5FDdsmDriver::GetAddressRangeForId(H5FDdsmInt32 Id, H5FDdsmAddr *Start, H5FDdsmAddr *End, H5FDdsmAddr Address){
     switch(this->DsmType) {
         case H5FD_DSM_TYPE_UNIFORM :
         case H5FD_DSM_TYPE_UNIFORM_RANGE :
@@ -194,7 +194,7 @@ H5FDdsmDriver::GetAddressRangeForId(H5FDdsmInt32 Id, H5FDdsmInt64 *Start, H5FDds
 }
 
 H5FDdsmInt32
-H5FDdsmDriver::AddressToId(H5FDdsmInt64 Address){
+H5FDdsmDriver::AddressToId(H5FDdsmAddr Address){
     H5FDdsmInt32 ServerId = H5FD_DSM_FAIL;
 
     switch(this->DsmType) {
@@ -242,8 +242,8 @@ H5FDdsmDriver::SendDone(){
 }
 
 H5FDdsmInt32
-H5FDdsmDriver::SetLength(H5FDdsmInt64 aLength, H5FDdsmBoolean AllowAllocate){
-    if(this->Storage->SetNumberOfElements(aLength, AllowAllocate) != H5FD_DSM_SUCCESS) {
+H5FDdsmDriver::SetLength(H5FDdsmUInt64 aLength, H5FDdsmBoolean AllowAllocate){
+    if(this->Storage->SetLength(aLength, AllowAllocate) != H5FD_DSM_SUCCESS) {
         H5FDdsmError("Cannot set Dsm Length to " << Length);
         return(H5FD_DSM_FAIL);
     }
@@ -264,7 +264,7 @@ H5FDdsmDriver::ProbeCommandHeader(H5FDdsmInt32 *Source){
 }
 
 H5FDdsmInt32
-H5FDdsmDriver::SendCommandHeader(H5FDdsmInt32 Opcode, H5FDdsmInt32 Dest, H5FDdsmInt64 Address, H5FDdsmInt32 aLength){
+H5FDdsmDriver::SendCommandHeader(H5FDdsmInt32 Opcode, H5FDdsmInt32 Dest, H5FDdsmAddr Address, H5FDdsmInt32 aLength){
     H5FDdsmCommand  Cmd;
     H5FDdsmInt32 Status;
 
@@ -288,7 +288,7 @@ H5FDdsmDriver::SendCommandHeader(H5FDdsmInt32 Opcode, H5FDdsmInt32 Dest, H5FDdsm
 }
 
 H5FDdsmInt32
-H5FDdsmDriver::ReceiveCommandHeader(H5FDdsmInt32 *Opcode, H5FDdsmInt32 *Source, H5FDdsmInt64 *Address, H5FDdsmInt32 *aLength, H5FDdsmInt32 IsRemoteService, H5FDdsmInt32 RemoteSource, H5FDdsmInt32 Block){
+H5FDdsmDriver::ReceiveCommandHeader(H5FDdsmInt32 *Opcode, H5FDdsmInt32 *Source, H5FDdsmAddr *Address, H5FDdsmInt32 *aLength, H5FDdsmInt32 IsRemoteService, H5FDdsmInt32 RemoteSource, H5FDdsmInt32 Block){
     H5FDdsmCommand  Cmd;
     H5FDdsmInt32       status = H5FD_DSM_FAIL;
 
@@ -407,7 +407,7 @@ H5FDdsmDriver::ReceiveData(H5FDdsmInt32 Source, void *Data, H5FDdsmInt32 aLength
 }
 
 H5FDdsmInt32
-H5FDdsmDriver::PutData(H5FDdsmInt32 Dest, void *Data, H5FDdsmInt32 aLength, H5FDdsmInt64 aAddress){
+H5FDdsmDriver::PutData(H5FDdsmInt32 Dest, void *Data, H5FDdsmInt32 aLength, H5FDdsmAddr aAddress){
 
     H5FDdsmMsg Msg;
 
@@ -420,7 +420,7 @@ H5FDdsmDriver::PutData(H5FDdsmInt32 Dest, void *Data, H5FDdsmInt32 aLength, H5FD
 }
 
 H5FDdsmInt32
-H5FDdsmDriver::GetData(H5FDdsmInt32 Source, void *Data, H5FDdsmInt32 aLength, H5FDdsmInt64 aAddress){
+H5FDdsmDriver::GetData(H5FDdsmInt32 Source, void *Data, H5FDdsmInt32 aLength, H5FDdsmAddr aAddress){
 
     H5FDdsmMsg Msg;
 

@@ -36,20 +36,20 @@ public:
   H5FDdsmStorage();
   ~H5FDdsmStorage();
 
-  H5FDdsmPointer  GetDataPointer(H5FDdsmInt64 Index = 0);
+  H5FDdsmPointer  GetDataPointer(H5FDdsmAddr Addr = 0);
 
   //! Comm
   H5FDdsmGetValueMacro(Comm, H5FDdsmComm *);
   H5FDdsmSetValueMacro(Comm, H5FDdsmComm *);
 
-  H5FDdsmGetValueMacro(NumberOfElements, H5FDdsmInt64);
-  H5FDdsmInt32 SetNumberOfElements(H5FDdsmInt64 Length, H5FDdsmBoolean AllowAllocate=1);
+  H5FDdsmGetValueMacro(Length, H5FDdsmUInt64);
+  H5FDdsmInt32 SetLength(H5FDdsmUInt64 Length, H5FDdsmBoolean AllowAllocate=1);
 
 protected:
   H5FDdsmInt32    Allocate();
 
   H5FDdsmPointer  DataPointer;
-  H5FDdsmInt64    NumberOfElements;
+  H5FDdsmUInt64   Length;
   H5FDdsmComm    *Comm;
 };
 

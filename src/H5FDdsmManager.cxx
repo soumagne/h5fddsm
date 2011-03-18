@@ -70,7 +70,7 @@ H5FDdsmManager::H5FDdsmManager()
   this->DSMBuffer               = NULL;
   this->DSMComm                 = NULL;
   this->DsmType                 = H5FD_DSM_TYPE_UNIFORM;
-  this->DsmBlockLength          = -1;
+  this->DsmBlockLength          = 0;
   this->DsmCommType             = H5FD_DSM_COMM_MPI;
   this->DsmUseStaticInterComm   = 0;
   this->DsmIsServer             = 1;
@@ -244,7 +244,7 @@ H5FDdsmInt32 H5FDdsmManager::CreateDSM()
   //
   if (this->DsmIsServer) {
     // Uniform Dsm : every node has a buffer the same size. (Addresses are sequential)
-    H5FDdsmInt64 length = this->GetLocalBufferSizeMBytes()*1024*1024;
+    H5FDdsmUInt64 length = (H5FDdsmUInt64)(this->GetLocalBufferSizeMBytes())*1024LU*1024LU;
     switch (this->DsmType) {
     case H5FD_DSM_TYPE_UNIFORM:
     case H5FD_DSM_TYPE_UNIFORM_RANGE:

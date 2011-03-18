@@ -238,7 +238,7 @@ H5FDdsmCommMpi::ClosePort() {
 }
 
 H5FDdsmInt32
-H5FDdsmCommMpi::RemoteCommAccept(void *storagePointer, H5FDdsmInt64 storageSize) {
+H5FDdsmCommMpi::RemoteCommAccept(void *storagePointer, H5FDdsmUInt64 storageSize) {
 
   if(H5FDdsmComm::RemoteCommAccept(storagePointer, storageSize) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
@@ -258,7 +258,7 @@ H5FDdsmCommMpi::RemoteCommAccept(void *storagePointer, H5FDdsmInt64 storageSize)
     MPI_Comm winComm;
     MPI_Intercomm_merge(this->InterComm, 0, &winComm);
 
-    if (MPI_Win_create(storagePointer, storageSize*sizeof(H5FDdsmInt8), sizeof(H5FDdsmInt8), MPI_INFO_NULL, winComm, &this->Win) != MPI_SUCCESS){
+    if (MPI_Win_create(storagePointer, storageSize*sizeof(H5FDdsmByte), sizeof(H5FDdsmByte), MPI_INFO_NULL, winComm, &this->Win) != MPI_SUCCESS){
       H5FDdsmError("Id = " << this->Id << " MPI_Win_create failed");
       return(H5FD_DSM_FAIL);
     }

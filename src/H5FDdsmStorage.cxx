@@ -50,17 +50,17 @@ H5FDdsmStorage::~H5FDdsmStorage()
   }
 }
 //----------------------------------------------------------------------------
-H5FDdsmPointer H5FDdsmStorage::GetDataPointer(H5FDdsmInt64 Index)
+H5FDdsmPointer H5FDdsmStorage::GetDataPointer(H5FDdsmAddr Addr)
 {
   H5FDdsmByte  *pointer;
   pointer = (H5FDdsmByte*) this->DataPointer;
-  pointer += sizeof(H5FDdsmInt64) * Index;
+  pointer += sizeof(H5FDdsmAddr) * Addr;
   return((H5FDdsmPointer)pointer);
 }
 //----------------------------------------------------------------------------
-H5FDdsmInt32  H5FDdsmStorage::SetNumberOfElements(H5FDdsmInt64 Length, H5FDdsmBoolean AllowAllocate)
+H5FDdsmInt32  H5FDdsmStorage::SetLength(H5FDdsmUInt64 Length, H5FDdsmBoolean AllowAllocate)
 {
-  this->NumberOfElements = Length;
+  this->Length = Length;
   if (AllowAllocate) {
     if (this->Allocate() != H5FD_DSM_SUCCESS) {
       return(H5FD_DSM_FAIL);
@@ -77,7 +77,7 @@ H5FDdsmInt32 H5FDdsmStorage::Allocate()
       MPI_Free_mem(this->DataPointer);
       this->DataPointer = NULL;
     }
-    err = MPI_Alloc_mem(this->NumberOfElements*sizeof(H5FDdsmInt8), MPI_INFO_NULL, &this->DataPointer);
+    err = MPI_Alloc_mem(this->Length*sizeof(H5FDdsmByte), MPI_INFO_NULL, &this->DataPointer);
     if ((this->DataPointer == NULL) || err) {
       int errclass;
       // An error of MPI_ERR_NO_MEM is allowed
@@ -85,21 +85,18 @@ H5FDdsmInt32 H5FDdsmStorage::Allocate()
       if (errclass == MPI_ERR_NO_MEM) {
         H5FDdsmError("MPI_Alloc_mem failed, not enough memory");
       }
-      H5FDdsmError("Allocation Failed, unable to allocate "
-          << this->NumberOfElements);
+      H5FDdsmError("Allocation Failed, unable to allocate " << this->Length);
       return(H5FD_DSM_FAIL);
     }
   } else {
     if (this->DataPointer) {
       // try to reallocate
-      this->DataPointer = realloc(this->DataPointer,
-          this->NumberOfElements*sizeof(H5FDdsmInt8));
+      this->DataPointer = realloc(this->DataPointer, this->Length*sizeof(H5FDdsmByte));
     } else {
-      this->DataPointer = calloc(this->NumberOfElements, sizeof(H5FDdsmInt8));
+      this->DataPointer = calloc(this->Length, sizeof(H5FDdsmByte));
     }
     if (this->DataPointer == NULL) {
-      H5FDdsmError("Allocation Failed, unable to allocate "
-          << this->NumberOfElements);
+      H5FDdsmError("Allocation Failed, unable to allocate " << this->Length);
       perror("Alloc :" );
       return(H5FD_DSM_FAIL);
     }

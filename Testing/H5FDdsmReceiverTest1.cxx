@@ -11,10 +11,10 @@ int main (int argc, char* argv[])
 {
   H5FDdsmInt32 provided, rank, size;
   MPI_Comm dcomm = MPI_COMM_WORLD;
-  H5FDdsmInt64 dsmSize = 16; // default MB
+  H5FDdsmUInt32 dsmSize = 16; // default MB
   H5FDdsmInt32 commType = H5FD_DSM_COMM_SOCKET;
   H5FDdsmInt32 dsmType = H5FD_DSM_TYPE_UNIFORM;
-  H5FDdsmInt64 dsmBlockSize = 1024;
+  H5FDdsmUInt64 dsmBlockSize = 1024;
   H5FDdsmBoolean staticInterComm = false;
 
   //
@@ -108,7 +108,7 @@ int main (int argc, char* argv[])
   }
   //
   H5FDdsmFloat64 totalMB = dsmManager->GetDSMHandle()->GetTotalLength()/(1024*1024);
-  H5FDdsmInt64 serversize = (dsmManager->GetDSMHandle()->GetEndServerId() -
+  H5FDdsmUInt32 serversize = (dsmManager->GetDSMHandle()->GetEndServerId() -
       dsmManager->GetDSMHandle()->GetStartServerId() + 1);
   if (rank == 0) {
     std::cout << "DSM server memory size is : " << totalMB << " MB" << std::endl;

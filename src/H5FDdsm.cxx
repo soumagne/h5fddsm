@@ -238,20 +238,20 @@ static const H5FD_class_mpi_t H5FD_dsm_g = {
 H5FDdsmInt32
 DsmUpdateEntry(H5FD_dsm_t *file)
 {
-  H5FDdsmInt64 addr;
+  H5FDdsmAddr  addr;
   H5FDdsmEntry entry;
 
   PRINT_INFO("DsmUpdateEntry()");
 
   if (!file->DsmBuffer) return (H5FD_DSM_FAIL);
 
-  file->end = MAX((H5FDdsmInt64)(file->start + file->eof), (H5FDdsmInt64)file->end);
+  file->end = MAX((file->start + file->eof), file->end);
   file->eof = file->end - file->start;
 
   if (!file->DsmBuffer->GetIsReadOnly()) {
     entry.start = file->start;
     entry.end = file->end;
-    addr = file->DsmBuffer->GetTotalLength() - sizeof(H5FDdsmMetaData);
+    addr = (H5FDdsmAddr) (file->DsmBuffer->GetTotalLength() - sizeof(H5FDdsmMetaData));
 
     PRINT_INFO("DsmUpdateEntry start " <<
         file->start <<
@@ -272,14 +272,14 @@ DsmUpdateEntry(H5FD_dsm_t *file)
 H5FDdsmInt32
 DsmGetEntry(H5FD_dsm_t *file)
 {
-  H5FDdsmInt64 addr;
+  H5FDdsmAddr  addr;
   H5FDdsmEntry entry;
 
   PRINT_INFO("DsmGetEntry()");
 
   if (!file->DsmBuffer) return (H5FD_DSM_FAIL);
 
-  addr = file->DsmBuffer->GetTotalLength() - sizeof(H5FDdsmMetaData);
+  addr = (H5FDdsmAddr) (file->DsmBuffer->GetTotalLength() - sizeof(H5FDdsmMetaData));
 
   // Get is done by every process so we can do independent reads (in parallel by blocks)
   // using the driver as a serial driver

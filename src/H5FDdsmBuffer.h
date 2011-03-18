@@ -140,11 +140,11 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     H5FDdsmInt32   StartRemoteService();
     H5FDdsmInt32   EndRemoteService();
 
-    H5FDdsmInt32   Put(H5FDdsmInt64 Address, H5FDdsmInt64 Length, void *Data);
-    H5FDdsmInt32   Get(H5FDdsmInt64 Address, H5FDdsmInt64 Length, void *Data);
+    H5FDdsmInt32   Put(H5FDdsmAddr Address, H5FDdsmUInt64 Length, void *Data);
+    H5FDdsmInt32   Get(H5FDdsmAddr Address, H5FDdsmUInt64 Length, void *Data);
 
-    H5FDdsmInt32   Acquire(H5FDdsmInt64 Index);
-    H5FDdsmInt32   Release(H5FDdsmInt64 Index);
+    H5FDdsmInt32   Acquire(H5FDdsmInt32 Index);
+    H5FDdsmInt32   Release(H5FDdsmInt32 Index);
 
     H5FDdsmInt32   RequestLockAcquire();
     H5FDdsmInt32   RequestLockRelease();

@@ -42,8 +42,8 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     // Description:
     // Set/Get the size of the buffer to be reserved on this process
     // the DSM total size will be the sum of the local sizes from all processes
-    H5FDdsmSetValueMacro(LocalBufferSizeMBytes,H5FDdsmInt64);
-    H5FDdsmGetValueMacro(LocalBufferSizeMBytes,H5FDdsmInt64);
+    H5FDdsmSetValueMacro(LocalBufferSizeMBytes, H5FDdsmUInt32);
+    H5FDdsmGetValueMacro(LocalBufferSizeMBytes, H5FDdsmUInt32);
 
     // Description:
     // Set/Get DsmIsServer info
@@ -58,8 +58,8 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
 
     // Description:
     // Set/Get the DSM block length when using H5FD_DSM_TYPE_BLOCK_CYCLIC
-    H5FDdsmSetValueMacro(DsmBlockLength, H5FDdsmInt64);
-    H5FDdsmGetValueMacro(DsmBlockLength, H5FDdsmInt64);
+    H5FDdsmSetValueMacro(DsmBlockLength, H5FDdsmUInt64);
+    H5FDdsmGetValueMacro(DsmBlockLength, H5FDdsmUInt64);
 
     // Description:
     // Set/Get the interprocess communication subsystem
@@ -177,9 +177,9 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     //
     // Internal Variables
     //
-    H5FDdsmInt32   UpdatePiece;
-    H5FDdsmInt32   UpdateNumPieces;
-    H5FDdsmInt64   LocalBufferSizeMBytes;
+    H5FDdsmInt32    UpdatePiece;
+    H5FDdsmInt32    UpdateNumPieces;
+    H5FDdsmUInt32   LocalBufferSizeMBytes;
 
     MPI_Comm        Communicator;
     H5FDdsmBuffer  *DSMBuffer;
@@ -187,7 +187,7 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     //
     H5FDdsmBoolean  DsmIsServer;
     H5FDdsmInt32    DsmType;
-    H5FDdsmInt64    DsmBlockLength;
+    H5FDdsmUInt64   DsmBlockLength;
     H5FDdsmInt32    DsmCommType;
     H5FDdsmBoolean  DsmUseStaticInterComm;
     H5FDdsmString   ServerHostName;

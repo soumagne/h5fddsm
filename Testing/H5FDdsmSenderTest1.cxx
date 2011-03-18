@@ -38,7 +38,7 @@ H5FDdsmConstString ArrayNames = "Position";
 /*******************************************************************/
 void write_ecrit_particule(
     EcritParticuleHDFTesting *buf, H5FDdsmConstString filename,
-    H5FDdsmInt64 len,  H5FDdsmInt64 start, H5FDdsmInt64 total, H5FDdsmBuffer *dsmBuffer)
+    H5FDdsmUInt64 len,  H5FDdsmUInt64 start, H5FDdsmUInt64 total, H5FDdsmBuffer *dsmBuffer)
 {
   hid_t      file_id, group_id, dataset_id, xfer_plist_id;
   hid_t      file_space_id, mem_space_id;
@@ -126,11 +126,11 @@ void freeBuffer(EcritParticuleHDFTesting *buffer) {
   if ((*buffer).Ddata) free((*buffer).Ddata);
 }
 //----------------------------------------------------------------------------
-H5FDdsmFloat64 TestParticleWrite(H5FDdsmConstString filename, H5FDdsmInt64 N, H5FDdsmInt32 mpiId, H5FDdsmInt32 mpiNum,
+H5FDdsmFloat64 TestParticleWrite(H5FDdsmConstString filename, H5FDdsmUInt64 N, H5FDdsmInt32 mpiId, H5FDdsmInt32 mpiNum,
     MPI_Comm dcomm, H5FDdsmBuffer *dsmBuffer)
 {
   EcritParticuleHDFTesting WriteBuffer;
-  H5FDdsmInt64 i, start, total;
+  H5FDdsmUInt64 i, start, total;
   H5FDdsmFloat64 *doublearray;
 
   start = N*mpiId;
@@ -241,7 +241,7 @@ int main(int argc, char **argv)
   // Get info from remote server
   //
   remoteMB = dsmBuffer->GetTotalLength()/(1024.0*1024.0);
-  H5FDdsmInt32 numServers = dsmBuffer->GetEndServerId()-dsmBuffer->GetStartServerId()+1;
+  H5FDdsmUInt32 numServers = dsmBuffer->GetEndServerId()-dsmBuffer->GetStartServerId()+1;
   if (rank == 0) {
     std::cout << "DSM server memory size is : " << remoteMB << " MB" << std::endl;
     std::cout << "DSM server process count  : " << numServers << std::endl;
@@ -255,7 +255,7 @@ int main(int argc, char **argv)
       std::cout << "Writing to Disk" << std::endl;
     }
     for (int loop=0; loop<LOOPS; loop++) {
-      H5FDdsmInt64 numParticles = 1024*1024*(remoteMB-1)/(sizeof(H5FDdsmFloat64)*3.0*nlocalprocs);
+      H5FDdsmUInt64 numParticles = 1024*1024*(remoteMB-1)/(sizeof(H5FDdsmFloat64)*3.0*nlocalprocs);
       // double numParticles = Lengths[length];
 
       Bytes       = numParticles*sizeof(H5FDdsmFloat64)*3.0; // 3 = {x,y,z}

@@ -83,12 +83,12 @@ H5FDdsmInt32 H5FDdsmSteerer::SetCurrentCommand(H5FDdsmConstString cmd)
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmSteerer::UpdateSteeringCommands()
 {
-  H5FDdsmInt64 addr;
+  H5FDdsmAddr addr;
   H5FDdsmMetaData metadata;
 
   H5FDdsmDebug("Sending steering command " << this->CurrentCommand);
   strcpy(metadata.steering_cmd, (H5FDdsmConstString)this->CurrentCommand);
-  addr = this->DsmBuffer->GetTotalLength() - sizeof(metadata) + sizeof(metadata.entry);
+  addr = (H5FDdsmAddr) (this->DsmBuffer->GetTotalLength() - sizeof(metadata) + sizeof(metadata.entry));
   // Only one of the processes writing to the DSM needs to write file metadata
   // but we must be careful that all the processes keep the metadata synchronized
   if (this->DsmBuffer->GetComm()->GetId() == 0) {
@@ -101,11 +101,11 @@ H5FDdsmInt32 H5FDdsmSteerer::UpdateSteeringCommands()
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmSteerer::GetSteeringCommands()
 {
-  H5FDdsmInt64 addr;
+  H5FDdsmAddr addr;
   H5FDdsmMetaData metadata;
   MPI_Comm comm = MPI_COMM_NULL;
 
-  addr = this->DsmBuffer->GetTotalLength() - sizeof(metadata) + sizeof(metadata.entry);
+  addr = (H5FDdsmAddr) (this->DsmBuffer->GetTotalLength() - sizeof(metadata) + sizeof(metadata.entry));
 
   if (this->DsmBuffer->GetComm()->GetId() == 0) {
     if (this->DsmBuffer->Get(addr, sizeof(metadata.steering_cmd), metadata.steering_cmd) != H5FD_DSM_SUCCESS) {
@@ -137,7 +137,7 @@ void H5FDdsmSteerer::SetDisabledObject(H5FDdsmConstString objectName)
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmSteerer::UpdateDisabledObjects()
 {
-  H5FDdsmInt64 addr;
+  H5FDdsmAddr addr;
   H5FDdsmMetaData metadata;
   int index = 0;
 
@@ -151,8 +151,8 @@ H5FDdsmInt32 H5FDdsmSteerer::UpdateDisabledObjects()
   }
   metadata.disabled_objects.number_of_objects = index;
 
-  addr = this->DsmBuffer->GetTotalLength() - sizeof(metadata) + sizeof(metadata.entry)
-      + sizeof(metadata.steering_cmd);
+  addr = (H5FDdsmAddr) (this->DsmBuffer->GetTotalLength() - sizeof(metadata) + sizeof(metadata.entry)
+      + sizeof(metadata.steering_cmd));
   // Only one of the processes writing to the DSM needs to write file metadata
   // but we must be careful that all the processes keep the metadata synchronized
   if (this->DsmBuffer->GetComm()->GetId() == 0) {
@@ -172,12 +172,12 @@ H5FDdsmInt32 H5FDdsmSteerer::UpdateDisabledObjects()
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmSteerer::GetDisabledObjects()
 {
-  H5FDdsmInt64 addr;
+  H5FDdsmAddr addr;
   H5FDdsmMetaData metadata;
   MPI_Comm comm = MPI_COMM_NULL;
 
-  addr = this->DsmBuffer->GetTotalLength() - sizeof(metadata) + sizeof(metadata.entry)
-      + sizeof(metadata.steering_cmd);
+  addr = (H5FDdsmAddr) (this->DsmBuffer->GetTotalLength() - sizeof(metadata) + sizeof(metadata.entry)
+      + sizeof(metadata.steering_cmd));
 
   if (this->DsmBuffer->GetComm()->GetId() == 0) {
     if (this->DsmBuffer->Get(addr, sizeof(metadata.disabled_objects.number_of_objects),

@@ -229,9 +229,9 @@ H5FDdsmCommSocket::ClosePort()
 }
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmCommSocket::RemoteCommAccept(void *storagePointer, H5FDdsmInt64 storageSize)
+H5FDdsmCommSocket::RemoteCommAccept()
 {
-  if (H5FDdsmComm::RemoteCommAccept(storagePointer, storageSize) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+  if (H5FDdsmComm::RemoteCommAccept() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
   // TODO Needed if we want to insert a timeout
   // if (this->MasterSocket->Select(100) <= 0 ) return(H5FD_DSM_FAIL);
@@ -398,7 +398,7 @@ H5FDdsmCommSocket::RemoteCommSendXML(H5FDdsmString file, H5FDdsmInt32 dest)
 
     if (this->CommChannel == H5FD_DSM_COMM_CHANNEL_REMOTE) {
       this->InterComm[dest]->Send(&length, sizeof(H5FDdsmInt32));
-      this->InterComm[dest]->Send(file, sizeof(H5FDdsmChar)*length);
+      this->InterComm[dest]->Send(file, sizeof(H5FDdsmByte)*length);
     }
     else {
       if (MPI_Send(file, length, MPI_CHAR, dest, H5FD_DSM_XML_TAG, this->Comm) != MPI_SUCCESS){
@@ -421,7 +421,7 @@ H5FDdsmCommSocket::RemoteCommRecvXML(H5FDdsmString *file)
   if (this->CommChannel == H5FD_DSM_COMM_CHANNEL_REMOTE) {
     this->InterComm[0]->Receive(&length, sizeof(H5FDdsmInt32));
     *file = new char[length];
-    this->InterComm[0]->Receive(*file, sizeof(H5FDdsmChar)*length);
+    this->InterComm[0]->Receive(*file, sizeof(H5FDdsmByte)*length);
   }
   else {
     MPI_Status status;

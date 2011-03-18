@@ -64,25 +64,33 @@
 //------------------------------------------------------------------------------
 #ifdef H5_HAVE_STDINT_H
   #include <stdint.h>
-    typedef int64_t H5FDdsmInt64;
-    typedef int32_t H5FDdsmInt32;
-    typedef char    H5FDdsmByte;
-    typedef int8_t  H5FDdsmInt8;
+    typedef int64_t  H5FDdsmInt64;
+    typedef int32_t  H5FDdsmInt32;
+    typedef int8_t   H5FDdsmInt8;
+    typedef uint64_t H5FDdsmUInt64;
+    typedef uint32_t H5FDdsmUInt32;
+    typedef uint8_t  H5FDdsmUInt8;
 #else
   #ifdef _MSC_VER
     typedef signed   __int64 H5FDdsmInt64;
     typedef signed   __int32 H5FDdsmInt32;
-    typedef char             H5FDdsmByte;
     typedef signed   __int8  H5FDdsmInt8;
+    typedef unsigned __int64 H5FDdsmUInt64;
+    typedef unsigned __int32 H5FDdsmUInt32;
+    typedef unsigned __int8  H5FDdsmUInt8;
   #endif
 #endif
 
+typedef char          H5FDdsmByte;
 typedef const char*   H5FDdsmConstString;
 typedef char*         H5FDdsmString;
 typedef H5FDdsmInt32  H5FDdsmBoolean;
+typedef float         H5FDdsmFloat32;
 typedef double        H5FDdsmFloat64;
 typedef void*         H5FDdsmPointer;
-typedef unsigned char H5FDdsmChar;
+typedef H5FDdsmUInt64 H5FDdsmAddr;
+
+#define H5FD_DSM_INT32_MAX (2147483647)
 
 #define H5FD_DSM_SUCCESS  1
 #define H5FD_DSM_FAIL    -1
