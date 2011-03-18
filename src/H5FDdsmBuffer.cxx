@@ -734,7 +734,7 @@ H5FDdsmBuffer::Put(H5FDdsmAddr Address, H5FDdsmUInt64 aLength, void *Data){
   H5FDdsmInt32   who, MyId = this->Comm->GetId();
   H5FDdsmAddr    astart, aend;
   H5FDdsmInt32   len;
-  H5FDdsmUInt32  ulen;
+  H5FDdsmUInt64  ulen;
   H5FDdsmByte   *datap = (H5FDdsmByte *)Data;
 
   while(aLength){
@@ -745,7 +745,7 @@ H5FDdsmBuffer::Put(H5FDdsmAddr Address, H5FDdsmUInt64 aLength, void *Data){
       return(H5FD_DSM_FAIL);
     }
     this->GetAddressRangeForId(who, &astart, &aend, Address);
-    ulen = static_cast<H5FDdsmUInt32>min(aLength, aend - Address + 1);
+    ulen = min(aLength, aend - Address + 1);
     // Because MPI uses only send/recv int size packets
     len = static_cast<H5FDdsmInt32>(min(H5FD_DSM_INT32_MAX, ulen));
     H5FDdsmDebug("Put " << len << " Bytes to Address " << Address << " Id = " << who);
@@ -789,7 +789,7 @@ H5FDdsmBuffer::Get(H5FDdsmAddr Address, H5FDdsmUInt64 aLength, void *Data){
   H5FDdsmInt32   who, MyId = this->Comm->GetId();
   H5FDdsmAddr    astart, aend;
   H5FDdsmInt32   len;
-  H5FDdsmUInt32  ulen;
+  H5FDdsmUInt64  ulen;
   H5FDdsmByte   *datap = (H5FDdsmByte *)Data;
 
   while(aLength){
@@ -799,7 +799,7 @@ H5FDdsmBuffer::Get(H5FDdsmAddr Address, H5FDdsmUInt64 aLength, void *Data){
       return(H5FD_DSM_FAIL);
     }
     this->GetAddressRangeForId(who, &astart, &aend, Address);
-    ulen = static_cast<H5FDdsmUInt32>(min(aLength, aend - Address + 1));
+    ulen = min(aLength, aend - Address + 1);
     // Because MPI uses only send/recv int size packets
     len = static_cast<H5FDdsmInt32>(min(H5FD_DSM_INT32_MAX, ulen));
     H5FDdsmDebug("Get " << len << " Bytes from Address " << Address << " Id = " << who);
