@@ -142,6 +142,7 @@ typedef struct H5FD_dsm_t
 
 //--------------------------------------------------------------------------
 // Driver-specific file access properties
+// TODO update structure
 typedef struct H5FD_dsm_fapl_t
 {
   size_t increment; // how much to grow memory
@@ -1071,7 +1072,7 @@ H5FD_dsm_read(H5FD_t *_file, H5FD_mem_t UNUSED type, hid_t UNUSED dxpl_id,
     temp_nbytes = file->eof - addr;
     H5_CHECK_OVERFLOW(temp_nbytes,hsize_t,size_t);
     nbytes = MIN(size,(size_t)temp_nbytes);
-    if (file->DsmBuffer->Get(file->start + addr, nbytes, buf) <= 0) {
+    if (file->DsmBuffer->Get(file->start + addr, nbytes, buf) != H5FD_DSM_SUCCESS) {
       HGOTO_ERROR(H5E_VFL, H5E_READERROR, FAIL, "can't read from DSM");
     }
     else {
@@ -1149,7 +1150,7 @@ H5FD_dsm_write(H5FD_t *_file, H5FD_mem_t UNUSED type, hid_t UNUSED dxpl_id,
   }
 
   // Write from BUF to DSM
-  if (file->DsmBuffer->Put(file->start + addr, size, (void *) buf) <= 0)
+  if (file->DsmBuffer->Put(file->start + addr, size, (void *) buf) != H5FD_DSM_SUCCESS)
     HGOTO_ERROR(H5E_VFL, H5E_WRITEERROR, FAIL, "can't write to DSM");
 
   file->dirty = TRUE;
