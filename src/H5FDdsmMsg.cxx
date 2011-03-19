@@ -73,5 +73,5 @@ const char *H5FDdsmTagToString(int tag) {
   H5FD_DSM_TAG_MACRO(H5FD_DSM_EXCHANGE_TAG, tag)
   H5FD_DSM_TAG_MACRO(H5FD_DSM_XML_TAG, tag)
   return "TAG UNDEFINED/UNRECOGNIZED";
-};
+}
 

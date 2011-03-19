@@ -447,7 +447,7 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
   // H5FD_DSM_SEMA_ACQUIRE
   case H5FD_DSM_SEMA_ACQUIRE:
     H5FDdsmDebug("Sema " << Address << " Acquire");
-    if ((Address < 0) || (Address >= H5FD_DSM_MAX_LOCKS)){
+    if (Address >= H5FD_DSM_MAX_LOCKS) {
       H5FDdsmError("Invalid Sema Request " << Address);
       value = H5FD_DSM_FAIL;
     }else{
@@ -470,7 +470,7 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
   // H5FD_DSM_SEMA_RELEASE
   case H5FD_DSM_SEMA_RELEASE:
     H5FDdsmDebug("Sema " << Address << " Release");
-    if ((Address < 0) || (Address >= H5FD_DSM_MAX_LOCKS)){
+    if (Address >= H5FD_DSM_MAX_LOCKS){
       H5FDdsmError("Invalid Sema Request " << Address);
       value = H5FD_DSM_FAIL;
     }else{
@@ -534,11 +534,7 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
   case H5FD_DSM_ACCEPT:
     if (!this->IsConnected) {
       this->IsConnecting = true;
-      if (this->Comm->GetCommType() == H5FD_DSM_COMM_SOCKET) {
-        this->Comm->RemoteCommAccept();
-      } else {
-        this->Comm->RemoteCommAccept(this->DataPointer, this->Length);
-      }
+      this->Comm->RemoteCommAccept(this->DataPointer, this->Length);
       this->IsConnecting = false;
       // send DSM information
       this->SendInfo();

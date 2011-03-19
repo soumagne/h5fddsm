@@ -141,7 +141,7 @@ class H5FDdsm_EXPORT H5FDdsmDriver : public H5FDdsmObject {
     H5FDdsmSetValueMacro(Comm, H5FDdsmComm *);
 
     //! Address Range
-    H5FDdsmInt32 GetAddressRangeForId(H5FDdsmInt32 Id, H5FDdsmAddr *Start, H5FDdsmAddr *End, H5FDdsmAddr Address=-1);
+    H5FDdsmInt32 GetAddressRangeForId(H5FDdsmInt32 Id, H5FDdsmAddr *Start, H5FDdsmAddr *End, H5FDdsmAddr Address);
 
     //! Configure the system. Set the Comm and ServerIds
     H5FDdsmInt32   ConfigureUniform(H5FDdsmComm *Comm, H5FDdsmUInt64 Length, H5FDdsmInt32 StartId=-1, H5FDdsmInt32 EndId=-1);

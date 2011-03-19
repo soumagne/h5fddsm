@@ -229,9 +229,9 @@ H5FDdsmCommSocket::ClosePort()
 }
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmCommSocket::RemoteCommAccept()
+H5FDdsmCommSocket::RemoteCommAccept(void *storagePointer, H5FDdsmUInt64 storageSize)
 {
-  if (H5FDdsmComm::RemoteCommAccept() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+  if (H5FDdsmComm::RemoteCommAccept(storagePointer, storageSize) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
   // TODO Needed if we want to insert a timeout
   // if (this->MasterSocket->Select(100) <= 0 ) return(H5FD_DSM_FAIL);
