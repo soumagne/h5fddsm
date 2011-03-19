@@ -107,7 +107,7 @@ int main (int argc, char* argv[])
     dsmManager->PublishDSM();
   }
   //
-  H5FDdsmFloat64 totalMB = dsmManager->GetDSMHandle()->GetTotalLength()/(1024*1024);
+  H5FDdsmFloat64 totalMB = (H5FDdsmFloat64) (dsmManager->GetDSMHandle()->GetTotalLength()/(1024*1024));
   H5FDdsmUInt32 serversize = (dsmManager->GetDSMHandle()->GetEndServerId() -
       dsmManager->GetDSMHandle()->GetStartServerId() + 1);
   if (rank == 0) {

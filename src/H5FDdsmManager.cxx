@@ -581,8 +581,8 @@ H5FDdsmInt32 H5FDdsmManager::ReadDSMConfigFile()
     std::string port = config.GetValue("DSM_BASE_PORT",   "Comm", configPath);
 
     // General settings
-    if (mode == "server" && atoll(size.c_str())) {
-      this->SetLocalBufferSizeMBytes(atoll(size.c_str()));
+    if (mode == "server" && atoi(size.c_str())) {
+      this->SetLocalBufferSizeMBytes(atoi(size.c_str()));
       this->SetDsmIsServer(true);
     } else {
       this->SetDsmIsServer(false);

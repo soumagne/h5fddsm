@@ -255,9 +255,7 @@ int main(int argc, char **argv)
       std::cout << "Writing to Disk" << std::endl;
     }
     for (int loop=0; loop<LOOPS; loop++) {
-      H5FDdsmUInt64 numParticles = 1024*1024*(remoteMB-1)/(sizeof(H5FDdsmFloat64)*3.0*nlocalprocs);
-      // double numParticles = Lengths[length];
-
+      H5FDdsmUInt64 numParticles = (H5FDdsmUInt64) (1024*1024*(remoteMB-1)/(sizeof(H5FDdsmFloat64)*3.0*nlocalprocs));
       Bytes       = numParticles*sizeof(H5FDdsmFloat64)*3.0; // 3 = {x,y,z}
       SendBytes   = Bytes*nlocalprocs;
       MBytes      = SendBytes/(1024.0*1024.0);
