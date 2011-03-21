@@ -54,6 +54,7 @@ IF (NOT H5FD_DSM_EXTERNALLY_CONFIGURED)
   SET (CMAKE_Fortran_MODULE_DIRECTORY
       ${PROJECT_BINARY_DIR}/bin/fortran CACHE PATH "Single Directory for all fortran modules."
   )
+  SET(H5FD_DSM_LIB_DEPENDENCIES hdf5)
 ENDIF (NOT H5FD_DSM_EXTERNALLY_CONFIGURED)
 
 #-----------------------------------------------------------------------------
@@ -310,7 +311,7 @@ INSTALL (
   EXPORT
     ${H5FD_DSM_EXPORTED_TARGETS}
   DESTINATION
-    ${H5FD_DSM_INSTALL_DATA_DIR}/cmake/h5fddsm
+    ${H5FD_DSM_INSTALL_DATA_DIR}/cmake/h5fddsm-${H5FDdsm_PACKAGE_VERSION}
   FILE
     h5fddsm-targets.cmake
 )
@@ -318,12 +319,14 @@ INSTALL (
 #-----------------------------------------------------------------------------
 # Export all exported targets to the build tree for use by parent project
 #-----------------------------------------------------------------------------
+IF (NOT H5FD_DSM_EXTERNALLY_CONFIGURED)
 EXPORT (
   TARGETS
-    H5FDdsm ${H5FD_DSM_LIB_DEPENDENCIES}
+    H5FDdsm
   FILE
     h5fddsm-targets.cmake
 )
+ENDIF (NOT H5FD_DSM_EXTERNALLY_CONFIGURED)
  
 #-----------------------------------------------------------------------------
 # Configure the HDF5-config.cmake file for the build directory
@@ -349,7 +352,7 @@ INSTALL (
   FILES
     ${H5FDdsm_BINARY_DIR}/CMakeFiles/h5fddsm-config.cmake
   DESTINATION
-    ${H5FD_DSM_INSTALL_DATA_DIR}/cmake/h5fddsm
+    ${H5FD_DSM_INSTALL_DATA_DIR}/cmake/h5fddsm-${H5FDdsm_PACKAGE_VERSION}
 )
 
 #-----------------------------------------------------------------------------
@@ -363,7 +366,7 @@ INSTALL (
   FILES
     ${H5FDdsm_BINARY_DIR}/CMakeFiles/h5fddsm-config-version.cmake
   DESTINATION
-    ${H5FD_DSM_INSTALL_DATA_DIR}/cmake/h5fddsm
+    ${H5FD_DSM_INSTALL_DATA_DIR}/cmake/h5fddsm-${H5FDdsm_PACKAGE_VERSION}
 )
 
 #-----------------------------------------------------------------------------
