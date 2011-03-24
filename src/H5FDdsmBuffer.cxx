@@ -52,7 +52,9 @@
 #include "H5FDdsmBuffer.h"
 #include "H5FDdsmComm.h"
 #include "H5FDdsmMsg.h"
+#ifdef H5FD_DSM_HAVE_STEERING
 #include "H5FDdsmSteerer.h"
+#endif
 
 #include <queue>
 
@@ -185,8 +187,10 @@ H5FDdsmBuffer::H5FDdsmBuffer() {
 
   this->XMLDescription = NULL;
 
+#ifdef H5FD_DSM_HAVE_STEERING
   // Initialize steerer
   this->Steerer = new H5FDdsmSteerer(this);
+#endif
 }
 //----------------------------------------------------------------------------
 H5FDdsmBuffer::~H5FDdsmBuffer() {
@@ -209,7 +213,9 @@ H5FDdsmBuffer::~H5FDdsmBuffer() {
 #endif
 
   if (this->XMLDescription) delete[] this->XMLDescription;
+#ifdef H5FD_DSM_HAVE_STEERING
   if (this->Steerer) delete this->Steerer;
+#endif
 }
 //----------------------------------------------------------------------------
 H5FDdsmInt32
@@ -492,6 +498,7 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
   // H5FD_DSM_OPCODE_DONE
   case H5FD_DSM_OPCODE_DONE:
     break;
+#ifdef H5FD_DSM_HAVE_STEERING
   // H5FD_DSM_COMM_SWITCH
   case H5FD_DSM_COMM_SWITCH:
     if (this->Comm->GetCommChannel() == H5FD_DSM_COMM_CHANNEL_LOCAL) {
@@ -521,15 +528,11 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
 #endif
       this->Comm->Barrier();
       if (this->IsConnected) {
-        if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
-          this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_REMOTE);
-          this->Comm->RemoteCommSync();
-        } else {
           if (!this->RemoteServiceThreadPtr) this->StartRemoteService();
-        }
       }
     }
     break;
+#endif
   // H5FD_DSM_ACCEPT
   case H5FD_DSM_ACCEPT:
     if (!this->IsConnected) {
@@ -544,7 +547,12 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
       this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_REMOTE);
       this->Comm->RemoteCommSync();
     } else {
+#ifdef H5FD_DSM_HAVE_STEERING
       if (!this->RemoteServiceThreadPtr) this->StartRemoteService();
+#else
+      this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_REMOTE);
+      this->Comm->Barrier();
+#endif
     }
     break;
   // H5FD_DSM_DISCONNECT
@@ -571,7 +579,11 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
       // When update ready is found, the server keeps the lock
       // and only releases it when the update is over
       this->ReleaseLockOnClose = false;
+#ifdef H5FD_DSM_HAVE_STEERING
       if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) this->IsLocked = true;
+#else
+      this->IsLocked = true;
+#endif
       H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "Update level " <<
           this->UpdateLevel << ", Switched to Local channel");
       this->Comm->Barrier();
@@ -926,7 +938,7 @@ H5FDdsmBuffer::Release(H5FDdsmInt32 Index){
 //----------------------------------------------------------------------------
 H5FDdsmInt32
 H5FDdsmBuffer::RequestLockAcquire() {
-  H5FDdsmInt32 who, status = H5FD_DSM_SUCCESS;
+  H5FDdsmInt32 status = H5FD_DSM_SUCCESS;
 
   if (this->IsServer) {
 #ifdef _WIN32
@@ -940,10 +952,14 @@ H5FDdsmBuffer::RequestLockAcquire() {
       if (this->IsSyncRequired) this->Comm->RemoteCommSync();
       this->IsSyncRequired = false;
     } else {
-      for (who = this->StartServerId ; who <= this->EndServerId ; who++) {
+#ifdef H5FD_DSM_HAVE_STEERING
+      for (H5FDdsmInt32 who = this->StartServerId ; who <= this->EndServerId ; who++) {
         H5FDdsmDebug("Send request LOCK acquire to " << who);
         status = this->SendCommandHeader(H5FD_DSM_LOCK_ACQUIRE, who, 0, 0);
       }
+#else
+      this->IsSyncRequired = false;
+#endif
     }
   }
 
@@ -959,7 +975,7 @@ H5FDdsmBuffer::RequestLockAcquire() {
 //----------------------------------------------------------------------------
 H5FDdsmInt32
 H5FDdsmBuffer::RequestLockRelease() {
-  H5FDdsmInt32 who, status = H5FD_DSM_SUCCESS;
+  H5FDdsmInt32 status = H5FD_DSM_SUCCESS;
 
   if (!this->IsLocked) {
     H5FDdsmLockError("already released");
@@ -978,17 +994,23 @@ H5FDdsmBuffer::RequestLockRelease() {
       if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
         this->RequestAccept();
       } else {
+#ifdef H5FD_DSM_HAVE_STEERING
         if (!this->RemoteServiceThreadPtr) this->StartRemoteService();
+#else
+        this->RequestAccept();
+#endif
       }
     }
   } else {
     if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
       // Nothing for now
     } else {
-      for (who = this->StartServerId ; who <= this->EndServerId ; who++) {
+#ifdef H5FD_DSM_HAVE_STEERING
+      for (H5FDdsmInt32 who = this->StartServerId ; who <= this->EndServerId ; who++) {
         H5FDdsmDebug("Send request LOCK release to " << who);
         status = this->SendCommandHeader(H5FD_DSM_LOCK_RELEASE, who, 0, 0);
       }
+#endif
     }
   }
 
@@ -1027,7 +1049,11 @@ H5FDdsmBuffer::RequestServerUpdate() {
   H5FDdsmInt32 who, status = H5FD_DSM_SUCCESS;
 
   // On next lock acquire, a synchronization is required
+#ifdef H5FD_DSM_HAVE_STEERING
   if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) this->IsSyncRequired = true;
+#else
+  this->IsSyncRequired = true;
+#endif
 
   // No mutex here, only informal since it's the client
   if (!this->IsLocked) {

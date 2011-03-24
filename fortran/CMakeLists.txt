@@ -29,8 +29,14 @@ INCLUDE_DIRECTORIES(
 #-----------------------------------------------------------------------------
 SET(H5FDdsm_F90_C_STUB_SRCS
   H5FDdsmf.c
-  H5FDdsmSteeringf.c
 )
+
+IF (H5FD_DSM_BUILD_STEERING)
+  SET(H5FDdsm_F90_C_STUB_SRCS
+    H5FDdsmSteeringf.c
+    ${H5FDdsm_F90_C_STUB_SRCS}
+  )
+ENDIF (H5FD_DSM_BUILD_STEERING)
 
 ADD_LIBRARY(H5FDdsm_f90CStub
   ${H5FDdsm_F90_C_STUB_SRCS}
@@ -50,8 +56,14 @@ SET_LIB_OPTIONS(H5FDdsm_f90CStub)
 SET(H5FDdsm_FORTRAN_SRC
   H5FDdsmf90global.f90
   H5FDdsmff.f90
-  H5FDdsmSteeringff.f90
 )
+
+IF (H5FD_DSM_BUILD_STEERING)
+  SET(H5FDdsm_FORTRAN_SRC
+    H5FDdsmSteeringff.f90
+    ${H5FDdsm_FORTRAN_SRC}
+  )
+ENDIF (H5FD_DSM_BUILD_STEERING)
 
 ADD_LIBRARY(H5FDdsm_fortran
   ${H5FDdsm_FORTRAN_SRC}

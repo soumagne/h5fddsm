@@ -117,6 +117,40 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     // Release locks and clean up for next update
     void UpdateFinalize();
 
+    H5FDdsmInt32 CreateDSM();
+    H5FDdsmInt32 DestroyDSM();
+    H5FDdsmBuffer *GetDSMHandle();
+    void   ClearDSM();
+    void   ConnectDSM(H5FDdsmBoolean persist = false);
+    void   ConnectInterCommDSM();
+    void   DisconnectDSM();
+    void   PublishDSM();
+    void   UnpublishDSM();
+    void   H5Dump();
+    void   H5DumpLight();
+    void   H5DumpXML();
+    void   SendDSMXML();
+
+    // Description:
+    // When sending, the writer can SetXMLDescriptionSend and it will be transmitted
+    // to the receiver. When receiving, GetXMLDescriptionReceive queries the internal DSMBuffer
+    // object to see if a string is present
+    H5FDdsmSetStringMacro(XMLStringSend);
+    H5FDdsmConstString GetXMLStringReceive();
+    void   ClearXMLStringReceive();
+
+    // Description:
+    // If the .dsm_config file exists in the standard location
+    // $ENV{H5FD_DSM_CONFIG_PATH}/.dsm_config then the server/port/mode
+    // information can be read. This is for use the by a DSM client.
+    // DSM servers write their .dsm_config when PublishDSM() is called
+    // Returns false if the .dsm_config file is not read
+    H5FDdsmInt32   ReadDSMConfigFile();
+
+#ifdef H5FD_DSM_HAVE_STEERING
+    void   WriteSteeredData();
+    void   UpdateSteeredObjects();
+
     // Description:
     // Set/Get the current given steering command.
     // The command is then passed to the simulation.
@@ -139,39 +173,7 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     // Description:
     // Set/Unset objects
     void SetDisabledObject(H5FDdsmString objectName);
-
-    // Description:
-    // When sending, the writer can SetXMLDescriptionSend and it will be transmitted
-    // to the receiver. When receiving, GetXMLDescriptionReceive queries the internal DSMBuffer
-    // object to see if a string is present
-    H5FDdsmSetStringMacro(XMLStringSend);
-    H5FDdsmConstString GetXMLStringReceive();
-    void   ClearXMLStringReceive();
-
-    H5FDdsmInt32 CreateDSM();
-    H5FDdsmInt32 DestroyDSM();
-    void   ClearDSM();
-    void   ConnectDSM(H5FDdsmBoolean persist = false);
-    void   ConnectInterCommDSM();
-    void   DisconnectDSM();
-    void   PublishDSM();
-    void   UnpublishDSM();
-    void   H5Dump();
-    void   H5DumpLight();
-    void   H5DumpXML();
-    void   SendDSMXML();
-    void   WriteSteeredData();
-    void   UpdateSteeredObjects();
-
-    // Description:
-    // If the .dsm_config file exists in the standard location
-    // $ENV{H5FD_DSM_CONFIG_PATH}/.dsm_config then the server/port/mode
-    // information can be read. This is for use the by a DSM client.
-    // DSM servers write their .dsm_config when PublishDSM() is called
-    // Returns false if the .dsm_config file is not read
-    H5FDdsmInt32   ReadDSMConfigFile();
-
-    H5FDdsmBuffer *GetDSMHandle();
+#endif
 
   protected:
     //

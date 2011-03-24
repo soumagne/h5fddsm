@@ -1,4 +1,4 @@
-H5FDdsm version 0.9.4 currently under development
+H5FDdsm version 0.9.6 currently under development
 Please refer to https://hpcforge.org/plugins/mediawiki/wiki/h5fddsm/index.php/Main_Page for installation instructions.
 ------------------------------------------------------------------------------
 

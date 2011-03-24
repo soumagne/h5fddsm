@@ -15,7 +15,7 @@ PROJECT (H5FDdsm C CXX)
 #-----------------------------------------------------------------------------
 SET (H5FDdsm_VERS_MAJOR   "0")
 SET (H5FDdsm_VERS_MINOR   "9")
-SET (H5FDdsm_VERS_RELEASE "5")
+SET (H5FDdsm_VERS_RELEASE "6")
 SET (H5FDdsm_PACKAGE "h5fddsm")
 SET (H5FDdsm_PACKAGE_NAME "H5FDdsm")
 SET (H5FDdsm_PACKAGE_VERSION "${H5FDdsm_VERS_MAJOR}.${H5FDdsm_VERS_MINOR}.${H5FDdsm_VERS_RELEASE}")
@@ -76,6 +76,14 @@ ELSE(BUILD_SHARED_LIBS)
   SET(H5FDdsm_BUILD_SHARED_LIBS 0)
 ENDIF(BUILD_SHARED_LIBS)
 
+#-----------------------------------------------------------------------------
+# Choose to build steering API or not.
+#-----------------------------------------------------------------------------
+OPTION(H5FD_DSM_BUILD_STEERING "Build H5FDdsm steering functionalities." OFF)
+IF(H5FD_DSM_BUILD_STEERING)
+  SET(H5FD_DSM_HAVE_STEERING TRUE)
+ENDIF(H5FD_DSM_BUILD_STEERING)
+
 #-------------------------------------------------------------------------------
 MACRO (SET_LIB_OPTIONS libtarget)
   IF (BUILD_SHARED_LIBS)
@@ -103,7 +111,7 @@ ENDIF (NOT BUILD_SHARED_LIBS)
 # Find HDF5
 #-----------------------------------------------------------------------------
 IF (NOT H5FD_DSM_EXTERNALLY_CONFIGURED)
-  FIND_PACKAGE(HDF5 "1.8.5" REQUIRED NO_MODULE PATHS "$ENV{ProgramFiles}/HDF5")
+  FIND_PACKAGE(HDF5 "1.8.6" REQUIRED NO_MODULE PATHS "$ENV{ProgramFiles}/HDF5")
 ELSE (NOT H5FD_DSM_EXTERNALLY_CONFIGURED)
   FIND_PACKAGE(HDF5 REQUIRED NO_MODULE PATHS "${HDF5_DIR}")
 ENDIF (NOT H5FD_DSM_EXTERNALLY_CONFIGURED)
@@ -205,8 +213,6 @@ SET(H5FDdsmSources
   src/H5FDdsmStorage.cxx
   src/H5FDdsmManager.cxx
   src/H5FDdsmDump.cxx
-  src/H5FDdsmSteerer.cxx
-  src/H5FDdsmSteering.cxx
   h5dump/h5dump.cxx
   h5dump/h5tools.cxx
   h5dump/h5tools_ref.cxx
@@ -215,6 +221,14 @@ SET(H5FDdsmSources
   h5dump/h5tools_utils.cxx
   h5dump/h5trav.cxx
 )
+
+IF (H5FD_DSM_BUILD_STEERING)
+  SET(H5FDdsmSources
+    src/H5FDdsmSteerer.cxx
+    src/H5FDdsmSteering.cxx
+    ${H5FDdsmSources}
+  )
+ENDIF (H5FD_DSM_BUILD_STEERING)
 
 #-----------------------------------------------------------------------------
 # Create the library

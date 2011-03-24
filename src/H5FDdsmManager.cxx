@@ -23,7 +23,9 @@
 #include "mpi.h"
 //
 #include "H5FDdsmIniFile.h"
+#ifdef H5FD_DSM_HAVE_STEERING
 #include "H5FDdsmSteerer.h"
+#endif
 #include "H5FDdsmDump.h"
 //
 #ifdef _WIN32
@@ -34,6 +36,7 @@
 
 struct H5FDdsmManagerInternals
 {
+#ifdef H5FD_DSM_HAVE_STEERING
   struct SteeringEntryInt
   {
     SteeringEntryInt(std::string text, int nelements, int *values) : Text(text),
@@ -58,6 +61,7 @@ struct H5FDdsmManagerInternals
   SteeringEntriesInt    SteeringValuesInt;
   SteeringEntriesDouble SteeringValuesDouble;
   SteeringEntriesString RequestedDisabledObjects;
+#endif
 };
 //----------------------------------------------------------------------------
 H5FDdsmManager::H5FDdsmManager() 
@@ -185,28 +189,6 @@ void H5FDdsmManager::UpdateFinalize()
   }
 }
 //----------------------------------------------------------------------------
-H5FDdsmInt32 H5FDdsmManager::DestroyDSM()
-{
-  // Watch out that all processes have empty message queues
-  // Should be already done during the disconnection
-  if (this->DSMBuffer) {
-    delete this->DSMBuffer;
-    this->DSMBuffer = NULL;
-    H5FDdsmDebug("DSM destroyed on " << this->UpdatePiece);
-  }
-  if (this->DSMComm) {
-    delete this->DSMComm;
-    this->DSMComm = NULL;
-  }
-  this->SetServerHostName(NULL);
-  return(H5FD_DSM_SUCCESS);
-}
-//----------------------------------------------------------------------------
-H5FDdsmBuffer *H5FDdsmManager::GetDSMHandle()
-{
-  return(this->DSMBuffer);
-}
-//----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmManager::CreateDSM()
 {
   if (this->DSMBuffer) return(H5FD_DSM_SUCCESS);
@@ -278,47 +260,32 @@ H5FDdsmInt32 H5FDdsmManager::CreateDSM()
   return(H5FD_DSM_SUCCESS);
 }
 //----------------------------------------------------------------------------
+H5FDdsmInt32 H5FDdsmManager::DestroyDSM()
+{
+  // Watch out that all processes have empty message queues
+  // Should be already done during the disconnection
+  if (this->DSMBuffer) {
+    delete this->DSMBuffer;
+    this->DSMBuffer = NULL;
+    H5FDdsmDebug("DSM destroyed on " << this->UpdatePiece);
+  }
+  if (this->DSMComm) {
+    delete this->DSMComm;
+    this->DSMComm = NULL;
+  }
+  this->SetServerHostName(NULL);
+  return(H5FD_DSM_SUCCESS);
+}
+//----------------------------------------------------------------------------
+H5FDdsmBuffer *H5FDdsmManager::GetDSMHandle()
+{
+  return(this->DSMBuffer);
+}
+//----------------------------------------------------------------------------
 void H5FDdsmManager::ClearDSM()
 {
   this->DSMBuffer->ClearStorage();
   if (this->UpdatePiece == 0) H5FDdsmDebug("DSM cleared");
-}
-//----------------------------------------------------------------------------
-void H5FDdsmManager::WriteSteeredData()
-{
-  if (this->ManagerInternals->SteeringValuesInt.size() ||
-      this->ManagerInternals->SteeringValuesDouble.size()) {
-    this->DSMBuffer->GetSteerer()->BeginInteractionsCache(H5F_ACC_RDWR);
-    while (!this->ManagerInternals->SteeringValuesInt.empty()) {
-      H5FDdsmManagerInternals::SteeringEntryInt entryInt =
-          this->ManagerInternals->SteeringValuesInt.back();
-      this->DSMBuffer->GetSteerer()->WriteInteractions(entryInt.Text.c_str(),
-          entryInt.NumberOfElements, entryInt.Values);
-      this->ManagerInternals->SteeringValuesInt.pop_back();
-    }
-    while (!this->ManagerInternals->SteeringValuesDouble.empty()) {
-      H5FDdsmManagerInternals::SteeringEntryDouble entryDouble =
-          this->ManagerInternals->SteeringValuesDouble.back();
-      this->DSMBuffer->GetSteerer()->WriteInteractions(entryDouble.Text.c_str(),
-          entryDouble.NumberOfElements, entryDouble.Values);
-      this->ManagerInternals->SteeringValuesDouble.pop_back();
-    }
-    this->DSMBuffer->GetSteerer()->EndInteractionsCache();
-  }
-}
-//----------------------------------------------------------------------------
-void H5FDdsmManager::UpdateSteeredObjects()
-{
-  this->WriteSteeredData();
-
-  while (!this->ManagerInternals->RequestedDisabledObjects.empty()) {
-    this->DSMBuffer->GetSteerer()->SetDisabledObject(
-        this->ManagerInternals->RequestedDisabledObjects.back().c_str());
-    this->ManagerInternals->RequestedDisabledObjects.pop_back();
-  }
-
-  this->DSMBuffer->GetSteerer()->UpdateSteeringCommands();
-  this->DSMBuffer->GetSteerer()->UpdateDisabledObjects();
 }
 //----------------------------------------------------------------------------
 void H5FDdsmManager::ConnectDSM(H5FDdsmBoolean persist)
@@ -604,6 +571,44 @@ H5FDdsmInt32 H5FDdsmManager::ReadDSMConfigFile()
   return(H5FD_DSM_FAIL);
 }
 //----------------------------------------------------------------------------
+#ifdef H5FD_DSM_HAVE_STEERING
+void H5FDdsmManager::WriteSteeredData()
+{
+  if (this->ManagerInternals->SteeringValuesInt.size() ||
+      this->ManagerInternals->SteeringValuesDouble.size()) {
+    this->DSMBuffer->GetSteerer()->BeginInteractionsCache(H5F_ACC_RDWR);
+    while (!this->ManagerInternals->SteeringValuesInt.empty()) {
+      H5FDdsmManagerInternals::SteeringEntryInt entryInt =
+          this->ManagerInternals->SteeringValuesInt.back();
+      this->DSMBuffer->GetSteerer()->WriteInteractions(entryInt.Text.c_str(),
+          entryInt.NumberOfElements, entryInt.Values);
+      this->ManagerInternals->SteeringValuesInt.pop_back();
+    }
+    while (!this->ManagerInternals->SteeringValuesDouble.empty()) {
+      H5FDdsmManagerInternals::SteeringEntryDouble entryDouble =
+          this->ManagerInternals->SteeringValuesDouble.back();
+      this->DSMBuffer->GetSteerer()->WriteInteractions(entryDouble.Text.c_str(),
+          entryDouble.NumberOfElements, entryDouble.Values);
+      this->ManagerInternals->SteeringValuesDouble.pop_back();
+    }
+    this->DSMBuffer->GetSteerer()->EndInteractionsCache();
+  }
+}
+//----------------------------------------------------------------------------
+void H5FDdsmManager::UpdateSteeredObjects()
+{
+  this->WriteSteeredData();
+
+  while (!this->ManagerInternals->RequestedDisabledObjects.empty()) {
+    this->DSMBuffer->GetSteerer()->SetDisabledObject(
+        this->ManagerInternals->RequestedDisabledObjects.back().c_str());
+    this->ManagerInternals->RequestedDisabledObjects.pop_back();
+  }
+
+  this->DSMBuffer->GetSteerer()->UpdateSteeringCommands();
+  this->DSMBuffer->GetSteerer()->UpdateDisabledObjects();
+}
+//----------------------------------------------------------------------------
 void H5FDdsmManager::SetSteeringCommand(H5FDdsmString cmd)
 {
   H5FDdsmDebug("cmd: " << cmd);
@@ -706,3 +711,4 @@ void H5FDdsmManager::SetDisabledObject(H5FDdsmString objectName)
 {
   this->ManagerInternals->RequestedDisabledObjects.push_back(objectName);
 }
+#endif

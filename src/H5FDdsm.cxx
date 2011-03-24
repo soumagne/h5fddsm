@@ -92,7 +92,9 @@ extern "C" {
 //--------------------------------------------------------------------------
 //
 #include "H5FDdsmManager.h"
+#ifdef H5FD_DSM_HAVE_STEERING
 #include "H5FDdsmSteerer.h"
+#endif
 //
 #ifdef H5_HAVE_PARALLEL
 
@@ -576,11 +578,16 @@ H5Pset_fapl_dsm(hid_t fapl_id, MPI_Comm dsmComm, void *dsmBuffer)
     }
   }
 
+#ifdef H5FD_DSM_HAVE_STEERING
   if (!fa.buffer->GetSteerer()->GetWriteToDSM() || 
       (!fa.buffer->GetIsConnected() && !fa.buffer->GetIsServer()))
   {
     // next time step will go back to the DSM if a steering asked for writing to the disk
     if (fa.buffer->GetSteerer()) fa.buffer->GetSteerer()->SetWriteToDSM(1);
+#else
+ if (!fa.buffer->GetIsConnected() && !fa.buffer->GetIsServer())
+  {
+#endif
     // When the set_fapl_dsm is called with a NULL dsmBuffer argument and no connection can be established
     // use automatically the MPIO driver
     PRINT_DSM_INFO(fa.buffer->GetComm()->GetId(), "Using MPIO driver");
@@ -736,11 +743,13 @@ H5FD_dsm_open(const char *name, unsigned UNUSED flags, hid_t fapl_id, haddr_t ma
       file->DsmBuffer->RequestLockAcquire();
     }
 
+#ifdef H5FD_DSM_HAVE_STEERING
     if ((H5F_ACC_CREAT & flags) && !file->DsmBuffer->GetIsServer()) {
       // TODO Probably do this somewhere else but here for now
       // so we get automatic pause and play
       file->DsmBuffer->GetSteerer()->GetSteeringCommands();
     }
+#endif
     //
     PRINT_INFO("Opening " << name);
     if (DsmGetEntry(file) == H5FD_DSM_FAIL) {

@@ -60,7 +60,9 @@
   #include <pthread.h>
 #endif
 
+#ifdef H5FD_DSM_HAVE_STEERING
 class H5FDdsmSteerer;
+#endif
 
 #define H5FD_DSM_MAX_LOCKS 32
 
@@ -157,7 +159,9 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     H5FDdsmInt32   RequestClearStorage();
     H5FDdsmInt32   RequestXMLExchange();
 
+#ifdef H5FD_DSM_HAVE_STEERING
     H5FDdsmSteerer *GetSteerer() { return(Steerer); }
+#endif
 
   protected:
     H5FDdsmInt32            ThreadDsmReady;
@@ -211,7 +215,9 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
 
     H5FDdsmString           XMLDescription;
 
+#ifdef H5FD_DSM_HAVE_STEERING
     H5FDdsmSteerer         *Steerer;
+#endif
 };
 
 #endif // __H5FDdsmBuffer_h
