@@ -114,7 +114,11 @@ ENDIF (NOT BUILD_SHARED_LIBS)
 IF (NOT H5FD_DSM_EXTERNALLY_CONFIGURED)
   FIND_PACKAGE(HDF5 "1.8.6" REQUIRED NO_MODULE PATHS "$ENV{ProgramFiles}/HDF5")
 ELSE (NOT H5FD_DSM_EXTERNALLY_CONFIGURED)
-  FIND_PACKAGE(HDF5 REQUIRED NO_MODULE PATHS "${HDF5_DIR}")
+  IF(HDF5_CONFIG)
+    INCLUDE("${HDF5_CONFIG}")
+  ELSE(HDF5_CONFIG)
+    FIND_PACKAGE(HDF5 REQUIRED NO_MODULE PATHS "${HDF5_DIR}")
+  ENDIF(HDF5_CONFIG)
 ENDIF (NOT H5FD_DSM_EXTERNALLY_CONFIGURED)
 INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
 
@@ -237,7 +241,7 @@ ENDIF (H5FD_DSM_BUILD_STEERING)
 ADD_LIBRARY(H5FDdsm ${H5FDdsmSources})
 
 TARGET_LINK_LIBRARIES(H5FDdsm
-  hdf5
+  ${H5FD_DSM_LIB_DEPENDENCIES}
 )
 
 IF(WIN32)
@@ -271,20 +275,33 @@ IF(H5FD_DSM_BUILD_TESTING)
 ENDIF(H5FD_DSM_BUILD_TESTING)
 
 #-----------------------------------------------------------------------------
+# Specify project header files to be installed
+#-----------------------------------------------------------------------------
+SET(H5FDdsmHeaders
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsm.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmManager.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmBuffer.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmDriver.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmObject.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmComm.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmCommSocket.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmCommMpi.h
+  ${H5FDdsm_BINARY_DIR}/src/H5FDdsmConfig.h
+)
+
+IF (H5FD_DSM_BUILD_STEERING)
+  SET(H5FDdsmHeaders
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmSteering.h
+    ${H5FDdsmHeaders}
+  )
+ENDIF (H5FD_DSM_BUILD_STEERING)
+
+#-----------------------------------------------------------------------------
 # Add file(s) to CMake Install
 #-----------------------------------------------------------------------------
 INSTALL (
   FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsm.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmSteering.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmManager.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmBuffer.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmDriver.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmObject.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmComm.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmCommSocket.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmCommMpi.h
-    ${H5FDdsm_BINARY_DIR}/src/H5FDdsmConfig.h
+    ${H5FDdsmHeaders}
   DESTINATION
     ${H5FD_DSM_INSTALL_INCLUDE_DIR}
   COMPONENT
