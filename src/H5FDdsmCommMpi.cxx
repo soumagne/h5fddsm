@@ -55,7 +55,7 @@
 #include <cstring>
 
 H5FDdsmCommMpi::H5FDdsmCommMpi() {
-    this->Comm = MPI_COMM_WORLD;
+    this->Comm = MPI_COMM_NULL;
     this->CommType = H5FD_DSM_COMM_MPI;
     this->UseStaticInterComm = 0;
     this->InterComm = MPI_COMM_NULL;
@@ -63,7 +63,12 @@ H5FDdsmCommMpi::H5FDdsmCommMpi() {
     this->Win = MPI_WIN_NULL;
 }
 
-H5FDdsmCommMpi::~H5FDdsmCommMpi() {}
+H5FDdsmCommMpi::~H5FDdsmCommMpi() {
+  if (this->Comm != MPI_COMM_NULL) {
+    MPI_Comm_free(&this->Comm);
+  }
+  this->Comm = MPI_COMM_NULL;
+}
 
 void
 H5FDdsmCommMpi::SetDsmMasterHostName(const char *hostName) {
@@ -262,6 +267,7 @@ H5FDdsmCommMpi::RemoteCommAccept(void *storagePointer, H5FDdsmUInt64 storageSize
       H5FDdsmError("Id = " << this->Id << " MPI_Win_create failed");
       return(H5FD_DSM_FAIL);
     }
+    MPI_Comm_free(&winComm);
   }
   return(H5FD_DSM_SUCCESS);
 }
@@ -312,6 +318,7 @@ H5FDdsmCommMpi::RemoteCommConnect() {
         H5FDdsmError("Id = " << this->Id << " MPI_Win_create failed");
         return(H5FD_DSM_FAIL);
       }
+      MPI_Comm_free(&winComm);
     }
     return(H5FD_DSM_SUCCESS);
   } else {
@@ -346,7 +353,8 @@ H5FDdsmCommMpi::RemoteCommSync() {
   if (H5FDdsmComm::RemoteCommSync() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
   if (this->Win != MPI_WIN_NULL) {
-    MPI_Win_fence(0, this->Win);
+//    MPI_Win_fence(0, this->Win);
+    MPI_Barrier(this->InterComm);
   }
   return(H5FD_DSM_SUCCESS);
 }

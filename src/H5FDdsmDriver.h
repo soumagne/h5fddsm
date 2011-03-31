@@ -188,6 +188,9 @@ class H5FDdsm_EXPORT H5FDdsmDriver : public H5FDdsmObject {
     H5FDdsmInt32    StorageIsMine;
 
     H5FDdsmComm    *Comm;
+    H5FDdsmMsg     *ServiceMsg;
+    H5FDdsmMsg     *RemoteServiceMsg;
+    H5FDdsmMsg     *DataMsg;
 
     H5FDdsmInt32   *Locks;
     H5FDdsmByte    *DataPointer;

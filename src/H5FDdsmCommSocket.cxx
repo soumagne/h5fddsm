@@ -34,7 +34,7 @@
 //----------------------------------------------------------------------------
 H5FDdsmCommSocket::H5FDdsmCommSocket()
 {
-  this->Comm = MPI_COMM_WORLD;
+  this->Comm = MPI_COMM_NULL;
   this->CommType = H5FD_DSM_COMM_SOCKET;
   for (int i=0; i<H5FD_DSM_MAX_SOCKET; i++) this->InterComm[i] = NULL;
   this->DsmMasterSocket = NULL;
@@ -51,6 +51,10 @@ H5FDdsmCommSocket::~H5FDdsmCommSocket()
   }
   if (this->DsmMasterSocket) delete this->DsmMasterSocket;
   this->DsmMasterSocket = NULL;
+  if (this->Comm != MPI_COMM_NULL) {
+    MPI_Comm_free(&this->Comm);
+  }
+  this->Comm = MPI_COMM_NULL;
 }
 //----------------------------------------------------------------------------
 void
@@ -446,8 +450,8 @@ H5FDdsmCommSocket::InterCommServerConnect()
   H5FDdsmInt32  *interCommPort           = NULL;
   H5FDdsmInt32  *masterInterCommPort     = NULL;
 
-  interCommHostName = new char[this->InterSize*MPI_MAX_PORT_NAME];
-  masterInterCommHostName = new char[(this->InterSize)*(this->TotalSize)*MPI_MAX_PORT_NAME];
+  interCommHostName = (H5FDdsmString) calloc(this->InterSize*MPI_MAX_PORT_NAME, sizeof(H5FDdsmByte));
+  masterInterCommHostName = (H5FDdsmString) calloc((this->InterSize)*(this->TotalSize)*MPI_MAX_PORT_NAME, sizeof(H5FDdsmByte));
   interCommPort = (H5FDdsmInt32*) malloc(sizeof(H5FDdsmInt32)*this->InterSize);
   masterInterCommPort = (H5FDdsmInt32*) malloc(sizeof(H5FDdsmInt32)*(this->InterSize)*(this->TotalSize));
 
@@ -497,8 +501,8 @@ H5FDdsmCommSocket::InterCommServerConnect()
   }
   this->Barrier();
   //
-  delete[] interCommHostName;
-  delete[] masterInterCommHostName;
+  free(interCommHostName);
+  free(masterInterCommHostName);
   free(interCommPort);
   free(masterInterCommPort);
 
@@ -514,8 +518,8 @@ H5FDdsmCommSocket::InterCommClientConnect()
   H5FDdsmInt32  *interCommPort           = NULL;
   H5FDdsmInt32  *masterInterCommPort     = NULL;
 
-  interCommHostName = new char[this->InterSize*MPI_MAX_PORT_NAME];
-  masterInterCommHostName = new char[(this->InterSize)*(this->TotalSize)*MPI_MAX_PORT_NAME];
+  interCommHostName = (H5FDdsmString) calloc(this->InterSize*MPI_MAX_PORT_NAME, sizeof(H5FDdsmByte));
+  masterInterCommHostName = (H5FDdsmString) calloc((this->InterSize)*(this->TotalSize)*MPI_MAX_PORT_NAME, sizeof(H5FDdsmByte));
   interCommPort = (H5FDdsmInt32*) malloc(sizeof(H5FDdsmInt32)*this->InterSize);
   masterInterCommPort = (H5FDdsmInt32*) malloc(sizeof(H5FDdsmInt32)*(this->InterSize)*(this->TotalSize));
 
@@ -562,8 +566,8 @@ H5FDdsmCommSocket::InterCommClientConnect()
   }
   this->Barrier();
   //
-  delete[] interCommHostName;
-  delete[] masterInterCommHostName;
+  free(interCommHostName);
+  free(masterInterCommHostName);
   free(interCommPort);
   free(masterInterCommPort);
 
