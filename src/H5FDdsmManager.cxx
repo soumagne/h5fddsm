@@ -213,6 +213,13 @@ H5FDdsmInt32 H5FDdsmManager::CreateDSM()
     this->DSMComm = new H5FDdsmCommSocket();
     H5FDdsmDebug("Using Socket Intercomm...");
     break;
+#ifdef H5FD_DSM_HAVE_DMAPP
+  case H5FD_DSM_COMM_DMAPP:
+    this->DSMComm = new H5FDdsmCommDmapp();
+    this->DSMComm->SetUseOneSidedComm(true);
+    H5FDdsmDebug("Using DMAPP Intercomm...");
+    break;
+#endif
   default:
     H5FDdsmError("DSM communication type not supported");
     return(H5FD_DSM_FAIL);

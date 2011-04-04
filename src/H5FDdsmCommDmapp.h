@@ -34,9 +34,6 @@ public:
   H5FDdsmCommDmapp();
   virtual ~H5FDdsmCommDmapp();
 
-  H5FDdsmGetStringMacro(DsmMasterHostName);
-  void SetDsmMasterHostName(H5FDdsmConstString hostName);
-
   H5FDdsmInt32   Init();
   H5FDdsmInt32   Send(H5FDdsmMsg *Msg);
   H5FDdsmInt32   Receive(H5FDdsmMsg *Msg, H5FDdsmInt32 Channel=0);
@@ -64,9 +61,10 @@ public:
   H5FDdsmInt32   RemoteCommRecvXML(H5FDdsmString *file);
 
 protected:
-  MPI_Comm       InterComm;
-  MPI_Win        Win;
-  H5FDdsmByte    DsmMasterHostName[MPI_MAX_PORT_NAME];
+  MPI_Comm         InterComm;
+  MPI_Win          Win;
+  dmapp_seg_desc_t DataSeg;
+  dmapp_seg_desc_t DestSeg;
 };
 
 #endif // __H5FDdsmCommDmapp_h

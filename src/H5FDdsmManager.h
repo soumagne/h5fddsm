@@ -25,6 +25,9 @@
 #include "H5FDdsmBuffer.h"
 #include "H5FDdsmCommSocket.h"
 #include "H5FDdsmCommMpi.h"
+#ifdef H5FD_DSM_HAVE_DMAPP
+#include "H5FDdsmCommDmapp.h"
+#endif
 
 struct H5FDdsmManagerInternals;
 

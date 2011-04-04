@@ -44,11 +44,6 @@ H5FDdsmStorage::~H5FDdsmStorage()
     if (this->Comm && (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA)) {
       MPI_Free_mem(this->DataPointer);
     } else {
-      if (this->Comm && (this->Comm->GetCommType() == H5FD_DSM_COMM_DMAPP)) {
-#ifdef H5FD_DSM_HAVE_DMAPP
-        dmapp_mem_unregister(&this->DataSeg);
-#endif
-      }
       free(this->DataPointer);
     }
     this->DataPointer = NULL;
@@ -104,16 +99,6 @@ H5FDdsmInt32 H5FDdsmStorage::Allocate()
       H5FDdsmError("Allocation Failed, unable to allocate " << this->Length);
       perror("Alloc :" );
       return(H5FD_DSM_FAIL);
-    }
-    if (this->Comm && (this->Comm->GetCommType() == H5FD_DSM_COMM_DMAPP)) {
-#ifdef H5FD_DSM_HAVE_DMAPP
-      dmapp_return_t status;
-      status = dmapp_mem_register(this->DataPointer, this->Length*sizeof(H5FDdsmByte), &this->DataSeg);
-      if (status != DMAPP_RC_SUCCESS) {
-        H5FDdsmError("dmapp_mem_register Failed: " << status);
-        return(H5FD_DSM_FAIL);
-      }
-#endif
     }
   }
   H5FDdsmDebug("Allocation Succeeded");

@@ -28,10 +28,6 @@
 
 #include "H5FDdsmObject.h"
 
-#ifdef H5FD_DSM_HAVE_DMAPP
-#include <dmapp.h>
-#endif
-
 class H5FDdsmComm;
 
 class H5FDdsm_EXPORT H5FDdsmStorage : public H5FDdsmObject {
@@ -53,9 +49,6 @@ protected:
   H5FDdsmInt32    Allocate();
 
   H5FDdsmPointer   DataPointer;
-#ifdef H5FD_DSM_HAVE_DMAPP
-  dmapp_seg_desc_t DataSeg;
-#endif
   H5FDdsmComm     *Comm;
   H5FDdsmUInt64    Length;
 };
