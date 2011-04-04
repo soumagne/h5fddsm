@@ -22,6 +22,7 @@
 #define H5_HAVE_DSM
 
 #cmakedefine H5FD_DSM_HAVE_STEERING
+#cmakedefine H5FD_DSM_HAVE_DMAPP
 
 #cmakedefine H5FDdsm_BUILD_SHARED_LIBS
 

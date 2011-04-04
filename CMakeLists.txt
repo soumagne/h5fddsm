@@ -85,6 +85,14 @@ IF(H5FD_DSM_BUILD_STEERING)
   SET(H5FD_DSM_HAVE_STEERING TRUE)
 ENDIF(H5FD_DSM_BUILD_STEERING)
 
+#-----------------------------------------------------------------------------
+# Choose to build DMAPP communicator or not.
+#-----------------------------------------------------------------------------
+OPTION(H5FD_DSM_BUILD_DMAPP "Build DMAPP communicator." OFF)
+IF(H5FD_DSM_BUILD_DMAPP)
+  SET(H5FD_DSM_HAVE_DMAPP TRUE)
+ENDIF(H5FD_DSM_BUILD_DMAPP)
+
 #-------------------------------------------------------------------------------
 MACRO (SET_LIB_OPTIONS libtarget)
   IF (BUILD_SHARED_LIBS)
@@ -234,6 +242,13 @@ IF (H5FD_DSM_BUILD_STEERING)
     ${H5FDdsmSources}
   )
 ENDIF (H5FD_DSM_BUILD_STEERING)
+
+IF (H5FD_DSM_BUILD_DMAPP)
+  SET(H5FDdsmSources
+    src/H5FDdsmCommDmapp.cxx
+    ${H5FDdsmSources}
+  )
+ENDIF (H5FD_DSM_BUILD_DMAPP)
 
 #-----------------------------------------------------------------------------
 # Create the library
