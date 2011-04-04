@@ -54,13 +54,15 @@
 
 #include "H5FDdsmObject.h"
 
+#include <mpi.h>
+
 //! Base comm object for Distributed Shared Memory implementation
 
 // Macros to choose communication system to use
 #define H5FD_DSM_COMM_MPI        0x10
 #define H5FD_DSM_COMM_SOCKET     0x11
 #define H5FD_DSM_COMM_MPI_RMA    0x12
-#define H5FD_DSM_COMM_GNI        0x13
+#define H5FD_DSM_COMM_DMAPP      0x13
 
 // Macros to switch between remote/local channels
 #define H5FD_DSM_COMM_CHANNEL_LOCAL  0x20
@@ -83,61 +85,79 @@ public:
   H5FDdsmComm();
   virtual ~H5FDdsmComm();
 
-//! Id 
-    H5FDdsmGetValueMacro(Id, H5FDdsmInt32);
-    H5FDdsmSetValueMacro(Id, H5FDdsmInt32);
+  // Set/Get the Internal MPI Communicator
+  H5FDdsmSetValueMacro(Comm, MPI_Comm);
+  H5FDdsmGetValueMacro(Comm, MPI_Comm);
 
-//! Total 
-    H5FDdsmGetValueMacro(TotalSize, H5FDdsmInt32);
-    H5FDdsmSetValueMacro(TotalSize, H5FDdsmInt32);
+  // Id
+  H5FDdsmGetValueMacro(Id, H5FDdsmInt32);
+  H5FDdsmSetValueMacro(Id, H5FDdsmInt32);
 
-    // InterSize
-    H5FDdsmGetValueMacro(InterSize, H5FDdsmInt32);
-    H5FDdsmSetValueMacro(InterSize, H5FDdsmInt32);
+  // Total
+  H5FDdsmGetValueMacro(TotalSize, H5FDdsmInt32);
+  H5FDdsmSetValueMacro(TotalSize, H5FDdsmInt32);
 
-    //! CommType
-    H5FDdsmGetValueMacro(CommType, H5FDdsmInt32);
-    H5FDdsmSetValueMacro(CommType, H5FDdsmInt32);
+  // InterSize
+  H5FDdsmGetValueMacro(InterSize, H5FDdsmInt32);
+  H5FDdsmSetValueMacro(InterSize, H5FDdsmInt32);
 
-    //! CommChannel
-    H5FDdsmGetValueMacro(CommChannel, H5FDdsmInt32);
-    H5FDdsmSetValueMacro(CommChannel, H5FDdsmInt32);
+  //! CommType
+  H5FDdsmGetValueMacro(CommType, H5FDdsmInt32);
+  H5FDdsmSetValueMacro(CommType, H5FDdsmInt32);
 
-    virtual H5FDdsmInt32   Init();
-    virtual H5FDdsmInt32   Send(H5FDdsmMsg *Msg);
-    virtual H5FDdsmInt32   Receive(H5FDdsmMsg *Msg, H5FDdsmInt32 Channel=0);
-    // Additional methods for one sided communications
-    virtual H5FDdsmInt32   PutData(H5FDdsmMsg *DataMsg);
-    virtual H5FDdsmInt32   GetData(H5FDdsmMsg *DataMsg);
-    //
-    virtual H5FDdsmInt32   Probe(H5FDdsmMsg *Msg);
-    virtual H5FDdsmInt32   Barrier();
+  //! CommChannel
+  H5FDdsmGetValueMacro(CommChannel, H5FDdsmInt32);
+  H5FDdsmSetValueMacro(CommChannel, H5FDdsmInt32);
 
-    virtual H5FDdsmInt32   OpenPort();
-    virtual H5FDdsmInt32   ClosePort();
-    virtual H5FDdsmInt32   RemoteCommAccept(void *storagePointer, H5FDdsmUInt64 storageSize);
-    virtual H5FDdsmInt32   RemoteCommConnect();
-    virtual H5FDdsmInt32   RemoteCommDisconnect();
+  // If set to true, use one sided comm
+  H5FDdsmSetValueMacro(UseOneSidedComm, H5FDdsmBoolean);
+  H5FDdsmGetValueMacro(UseOneSidedComm, H5FDdsmBoolean);
 
-    virtual H5FDdsmInt32   RemoteCommSync();
-    virtual H5FDdsmInt32   RemoteCommChannelSynced(H5FDdsmInt32 who, H5FDdsmInt32 *syncId);
-    virtual H5FDdsmInt32   RemoteCommRecvReady();
-    virtual H5FDdsmInt32   RemoteCommSendReady();
+  // If set to true, do not use dynamic connection
+  H5FDdsmSetValueMacro(UseStaticInterComm, H5FDdsmBoolean);
+  H5FDdsmGetValueMacro(UseStaticInterComm, H5FDdsmBoolean);
 
-    virtual H5FDdsmInt32   RemoteCommRecvInfo(H5FDdsmInfo *dsmInfo);
-    virtual H5FDdsmInt32   RemoteCommSendInfo(H5FDdsmInfo *dsmInfo);
+  H5FDdsmInt32           DupComm(MPI_Comm Source);
 
-    virtual H5FDdsmInt32   RemoteCommSendXML(H5FDdsmString file, H5FDdsmInt32 dest);
-    virtual H5FDdsmInt32   RemoteCommRecvXML(H5FDdsmString *file);
+  virtual H5FDdsmInt32   Init();
+  virtual H5FDdsmInt32   Send(H5FDdsmMsg *Msg);
+  virtual H5FDdsmInt32   Receive(H5FDdsmMsg *Msg, H5FDdsmInt32 Channel=0);
+  // Additional methods for one sided communications
+  virtual H5FDdsmInt32   PutData(H5FDdsmMsg *DataMsg);
+  virtual H5FDdsmInt32   GetData(H5FDdsmMsg *DataMsg);
+  //
+  virtual H5FDdsmInt32   Probe(H5FDdsmMsg *Msg);
+  virtual H5FDdsmInt32   Barrier();
+
+  virtual H5FDdsmInt32   OpenPort();
+  virtual H5FDdsmInt32   ClosePort();
+  virtual H5FDdsmInt32   RemoteCommAccept(void *storagePointer, H5FDdsmUInt64 storageSize);
+  virtual H5FDdsmInt32   RemoteCommConnect();
+  virtual H5FDdsmInt32   RemoteCommDisconnect();
+
+  virtual H5FDdsmInt32   RemoteCommSync();
+  virtual H5FDdsmInt32   RemoteCommChannelSynced(H5FDdsmInt32 who, H5FDdsmInt32 *syncId);
+  virtual H5FDdsmInt32   RemoteCommRecvReady();
+  virtual H5FDdsmInt32   RemoteCommSendReady();
+
+  virtual H5FDdsmInt32   RemoteCommRecvInfo(H5FDdsmInfo *dsmInfo);
+  virtual H5FDdsmInt32   RemoteCommSendInfo(H5FDdsmInfo *dsmInfo);
+
+  virtual H5FDdsmInt32   RemoteCommSendXML(H5FDdsmString file, H5FDdsmInt32 dest);
+  virtual H5FDdsmInt32   RemoteCommRecvXML(H5FDdsmString *file);
 
 protected:
-    H5FDdsmInt32       Id;
-    H5FDdsmInt32       TotalSize;
-    H5FDdsmInt32       InterSize;
-    H5FDdsmInt32       CommType;
-    H5FDdsmInt32       CommChannel;
+  MPI_Comm           Comm;
+  H5FDdsmInt32       Id;
+  H5FDdsmInt32       TotalSize;
+  H5FDdsmInt32       InterSize;
+  H5FDdsmInt32       CommType;
+  H5FDdsmInt32       CommChannel;
 
-    H5FDdsmInt32             SyncChannels;
+  H5FDdsmBoolean     UseOneSidedComm;
+  H5FDdsmBoolean     UseStaticInterComm;
+
+  H5FDdsmInt32       SyncChannels;
 };
 
 #endif // __H5FDdsmComm_h

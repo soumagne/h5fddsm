@@ -63,7 +63,10 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
 
     // Description:
     // Set/Get the interprocess communication subsystem
-    // Valid values are H5FD_DSM_COMM_MPI, H5FD_DSM_COMM_SOCKET, H5FD_DSM_COMM_MPI_RMA
+    // Valid values are: - H5FD_DSM_COMM_MPI
+    //                   - H5FD_DSM_COMM_SOCKET
+    //                   - H5FD_DSM_COMM_MPI_RMA
+    //                   - H5FD_DSM_COMM_DMAPP
     H5FDdsmSetValueMacro(DsmCommType, H5FDdsmInt32);
     H5FDdsmGetValueMacro(DsmCommType, H5FDdsmInt32);
 

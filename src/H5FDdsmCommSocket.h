@@ -31,25 +31,17 @@
 
 class H5FDdsmSocket;
 
-#include <mpi.h>
-
 class H5FDdsm_EXPORT H5FDdsmCommSocket : public H5FDdsmComm {
 
 public:
   H5FDdsmCommSocket();
   virtual ~H5FDdsmCommSocket();
 
-  // Set/Get the Internal MPI Communicator
-  H5FDdsmSetValueMacro(Comm, MPI_Comm);
-  H5FDdsmGetValueMacro(Comm, MPI_Comm);
-
   H5FDdsmGetStringMacro(DsmMasterHostName);
   void SetDsmMasterHostName(H5FDdsmConstString hostName);
 
   H5FDdsmGetValueMacro(DsmMasterPort, H5FDdsmInt32);
   H5FDdsmSetValueMacro(DsmMasterPort, H5FDdsmInt32);
-
-  H5FDdsmInt32   DupComm(MPI_Comm Source);
 
   H5FDdsmInt32   Init();
   H5FDdsmInt32   Send(H5FDdsmMsg *Msg);
@@ -76,7 +68,6 @@ protected:
   H5FDdsmInt32   InterCommServerConnect();
   H5FDdsmInt32   InterCommClientConnect();
 
-  MPI_Comm             Comm;
   H5FDdsmSocket       *InterComm[H5FD_DSM_MAX_SOCKET]; // Internode Socket Collection for data exchange
   H5FDdsmSocket       *DsmMasterSocket; // Used for initializing connection and send comm orders
   H5FDdsmByte          DsmMasterHostName[MPI_MAX_PORT_NAME];

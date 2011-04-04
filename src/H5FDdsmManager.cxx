@@ -203,14 +203,14 @@ H5FDdsmInt32 H5FDdsmManager::CreateDSM()
   case H5FD_DSM_COMM_MPI_RMA:
     this->DSMComm = new H5FDdsmCommMpi();
     this->DSMComm->SetCommType(this->GetDsmCommType());
-    dynamic_cast<H5FDdsmCommMpi*> (this->DSMComm)->DupComm(this->Communicator);
-    dynamic_cast<H5FDdsmCommMpi*> (this->DSMComm)->SetUseStaticInterComm(this->GetDsmUseStaticInterComm());
     H5FDdsmDebug("Using MPI Intercomm...");
-    if (this->GetDsmCommType() == H5FD_DSM_COMM_MPI_RMA) H5FDdsmDebug("Using RMA Intercomm...");
+    if (this->GetDsmCommType() == H5FD_DSM_COMM_MPI_RMA) {
+      this->DSMComm->SetUseOneSidedComm(true);
+      H5FDdsmDebug("Using RMA Intercomm...");
+    }
     break;
   case H5FD_DSM_COMM_SOCKET:
     this->DSMComm = new H5FDdsmCommSocket();
-    dynamic_cast<H5FDdsmCommSocket*> (this->DSMComm)->DupComm(this->Communicator);
     H5FDdsmDebug("Using Socket Intercomm...");
     break;
   default:
@@ -218,6 +218,8 @@ H5FDdsmInt32 H5FDdsmManager::CreateDSM()
     return(H5FD_DSM_FAIL);
     break;
   }
+  this->DSMComm->SetUseStaticInterComm(this->GetDsmUseStaticInterComm());
+  this->DSMComm->DupComm(this->Communicator);
   this->DSMComm->Init();
   //
   // Create the DSM buffer
@@ -563,6 +565,8 @@ H5FDdsmInt32 H5FDdsmManager::ReadDSMConfigFile()
       this->SetDsmCommType(H5FD_DSM_COMM_MPI);
     } else if (comm == "mpi_rma") {
       this->SetDsmCommType(H5FD_DSM_COMM_MPI_RMA);
+    } else if (comm == "dmapp") {
+      this->SetDsmCommType(H5FD_DSM_COMM_DMAPP);
     }
     if (static_intercomm == "true") this->SetDsmUseStaticInterComm(1);
     this->SetServerHostName(host.c_str());

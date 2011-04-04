@@ -543,7 +543,7 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
       this->SendInfo();
       this->SignalConnected();
     }
-    if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
+    if (this->Comm->GetUseOneSidedComm()) {
       this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_REMOTE);
       this->Comm->RemoteCommSync();
     } else {
@@ -580,7 +580,7 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
       // and only releases it when the update is over
       this->ReleaseLockOnClose = false;
 #ifdef H5FD_DSM_HAVE_STEERING
-      if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) this->IsLocked = true;
+      if (this->Comm->GetUseOneSidedComm()) this->IsLocked = true;
 #else
       this->IsLocked = true;
 #endif
@@ -765,7 +765,7 @@ H5FDdsmBuffer::Put(H5FDdsmAddr Address, H5FDdsmUInt64 aLength, void *Data){
 
     }else{
       H5FDdsmInt32   status;
-      if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
+      if (this->Comm->GetUseOneSidedComm()) {
         H5FDdsmDebug("PUT request from " << who << " for " << len << " bytes @ " << Address);
         status = this->PutData(who, datap, len, Address - astart);
         if (status == H5FD_DSM_FAIL){
@@ -819,7 +819,7 @@ H5FDdsmBuffer::Get(H5FDdsmAddr Address, H5FDdsmUInt64 aLength, void *Data){
 
     }else{
       H5FDdsmInt32   status;
-      if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
+      if (this->Comm->GetUseOneSidedComm()) {
         H5FDdsmDebug("Get request from " << who << " for " << len << " bytes @ " << Address);
         status = this->GetData(who, datap, len, Address - astart);
         if (status == H5FD_DSM_FAIL){
@@ -947,7 +947,7 @@ H5FDdsmBuffer::RequestLockAcquire() {
     pthread_mutex_lock(&this->Lock);
 #endif
   } else {
-    if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
+    if (this->Comm->GetUseOneSidedComm()) {
       // After possible RMA put, need to sync windows before further operations
       if (this->IsSyncRequired) this->Comm->RemoteCommSync();
       this->IsSyncRequired = false;
@@ -991,7 +991,7 @@ H5FDdsmBuffer::RequestLockRelease() {
     pthread_mutex_unlock(&this->Lock);
 #endif
     if (this->IsConnected) {
-      if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
+      if (this->Comm->GetUseOneSidedComm()) {
         this->RequestAccept();
       } else {
 #ifdef H5FD_DSM_HAVE_STEERING
@@ -1002,7 +1002,7 @@ H5FDdsmBuffer::RequestLockRelease() {
       }
     }
   } else {
-    if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
+    if (this->Comm->GetUseOneSidedComm()) {
       // Nothing for now
     } else {
 #ifdef H5FD_DSM_HAVE_STEERING
@@ -1050,7 +1050,7 @@ H5FDdsmBuffer::RequestServerUpdate() {
 
   // On next lock acquire, a synchronization is required
 #ifdef H5FD_DSM_HAVE_STEERING
-  if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) this->IsSyncRequired = true;
+  if (this->Comm->GetUseOneSidedComm()) this->IsSyncRequired = true;
 #else
   this->IsSyncRequired = true;
 #endif

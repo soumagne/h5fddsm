@@ -54,68 +54,45 @@
 
 #include "H5FDdsmComm.h"
 
-#include <mpi.h>
-
-//! Base comm object for Distributed Shared Memory implementation
-/*!
-*/
-
-
 class H5FDdsm_EXPORT H5FDdsmCommMpi : public H5FDdsmComm {
 
 public:
   H5FDdsmCommMpi();
   virtual ~H5FDdsmCommMpi();
 
-#ifndef SWIG
-    //! Set the MPI Communicator
-    H5FDdsmSetValueMacro(Comm, MPI_Comm);
-    //! Get the MPI Communicator
-    H5FDdsmGetValueMacro(Comm, MPI_Comm);
+  H5FDdsmGetStringMacro(DsmMasterHostName);
+  void SetDsmMasterHostName(H5FDdsmConstString hostName);
 
-    H5FDdsmGetValueMacro(InterComm, MPI_Comm);
+  H5FDdsmInt32   Init();
+  H5FDdsmInt32   Send(H5FDdsmMsg *Msg);
+  H5FDdsmInt32   Receive(H5FDdsmMsg *Msg, H5FDdsmInt32 Channel=0);
+  // Additional methods for one sided communications
+  H5FDdsmInt32   PutData(H5FDdsmMsg *DataMsg);
+  H5FDdsmInt32   GetData(H5FDdsmMsg *DataMsg);
+  //
+  H5FDdsmInt32   Probe(H5FDdsmMsg *Msg);
+  H5FDdsmInt32   Barrier();
 
-    // If set to true, do not use dynamic connection
-    H5FDdsmSetValueMacro(UseStaticInterComm, H5FDdsmBoolean);
-    H5FDdsmGetValueMacro(UseStaticInterComm, H5FDdsmBoolean);
+  H5FDdsmInt32   OpenPort();
+  H5FDdsmInt32   ClosePort();
+  H5FDdsmInt32   RemoteCommAccept(void *storagePointer, H5FDdsmUInt64 storageSize);
+  H5FDdsmInt32   RemoteCommConnect();
+  H5FDdsmInt32   RemoteCommDisconnect();
 
-    H5FDdsmGetStringMacro(DsmMasterHostName);
-    void SetDsmMasterHostName(H5FDdsmConstString hostName);
+  H5FDdsmInt32   RemoteCommSync();
+  H5FDdsmInt32   RemoteCommRecvReady();
+  H5FDdsmInt32   RemoteCommSendReady();
 
-    H5FDdsmInt32   DupComm(MPI_Comm Source);
-#endif
-    H5FDdsmInt32   Init();
-    H5FDdsmInt32   Send(H5FDdsmMsg *Msg);
-    H5FDdsmInt32   Receive(H5FDdsmMsg *Msg, H5FDdsmInt32 Channel=0);
-    // Additional methods for one sided communications
-    H5FDdsmInt32   PutData(H5FDdsmMsg *DataMsg);
-    H5FDdsmInt32   GetData(H5FDdsmMsg *DataMsg);
-    //
-    H5FDdsmInt32   Probe(H5FDdsmMsg *Msg);
-    H5FDdsmInt32   Barrier();
+  H5FDdsmInt32   RemoteCommRecvInfo(H5FDdsmInfo *dsmInfo);
+  H5FDdsmInt32   RemoteCommSendInfo(H5FDdsmInfo *dsmInfo);
 
-    H5FDdsmInt32   OpenPort();
-    H5FDdsmInt32   ClosePort();
-    H5FDdsmInt32   RemoteCommAccept(void *storagePointer, H5FDdsmUInt64 storageSize);
-    H5FDdsmInt32   RemoteCommConnect();
-    H5FDdsmInt32   RemoteCommDisconnect();
-
-    H5FDdsmInt32   RemoteCommSync();
-    H5FDdsmInt32   RemoteCommRecvReady();
-    H5FDdsmInt32   RemoteCommSendReady();
-
-    H5FDdsmInt32   RemoteCommRecvInfo(H5FDdsmInfo *dsmInfo);
-    H5FDdsmInt32   RemoteCommSendInfo(H5FDdsmInfo *dsmInfo);
-
-    H5FDdsmInt32   RemoteCommSendXML(H5FDdsmString file, H5FDdsmInt32 dest);
-    H5FDdsmInt32   RemoteCommRecvXML(H5FDdsmString *file);
+  H5FDdsmInt32   RemoteCommSendXML(H5FDdsmString file, H5FDdsmInt32 dest);
+  H5FDdsmInt32   RemoteCommRecvXML(H5FDdsmString *file);
 
 protected:
-    MPI_Comm       Comm;
-    H5FDdsmBoolean UseStaticInterComm;
-    MPI_Comm       InterComm;
-    MPI_Win        Win;
-    H5FDdsmByte    DsmMasterHostName[MPI_MAX_PORT_NAME];
+  MPI_Comm       InterComm;
+  MPI_Win        Win;
+  H5FDdsmByte    DsmMasterHostName[MPI_MAX_PORT_NAME];
 };
 
 #endif // __H5FDdsmCommMpi_h

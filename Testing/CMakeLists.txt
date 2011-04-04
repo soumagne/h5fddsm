@@ -40,7 +40,7 @@ FUNCTION(ADD_REMOTE_DSM_TEST full_test_name server client)
       ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/H5FDdsmTestDriver
       --server ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${server}
       --client ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${client}
-      16 ${comm}
+      64 ${comm}
       )
   ENDFOREACH(comm)
 ENDFUNCTION (ADD_REMOTE_DSM_TEST)

@@ -104,7 +104,6 @@ H5FDdsmInt32 H5FDdsmSteerer::GetSteeringCommands()
 {
   H5FDdsmAddr addr;
   H5FDdsmMetaData metadata;
-  MPI_Comm comm = MPI_COMM_NULL;
 
   memset(&metadata, 0, sizeof(metadata));
   addr = (H5FDdsmAddr) (this->DsmBuffer->GetTotalLength() - sizeof(metadata) + sizeof(metadata.entry));
@@ -115,14 +114,9 @@ H5FDdsmInt32 H5FDdsmSteerer::GetSteeringCommands()
       return H5FD_DSM_FAIL;
     }
   }
-  if (this->DsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_SOCKET) {
-    comm = dynamic_cast <H5FDdsmCommSocket*> (this->DsmBuffer->GetComm())->GetComm();
-  }
-  else if ((this->DsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI) ||
-      (this->DsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI_RMA)) {
-    comm = dynamic_cast <H5FDdsmCommMpi*> (this->DsmBuffer->GetComm())->GetComm();
-  }
-  MPI_Bcast(metadata.steering_cmd, sizeof(metadata.steering_cmd), MPI_UNSIGNED_CHAR, 0, comm);
+
+  MPI_Bcast(metadata.steering_cmd, sizeof(metadata.steering_cmd),
+      MPI_UNSIGNED_CHAR, 0, this->DsmBuffer->GetComm()->GetComm());
   H5FDdsmDebug("Received steering command: " << metadata.steering_cmd);
   if (this->CheckCommand((H5FDdsmConstString) metadata.steering_cmd) == H5FD_DSM_SUCCESS) {
     // Steering command successfully treated, clear it
@@ -177,7 +171,6 @@ H5FDdsmInt32 H5FDdsmSteerer::GetDisabledObjects()
 {
   H5FDdsmAddr addr;
   H5FDdsmMetaData metadata;
-  MPI_Comm comm = MPI_COMM_NULL;
 
   memset(&metadata, 0, sizeof(metadata));
   addr = (H5FDdsmAddr) (this->DsmBuffer->GetTotalLength() - sizeof(metadata) + sizeof(metadata.entry)
@@ -194,15 +187,13 @@ H5FDdsmInt32 H5FDdsmSteerer::GetDisabledObjects()
       return H5FD_DSM_FAIL;
     }
   }
-  if (this->DsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_SOCKET) {
-    comm = dynamic_cast <H5FDdsmCommSocket*> (this->DsmBuffer->GetComm())->GetComm();
-  }
-  else if ((this->DsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI) ||
-      (this->DsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI_RMA)) {
-    comm = dynamic_cast <H5FDdsmCommMpi*> (this->DsmBuffer->GetComm())->GetComm();
-  }
-  MPI_Bcast(&metadata.disabled_objects.number_of_objects, sizeof(metadata.disabled_objects.number_of_objects), MPI_UNSIGNED_CHAR, 0, comm);
-  MPI_Bcast(metadata.disabled_objects.object_names, sizeof(metadata.disabled_objects.object_names), MPI_UNSIGNED_CHAR, 0, comm);
+
+  MPI_Bcast(&metadata.disabled_objects.number_of_objects,
+      sizeof(metadata.disabled_objects.number_of_objects),
+      MPI_UNSIGNED_CHAR, 0, this->DsmBuffer->GetComm()->GetComm());
+  MPI_Bcast(metadata.disabled_objects.object_names,
+      sizeof(metadata.disabled_objects.object_names),
+      MPI_UNSIGNED_CHAR, 0, this->DsmBuffer->GetComm()->GetComm());
 
   H5FDdsmDebug("Received nb of Disabled objects: " << metadata.disabled_objects.number_of_objects);
 

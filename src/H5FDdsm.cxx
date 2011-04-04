@@ -144,7 +144,6 @@ typedef struct H5FD_dsm_t
 
 //--------------------------------------------------------------------------
 // Driver-specific file access properties
-// TODO update structure
 typedef struct H5FD_dsm_fapl_t
 {
   size_t increment; // how much to grow memory
@@ -614,7 +613,7 @@ done:
  *-------------------------------------------------------------------------
  */
 herr_t
-H5Pget_fapl_dsm(hid_t fapl_id, MPI_Comm *dsmComm/*out*/, void **dsmBuffer /* out */)
+H5Pget_fapl_dsm(hid_t fapl_id, MPI_Comm *dsmComm /* out */, void **dsmBuffer /* out */)
 {
   H5FD_dsm_fapl_t *fa;
   H5P_genplist_t *plist; // Property list pointer
@@ -631,13 +630,7 @@ H5Pget_fapl_dsm(hid_t fapl_id, MPI_Comm *dsmComm/*out*/, void **dsmBuffer /* out
     HGOTO_ERROR(H5E_PLIST, H5E_BADVALUE, FAIL, "bad VFL driver info");
 
   if (dsmComm) {
-    if (fa->buffer->GetComm()->GetCommType() == H5FD_DSM_COMM_SOCKET) {
-      *dsmComm = dynamic_cast <H5FDdsmCommSocket*> (fa->buffer->GetComm())->GetComm();
-    }
-    else if ((fa->buffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI) ||
-        (fa->buffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI_RMA)) {
-      *dsmComm = dynamic_cast <H5FDdsmCommMpi*> (fa->buffer->GetComm())->GetComm();
-    }
+    *dsmComm = fa->buffer->GetComm()->GetComm();
   }
   if (dsmBuffer) *dsmBuffer = fa->buffer;
 
@@ -823,7 +816,6 @@ H5FD_dsm_close(H5FD_t *_file)
   H5FD_dsm_t *file = (H5FD_dsm_t*) _file;
   herr_t ret_value = SUCCEED; // Return value
   hbool_t isSomeoneDirty = FALSE;
-  MPI_Comm comm = MPI_COMM_NULL;
 
   FUNC_ENTER_NOAPI(H5FD_dsm_close, FAIL)
 
@@ -836,17 +828,11 @@ H5FD_dsm_close(H5FD_t *_file)
   if (!file->DsmBuffer->GetIsReadOnly()) {
     if (!file->DsmBuffer->GetIsServer() || !file->DsmBuffer->GetIsConnected()) {
       PRINT_INFO("Gathering dirty info");
-      if (file->DsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_SOCKET) {
-        comm = dynamic_cast <H5FDdsmCommSocket*> (file->DsmBuffer->GetComm())->GetComm();
-      }
-      else if ((file->DsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI) ||
-          (file->DsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI_RMA)) {
-        comm = dynamic_cast <H5FDdsmCommMpi*> (file->DsmBuffer->GetComm())->GetComm();
-      }
       // Be sure that everyone's here before releasing resources (done with collective op)
       // We're now ready to read from the DSM
       // Gather all the dirty flags because some processes may not have written yet
-      MPI_Allreduce(&file->dirty, &isSomeoneDirty, sizeof(hbool_t), MPI_UNSIGNED_CHAR, MPI_MAX, comm);
+      MPI_Allreduce(&file->dirty, &isSomeoneDirty, sizeof(hbool_t),
+          MPI_UNSIGNED_CHAR, MPI_MAX, file->DsmBuffer->GetComm()->GetComm());
       if (isSomeoneDirty) {
         file->DsmBuffer->SetIsDataModified(true);
         if (file->DsmBuffer->GetUpdateServerOnClose()) {
@@ -1305,15 +1291,7 @@ H5FD_dsm_communicator(const H5FD_t *_file)
   assert(H5FD_DSM==file->pub.driver_id);
 
   // Set return value
-  if (file->DsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_SOCKET) {
-  ret_value
-  = dynamic_cast <H5FDdsmCommSocket*> (file->DsmBuffer->GetComm())->GetComm();
-  }
-  else if ((file->DsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI) ||
-      (file->DsmBuffer->GetComm()->GetCommType() == H5FD_DSM_COMM_MPI_RMA)) {
-    ret_value
-    = dynamic_cast <H5FDdsmCommMpi*> (file->DsmBuffer->GetComm())->GetComm();
-  }
+  ret_value = file->DsmBuffer->GetComm()->GetComm();
 
 done:
   FUNC_LEAVE_NOAPI(ret_value)

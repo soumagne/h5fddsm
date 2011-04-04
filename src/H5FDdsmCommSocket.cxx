@@ -34,7 +34,6 @@
 //----------------------------------------------------------------------------
 H5FDdsmCommSocket::H5FDdsmCommSocket()
 {
-  this->Comm = MPI_COMM_NULL;
   this->CommType = H5FD_DSM_COMM_SOCKET;
   for (int i=0; i<H5FD_DSM_MAX_SOCKET; i++) this->InterComm[i] = NULL;
   this->DsmMasterSocket = NULL;
@@ -51,36 +50,18 @@ H5FDdsmCommSocket::~H5FDdsmCommSocket()
   }
   if (this->DsmMasterSocket) delete this->DsmMasterSocket;
   this->DsmMasterSocket = NULL;
-  if (this->Comm != MPI_COMM_NULL) {
-    MPI_Comm_free(&this->Comm);
-  }
-  this->Comm = MPI_COMM_NULL;
 }
 //----------------------------------------------------------------------------
 void
 H5FDdsmCommSocket::SetDsmMasterHostName(const char *hostName) {
   strcpy(this->DsmMasterHostName, hostName);
 }
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmCommSocket::DupComm(MPI_Comm Source)
-{
-  MPI_Comm    NewComm;
 
-  MPI_Comm_dup(Source, &NewComm);
-  return(this->SetComm(NewComm));
-}
 //----------------------------------------------------------------------------
 H5FDdsmInt32
 H5FDdsmCommSocket::Init()
 {
-  int size, rank;
-
-  if (MPI_Comm_size(this->Comm, &size) != MPI_SUCCESS) return(H5FD_DSM_FAIL);
-  if (MPI_Comm_rank(this->Comm, &rank) != MPI_SUCCESS) return(H5FD_DSM_FAIL);
-
-  this->SetId(rank);
-  this->SetTotalSize(size);
+  if(H5FDdsmComm::Init() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
   if (this->Id == 0) {
     this->DsmMasterSocket = new H5FDdsmSocket();
@@ -259,7 +240,7 @@ H5FDdsmCommSocket::RemoteCommAccept(void *storagePointer, H5FDdsmUInt64 storageS
   }
 
   for (int i=0; i<this->InterSize; i++) {
-      this->InterCommSockets[i] = this->InterComm[i]->GetClientSocketDescriptor();
+    this->InterCommSockets[i] = this->InterComm[i]->GetClientSocketDescriptor();
   }
 
   return(H5FD_DSM_SUCCESS);
@@ -313,11 +294,11 @@ H5FDdsmCommSocket::RemoteCommDisconnect()
 
   this->Barrier();
   if (this->InterComm[0]->GetClientSocketDescriptor() < 0) {
-      H5FDdsmDebug("Client is now disconnecting");
-      this->RemoteCommRecvReady();
+    H5FDdsmDebug("Client is now disconnecting");
+    this->RemoteCommRecvReady();
   } else {
-      H5FDdsmDebug("Server is now disconnecting");
-      this->RemoteCommSendReady();
+    H5FDdsmDebug("Server is now disconnecting");
+    this->RemoteCommSendReady();
   }
   for (int i=0; i<H5FD_DSM_MAX_SOCKET; i++) {
     if (this->InterComm[i]) delete this->InterComm[i];
@@ -475,9 +456,9 @@ H5FDdsmCommSocket::InterCommServerConnect()
 
   // Gather socket info
   MPI_Gather(interCommHostName, this->InterSize*MPI_MAX_PORT_NAME, MPI_CHAR,
-    masterInterCommHostName, this->InterSize*MPI_MAX_PORT_NAME, MPI_CHAR, 0, this->Comm);
+      masterInterCommHostName, this->InterSize*MPI_MAX_PORT_NAME, MPI_CHAR, 0, this->Comm);
   MPI_Gather(interCommPort, this->InterSize*sizeof(H5FDdsmInt32), MPI_UNSIGNED_CHAR,
-    masterInterCommPort, this->InterSize*sizeof(H5FDdsmInt32), MPI_UNSIGNED_CHAR, 0, this->Comm);
+      masterInterCommPort, this->InterSize*sizeof(H5FDdsmInt32), MPI_UNSIGNED_CHAR, 0, this->Comm);
 
   // Send it then to interComm 0
   if (this->Id == 0) {
@@ -489,10 +470,10 @@ H5FDdsmCommSocket::InterCommServerConnect()
     }
     // Send masterInterCommHostName
     this->DsmMasterSocket->Send(masterInterCommHostName,
-      (this->InterSize)*(this->TotalSize)*MPI_MAX_PORT_NAME*sizeof(char));
+        (this->InterSize)*(this->TotalSize)*MPI_MAX_PORT_NAME*sizeof(char));
     // Send masterInterCommPort
     this->DsmMasterSocket->Send(masterInterCommPort,
-      (this->InterSize)*(this->TotalSize)*sizeof(H5FDdsmInt32));
+        (this->InterSize)*(this->TotalSize)*sizeof(H5FDdsmInt32));
   }
   //
   // Accept
@@ -526,15 +507,15 @@ H5FDdsmCommSocket::InterCommClientConnect()
   if (this->Id == 0) {
     // Receive masterInterCommHostName
     this->DsmMasterSocket->Receive(masterInterCommHostName,
-      (this->InterSize)*(this->TotalSize)*MPI_MAX_PORT_NAME*sizeof(char));
+        (this->InterSize)*(this->TotalSize)*MPI_MAX_PORT_NAME*sizeof(char));
     // Receive masterInterCommPort
     this->DsmMasterSocket->Receive(masterInterCommPort,
-      (this->InterSize)*(this->TotalSize)*sizeof(H5FDdsmInt32));
+        (this->InterSize)*(this->TotalSize)*sizeof(H5FDdsmInt32));
 
     for (int i=0; i<((this->InterSize)*(this->TotalSize)); i++) {
       if (i%(this->TotalSize) == 0) {
         strncpy(interCommHostName+(i/this->TotalSize)*MPI_MAX_PORT_NAME, 
-          masterInterCommHostName+i*MPI_MAX_PORT_NAME, MPI_MAX_PORT_NAME);
+            masterInterCommHostName+i*MPI_MAX_PORT_NAME, MPI_MAX_PORT_NAME);
         interCommPort[i/this->TotalSize] = masterInterCommPort[i];
       } else {
         char tmpHost[MPI_MAX_PORT_NAME];
@@ -575,4 +556,3 @@ H5FDdsmCommSocket::InterCommClientConnect()
 
   return H5FD_DSM_SUCCESS;
 }
-//----------------------------------------------------------------------------
