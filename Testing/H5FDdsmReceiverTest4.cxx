@@ -44,16 +44,24 @@ main(int argc, char * argv[])
       commType = H5FD_DSM_COMM_MPI_RMA;
       std::cout << "MPI_RMA Inter-Communicator selected" << std::endl;
     }
+    else if (!strcmp(argv[2], "DMAPP")) {
+      commType = H5FD_DSM_COMM_DMAPP;
+      staticInterComm = true;
+      if (rank == 0) std::cout << "DMAPP Inter-Communicator selected" << std::endl;
+    }
   }
 
   if (argc > 3) {
     if (!strcmp(argv[3], "Static") && (commType != H5FD_DSM_COMM_SOCKET)) {
-      int color = 1; // 1 for server, 2 for client
-      MPI_Comm_split(MPI_COMM_WORLD, color, rank, &comm);
       staticInterComm = true;
-      MPI_Comm_rank(comm, &rank);
-      MPI_Comm_size(comm, &size);
     }
+  }
+
+  if (staticInterComm) {
+    int color = 1; // 1 for server, 2 for client
+    MPI_Comm_split(MPI_COMM_WORLD, color, rank, &comm);
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &size);
   }
 
   std::cout << "Process number " << rank << " of " << size - 1 << std::endl;

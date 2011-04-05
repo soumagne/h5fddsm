@@ -31,23 +31,45 @@
 //----------------------------------------------------------------------------
 H5FDdsmCommDmapp::H5FDdsmCommDmapp()
 {
-  this->CommType = H5FD_DSM_COMM_MPI;
+  this->IsDmappInitialized = 0;
+  this->CommType = H5FD_DSM_COMM_DMAPP;
   this->InterComm = MPI_COMM_NULL;
   this->CommChannel = H5FD_DSM_COMM_CHANNEL_LOCAL;
   this->Win = MPI_WIN_NULL;
+  this->IsDataSegRegistered = 0;
 }
 
 //----------------------------------------------------------------------------
 H5FDdsmCommDmapp::~H5FDdsmCommDmapp()
 {
+  if (this->IsDmappInitialized) {
+    dmapp_finalize();
+    this->IsDmappInitialized = 0;
+  }
 }
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
 H5FDdsmCommDmapp::Init()
 {
+  dmapp_rma_attrs_t actual_args = {0}, rma_args = {0};
+
   if(H5FDdsmComm::Init() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
+  // Set the RMA parameters
+  rma_args.put_relaxed_ordering = DMAPP_ROUTING_ADAPTIVE;
+  rma_args.max_outstanding_nb = DMAPP_DEF_OUTSTANDING_NB;
+  rma_args.offload_threshold = DMAPP_OFFLOAD_THRESHOLD;
+  rma_args.max_concurrency = 1;
+
+  // Initialize DMAPP
+  status = dmapp_init(&rma_args, &actual_args);
+  if (status != DMAPP_RC_SUCCESS) {
+    H5FDdsmError("dmapp_init Failed: " << status);
+    return(H5FD_DSM_FAIL);
+  }
+
+  this->IsDmappInitialized = 1;
   H5FDdsmDebug("CommDmapp initialized");
   return(H5FD_DSM_SUCCESS);
 }
@@ -161,16 +183,16 @@ H5FDdsmInt32
 H5FDdsmCommDmapp::PutData(H5FDdsmMsg *DataMsg)
 {
   dmapp_return_t status;
+  H5FDdsmByte *dataPtr = (H5FDdsmByte *) DataMsg->Address;
 
   if(H5FDdsmComm::PutData(DataMsg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
   H5FDdsmDebug("Putting " << DataMsg->Length << " Bytes to Address " << DataMsg->Address << " to Id = " << DataMsg->Dest);
-  status = dmapp_put(DataMsg->Address, &this->DestSeg, DataMsg->Dest, DataMsg->Data, DataMsg->Length, DMAPP_BYTE);
-//  status = MPI_Put(DataMsg->Data, DataMsg->Length, MPI_UNSIGNED_CHAR, DataMsg->Dest, DataMsg->Address, DataMsg->Length, MPI_UNSIGNED_CHAR, this->Win);
-    if (status != DMAPP_RC_SUCCESS) {
-      H5FDdsmError("Id = " << this->Id << " MPI_Put failed to put " << DataMsg->Length << " Bytes to " << DataMsg->Dest);
-      return(H5FD_DSM_FAIL);
-    }
+  status = dmapp_put(dataPtr, &this->DestSeg, DataMsg->Dest, DataMsg->Data, DataMsg->Length, DMAPP_BYTE);
+  if (status != DMAPP_RC_SUCCESS) {
+    H5FDdsmError("Id = " << this->Id << " dmapp_put failed to put " << DataMsg->Length << " Bytes to " << DataMsg->Dest);
+    return(H5FD_DSM_FAIL);
+  }
 
   return(H5FD_DSM_SUCCESS);
 }
@@ -233,9 +255,13 @@ H5FDdsmCommDmapp::RemoteCommAccept(void *storagePointer, H5FDdsmUInt64 storageSi
     H5FDdsmError("dmapp_mem_register Failed: " << status);
     return(H5FD_DSM_FAIL);
   }
+  this->IsDataSegRegistered = 1;
 
   // Send now mem segments information
-  MPI_Send(&this->DataSeg, sizeof(this->DataSeg), MPI_UNSIGNED_CHAR, 0, H5FD_DSM_EXCHANGE_TAG, this->InterComm);
+  if (MPI_Send(&this->DataSeg, sizeof(this->DataSeg), MPI_UNSIGNED_CHAR, 0, H5FD_DSM_EXCHANGE_TAG, this->InterComm)!= MPI_SUCCESS) {
+    H5FDdsmError("Id = " << this->Id << " MPI_Send of DataSeg failed");
+    return(H5FD_DSM_FAIL);
+  };
 
   return(H5FD_DSM_SUCCESS);
 }
@@ -276,8 +302,8 @@ H5FDdsmCommDmapp::RemoteCommConnect()
     MPI_Comm_free(&winComm);
 
     // Send now mem segments information
-    if (MPI_Recv(&this->DestSeg, sizeof(this->DestSeg), MPI_UNSIGNED_CHAR, 1, H5FD_DSM_EXCHANGE_TAG, this->InterComm, &recvStatus) != MPI_SUCCESS) {
-      H5FDdsmError("Id = " << this->Id << " MPI_Recv of ready failed");
+    if (MPI_Recv(&this->DataSeg, sizeof(this->DataSeg), MPI_UNSIGNED_CHAR, 1, H5FD_DSM_EXCHANGE_TAG, this->InterComm, &recvStatus) != MPI_SUCCESS) {
+      H5FDdsmError("Id = " << this->Id << " MPI_Recv of DataSeg failed");
       return(H5FD_DSM_FAIL);
     }
 
@@ -293,7 +319,10 @@ H5FDdsmCommDmapp::RemoteCommDisconnect()
 {
   if(H5FDdsmComm::RemoteCommDisconnect() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
-  dmapp_mem_unregister(&this->DataSeg);
+  if (this->IsDataSegRegistered) {
+    dmapp_mem_unregister(&this->DataSeg);
+    this->IsDataSegRegistered = 0;
+  }
 
   if (this->Win != MPI_WIN_NULL) {
     MPI_Win_free(&this->Win);

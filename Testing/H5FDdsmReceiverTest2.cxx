@@ -76,7 +76,7 @@ void freeBuffer(ParticleBuffer_t *buffer) {
 }
 //----------------------------------------------------------------------------
 double TestParticleRead(const char *filename, int rank, hsize_t N,
-    MPI_Comm dcomm, H5FDdsmBuffer *dsmBuffer)
+    MPI_Comm comm, H5FDdsmBuffer *dsmBuffer)
 {
   ParticleBuffer_t ReadBuffer;
   hsize_t   i;
@@ -95,10 +95,10 @@ double TestParticleRead(const char *filename, int rank, hsize_t N,
   ReadBuffer.Ddata = doublearray;
 
   // call the write routine with our dummy buffer
-  MPI_Barrier(dcomm);
+  MPI_Barrier(comm);
   double t1 = MPI_Wtime();
   particle_read(&ReadBuffer, filename, rank, dsmBuffer);
-  MPI_Barrier(dcomm);
+  MPI_Barrier(comm);
   double t2 = MPI_Wtime();
 
   if (rank == 0) {
@@ -125,7 +125,7 @@ double TestParticleRead(const char *filename, int rank, hsize_t N,
 int main (int argc, char* argv[])
 {
   int provided, rank, size, nremoteprocs;
-  MPI_Comm dcomm = MPI_COMM_WORLD;
+  MPI_Comm comm = MPI_COMM_WORLD;
   char fullname[16] = "dsm";
   hsize_t numParticles = 0;
   long dsmSize = 16; // default MB
@@ -137,8 +137,8 @@ int main (int argc, char* argv[])
   // Receiver will spawn a thread to handle incoming data Put/Get requests
   // we must therefore have MPI_THREAD_MULTIPLE
   MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
-  MPI_Comm_rank(dcomm, &rank);
-  MPI_Comm_size(dcomm, &size);
+  MPI_Comm_rank(comm, &rank);
+  MPI_Comm_size(comm, &size);
   //
   if (rank == 0) {
     if (provided != MPI_THREAD_MULTIPLE) {
@@ -176,6 +176,11 @@ int main (int argc, char* argv[])
       commType = H5FD_DSM_COMM_MPI_RMA;
       std::cout << "MPI_RMA Inter-Communicator selected" << std::endl;
     }
+    else if (!strcmp(argv[2], "DMAPP")) {
+      commType = H5FD_DSM_COMM_DMAPP;
+      staticInterComm = true;
+      if (rank == 0) std::cout << "DMAPP Inter-Communicator selected" << std::endl;
+    }
   }
 
   if (argc > 3) {
@@ -183,12 +188,15 @@ int main (int argc, char* argv[])
       dsmType = H5FD_DSM_TYPE_BLOCK_CYCLIC;
     }
     else if (!strcmp(argv[3], "Static") && (commType != H5FD_DSM_COMM_SOCKET)) {
-      int color = 1; // 1 for server, 2 for client
-      MPI_Comm_split(MPI_COMM_WORLD, color, rank, &dcomm);
       staticInterComm = true;
-      MPI_Comm_rank(dcomm, &rank);
-      MPI_Comm_size(dcomm, &size);
     }
+  }
+
+  if (staticInterComm) {
+    int color = 1; // 1 for server, 2 for client
+    MPI_Comm_split(MPI_COMM_WORLD, color, rank, &comm);
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &size);
   }
 
   if (argc > 4) {
@@ -199,7 +207,7 @@ int main (int argc, char* argv[])
 
   // Create a DSM manager
   H5FDdsmManager *dsmManager = new H5FDdsmManager();
-  dsmManager->SetCommunicator(dcomm);
+  dsmManager->SetCommunicator(comm);
   dsmManager->SetLocalBufferSizeMBytes(dsmSize/size);
   dsmManager->SetDsmType(dsmType);
   dsmManager->SetDsmBlockLength(dsmBlockSize);
@@ -227,7 +235,7 @@ int main (int argc, char* argv[])
 
   // The output comment below must not be deleted, it allows ctest to detect
   // when the server is initialized
-  MPI_Barrier(dcomm);
+  MPI_Barrier(comm);
   std::cout << "Waiting for client..." << std::endl;
   dsmManager->WaitForConnected();
 
@@ -241,9 +249,9 @@ int main (int argc, char* argv[])
       if (rank == 0) {
         // printf("Trying to read %d * %llu particles\n", nremoteprocs, numParticles);
       }
-      TestParticleRead(fullname, rank, nremoteprocs*numParticles, dcomm, dsmManager->GetDSMHandle());
+      TestParticleRead(fullname, rank, nremoteprocs*numParticles, comm, dsmManager->GetDSMHandle());
       // Sync here
-      MPI_Barrier(dcomm);
+      MPI_Barrier(comm);
       // Clean up for next step
       dsmManager->UpdateFinalize();
     }
@@ -252,7 +260,7 @@ int main (int argc, char* argv[])
   std::cout << "Process number " << rank << " Closing down DSM server" << std::endl;
 
   // Sync here
-  MPI_Barrier(dcomm);
+  MPI_Barrier(comm);
 
   // Closes ports or MPI communicators
   if (!staticInterComm) dsmManager->UnpublishDSM();
@@ -261,7 +269,7 @@ int main (int argc, char* argv[])
   delete dsmManager;
 
   if (staticInterComm) {
-   MPI_Comm_free(&dcomm);
+   MPI_Comm_free(&comm);
   }
 
   MPI_Finalize();

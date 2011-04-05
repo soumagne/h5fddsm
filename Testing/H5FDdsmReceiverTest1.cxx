@@ -10,7 +10,7 @@
 int main (int argc, char* argv[])
 {
   H5FDdsmInt32 provided, rank, size;
-  MPI_Comm dcomm = MPI_COMM_WORLD;
+  MPI_Comm comm = MPI_COMM_WORLD;
   H5FDdsmUInt32 dsmSize = 16; // default MB
   H5FDdsmInt32 commType = H5FD_DSM_COMM_SOCKET;
   H5FDdsmInt32 dsmType = H5FD_DSM_TYPE_UNIFORM;
@@ -22,8 +22,8 @@ int main (int argc, char* argv[])
   // we must therefore have MPI_THREAD_MULTIPLE
   //
   MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
-  MPI_Comm_rank(dcomm, &rank);
-  MPI_Comm_size(dcomm, &size);
+  MPI_Comm_rank(comm, &rank);
+  MPI_Comm_size(comm, &size);
   //
   if (rank == 0) {
     if (provided != MPI_THREAD_MULTIPLE) {
@@ -63,6 +63,11 @@ int main (int argc, char* argv[])
       commType = H5FD_DSM_COMM_MPI_RMA;
       if (rank == 0) std::cout << "MPI_RMA Inter-Communicator selected" << std::endl;
     }
+    else if (!strcmp(argv[2], "DMAPP")) {
+      commType = H5FD_DSM_COMM_DMAPP;
+      staticInterComm = true;
+      if (rank == 0) std::cout << "DMAPP Inter-Communicator selected" << std::endl;
+    }
   }
 
   if (argc > 3) {
@@ -70,12 +75,15 @@ int main (int argc, char* argv[])
       dsmType = H5FD_DSM_TYPE_BLOCK_CYCLIC;
     }
     else if (!strcmp(argv[3], "Static") && (commType != H5FD_DSM_COMM_SOCKET)) {
-      H5FDdsmInt32 color = 1; // 1 for server, 2 for client
-      MPI_Comm_split(MPI_COMM_WORLD, color, rank, &dcomm);
       staticInterComm = true;
-      MPI_Comm_rank(dcomm, &rank);
-      MPI_Comm_size(dcomm, &size);
     }
+  }
+
+  if (staticInterComm) {
+    H5FDdsmInt32 color = 1; // 1 for server, 2 for client
+    MPI_Comm_split(MPI_COMM_WORLD, color, rank, &comm);
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &size);
   }
 
   if (argc > 4) {
@@ -88,7 +96,7 @@ int main (int argc, char* argv[])
   // Create a DSM manager
   //
   H5FDdsmManager *dsmManager = new H5FDdsmManager();
-  dsmManager->SetCommunicator(dcomm);
+  dsmManager->SetCommunicator(comm);
   dsmManager->SetLocalBufferSizeMBytes(dsmSize/size);
   dsmManager->SetDsmType(dsmType);
   dsmManager->SetDsmBlockLength(dsmBlockSize);
@@ -117,7 +125,7 @@ int main (int argc, char* argv[])
 
   // The output comment below must not be deleted, it allows ctest to detect
   // when the server is initialized
-  MPI_Barrier(dcomm);
+  MPI_Barrier(comm);
   if (rank == 0) std::cout << "Waiting for client..." << std::endl;
   dsmManager->WaitForConnected();
 
@@ -126,7 +134,7 @@ int main (int argc, char* argv[])
       // H5Dump
       // dsmManager->H5DumpLight();
       // Sync here
-      MPI_Barrier(dcomm);
+      MPI_Barrier(comm);
       // Clean up for next step
       dsmManager->UpdateFinalize();
     }
@@ -137,7 +145,7 @@ int main (int argc, char* argv[])
   //
   // Sync here
   //
-  MPI_Barrier(dcomm);
+  MPI_Barrier(comm);
 
   //
   // Closes ports or MPI communicators
@@ -150,7 +158,7 @@ int main (int argc, char* argv[])
   delete dsmManager;
 
   if (staticInterComm) {
-   MPI_Comm_free(&dcomm);
+   MPI_Comm_free(&comm);
   }
 
   MPI_Finalize();

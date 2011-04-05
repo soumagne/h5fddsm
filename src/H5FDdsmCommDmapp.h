@@ -63,10 +63,11 @@ public:
   H5FDdsmInt32   RemoteCommRecvXML(H5FDdsmString *file);
 
 protected:
+  H5FDdsmBoolean   IsDmappInitialized;
   MPI_Comm         InterComm;
   MPI_Win          Win;
   dmapp_seg_desc_t DataSeg;
-  dmapp_seg_desc_t DestSeg;
+  H5FDdsmBoolean   IsDataSegRegistered;
 };
 
 #endif // __H5FDdsmCommDmapp_h
