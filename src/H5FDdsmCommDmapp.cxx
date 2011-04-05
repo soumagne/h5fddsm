@@ -74,7 +74,7 @@ H5FDdsmCommDmapp::Probe(H5FDdsmMsg *Msg)
 H5FDdsmInt32
 H5FDdsmCommDmapp::Receive(H5FDdsmMsg *Msg, H5FDdsmInt32 Channel)
 {
-  int            MessageLength;
+  int            messageLength;
   H5FDdsmInt32   status;
   H5FDdsmInt32   source = MPI_ANY_SOURCE;
   H5FDdsmInt32   receiveChannel = Channel;
@@ -98,10 +98,10 @@ H5FDdsmCommDmapp::Receive(H5FDdsmMsg *Msg, H5FDdsmInt32 Channel)
     H5FDdsmError("MPI Error Code = " << sendRecvStatus.MPI_ERROR);
     return(H5FD_DSM_FAIL);
   }
-  status = MPI_Get_count(&SendRecvStatus, MPI_UNSIGNED_CHAR, &MessageLength);
-  H5FDdsmDebug("(" << this->Id << ") Received " << MessageLength << " bytes from " << sendRecvStatus.MPI_SOURCE);
+  status = MPI_Get_count(&sendRecvStatus, MPI_UNSIGNED_CHAR, &messageLength);
+  H5FDdsmDebug("(" << this->Id << ") Received " << messageLength << " bytes from " << sendRecvStatus.MPI_SOURCE);
   Msg->SetSource(sendRecvStatus.MPI_SOURCE);
-  Msg->SetLength(MessageLength);
+  Msg->SetLength(messageLength);
   if(status != MPI_SUCCESS){
     H5FDdsmError("MPI_Get_count failed ");
     return(H5FD_DSM_FAIL);

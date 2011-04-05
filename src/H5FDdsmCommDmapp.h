@@ -28,6 +28,8 @@
 
 #include "H5FDdsmComm.h"
 
+#include <dmapp.h>
+
 class H5FDdsm_EXPORT H5FDdsmCommDmapp : public H5FDdsmComm {
 
 public:
