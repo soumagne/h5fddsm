@@ -52,6 +52,7 @@ H5FDdsmCommDmapp::~H5FDdsmCommDmapp()
 H5FDdsmInt32
 H5FDdsmCommDmapp::Init()
 {
+  dmapp_return_t status;
   dmapp_rma_attrs_t actual_args = {0}, rma_args = {0};
 
   if(H5FDdsmComm::Init() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
@@ -188,7 +189,7 @@ H5FDdsmCommDmapp::PutData(H5FDdsmMsg *DataMsg)
   if(H5FDdsmComm::PutData(DataMsg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
   H5FDdsmDebug("Putting " << DataMsg->Length << " Bytes to Address " << DataMsg->Address << " to Id = " << DataMsg->Dest);
-  status = dmapp_put(dataPtr, &this->DestSeg, DataMsg->Dest, DataMsg->Data, DataMsg->Length, DMAPP_BYTE);
+  status = dmapp_put(dataPtr, &this->DataSeg, DataMsg->Dest, DataMsg->Data, DataMsg->Length, DMAPP_BYTE);
   if (status != DMAPP_RC_SUCCESS) {
     H5FDdsmError("Id = " << this->Id << " dmapp_put failed to put " << DataMsg->Length << " Bytes to " << DataMsg->Dest);
     return(H5FD_DSM_FAIL);
