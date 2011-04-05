@@ -176,6 +176,15 @@ herr_t H5FD_dsm_steering_wait()
   }
 
   dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
+
+  if (!dsmBuffer->GetIsLocked()) dsmBuffer->RequestLockAcquire();
+
+  if (dsmBuffer->GetComm()->GetUseOneSidedComm() &&
+      dsmBuffer->GetIsSyncRequired() && !dsmBuffer->GetIsServer()) {
+    dsmBuffer->GetComm()->RemoteCommSync();
+    dsmBuffer->SetIsSyncRequired(false);
+  }
+
   if (dsmBuffer->GetSteerer()->SetCurrentCommand("pause")<0 ||
       dsmBuffer->GetSteerer()->UpdateSteeringCommands()<0) 
   {
