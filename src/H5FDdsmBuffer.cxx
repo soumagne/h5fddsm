@@ -537,8 +537,12 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
   case H5FD_DSM_ACCEPT:
     if (!this->IsConnected) {
       this->IsConnecting = true;
-      this->Comm->RemoteCommAccept(this->DataPointer, this->Length);
+      status = this->Comm->RemoteCommAccept(this->DataPointer, this->Length);
       this->IsConnecting = false;
+      if (status == H5FD_DSM_FAIL) {
+        H5FDdsmError("RemoteCommAccept Failed");
+        return(H5FD_DSM_FAIL);
+      }
       // send DSM information
       this->SendInfo();
       this->SignalConnected();
