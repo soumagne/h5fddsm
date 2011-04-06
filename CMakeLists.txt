@@ -54,7 +54,10 @@ IF (NOT H5FD_DSM_EXTERNALLY_CONFIGURED)
   SET (CMAKE_Fortran_MODULE_DIRECTORY
       ${PROJECT_BINARY_DIR}/bin/fortran CACHE PATH "Single Directory for all fortran modules."
   )
-  SET(H5FD_DSM_LIB_DEPENDENCIES hdf5)
+  SET(H5FD_DSM_LIB_DEPENDENCIES 
+    hdf5 
+    ${MPI_LIBRARY}
+  )
 ENDIF (NOT H5FD_DSM_EXTERNALLY_CONFIGURED)
 
 #-----------------------------------------------------------------------------
