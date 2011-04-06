@@ -184,7 +184,7 @@ H5FDdsmInt32
 H5FDdsmCommDmapp::PutData(H5FDdsmMsg *DataMsg)
 {
   dmapp_return_t status;
-  H5FDdsmByte *dataPtr = (H5FDdsmByte *) DataMsg->Address;
+  H5FDdsmByte *dataPtr = (H5FDdsmByte *) (this->DataAddr + DataMsg->Address);
 
   if(H5FDdsmComm::PutData(DataMsg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
@@ -258,7 +258,12 @@ H5FDdsmCommDmapp::RemoteCommAccept(void *storagePointer, H5FDdsmUInt64 storageSi
   }
   this->IsDataSegRegistered = 1;
 
-  // Send now mem segments information
+  // Send now memory segment information
+  H5FDdsmAddr storageAddr = (H5FDdsmAddr) storagePointer;
+  if (MPI_Send(&storageAddr, sizeof(storageAddr), MPI_UNSIGNED_CHAR, 0, H5FD_DSM_EXCHANGE_TAG, this->InterComm)!= MPI_SUCCESS) {
+    H5FDdsmError("Id = " << this->Id << " MPI_Send of Storage Address failed");
+    return(H5FD_DSM_FAIL);
+  };
   if (MPI_Send(&this->DataSeg, sizeof(this->DataSeg), MPI_UNSIGNED_CHAR, 0, H5FD_DSM_EXCHANGE_TAG, this->InterComm)!= MPI_SUCCESS) {
     H5FDdsmError("Id = " << this->Id << " MPI_Send of DataSeg failed");
     return(H5FD_DSM_FAIL);
@@ -302,8 +307,12 @@ H5FDdsmCommDmapp::RemoteCommConnect()
     }
     MPI_Comm_free(&winComm);
 
-    // Send now mem segments information
-    if (MPI_Recv(&this->DataSeg, sizeof(this->DataSeg), MPI_UNSIGNED_CHAR, 1, H5FD_DSM_EXCHANGE_TAG, this->InterComm, &recvStatus) != MPI_SUCCESS) {
+    // Receive now remote memory segment information
+    if (MPI_Recv(&this->DataAddr, sizeof(this->DataAddr), MPI_UNSIGNED_CHAR, 0, H5FD_DSM_EXCHANGE_TAG, this->InterComm, &recvStatus) != MPI_SUCCESS) {
+      H5FDdsmError("Id = " << this->Id << " MPI_Recv of DataAddr failed");
+      return(H5FD_DSM_FAIL);
+    }
+    if (MPI_Recv(&this->DataSeg, sizeof(this->DataSeg), MPI_UNSIGNED_CHAR, 0, H5FD_DSM_EXCHANGE_TAG, this->InterComm, &recvStatus) != MPI_SUCCESS) {
       H5FDdsmError("Id = " << this->Id << " MPI_Recv of DataSeg failed");
       return(H5FD_DSM_FAIL);
     }

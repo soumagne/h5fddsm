@@ -67,6 +67,7 @@ protected:
   MPI_Comm         InterComm;
   MPI_Win          Win;
   dmapp_seg_desc_t DataSeg;
+  H5FDdsmAddr      DataAddr;
   H5FDdsmBoolean   IsDataSegRegistered;
 };
 
