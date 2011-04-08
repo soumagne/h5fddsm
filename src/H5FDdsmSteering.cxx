@@ -191,7 +191,8 @@ herr_t H5FD_dsm_steering_wait()
     ret_value = FAIL;
   }
   else {
-    H5FD_dsm_steering_update();
+    dsmBuffer->GetSteerer()->GetSteeringCommands();
+    if (dsmBuffer->GetIsLocked()) dsmBuffer->RequestLockRelease();
   }
 
 done:
