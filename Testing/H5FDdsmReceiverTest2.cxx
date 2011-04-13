@@ -1,12 +1,8 @@
-#include <cstdio>
-#include <cstdlib>
-#include <string>
-#include <iostream>
-#include <mpi.h>
-#include <hdf5.h>
-//
-#include "H5FDdsmManager.h"
+#include "H5FDdsmTest.h"
 #include "H5FDdsm.h"
+//
+#include <hdf5.h>
+#include <cstdlib>
 
 // Names of datasets and groups
 #define GROUPNAME       "Scalar"
@@ -124,120 +120,12 @@ double TestParticleRead(const char *filename, int rank, hsize_t N,
 //----------------------------------------------------------------------------
 int main (int argc, char* argv[])
 {
-  int provided, rank, size, nremoteprocs;
+  H5FDdsmInt32 nremoteprocs;
   MPI_Comm comm = MPI_COMM_WORLD;
-  char fullname[16] = "dsm";
+  H5FDdsmConstString fullname = "dsm";
   hsize_t numParticles = 0;
-  long dsmSize = 16; // default MB
-  int commType = H5FD_DSM_COMM_SOCKET;
-  int dsmType = H5FD_DSM_TYPE_UNIFORM;
-  long dsmBlockSize = 1024;
-  bool staticInterComm = false;
-
-  // Receiver will spawn a thread to handle incoming data Put/Get requests
-  // we must therefore have MPI_THREAD_MULTIPLE
-  MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
-  MPI_Comm_rank(comm, &rank);
-  MPI_Comm_size(comm, &size);
-  //
-  if (rank == 0) {
-    if (provided != MPI_THREAD_MULTIPLE) {
-      std::cout << "MPI_THREAD_MULTIPLE not set, you may need to recompile your "
-          << "MPI distribution with threads enabled" << std::endl;
-    }
-    else {
-      std::cout << "MPI_THREAD_MULTIPLE is OK" << std::endl;
-    }
-  }
-
-  // Pause for debugging
-#ifdef H5FD_TEST_WAIT
-  if (rank == 0) {
-    std::cout << "Attach debugger if necessary, then press <enter>" << std::endl;
-    char c;
-    std::cin >> c;
-  }
-#endif
-
-  if (argc > 1) {
-    dsmSize = atol(argv[1]);
-  }
-
-  if (argc > 2) {
-    if (!strcmp(argv[2], "Socket")) {
-      commType = H5FD_DSM_COMM_SOCKET;
-      std::cout << "SOCKET Inter-Communicator selected" << std::endl;
-    }
-    else if (!strcmp(argv[2], "MPI")) {
-      commType = H5FD_DSM_COMM_MPI;
-      std::cout << "MPI Inter-Communicator selected" << std::endl;
-    }
-    else if (!strcmp(argv[2], "MPI_RMA")) {
-      commType = H5FD_DSM_COMM_MPI_RMA;
-      std::cout << "MPI_RMA Inter-Communicator selected" << std::endl;
-    }
-    else if (!strcmp(argv[2], "DMAPP")) {
-      commType = H5FD_DSM_COMM_DMAPP;
-      staticInterComm = true;
-      if (rank == 0) std::cout << "DMAPP Inter-Communicator selected" << std::endl;
-    }
-  }
-
-  if (argc > 3) {
-    if (!strcmp(argv[3], "Block")) {
-      dsmType = H5FD_DSM_TYPE_BLOCK_CYCLIC;
-    }
-    else if (!strcmp(argv[3], "Static") && (commType != H5FD_DSM_COMM_SOCKET)) {
-      staticInterComm = true;
-    }
-  }
-
-  if (staticInterComm) {
-    int color = 1; // 1 for server, 2 for client
-    MPI_Comm_split(MPI_COMM_WORLD, color, rank, &comm);
-    MPI_Comm_rank(comm, &rank);
-    MPI_Comm_size(comm, &size);
-  }
-
-  if (argc > 4) {
-    dsmBlockSize = atol(argv[4]);
-  }
-
-  std::cout << "Process number " << rank << " of " << size - 1 << std::endl;
-
-  // Create a DSM manager
   H5FDdsmManager *dsmManager = new H5FDdsmManager();
-  dsmManager->SetCommunicator(comm);
-  dsmManager->SetLocalBufferSizeMBytes(dsmSize/size);
-  dsmManager->SetDsmType(dsmType);
-  dsmManager->SetDsmBlockLength(dsmBlockSize);
-  dsmManager->SetDsmCommType(commType);
-  dsmManager->SetDsmIsServer(1);
-  if (staticInterComm) dsmManager->SetDsmUseStaticInterComm(1);
-  dsmManager->SetServerHostName("default");
-  dsmManager->SetServerPort(22000);
-  dsmManager->CreateDSM();
-
-  if (staticInterComm) {
-    dsmManager->ConnectInterCommDSM();
-  } else {
-    // Publish writes .dsm_config file with server name/port/mode in
-    // then spawns thread which waits for incoming connections
-    dsmManager->PublishDSM();
-  }
-  //
-  int totalMB = static_cast<int>(dsmManager->GetDSMHandle()->GetTotalLength()/(1024*1024));
-  int serversize = dsmManager->GetDSMHandle()->GetEndServerId();
-  if (rank == 0) {
-    std::cout << "DSM server memory size is : " << totalMB << " MB" << std::endl;
-    std::cout << "DSM server process count  : " <<  (serversize+1) << std::endl;
-  }
-
-  // The output comment below must not be deleted, it allows ctest to detect
-  // when the server is initialized
-  MPI_Barrier(comm);
-  std::cout << "Waiting for client..." << std::endl;
-  dsmManager->WaitForConnected();
+  receiverInit(argc, argv, dsmManager, &comm);
 
   while(dsmManager->GetDsmIsConnected()) {
     if (dsmManager->WaitForUpdateReady() > 0) {
@@ -246,10 +134,10 @@ int main (int argc, char* argv[])
       nremoteprocs = dsmManager->GetDSMHandle()->GetComm()->GetInterSize();
       numParticles = (hsize_t) (1024*1024*((dsmManager->GetDSMHandle()->GetTotalLength()/(1024.0*1024.0))-1)/(sizeof(double)*nremoteprocs));
       // Check data
-      if (rank == 0) {
+      if (dsmManager->GetUpdatePiece() == 0) {
         // printf("Trying to read %d * %llu particles\n", nremoteprocs, numParticles);
       }
-      TestParticleRead(fullname, rank, nremoteprocs*numParticles, comm, dsmManager->GetDSMHandle());
+      TestParticleRead(fullname, dsmManager->GetUpdatePiece(), nremoteprocs*numParticles, comm, dsmManager->GetDSMHandle());
       // Sync here
       MPI_Barrier(comm);
       // Clean up for next step
@@ -257,21 +145,7 @@ int main (int argc, char* argv[])
     }
   }
 
-  std::cout << "Process number " << rank << " Closing down DSM server" << std::endl;
-
-  // Sync here
-  MPI_Barrier(comm);
-
-  // Closes ports or MPI communicators
-  if (!staticInterComm) dsmManager->UnpublishDSM();
-
-  // Clean up everything
+  receiverFinalize(dsmManager, &comm);
   delete dsmManager;
-
-  if (staticInterComm) {
-   MPI_Comm_free(&comm);
-  }
-
-  MPI_Finalize();
   return(EXIT_SUCCESS);
 }

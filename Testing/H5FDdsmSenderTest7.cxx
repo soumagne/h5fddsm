@@ -1,5 +1,6 @@
 #include "H5FDdsmTest.h"
 #include "H5FDdsm.h"
+#include "H5FDdsmSteering.h"
 //
 #include <hdf5.h>
 #include <cstdlib>
@@ -142,6 +143,8 @@ H5FDdsmFloat64 TestParticleWrite(H5FDdsmConstString filename, H5FDdsmUInt64 N, H
   }
   WriteBuffer.Ddata = doublearray;
 
+  H5FD_dsm_steering_update();
+
   // call the write routine with our dummy buffer
   MPI_Barrier(dcomm);
   H5FDdsmFloat64 t1 = MPI_Wtime();
@@ -169,6 +172,7 @@ int main(int argc, char **argv)
   std::string hdffile;
   H5FDdsmManager *dsmManager = new H5FDdsmManager();
   senderInit(argc, argv, dsmManager, &comm);
+  H5FD_dsm_steering_init(comm, dsmManager->GetDSMHandle());
 
   if (dsm_env) {
     hdffile = std::string(dsm_env) + std::string("/hdf-output.h5");

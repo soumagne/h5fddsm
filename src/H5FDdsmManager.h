@@ -38,9 +38,14 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     ~H5FDdsmManager();
 
     // Description:
+    // Get the process rank and communicator size
+    H5FDdsmGetValueMacro(UpdatePiece, H5FDdsmInt32);
+    H5FDdsmGetValueMacro(UpdateNumPieces, MPI_Comm);
+
+    // Description:
     // Set/Get the MPI Communicator used by this DSM manager
     void SetCommunicator(MPI_Comm comm);
-    H5FDdsmGetValueMacro(Communicator,MPI_Comm);
+    H5FDdsmGetValueMacro(Communicator, MPI_Comm);
 
     // Description:
     // Set/Get the size of the buffer to be reserved on this process

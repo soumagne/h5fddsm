@@ -49,7 +49,7 @@ ENDFUNCTION (ADD_REMOTE_DSM_TEST)
 # H5FDdsmSenderTest1 : Bandwidth test of DSM write operations
 #-----------------------------------------------------------------------------
 ADD_EXECUTABLE(H5FDdsmSenderTest1
-  H5FDdsmSenderTest1.cxx
+  H5FDdsmSenderTest1.cxx H5FDdsmTest.cxx
 )
 TARGET_LINK_LIBRARIES(H5FDdsmSenderTest1
   H5FDdsm
@@ -60,7 +60,7 @@ SET_LINK_OPTIONS(H5FDdsmSenderTest1)
 # H5FDdsmReceiverTest1 : Bandwidth test receiver (does not do anything except hosting data)
 #-----------------------------------------------------------------------------
 ADD_EXECUTABLE(H5FDdsmReceiverTest1
-  H5FDdsmReceiverTest1.cxx
+  H5FDdsmReceiverTest1.cxx H5FDdsmTest.cxx
 )
 TARGET_LINK_LIBRARIES(H5FDdsmReceiverTest1
   H5FDdsm
@@ -71,7 +71,7 @@ SET_LINK_OPTIONS(H5FDdsmReceiverTest1)
 # H5FDdsmSenderTest2 : Data validity test of DSM write operations
 #-----------------------------------------------------------------------------
 ADD_EXECUTABLE(H5FDdsmSenderTest2
-  H5FDdsmSenderTest2.cxx
+  H5FDdsmSenderTest2.cxx H5FDdsmTest.cxx
 )
 TARGET_LINK_LIBRARIES(H5FDdsmSenderTest2
   H5FDdsm
@@ -82,7 +82,7 @@ SET_LINK_OPTIONS(H5FDdsmSenderTest2)
 # H5FDdsmReceiverTest2 : Data validity test receiver - Checks received data
 #-----------------------------------------------------------------------------
 ADD_EXECUTABLE(H5FDdsmReceiverTest2
-  H5FDdsmReceiverTest2.cxx
+  H5FDdsmReceiverTest2.cxx H5FDdsmTest.cxx
 )
 TARGET_LINK_LIBRARIES(H5FDdsmReceiverTest2
   H5FDdsm
@@ -116,7 +116,7 @@ SET_LINK_OPTIONS(H5FDdsmReceiverTest2)
 # H5FDdsmSenderTest4 : Send data as a client and test RDONLY mode
 #-----------------------------------------------------------------------------
 ADD_EXECUTABLE(H5FDdsmSenderTest4
-  H5FDdsmSenderTest4.cxx
+  H5FDdsmSenderTest4.cxx H5FDdsmTest.cxx
 )
 TARGET_LINK_LIBRARIES(H5FDdsmSenderTest4
   H5FDdsm
@@ -127,7 +127,7 @@ SET_LINK_OPTIONS(H5FDdsmSenderTest4)
 # H5FDdsmReceiverTest4 : Receive data as a server and dump the data
 #-----------------------------------------------------------------------------
 ADD_EXECUTABLE(H5FDdsmReceiverTest4
-  H5FDdsmReceiverTest4.cxx
+  H5FDdsmReceiverTest4.cxx H5FDdsmTest.cxx
 )
 TARGET_LINK_LIBRARIES(H5FDdsmReceiverTest4
   H5FDdsm
@@ -138,7 +138,7 @@ SET_LINK_OPTIONS(H5FDdsmReceiverTest4)
 # H5FDdsmSenderTest5 : Send data as a client and test RDWR mode
 #-----------------------------------------------------------------------------
 ADD_EXECUTABLE(H5FDdsmSenderTest5
-  H5FDdsmSenderTest5.cxx
+  H5FDdsmSenderTest5.cxx H5FDdsmTest.cxx
 )
 TARGET_LINK_LIBRARIES(H5FDdsmSenderTest5
   H5FDdsm
@@ -149,7 +149,7 @@ SET_LINK_OPTIONS(H5FDdsmSenderTest5)
 # H5FDdsmReceiverTest5 : Receive data as a server and dump the data
 #-----------------------------------------------------------------------------
 ADD_EXECUTABLE(H5FDdsmReceiverTest5
-  H5FDdsmReceiverTest5.cxx
+  H5FDdsmReceiverTest5.cxx H5FDdsmTest.cxx
 )
 TARGET_LINK_LIBRARIES(H5FDdsmReceiverTest5
   H5FDdsm
@@ -161,7 +161,7 @@ SET_LINK_OPTIONS(H5FDdsmReceiverTest5)
 #                      hand back and dump the data
 #-----------------------------------------------------------------------------
 ADD_EXECUTABLE(H5FDdsmSenderTest6
-  H5FDdsmSenderTest6.cxx
+  H5FDdsmSenderTest6.cxx H5FDdsmTest.cxx
 )
 TARGET_LINK_LIBRARIES(H5FDdsmSenderTest6
   H5FDdsm
@@ -173,12 +173,36 @@ SET_LINK_OPTIONS(H5FDdsmSenderTest6)
 #                        an array into a newly created steering group
 #-----------------------------------------------------------------------------
 ADD_EXECUTABLE(H5FDdsmReceiverTest6
-  H5FDdsmReceiverTest6.cxx
+  H5FDdsmReceiverTest6.cxx H5FDdsmTest.cxx
 )
 TARGET_LINK_LIBRARIES(H5FDdsmReceiverTest6
   H5FDdsm
 )
 SET_LINK_OPTIONS(H5FDdsmReceiverTest6)
+
+#-----------------------------------------------------------------------------
+# H5FDdsmSenderTest7 : Send data as a client, wait for the server to give
+#                      hand back and dump the data
+#-----------------------------------------------------------------------------
+ADD_EXECUTABLE(H5FDdsmSenderTest7
+  H5FDdsmSenderTest7.cxx H5FDdsmTest.cxx
+)
+TARGET_LINK_LIBRARIES(H5FDdsmSenderTest7
+  H5FDdsm
+)
+SET_LINK_OPTIONS(H5FDdsmSenderTest7)
+
+#-----------------------------------------------------------------------------
+# H5FDdsmReceiverTest7 : Receive data as a server, dump the data, write back
+#                        an array into a newly created steering group
+#-----------------------------------------------------------------------------
+ADD_EXECUTABLE(H5FDdsmReceiverTest7
+  H5FDdsmReceiverTest7.cxx H5FDdsmTest.cxx
+)
+TARGET_LINK_LIBRARIES(H5FDdsmReceiverTest7
+  H5FDdsm
+)
+SET_LINK_OPTIONS(H5FDdsmReceiverTest7)
 
 #-----------------------------------------------------------------------------
 IF (MPIEXEC)
@@ -187,4 +211,5 @@ IF (MPIEXEC)
   ADD_REMOTE_DSM_TEST(H5FDdsmTest4 H5FDdsmReceiverTest4 H5FDdsmSenderTest4)
   ADD_REMOTE_DSM_TEST(H5FDdsmTest5 H5FDdsmReceiverTest5 H5FDdsmSenderTest5)
   ADD_REMOTE_DSM_TEST(H5FDdsmTest6 H5FDdsmReceiverTest6 H5FDdsmSenderTest6)
+  ADD_REMOTE_DSM_TEST(H5FDdsmTest7 H5FDdsmReceiverTest7 H5FDdsmSenderTest7)
 ENDIF (MPIEXEC)
