@@ -3,6 +3,7 @@
 //
 #include <hdf5.h>
 #include <cstdlib>
+#include <string>
 
 // Names of datasets and groups
 #define GROUPNAME       "Scalar"
@@ -179,7 +180,7 @@ int main(int argc, char **argv)
     for (int loop = 0; loop < LOOPS; loop++) {
       H5FDdsmUInt64 numParticles = (H5FDdsmUInt64) (1024 * 1024 * (remoteMB - 1) /
           (sizeof(H5FDdsmFloat64) * dsmManager->GetUpdateNumPieces()));
-      Bytes       = numParticles * sizeof(H5FDdsmFloat64);
+      Bytes       = (H5FDdsmFloat64) (numParticles * sizeof(H5FDdsmFloat64));
       SendBytes   = Bytes * dsmManager->GetUpdateNumPieces();
       MBytes      = SendBytes / (1024.0 * 1024.0);
       if (MBytes < remoteMB) {

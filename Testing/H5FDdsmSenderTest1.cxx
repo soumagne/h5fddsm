@@ -3,6 +3,7 @@
 //
 #include <hdf5.h>
 #include <cstdlib>
+#include <string>
 
 /* Name of dataset_id to create in loc_id */
 #define GROUPNAME       "Step#0"
