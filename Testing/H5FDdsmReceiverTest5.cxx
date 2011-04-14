@@ -3,13 +3,13 @@
 #include <cstdlib>
 
 //----------------------------------------------------------------------------
-int main(int argc, char * argv[])
+int main(int argc, char *argv[])
 {
   H5FDdsmManager *dsmManager = new H5FDdsmManager();
   MPI_Comm comm = MPI_COMM_WORLD;
   receiverInit(argc, argv, dsmManager, &comm);
 
-  while (dsmManager->GetDSMHandle()->GetIsConnected()) {
+  while (dsmManager->GetDsmIsConnected()) {
     if (dsmManager->WaitForUpdateReady() > 0) {
       // H5Dump
       dsmManager->H5DumpLight();

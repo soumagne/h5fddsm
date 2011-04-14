@@ -118,7 +118,7 @@ double TestParticleRead(const char *filename, int rank, hsize_t N,
   return t2-t1;
 };
 //----------------------------------------------------------------------------
-int main (int argc, char* argv[])
+int main(int argc, char *argv[])
 {
   H5FDdsmInt32 nremoteprocs;
   MPI_Comm comm = MPI_COMM_WORLD;
@@ -127,7 +127,7 @@ int main (int argc, char* argv[])
   H5FDdsmManager *dsmManager = new H5FDdsmManager();
   receiverInit(argc, argv, dsmManager, &comm);
 
-  while(dsmManager->GetDsmIsConnected()) {
+  while (dsmManager->GetDsmIsConnected()) {
     if (dsmManager->WaitForUpdateReady() > 0) {
       // H5Dump
       // dsmManager->H5DumpLight();

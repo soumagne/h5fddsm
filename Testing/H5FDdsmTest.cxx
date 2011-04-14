@@ -198,7 +198,27 @@ void senderInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *co
   //
   // Create a DSM manager
   //
-  dsmManager->ReadDSMConfigFile();
+  if (argc > 1) {
+    // If an argument to give the comm is passed, assume we use static mode for now
+    H5FDdsmInt32 commType = H5FD_DSM_COMM_MPI;
+    if (!strcmp(argv[1], "MPI")) {
+      commType = H5FD_DSM_COMM_MPI;
+      if (rank == 0) std::cout << "MPI Inter-Communicator selected" << std::endl;
+    }
+    else if (!strcmp(argv[1], "MPI_RMA")) {
+      commType = H5FD_DSM_COMM_MPI_RMA;
+      if (rank == 0) std::cout << "MPI_RMA Inter-Communicator selected" << std::endl;
+    }
+    else if (!strcmp(argv[1], "DMAPP")) {
+      commType = H5FD_DSM_COMM_DMAPP;
+      staticInterComm = true;
+      if (rank == 0) std::cout << "DMAPP Inter-Communicator selected" << std::endl;
+    }
+    dsmManager->SetDsmCommType(commType);
+    dsmManager->SetDsmUseStaticInterComm(1);
+  } else {
+    dsmManager->ReadDSMConfigFile();
+  }
   if (dsmManager->GetDsmUseStaticInterComm()) {
     H5FDdsmInt32 color = 2; // 1 for server, 2 for client
     MPI_Comm_split(MPI_COMM_WORLD, color, rank, comm);

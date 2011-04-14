@@ -144,8 +144,6 @@ H5FDdsmFloat64 TestParticleWrite(H5FDdsmConstString filename, H5FDdsmUInt64 N, H
   }
   WriteBuffer.Ddata = doublearray;
 
-  H5FD_dsm_steering_update();
-
   // call the write routine with our dummy buffer
   MPI_Barrier(dcomm);
   H5FDdsmFloat64 t1 = MPI_Wtime();
@@ -201,9 +199,17 @@ int main(int argc, char **argv)
         totaltime = 0;
         for (int avg = 0; avg < AVERAGE; avg++) {
           if (type == 0) {
+            H5FDdsmBoolean modified = 0;
             // We have configured everything manually using the DSM manager, so pass the buffer
             // into the read/write code so that we can use the dsm that we have setup
             // otherwise it creates a new DSM server object
+            if (loop != 0) H5FD_dsm_steering_update();
+            H5FD_dsm_steering_is_set("WaitForGui", &modified);
+            if (modified) {
+              H5FDdsmBoolean waitForGui;
+              H5FD_dsm_steering_scalar_get("WaitForGui", H5T_NATIVE_INT, &waitForGui);
+            }
+
             totaltime += TestParticleWrite(fullname, numParticles, dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(), comm, dsmManager->GetDSMHandle());
           }
           else if (type == 1) {

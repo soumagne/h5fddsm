@@ -165,7 +165,7 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     // Description:
     // Set/Get the current given steering command.
     // The command is then passed to the simulation.
-    void SetSteeringCommand(H5FDdsmString cmd);
+    void SetSteeringCommand(H5FDdsmConstString cmd);
 
     // Description:
     // Set values and associated name for the corresponding int interaction.

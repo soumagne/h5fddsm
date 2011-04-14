@@ -3,7 +3,7 @@
 #include <cstdlib>
 
 //----------------------------------------------------------------------------
-int main(int argc, char * argv[])
+int main(int argc, char *argv[])
 {
   H5FDdsmManager *dsmManager = new H5FDdsmManager();
   MPI_Comm comm = MPI_COMM_WORLD;

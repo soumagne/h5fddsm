@@ -620,7 +620,7 @@ void H5FDdsmManager::UpdateSteeredObjects()
   this->DSMBuffer->GetSteerer()->UpdateDisabledObjects();
 }
 //----------------------------------------------------------------------------
-void H5FDdsmManager::SetSteeringCommand(H5FDdsmString cmd)
+void H5FDdsmManager::SetSteeringCommand(H5FDdsmConstString cmd)
 {
   H5FDdsmDebug("cmd: " << cmd);
   if (cmd) {
