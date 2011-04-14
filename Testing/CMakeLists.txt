@@ -110,29 +110,6 @@ TARGET_LINK_LIBRARIES(H5FDdsmReceiver_cwrite_sread_bw
 SET_LINK_OPTIONS(H5FDdsmReceiver_cwrite_sread_bw)
 
 #-----------------------------------------------------------------------------
-# H5FDdsmSenderTest3 : Send data as a client
-#-----------------------------------------------------------------------------
-#ADD_EXECUTABLE(H5FDdsmSenderTest3
-#  H5FDdsmSenderTest3.cxx
-#)
-#TARGET_LINK_LIBRARIES(H5FDdsmSenderTest3
-#  H5FDdsm
-#)
-#SET_LINK_OPTIONS(H5FDdsmSenderTest3)
-
-#-----------------------------------------------------------------------------
-# H5FDdsmReceiverTest3 : Receive data as a server
-#            (auto-allocated - requires H5FD_DSM_SERVER_CONFIG_PATH to be set)
-#-----------------------------------------------------------------------------
-#ADD_EXECUTABLE(H5FDdsmReceiverTest3
-#  H5FDdsmReceiverTest3.cxx
-#)
-#TARGET_LINK_LIBRARIES(H5FDdsmReceiverTest3
-#  H5FDdsm
-#)
-#SET_LINK_OPTIONS(H5FDdsmReceiverTest3)
-
-#-----------------------------------------------------------------------------
 # H5FDdsmSender_cwrite_cread : Send data as a client and test RDONLY mode
 #-----------------------------------------------------------------------------
 ADD_EXECUTABLE(H5FDdsmSender_cwrite_cread
