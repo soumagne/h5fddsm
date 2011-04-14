@@ -97,8 +97,8 @@ double TestParticleRead(const char *filename, int rank, hsize_t N,
   MPI_Barrier(comm);
   double t2 = MPI_Wtime();
 
-  if (rank == 0) {
-    /* Check the results. */
+  if (rank == 0 && step_increment < 5) {
+    /* Check the results the first times. */
     for (i=0; i<N; i++) {
       if((doublearray[i] != (i + step_increment)) && (fail_count<10)) {
         fprintf(stderr," doublearray[%llu] is %llu, should be %llu\n", i, (hsize_t)doublearray[i], (i+step_increment));

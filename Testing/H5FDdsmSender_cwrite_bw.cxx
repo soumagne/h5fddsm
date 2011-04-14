@@ -157,7 +157,7 @@ H5FDdsmFloat64 TestParticleWrite(H5FDdsmConstString filename, H5FDdsmUInt64 N, H
 
 //----------------------------------------------------------------------------
 #define LOOPS       10
-#define AVERAGE     1
+#define AVERAGE     5
 #define TYPES       1 // 2 if disk output test required
 
 int main(int argc, char **argv)
