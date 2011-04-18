@@ -66,9 +66,9 @@ protected:
   H5FDdsmBoolean   IsDmappInitialized;
   MPI_Comm         InterComm;
   MPI_Win          Win;
-  dmapp_seg_desc_t DataSeg;
-  H5FDdsmAddr      DataAddr;
-  H5FDdsmBoolean   IsDataSegRegistered;
+  dmapp_seg_desc_t *DataSeg;
+//  H5FDdsmAddr      DataAddr;
+//  H5FDdsmBoolean   IsDataSegRegistered;
 };
 
 #endif // __H5FDdsmCommDmapp_h

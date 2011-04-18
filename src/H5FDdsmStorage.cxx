@@ -30,6 +30,9 @@
 #include <cstdio>
 #include <cstdlib>
 #include <mpi.h>
+#ifdef H5FD_DSM_HAVE_DMAPP
+#include <dmapp.h>
+#endif
 
 //----------------------------------------------------------------------------
 H5FDdsmStorage::H5FDdsmStorage()
@@ -40,10 +43,17 @@ H5FDdsmStorage::H5FDdsmStorage()
 //----------------------------------------------------------------------------
 H5FDdsmStorage::~H5FDdsmStorage()
 {
-  if (this->DataPointer) {
-    if (this->Comm && (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA)) {
+  if (this->DataPointer && this->Comm) {
+    switch(this->Comm->GetCommType()) {
+    case H5FD_DSM_COMM_MPI_RMA:
       MPI_Free_mem(this->DataPointer);
-    } else {
+      break;
+#ifdef H5FD_DSM_HAVE_DMAPP
+    case H5FD_DSM_COMM_DMAPP:
+      dmapp_sheap_free(this->DataPointer);
+      break;
+#endif
+    default:
       free(this->DataPointer);
     }
     this->DataPointer = NULL;
@@ -71,37 +81,56 @@ H5FDdsmInt32  H5FDdsmStorage::SetLength(H5FDdsmUInt64 Length, H5FDdsmBoolean All
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmStorage::Allocate()
 {
-  if (this->Comm && (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA)) {
-    int err;
-    if (this->DataPointer) {
-      MPI_Free_mem(this->DataPointer);
-      this->DataPointer = NULL;
-    }
-    err = MPI_Alloc_mem(this->Length*sizeof(H5FDdsmByte), MPI_INFO_NULL, &this->DataPointer);
-    if ((this->DataPointer == NULL) || err) {
-      int errclass;
-      // An error of MPI_ERR_NO_MEM is allowed
-      MPI_Error_class(err, &errclass);
-      if (errclass == MPI_ERR_NO_MEM) {
-        H5FDdsmError("MPI_Alloc_mem failed, not enough memory");
+  if (this->Comm) {
+    switch(this->Comm->GetCommType()) {
+    case H5FD_DSM_COMM_MPI_RMA:
+      int err;
+      if (this->DataPointer) {
+        MPI_Free_mem(this->DataPointer);
+        this->DataPointer = NULL;
       }
-      H5FDdsmError("Allocation Failed, unable to allocate " << this->Length);
-      return(H5FD_DSM_FAIL);
+      err = MPI_Alloc_mem(this->Length*sizeof(H5FDdsmByte), MPI_INFO_NULL, &this->DataPointer);
+      if ((this->DataPointer == NULL) || err) {
+        int errclass;
+        // An error of MPI_ERR_NO_MEM is allowed
+        MPI_Error_class(err, &errclass);
+        if (errclass == MPI_ERR_NO_MEM) {
+          H5FDdsmError("MPI_Alloc_mem failed, not enough memory");
+        }
+        H5FDdsmError("Allocation Failed, unable to allocate " << this->Length);
+        return(H5FD_DSM_FAIL);
+      }
+      break;
+#ifdef H5FD_DSM_HAVE_DMAPP
+    case H5FD_DSM_COMM_DMAPP:
+      if (this->DataPointer) {
+        // try to reallocate
+        this->DataPointer = dmapp_sheap_realloc(this->DataPointer, this->Length*sizeof(H5FDdsmByte));
+      } else {
+        this->DataPointer = dmapp_sheap_malloc(this->Length*sizeof(H5FDdsmByte));
+      }
+      if (this->DataPointer == NULL) {
+        H5FDdsmError("Symmetric Heap Allocation Failed, unable to allocate " << this->Length);
+        return(H5FD_DSM_FAIL);
+      }
+      break;
+#endif
+    default:
+      if (this->DataPointer) {
+        // try to reallocate
+        this->DataPointer = realloc(this->DataPointer, this->Length*sizeof(H5FDdsmByte));
+      } else {
+        this->DataPointer = calloc(this->Length, sizeof(H5FDdsmByte));
+      }
+      if (this->DataPointer == NULL) {
+        H5FDdsmError("Allocation Failed, unable to allocate " << this->Length);
+        perror("Alloc :" );
+        return(H5FD_DSM_FAIL);
+      }
     }
-  } else {
-    if (this->DataPointer) {
-      // try to reallocate
-      this->DataPointer = realloc(this->DataPointer, this->Length*sizeof(H5FDdsmByte));
-    } else {
-      this->DataPointer = calloc(this->Length, sizeof(H5FDdsmByte));
-    }
-    if (this->DataPointer == NULL) {
-      H5FDdsmError("Allocation Failed, unable to allocate " << this->Length);
-      perror("Alloc :" );
-      return(H5FD_DSM_FAIL);
-    }
+    H5FDdsmDebug("Allocation Succeeded");
+    return(H5FD_DSM_SUCCESS);
   }
-  H5FDdsmDebug("Allocation Succeeded");
-  return(H5FD_DSM_SUCCESS);
+  return(H5FD_DSM_FAIL);
 }
 //----------------------------------------------------------------------------
