@@ -36,7 +36,7 @@ struct H5FDdsmCommDmappInternals
     DmappSegEntry(H5FDdsmAddr addr, dmapp_seg_desc_t seg, H5FDdsmInt32 pe) : Addr(addr),
         PE(pe)
     {
-      memcpy(SegDesc, seg, sizeof(dmapp_seg_desc_t));
+      memcpy(&SegDesc, &seg, sizeof(dmapp_seg_desc_t));
     }
     H5FDdsmAddr Addr;
     dmapp_seg_desc_t SegDesc;
@@ -366,7 +366,7 @@ H5FDdsmCommDmapp::RemoteCommConnect()
         return(H5FD_DSM_FAIL);
       }
       this->CommDmappInternals->DmappSegTable.push_back(
-          H5FDdsmManagerInternals::DmappSegEntry(storageAddr, segDesc, dmappRank));
+          H5FDdsmCommDmappInternals::DmappSegEntry(storageAddr, segDesc, dmappRank));
     }
     return(H5FD_DSM_SUCCESS);
   } else {
@@ -380,7 +380,7 @@ H5FDdsmCommDmapp::RemoteCommDisconnect()
 {
   if(H5FDdsmComm::RemoteCommDisconnect() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
-  if (this->IsDataSegRegistered) {
+  if (this->IsStorageSegRegistered) {
     dmapp_mem_unregister(&this->StorageSegDesc);
     this->IsStorageSegRegistered = 0;
   }
