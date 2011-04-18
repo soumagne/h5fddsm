@@ -30,9 +30,9 @@
 #include <cstdio>
 #include <cstdlib>
 #include <mpi.h>
-#ifdef H5FD_DSM_HAVE_DMAPP
-#include <dmapp.h>
-#endif
+//#ifdef H5FD_DSM_HAVE_DMAPP
+//#include <dmapp.h>
+//#endif
 
 //----------------------------------------------------------------------------
 H5FDdsmStorage::H5FDdsmStorage()
@@ -48,11 +48,11 @@ H5FDdsmStorage::~H5FDdsmStorage()
     case H5FD_DSM_COMM_MPI_RMA:
       MPI_Free_mem(this->DataPointer);
       break;
-#ifdef H5FD_DSM_HAVE_DMAPP
-    case H5FD_DSM_COMM_DMAPP:
-      dmapp_sheap_free(this->DataPointer);
-      break;
-#endif
+//#ifdef H5FD_DSM_HAVE_DMAPP
+//    case H5FD_DSM_COMM_DMAPP:
+//      dmapp_sheap_free(this->DataPointer);
+//      break;
+//#endif
     default:
       free(this->DataPointer);
     }
@@ -101,20 +101,20 @@ H5FDdsmInt32 H5FDdsmStorage::Allocate()
         return(H5FD_DSM_FAIL);
       }
       break;
-#ifdef H5FD_DSM_HAVE_DMAPP
-    case H5FD_DSM_COMM_DMAPP:
-      if (this->DataPointer) {
-        // try to reallocate
-        this->DataPointer = dmapp_sheap_realloc(this->DataPointer, this->Length*sizeof(H5FDdsmByte));
-      } else {
-        this->DataPointer = dmapp_sheap_malloc(this->Length*sizeof(H5FDdsmByte));
-      }
-      if (this->DataPointer == NULL) {
-        H5FDdsmError("Symmetric Heap Allocation Failed, unable to allocate " << this->Length);
-        return(H5FD_DSM_FAIL);
-      }
-      break;
-#endif
+//#ifdef H5FD_DSM_HAVE_DMAPP
+//    case H5FD_DSM_COMM_DMAPP:
+//      if (this->DataPointer) {
+//        // try to reallocate
+//        this->DataPointer = dmapp_sheap_realloc(this->DataPointer, this->Length*sizeof(H5FDdsmByte));
+//      } else {
+//        this->DataPointer = dmapp_sheap_malloc(this->Length*sizeof(H5FDdsmByte));
+//      }
+//      if (this->DataPointer == NULL) {
+//        H5FDdsmError("Symmetric Heap Allocation Failed, unable to allocate " << this->Length);
+//        return(H5FD_DSM_FAIL);
+//      }
+//      break;
+//#endif
     default:
       if (this->DataPointer) {
         // try to reallocate

@@ -27,22 +27,43 @@
 #include "H5FDdsmMsg.h"
 
 #include <cstring>
+#include <vector>
 
+struct H5FDdsmCommDmappInternals
+{
+  struct DmappSegEntry
+  {
+    DmappSegEntry(H5FDdsmAddr addr, dmapp_seg_desc_t seg, H5FDdsmInt32 pe) : Addr(addr),
+        PE(pe)
+    {
+      memcpy(SegDesc, seg, sizeof(dmapp_seg_desc_t));
+    }
+    H5FDdsmAddr Addr;
+    dmapp_seg_desc_t SegDesc;
+    H5FDdsmInt32 PE;
+  };
+
+  typedef std::vector<DmappSegEntry> DmappSegEntries;
+
+  DmappSegEntries DmappSegTable;
+};
 //----------------------------------------------------------------------------
 H5FDdsmCommDmapp::H5FDdsmCommDmapp()
 {
-  this->IsDmappInitialized = 0;
   this->CommType = H5FD_DSM_COMM_DMAPP;
   this->InterComm = MPI_COMM_NULL;
   this->CommChannel = H5FD_DSM_COMM_CHANNEL_LOCAL;
   this->Win = MPI_WIN_NULL;
-  this->DataSeg = NULL;
-//  this->IsDataSegRegistered = 0;
+  this->CommDmappInternals = new H5FDdsmCommDmappInternals;
+  this->IsDmappInitialized = 0;
+  this->DmappRank = 0;
+  this->IsStorageSegRegistered = 0;
 }
 
 //----------------------------------------------------------------------------
 H5FDdsmCommDmapp::~H5FDdsmCommDmapp()
 {
+  delete this->CommDmappInternals;
   if (this->IsDmappInitialized) {
     dmapp_finalize();
     this->IsDmappInitialized = 0;
@@ -79,7 +100,7 @@ H5FDdsmCommDmapp::Init()
     return(H5FD_DSM_FAIL);
   }
 
-  this->DataSeg = &(job.sheap_seg);
+  this->DmappRank = job.pe;
 
   this->IsDmappInitialized = 1;
   H5FDdsmDebug("CommDmapp initialized");
@@ -195,14 +216,17 @@ H5FDdsmInt32
 H5FDdsmCommDmapp::PutData(H5FDdsmMsg *DataMsg)
 {
   dmapp_return_t status;
-  H5FDdsmByte *dataPtr = (H5FDdsmByte *) (this->DataAddr + DataMsg->Address);
+  H5FDdsmByte *targetPtr = (H5FDdsmByte *) (this->CommDmappInternals->DmappSegTable[DataMsg->Dest].Addr + DataMsg->Address);
+  dmapp_seg_desc_t *targetSeg = &this->CommDmappInternals->DmappSegTable[DataMsg->Dest].SegDesc;
+  H5FDdsmInt32 targetPE = this->CommDmappInternals->DmappSegTable[DataMsg->Dest].PE;
 
   if(H5FDdsmComm::PutData(DataMsg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
   H5FDdsmDebug("Putting " << DataMsg->Length << " Bytes to Address " << DataMsg->Address << " to Id = " << DataMsg->Dest);
-  status = dmapp_put(dataPtr, this->DataSeg, DataMsg->Dest, DataMsg->Data, DataMsg->Length, DMAPP_BYTE);
+  status = dmapp_put(targetPtr, targetSeg, targetPE, DataMsg->Data, DataMsg->Length, DMAPP_BYTE);
   if (status != DMAPP_RC_SUCCESS) {
-    H5FDdsmError("Id = " << this->Id << " dmapp_put failed to put " << DataMsg->Length << " Bytes to " << DataMsg->Dest);
+    H5FDdsmError("Id = " << this->Id << " dmapp_put failed to put " << DataMsg->Length
+        << " Bytes to " << DataMsg->Dest << " (PE " << targetPE << ")");
     return(H5FD_DSM_FAIL);
   }
 
@@ -262,23 +286,29 @@ H5FDdsmCommDmapp::RemoteCommAccept(void *storagePointer, H5FDdsmUInt64 storageSi
   }
   MPI_Comm_free(&winComm);
 
-//  status = dmapp_mem_register(storagePointer, storageSize, &this->DataSeg);
-//  if (status != DMAPP_RC_SUCCESS) {
-//    H5FDdsmError("dmapp_mem_register Failed: " << status);
-//    return(H5FD_DSM_FAIL);
-//  }
-//  this->IsDataSegRegistered = 1;
-//
-//  // Send now memory segment information
-//  H5FDdsmAddr storageAddr = (H5FDdsmAddr) storagePointer;
-//  if (MPI_Send(&storageAddr, sizeof(storageAddr), MPI_UNSIGNED_CHAR, 0, H5FD_DSM_EXCHANGE_TAG, this->InterComm)!= MPI_SUCCESS) {
-//    H5FDdsmError("Id = " << this->Id << " MPI_Send of Storage Address failed");
-//    return(H5FD_DSM_FAIL);
-//  };
-//  if (MPI_Send(&this->DataSeg, sizeof(this->DataSeg), MPI_UNSIGNED_CHAR, 0, H5FD_DSM_EXCHANGE_TAG, this->InterComm)!= MPI_SUCCESS) {
-//    H5FDdsmError("Id = " << this->Id << " MPI_Send of DataSeg failed");
-//    return(H5FD_DSM_FAIL);
-//  };
+  status = dmapp_mem_register(storagePointer, storageSize, &this->StorageSegDesc);
+  if (status != DMAPP_RC_SUCCESS) {
+    H5FDdsmError("dmapp_mem_register Failed: " << status);
+    return(H5FD_DSM_FAIL);
+  }
+  this->IsStorageSegRegistered = 1;
+
+  // Send now memory segment information
+  H5FDdsmAddr storageAddr = (H5FDdsmAddr) storagePointer;
+  for (H5FDdsmInt32 i = 0; i < this->InterSize; i++) {
+    if (MPI_Send(&storageAddr, sizeof(storageAddr), MPI_UNSIGNED_CHAR, i, H5FD_DSM_EXCHANGE_TAG, this->InterComm)!= MPI_SUCCESS) {
+      H5FDdsmError("Id = " << this->Id << " MPI_Send of Storage Address failed");
+      return(H5FD_DSM_FAIL);
+    };
+    if (MPI_Send(&this->StorageSegDesc, sizeof(this->StorageSegDesc), MPI_UNSIGNED_CHAR, i, H5FD_DSM_EXCHANGE_TAG, this->InterComm)!= MPI_SUCCESS) {
+      H5FDdsmError("Id = " << this->Id << " MPI_Send of Storage Segment Descriptor failed");
+      return(H5FD_DSM_FAIL);
+    };
+    if (MPI_Send(&this->DmappRank, sizeof(this->DmappRank), MPI_UNSIGNED_CHAR, i, H5FD_DSM_EXCHANGE_TAG, this->InterComm)!= MPI_SUCCESS) {
+      H5FDdsmError("Id = " << this->Id << " MPI_Send of DMAPP PE rank failed");
+      return(H5FD_DSM_FAIL);
+    };
+  }
 
   return(H5FD_DSM_SUCCESS);
 }
@@ -318,16 +348,26 @@ H5FDdsmCommDmapp::RemoteCommConnect()
     }
     MPI_Comm_free(&winComm);
 
-//    // Receive now remote memory segment information
-//    if (MPI_Recv(&this->DataAddr, sizeof(this->DataAddr), MPI_UNSIGNED_CHAR, 0, H5FD_DSM_EXCHANGE_TAG, this->InterComm, &recvStatus) != MPI_SUCCESS) {
-//      H5FDdsmError("Id = " << this->Id << " MPI_Recv of DataAddr failed");
-//      return(H5FD_DSM_FAIL);
-//    }
-//    if (MPI_Recv(&this->DataSeg, sizeof(this->DataSeg), MPI_UNSIGNED_CHAR, 0, H5FD_DSM_EXCHANGE_TAG, this->InterComm, &recvStatus) != MPI_SUCCESS) {
-//      H5FDdsmError("Id = " << this->Id << " MPI_Recv of DataSeg failed");
-//      return(H5FD_DSM_FAIL);
-//    }
-
+    // Receive now remote memory segment information
+    for (H5FDdsmInt32 i = 0; i < this->InterSize; i++) {
+      H5FDdsmAddr storageAddr;
+      dmapp_seg_desc_t segDesc;
+      H5FDdsmInt32 dmappRank;
+      if (MPI_Recv(&storageAddr, sizeof(storageAddr), MPI_UNSIGNED_CHAR, i, H5FD_DSM_EXCHANGE_TAG, this->InterComm, &recvStatus) != MPI_SUCCESS) {
+        H5FDdsmError("Id = " << this->Id << " MPI_Recv of Storage Address failed");
+        return(H5FD_DSM_FAIL);
+      }
+      if (MPI_Recv(&segDesc, sizeof(segDesc), MPI_UNSIGNED_CHAR, i, H5FD_DSM_EXCHANGE_TAG, this->InterComm, &recvStatus) != MPI_SUCCESS) {
+        H5FDdsmError("Id = " << this->Id << " MPI_Recv of Storage Segment Descriptor failed");
+        return(H5FD_DSM_FAIL);
+      }
+      if (MPI_Recv(&dmappRank, sizeof(dmappRank), MPI_UNSIGNED_CHAR, i, H5FD_DSM_EXCHANGE_TAG, this->InterComm, &recvStatus) != MPI_SUCCESS) {
+        H5FDdsmError("Id = " << this->Id << " MPI_Recv of of DMAPP PE rank failed");
+        return(H5FD_DSM_FAIL);
+      }
+      this->CommDmappInternals->DmappSegTable.push_back(
+          H5FDdsmManagerInternals::DmappSegEntry(storageAddr, segDesc, dmappRank));
+    }
     return(H5FD_DSM_SUCCESS);
   } else {
     return(H5FD_DSM_FAIL);
@@ -340,10 +380,10 @@ H5FDdsmCommDmapp::RemoteCommDisconnect()
 {
   if(H5FDdsmComm::RemoteCommDisconnect() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
-//  if (this->IsDataSegRegistered) {
-//    dmapp_mem_unregister(&this->DataSeg);
-//    this->IsDataSegRegistered = 0;
-//  }
+  if (this->IsDataSegRegistered) {
+    dmapp_mem_unregister(&this->StorageSegDesc);
+    this->IsStorageSegRegistered = 0;
+  }
 
   if (this->Win != MPI_WIN_NULL) {
     MPI_Win_free(&this->Win);

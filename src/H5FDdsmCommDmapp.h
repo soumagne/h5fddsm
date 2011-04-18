@@ -30,6 +30,8 @@
 
 #include <dmapp.h>
 
+struct H5FDdsmCommDmappInternals;
+
 class H5FDdsm_EXPORT H5FDdsmCommDmapp : public H5FDdsmComm {
 
 public:
@@ -63,12 +65,13 @@ public:
   H5FDdsmInt32   RemoteCommRecvXML(H5FDdsmString *file);
 
 protected:
-  H5FDdsmBoolean   IsDmappInitialized;
   MPI_Comm         InterComm;
   MPI_Win          Win;
-  dmapp_seg_desc_t *DataSeg;
-//  H5FDdsmAddr      DataAddr;
-//  H5FDdsmBoolean   IsDataSegRegistered;
+  H5FDdsmCommDmappInternals *CommDmappInternals;
+  H5FDdsmBoolean   IsDmappInitialized;
+  H5FDdsmInt32     DmappRank;
+  dmapp_seg_desc_t StorageSegDesc;
+  H5FDdsmBoolean   IsStorageSegRegistered;
 };
 
 #endif // __H5FDdsmCommDmapp_h
