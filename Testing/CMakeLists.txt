@@ -66,6 +66,16 @@ ENDMACRO(ADD_STATIC_DSM_TEST)
 #-----------------------------------------------------------------------------
 #
 #-----------------------------------------------------------------------------
+# H5FDdsmSender_cwrite_nohdf_bw : Bandwidth test of DSM write operations
+#-----------------------------------------------------------------------------
+ADD_EXECUTABLE(H5FDdsmSender_cwrite_nohdf_bw
+  H5FDdsmSender_cwrite_nohdf_bw.cxx H5FDdsmTest.cxx
+)
+TARGET_LINK_LIBRARIES(H5FDdsmSender_cwrite_nohdf_bw
+  H5FDdsm
+)
+SET_LINK_OPTIONS(H5FDdsmSender_cwrite_nohdf_bw)
+#-----------------------------------------------------------------------------
 # H5FDdsmSender_cwrite_bw : Bandwidth test of DSM write operations
 #-----------------------------------------------------------------------------
 ADD_EXECUTABLE(H5FDdsmSender_cwrite_bw
