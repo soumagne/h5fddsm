@@ -148,22 +148,19 @@ H5FDdsmInt32 H5FDdsmSteerer::UpdateDisabledObjects()
   }
   metadata.disabled_objects.number_of_objects = index;
 
-  addr = (H5FDdsmAddr) (this->DsmBuffer->GetTotalLength() - sizeof(metadata) + sizeof(metadata.entry)
-      + sizeof(metadata.steering_cmd));
-  // Only one of the processes writing to the DSM needs to write file metadata
-  // but we must be careful that all the processes keep the metadata synchronized
-  if (this->DsmBuffer->GetComm()->GetId() == 0) {
-    if (this->DsmBuffer->Put(addr, sizeof(metadata.disabled_objects.number_of_objects),
-        &metadata.disabled_objects.number_of_objects) != H5FD_DSM_SUCCESS) {
-      return H5FD_DSM_FAIL;
+  if (index) {
+    addr = (H5FDdsmAddr) (this->DsmBuffer->GetTotalLength() - sizeof(metadata) + sizeof(metadata.entry)
+        + sizeof(metadata.steering_cmd));
+    // Only one of the processes writing to the DSM needs to write file metadata
+    // but we must be careful that all the processes keep the metadata synchronized
+    if (this->DsmBuffer->GetComm()->GetId() == 0) {
+      if (this->DsmBuffer->Put(addr, sizeof(metadata.disabled_objects),
+          &metadata.disabled_objects) != H5FD_DSM_SUCCESS) {
+        return H5FD_DSM_FAIL;
+      }
     }
-    if (this->DsmBuffer->Put(addr+sizeof(metadata.disabled_objects.number_of_objects),
-        sizeof(metadata.disabled_objects.object_names),
-        metadata.disabled_objects.object_names) != H5FD_DSM_SUCCESS) {
-      return H5FD_DSM_FAIL;
-    }
+    this->DsmBuffer->GetComm()->Barrier();
   }
-  this->DsmBuffer->GetComm()->Barrier();
   return(H5FD_DSM_SUCCESS);
 }
 //----------------------------------------------------------------------------

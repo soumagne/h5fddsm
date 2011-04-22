@@ -79,9 +79,9 @@ typedef struct
   H5FDdsmAddr end;
 } H5FDdsmEntry; // 16
 
-typedef struct
+typedef union
 {
-  H5FDdsmByte  object_names[64*64]; // TODO Size to be better handled
+  H5FDdsmByte  object_names[64*16]; // TODO Size to be better handled
   H5FDdsmInt32 number_of_objects;
 } H5FDdsmDisabledObjectEntries;
 
