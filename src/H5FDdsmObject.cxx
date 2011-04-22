@@ -52,14 +52,8 @@
 #include "H5FDdsmObject.h"
 #include <string.h>
 
-#ifdef H5FD_DEBUG_WITH_THREADS
- static H5FDdsmInt32 GlobalDebugFlag = 0;
-#else
- static H5FDdsmInt32 GlobalDebugFlag = 0;
-#endif
-
 //------------------------------------------------------------------------------
-// Base H5FDdsm class definition from H5FDdsm originally
+// Base H5FDdsm class definition
 //------------------------------------------------------------------------------
 H5FDdsmObject::H5FDdsmObject() {
   this->Debug = 0;
@@ -68,80 +62,43 @@ H5FDdsmObject::H5FDdsmObject() {
 H5FDdsmObject::~H5FDdsmObject() {
 }
 
-H5FDdsmInt32 H5FDdsmObject::GetGlobalDebug() {
-  return GlobalDebugFlag;
-}
-
-void H5FDdsmObject::SetGlobalDebug( H5FDdsmInt32 Value ) {
-  GlobalDebugFlag = Value;
-}
-
-#ifdef H5FD_DEBUG_WITH_THREADS
-
-//------------------------------------------------------------------------------
-// Simple Mutex code taken from VTK
-//------------------------------------------------------------------------------
-SimpleMutexLock SimpleMutexLock::GlobalLock;
+#ifdef H5FD_DSM_DEBUG_SYNCED
+DebugLock DebugLock::GlobalLock;
 
 // Construct a new vtkMutexLock 
-SimpleMutexLock::SimpleMutexLock()
+DebugLock::DebugLock()
 {
-#ifdef H5FD_DSM_USE_SPROC
-  init_lock( &this->MutexLock );
-#endif
-
-#ifdef H5FD_DSM_USE_WIN32_THREADS
-  this->MutexLock = CreateMutex( NULL, FALSE, NULL ); 
-#endif
-
-#ifdef H5FD_DSM_USE_PTHREADS
-#ifdef H5FD_DSM_HP_PTHREADS
-  pthread_mutex_init(&(this->MutexLock), pthread_mutexattr_default);
+#ifdef _WIN32
+  this->MutexLock = CreateMutex(NULL, FALSE, NULL);
 #else
   pthread_mutex_init(&(this->MutexLock), NULL);
 #endif
-#endif
 }
 //------------------------------------------------------------------------------
-SimpleMutexLock::~SimpleMutexLock()
+DebugLock::~DebugLock()
 {
-#ifdef H5FD_DSM_USE_WIN32_THREADS
+#ifdef _WIN32
   CloseHandle(this->MutexLock);
-#endif
-
-#ifdef H5FD_DSM_USE_PTHREADS
-  pthread_mutex_destroy( &this->MutexLock);
+#else
+  pthread_mutex_destroy(&this->MutexLock);
 #endif
 }
 //------------------------------------------------------------------------------
-void SimpleMutexLock::Lock()
+void DebugLock::Lock()
 {
-#ifdef H5FD_DSM_USE_SPROC
-  spin_lock( &this->MutexLock );
-#endif
-
-#ifdef H5FD_DSM_USE_WIN32_THREADS
-  WaitForSingleObject( this->MutexLock, INFINITE );
-#endif
-
-#ifdef H5FD_DSM_USE_PTHREADS
-  pthread_mutex_lock( &this->MutexLock);
+#ifdef _WIN32
+  WaitForSingleObject(this->MutexLock, INFINITE);
+#else
+  pthread_mutex_lock(&this->MutexLock);
 #endif
 }
 //------------------------------------------------------------------------------
-void SimpleMutexLock::Unlock()
+void DebugLock::Unlock()
 {
-#ifdef H5FD_DSM_USE_SPROC
-  release_lock( &this->MutexLock );
-#endif
-
-#ifdef H5FD_DSM_USE_WIN32_THREADS
-  ReleaseMutex( this->MutexLock );
-#endif
-
-#ifdef H5FD_DSM_USE_PTHREADS
-  pthread_mutex_unlock( &this->MutexLock);
+#ifdef _WIN32
+  ReleaseMutex(this->MutexLock);
+#else
+  pthread_mutex_unlock(&this->MutexLock);
 #endif
 }
-
-#endif // H5FD_DEBUG_WITH_THREADS
+#endif // H5FD_DSM_DEBUG_SYNCED
