@@ -100,118 +100,80 @@ typedef H5FDdsmUInt64 H5FDdsmAddr;
 //------------------------------------------------------------------------------
 // Below is all missing in non debug build
 //------------------------------------------------------------------------------
-#ifdef H5FD_DEBUG_WITH_THREADS
-
+#ifdef H5FD_DSM_DEBUG_SYNCED
+#ifdef _WIN32
+  #include <windows.h>
+#else
+  #include <pthread.h>
+#endif
 //------------------------------------------------------------------------------
 // Thread stuff used for mutex control with debug messages, to ensure that
-// messages arrive in a readable manner, not overlapped and munged as two
+// messages arrive in a readable manner, not overlapped and munged as multiple
 // processes simultaneously write debug statements
 //------------------------------------------------------------------------------
-#ifdef _WIN32 
-  #ifndef H5FD_DSM_USE_WIN32_THREADS 
-   #define H5FD_DSM_USE_WIN32_THREADS 
-  #endif
-#else 
-  #ifndef H5FD_DSM_USE_PTHREADS 
-   #define H5FD_DSM_USE_PTHREADS 
-  #endif
-#endif
-
-#if defined(H5FD_DSM_USE_PTHREADS) || defined(H5FD_DSM_HP_PTHREADS)
-  #include <pthread.h> // Needed for PTHREAD implementation of mutex
-  typedef pthread_mutex_t H5FDdsmMutexType;
-#endif
- 
-#ifdef H5FD_DSM_USE_WIN32_THREADS
-  /* Include the real windows header. */
-  #define NOMINMAX  
-  #include <windows.h>
-  typedef void* H5FDdsmMutexType;
-#endif
-
-//------------------------------------------------------------------------------
-// Mutex lock : used for debug only
-//------------------------------------------------------------------------------
-class H5FDdsm_EXPORT SimpleMutexLock {
+class H5FDdsm_EXPORT DebugLock {
 public:
-   // left public purposely
-   SimpleMutexLock();
-  ~SimpleMutexLock();
+   DebugLock();
+  ~DebugLock();
 
-  // Description:
-  // Lock the vtkMutexLock
-  void Lock( void );
-
-  // Description:
-  // Unlock the vtkMutexLock
-  void Unlock( void );
+  void Lock();
+  void Unlock();
 
 protected:
-  H5FDdsmMutexType MutexLock;
-public:
-  static SimpleMutexLock GlobalLock;
-};
+#ifdef _WIN32
+  HANDLE MutexLock;
+#else
+  pthread_mutex_t MutexLock;
+#endif
 
-//------------------------------------------------------------------------------
-#endif // H5FD_DEBUG_WITH_THREADS
+public:
+  static DebugLock GlobalLock;
+};
+#endif // H5FD_DSM_DEBUG_SYNCED
 
 //------------------------------------------------------------------------------
 // Error and Debug message Macros
 //------------------------------------------------------------------------------
-#define H5FDDebugIsOn ( this->Debug || H5FDdsmObject::GetGlobalDebug() )
-#define H5FDDebugIsAbove(a)  ( ( this->Debug >= (a) ) || ( H5FDdsmObject::GetGlobalDebug() >= (a))) 
-
-#if 0
+#ifdef H5FD_DSM_DEBUG_SYNCED
+#ifdef H5FD_DSM_DEBUG_GLOBAL
 #define H5FDdsmDebug(x) \
-{ if (H5FDDebugIsOn) { \
-    SimpleMutexLock::GlobalLock.Lock();   \
-    std::cout << "H5FD_DSM Debug : " /*__FILE__ << " line " << __LINE__ << */ x << std::endl; \
-    SimpleMutexLock::GlobalLock.Unlock(); \
+{ DebugLock::GlobalLock.Lock();   \
+  std::cout << "H5FD_DSM Debug : " /*__FILE__ << " line " << __LINE__ */ << x << std::endl; \
+  DebugLock::GlobalLock.Unlock(); \
+}
+#else
+#define H5FDdsmDebug(x) \
+{ if (this->Debug) { \
+    DebugLock::GlobalLock.Lock();   \
+    std::cout << "H5FD_DSM Debug : " /*__FILE__ << " line " << __LINE__ */ << x << std::endl; \
+    DebugLock::GlobalLock.Unlock(); \
   } \
 }
-
-#define H5FDdsmExternalDebug(x) \
-{ if (H5FDdsmObject::GetGlobalDebug()) { \
-    SimpleMutexLock::GlobalLock.Lock();   \
-    std::cout << "H5FD_ext Debug : " /*__FILE__ << " line " << __LINE__ << */ x << std::endl; \
-    SimpleMutexLock::GlobalLock.Unlock(); \
-  } \
-}
+#endif
 
 #define H5FDdsmError(x) \
-{ SimpleMutexLock::GlobalLock.Lock();   \
-  std::cout << "H5FD_DSM Error : " /*__FILE__ << " line " << __LINE__ << */ x << std::endl; \
-  SimpleMutexLock::GlobalLock.Unlock(); \
-} \
-
-#define H5FDdsmExternalError(x) \
-{ SimpleMutexLock::GlobalLock.Lock();   \
-  std::cout << "H5FD_DSM Error : " /*__FILE__ << " line " << __LINE__ << */ x << std::endl; \
-  SimpleMutexLock::GlobalLock.Unlock(); \
+{ DebugLock::GlobalLock.Lock();   \
+  std::cout << "H5FD_DSM Error : " __FILE__ << " line " << __LINE__ << x << std::endl; \
+  DebugLock::GlobalLock.Unlock(); \
 }
-
 #else
 
+#ifdef H5FD_DSM_DEBUG_GLOBAL
 #define H5FDdsmDebug(x) \
-{ if (H5FDDebugIsOn) { \
+{ \
+  std::cout << "H5FD_DSM Debug : " /*__FILE__ << " line " << __LINE__ */ << x << std::endl; \
+}
+#else
+#define H5FDdsmDebug(x) \
+{ if (this->Debug) { \
     std::cout << "H5FD_DSM Debug : " /*__FILE__ << " line " << __LINE__ */ << x << std::endl; \
   } \
 }
-
-#define H5FDdsmExternalDebug(x) \
-{ \
-  if (H5FDdsmObject::GetGlobalDebug()) { \
-    std::cout << "H5FD_ext Debug : " /*__FILE__ << " line " << __LINE__ */ << x << std::endl; \
-  } \
-}
+#endif
 
 #define H5FDdsmError(x) \
 { \
   std::cout << "H5FD_DSM Error : " __FILE__ << " line " << __LINE__ << ": " << x << std::endl; \
-} \
-
-#define H5FDdsmExternalError(x) \
-{ std::cout << "H5FD_DSM Error : " __FILE__ << " line " << __LINE__ << ": " << x << std::endl; \
 }
 #endif
 //------------------------------------------------------------------------------
@@ -263,25 +225,19 @@ type Get##var (Int64 Index) \
 // Base Class for H5FDdsm Objects : provides debug flags
 //------------------------------------------------------------------------------
 class H5FDdsm_EXPORT H5FDdsmObject {
-  public:
-     H5FDdsmObject();
-    ~H5FDdsmObject();
+public:
+  H5FDdsmObject();
+  ~H5FDdsmObject();
 
-    H5FDdsmSetValueMacro(Debug, H5FDdsmBoolean);
-    H5FDdsmGetValueMacro(Debug, H5FDdsmBoolean);
+  H5FDdsmSetValueMacro(Debug, H5FDdsmBoolean);
+  H5FDdsmGetValueMacro(Debug, H5FDdsmBoolean);
 
-    static H5FDdsmBoolean GetGlobalDebug();
-    static void SetGlobalDebug( H5FDdsmBoolean Value );
+  void DebugOn()  { H5FDdsmObject::SetDebug(1); }
+  void DebugOff() { H5FDdsmObject::SetDebug(0); }
 
-    void DebugOn()  { H5FDdsmObject::SetDebug( 1 ) ; };
-    void DebugOff() { H5FDdsmObject::SetDebug( 0 ) ; };
-
-    void GlobalDebugOn()  { H5FDdsmObject::SetGlobalDebug( 1 ) ; };
-    void GlobalDebugOff() { H5FDdsmObject::SetGlobalDebug( 0 ) ; };
-
-  protected:
-    H5FDdsmInt32 Debug;  
-  private:
+protected:
+  H5FDdsmInt32 Debug;
+private:
 };
 
 #endif // __H5FDdsmObject_h

@@ -80,6 +80,16 @@ ELSE(BUILD_SHARED_LIBS)
 ENDIF(BUILD_SHARED_LIBS)
 
 #-----------------------------------------------------------------------------
+# Choose to use thread debug or not.
+#-----------------------------------------------------------------------------
+OPTION(H5FD_DSM_DEBUG_SYNCED "Enable synchronization of debug messages using thread locking." OFF)
+
+#-----------------------------------------------------------------------------
+# Choose to enable global debug or not.
+#-----------------------------------------------------------------------------
+OPTION(H5FD_DSM_DEBUG_GLOBAL "Turn on all debug messages." OFF)
+
+#-----------------------------------------------------------------------------
 # Choose to build steering API or not.
 #-----------------------------------------------------------------------------
 OPTION(H5FD_DSM_BUILD_STEERING "Build H5FDdsm steering functionalities." OFF)
