@@ -193,7 +193,7 @@ H5FDdsmComm::ClosePort()
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmComm::RemoteCommAccept(void *storagePointer, H5FDdsmUInt64 storageSize)
+H5FDdsmComm::RemoteCommAccept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize)
 {
   if (!storagePointer) {
     H5FDdsmError("Null Data Pointer passed to CommAccept");

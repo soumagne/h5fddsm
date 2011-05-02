@@ -138,14 +138,14 @@ public:
 #ifdef H5FD_DSM_DEBUG_GLOBAL
 #define H5FDdsmDebug(x) \
 { DebugLock::GlobalLock.Lock();   \
-  std::cout << "H5FD_DSM Debug : " /*__FILE__ << " line " << __LINE__ */ << x << std::endl; \
+  std::cout << "H5FD_DSM Debug : " << x << std::endl; \
   DebugLock::GlobalLock.Unlock(); \
 }
 #else
 #define H5FDdsmDebug(x) \
 { if (this->Debug) { \
     DebugLock::GlobalLock.Lock();   \
-    std::cout << "H5FD_DSM Debug : " /*__FILE__ << " line " << __LINE__ */ << x << std::endl; \
+    std::cout << "H5FD_DSM Debug : " << x << std::endl; \
     DebugLock::GlobalLock.Unlock(); \
   } \
 }
@@ -153,7 +153,7 @@ public:
 
 #define H5FDdsmError(x) \
 { DebugLock::GlobalLock.Lock();   \
-  std::cout << "H5FD_DSM Error : " __FILE__ << " line " << __LINE__ << x << std::endl; \
+  std::cout << "H5FD_DSM Error : " __FILE__ << " line " << __LINE__ << ": " << x << std::endl; \
   DebugLock::GlobalLock.Unlock(); \
 }
 #else
@@ -161,12 +161,12 @@ public:
 #ifdef H5FD_DSM_DEBUG_GLOBAL
 #define H5FDdsmDebug(x) \
 { \
-  std::cout << "H5FD_DSM Debug : " /*__FILE__ << " line " << __LINE__ */ << x << std::endl; \
+  std::cout << "H5FD_DSM Debug : " << x << std::endl; \
 }
 #else
 #define H5FDdsmDebug(x) \
 { if (this->Debug) { \
-    std::cout << "H5FD_DSM Debug : " /*__FILE__ << " line " << __LINE__ */ << x << std::endl; \
+    std::cout << "H5FD_DSM Debug : " << x << std::endl; \
   } \
 }
 #endif

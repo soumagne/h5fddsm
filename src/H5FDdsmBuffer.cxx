@@ -55,14 +55,7 @@
 #ifdef H5FD_DSM_HAVE_STEERING
 #include "H5FDdsmSteerer.h"
 #endif
-
-#include <queue>
-
-#ifndef NOMINMAX
-#ifndef min
-#define min(a,b)  (((a) < (b)) ? (a) : (b))
-#endif
-#endif  /* NOMINMAX for _WIN32 compatibility */ 
+#include "H5FDdsmAddressMapper.h"
 
 #define H5FD_DSM_OPCODE_PUT          0x01
 #define H5FD_DSM_OPCODE_GET          0x02
@@ -105,36 +98,40 @@
 //----------------------------------------------------------------------------
 extern "C"{
 #ifdef _WIN32
-  H5FDdsm_EXPORT DWORD WINAPI H5FDdsmBufferServiceThread(void *DsmObj) {
+  H5FDdsm_EXPORT DWORD WINAPI H5FDdsmBufferServiceThread(void *DsmObj)
+  {
     H5FDdsmBuffer *Dsm = (H5FDdsmBuffer *)DsmObj;
     Dsm->ServiceThread();
     return(0);
   }
 #else
   H5FDdsm_EXPORT void *
-  H5FDdsmBufferServiceThread(void *DsmObj){
+  H5FDdsmBufferServiceThread(void *DsmObj)
+  {
     H5FDdsmBuffer *Dsm = (H5FDdsmBuffer *)DsmObj;
     return(Dsm->ServiceThread());
   }
 #endif
   //----------------------------------------------------------------------------
 #ifdef _WIN32
-  H5FDdsm_EXPORT DWORD WINAPI H5FDdsmBufferRemoteServiceThread(void *DsmObj) {
+  H5FDdsm_EXPORT DWORD WINAPI H5FDdsmBufferRemoteServiceThread(void *DsmObj)
+  {
     H5FDdsmBuffer *Dsm = (H5FDdsmBuffer *)DsmObj;
     Dsm->RemoteServiceThread();
     return(0);
   }
 #else
   H5FDdsm_EXPORT void *
-  H5FDdsmBufferRemoteServiceThread(void *DsmObj){
+  H5FDdsmBufferRemoteServiceThread(void *DsmObj)
+  {
     H5FDdsmBuffer *Dsm = (H5FDdsmBuffer *)DsmObj;
     return(Dsm->RemoteServiceThread());
   }
 #endif
 }
 //----------------------------------------------------------------------------
-H5FDdsmBuffer::H5FDdsmBuffer() {
-
+H5FDdsmBuffer::H5FDdsmBuffer()
+{
   this->DataPointer = 0;
   this->Locks = new H5FDdsmInt32[H5FD_DSM_MAX_LOCKS];
   for(H5FDdsmInt32 i=0; i < H5FD_DSM_MAX_LOCKS; i++) this->Locks[i] = -1;
@@ -192,9 +189,10 @@ H5FDdsmBuffer::H5FDdsmBuffer() {
   this->Steerer = new H5FDdsmSteerer(this);
 #endif
 }
-//----------------------------------------------------------------------------
-H5FDdsmBuffer::~H5FDdsmBuffer() {
 
+//----------------------------------------------------------------------------
+H5FDdsmBuffer::~H5FDdsmBuffer()
+{
   if (this->IsServer) this->EndService();
 
   if (this->StorageIsMine) delete[] this->Locks;
@@ -217,10 +215,11 @@ H5FDdsmBuffer::~H5FDdsmBuffer() {
   if (this->Steerer) delete this->Steerer;
 #endif
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBuffer::SignalConnected() {
-
+H5FDdsmBuffer::SignalConnected()
+{
 #ifdef _WIN32
   EnterCriticalSection(&this->ConnectedCritSection);
 #else
@@ -237,9 +236,11 @@ H5FDdsmBuffer::SignalConnected() {
 #endif
   return(H5FD_DSM_SUCCESS);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBuffer::WaitForConnected() {
+H5FDdsmBuffer::WaitForConnected()
+{
   H5FDdsmInt32 ret = H5FD_DSM_FAIL;
 
 #ifdef _WIN32
@@ -266,10 +267,11 @@ H5FDdsmBuffer::WaitForConnected() {
 #endif
   return(ret);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBuffer::SignalUpdateReady() {
-
+H5FDdsmBuffer::SignalUpdateReady()
+{
 #ifdef _WIN32
   EnterCriticalSection(&this->UpdateReadyCritSection);
 #else
@@ -286,9 +288,11 @@ H5FDdsmBuffer::SignalUpdateReady() {
 #endif
   return(H5FD_DSM_SUCCESS);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBuffer::WaitForUpdateReady() {
+H5FDdsmBuffer::WaitForUpdateReady()
+{
   H5FDdsmInt32 ret = H5FD_DSM_FAIL;
 
 #ifdef _WIN32
@@ -316,9 +320,11 @@ H5FDdsmBuffer::WaitForUpdateReady() {
 #endif
   return(ret);
 }
+
 //----------------------------------------------------------------------------
 void *
-H5FDdsmBuffer::ServiceThread(){
+H5FDdsmBuffer::ServiceThread()
+{
   H5FDdsmInt32   ReturnOpcode;
 
   H5FDdsmDebug("Starting DSM Service on node " << this->Comm->GetId());
@@ -328,9 +334,11 @@ H5FDdsmBuffer::ServiceThread(){
   H5FDdsmDebug("Ending DSM Service on node " << this->Comm->GetId() << " last op = " << ReturnOpcode);
   return((void *)this);
 }
+
 //----------------------------------------------------------------------------
 void *
-H5FDdsmBuffer::RemoteServiceThread(){
+H5FDdsmBuffer::RemoteServiceThread()
+{
   H5FDdsmInt32   ReturnOpcode;
 
   H5FDdsmDebug("Starting DSM Remote Service on node " << this->Comm->GetId());
@@ -340,16 +348,20 @@ H5FDdsmBuffer::RemoteServiceThread(){
   H5FDdsmDebug("Ending DSM Remote Service on node " << this->Comm->GetId() << " last op = " << ReturnOpcode);
   return((void *)this);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBuffer::ServiceInit(){
+H5FDdsmBuffer::ServiceInit()
+{
   H5FDdsmInt32   status = H5FD_DSM_SUCCESS;
 
   return(status);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBuffer::ServiceOnce(H5FDdsmInt32 *ReturnOpcode){
+H5FDdsmBuffer::ServiceOnce(H5FDdsmInt32 *ReturnOpcode)
+{
   H5FDdsmInt32   status = H5FD_DSM_FAIL;
 
   // this->Msg->SetTag(H5FD_DSM_COMMAND_TAG);
@@ -362,9 +374,11 @@ H5FDdsmBuffer::ServiceOnce(H5FDdsmInt32 *ReturnOpcode){
   H5FDdsmDebug(".... Service a Call");
   return(this->Service(ReturnOpcode));
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBuffer::ServiceUntilIdle(H5FDdsmInt32 *ReturnOpcode){
+H5FDdsmBuffer::ServiceUntilIdle(H5FDdsmInt32 *ReturnOpcode)
+{
   H5FDdsmInt32   status = H5FD_DSM_SUCCESS;
 
   while(status == H5FD_DSM_SUCCESS){
@@ -383,9 +397,11 @@ H5FDdsmBuffer::ServiceUntilIdle(H5FDdsmInt32 *ReturnOpcode){
   }
   return(H5FD_DSM_SUCCESS);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBuffer::ServiceLoop(H5FDdsmInt32 *ReturnOpcode){
+H5FDdsmBuffer::ServiceLoop(H5FDdsmInt32 *ReturnOpcode)
+{
   H5FDdsmInt32   op, status = H5FD_DSM_SUCCESS;
 
   while(status == H5FD_DSM_SUCCESS){
@@ -396,9 +412,11 @@ H5FDdsmBuffer::ServiceLoop(H5FDdsmInt32 *ReturnOpcode){
   }
   return(H5FD_DSM_SUCCESS);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
+H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode)
+{
   H5FDdsmInt32        Opcode, who, value, status = H5FD_DSM_FAIL;
   H5FDdsmInt32        aLength;
   H5FDdsmAddr         Address;
@@ -420,14 +438,15 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
   // H5FD_DSM_OPCODE_PUT
   case H5FD_DSM_OPCODE_PUT:
     H5FDdsmDebug("PUT request from " << who << " for " << aLength << " bytes @ " << Address);
-    if (((H5FDdsmUInt32) aLength) > (this->EndAddress - Address + 1)){
-      H5FDdsmError("Length too long");
+    if (((H5FDdsmUInt32) aLength + Address) > this->Length) {
+      H5FDdsmError("Length " << aLength << " too long for Address " << Address);
+      H5FDdsmError("Server Start = " << this->StartAddress << " End = " << this->EndAddress);
       return(H5FD_DSM_FAIL);
     }
     if ((datap = this->DataPointer) == NULL) H5FDdsmError("Null Data Pointer when trying to put data");
-    datap += Address - this->StartAddress;
+    datap += Address;
     status = this->ReceiveData(who, datap, aLength, H5FD_DSM_PUT_DATA_TAG);
-    if (status == H5FD_DSM_FAIL){
+    if (status == H5FD_DSM_FAIL) {
       H5FDdsmError("ReceiveData() failed");
       return(H5FD_DSM_FAIL);
     }
@@ -436,15 +455,15 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
   // H5FD_DSM_OPCODE_GET
   case H5FD_DSM_OPCODE_GET:
     H5FDdsmDebug("(Server " << this->Comm->GetId() << ") Get request from " << who << " for " << aLength << " bytes @ " << Address);
-    if (((H5FDdsmUInt32) aLength) > (this->EndAddress - Address + 1)){
-      H5FDdsmError("Length " << aLength << " too long for address of len " << this->EndAddress - Address);
+    if (((H5FDdsmUInt32) aLength + Address) > this->Length) {
+      H5FDdsmError("Length " << aLength << " too long for Address " << Address);
       H5FDdsmError("Server Start = " << this->StartAddress << " End = " << this->EndAddress);
       return(H5FD_DSM_FAIL);
     }
     if ((datap = this->DataPointer) == NULL) H5FDdsmError("Null Data Pointer when trying to get data");
-    datap += Address - this->StartAddress;
+    datap += Address;
     status = this->SendData(who, datap, aLength, H5FD_DSM_GET_DATA_TAG);
-    if (status == H5FD_DSM_FAIL){
+    if (status == H5FD_DSM_FAIL) {
       H5FDdsmError("SendData() failed");
       return(H5FD_DSM_FAIL);
     }
@@ -613,9 +632,10 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode){
   if (ReturnOpcode) *ReturnOpcode = Opcode;
   return(H5FD_DSM_SUCCESS);
 }
-//----------------------------------------------------------------------------
-H5FDdsmInt32 H5FDdsmBuffer::StartService(){
 
+//----------------------------------------------------------------------------
+H5FDdsmInt32 H5FDdsmBuffer::StartService()
+{
   H5FDdsmDebug("Creating service thread...");
 #ifdef _WIN32
   this->ServiceThreadHandle = CreateThread(NULL, 0, H5FDdsmBufferServiceThread, (void *) this, 0, &this->ServiceThreadPtr);
@@ -629,9 +649,10 @@ H5FDdsmInt32 H5FDdsmBuffer::StartService(){
   // }
   return(H5FD_DSM_SUCCESS);
 }
-//----------------------------------------------------------------------------
-H5FDdsmInt32 H5FDdsmBuffer::EndService(){
 
+//----------------------------------------------------------------------------
+H5FDdsmInt32 H5FDdsmBuffer::EndService()
+{
   if (this->ServiceThreadPtr) {
     if (this->IsConnecting && !this->IsConnected) {
 #ifdef _WIN32
@@ -654,10 +675,11 @@ H5FDdsmInt32 H5FDdsmBuffer::EndService(){
   }
   return(H5FD_DSM_SUCCESS);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBuffer::RemoteService(H5FDdsmInt32 *ReturnOpcode){
-
+H5FDdsmBuffer::RemoteService(H5FDdsmInt32 *ReturnOpcode)
+{
   H5FDdsmInt32        Opcode, who, status = H5FD_DSM_FAIL;
   H5FDdsmInt32        aLength;
   H5FDdsmAddr         Address;
@@ -705,9 +727,11 @@ H5FDdsmBuffer::RemoteService(H5FDdsmInt32 *ReturnOpcode){
   if (ReturnOpcode) *ReturnOpcode = Opcode;
   return(H5FD_DSM_SUCCESS);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBuffer::StartRemoteService() {
+H5FDdsmBuffer::StartRemoteService()
+{
   // create a single thread listening on the remote transaction request
   H5FDdsmDebug("Creating remote service thread...");
 #ifdef _WIN32
@@ -722,9 +746,11 @@ H5FDdsmBuffer::StartRemoteService() {
   // }
   return(H5FD_DSM_SUCCESS);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBuffer::EndRemoteService() {
+H5FDdsmBuffer::EndRemoteService()
+{
 #ifdef _WIN32
   if (this->RemoteServiceThreadPtr) {
     WaitForSingleObject(this->RemoteServiceThreadHandle, INFINITE);
@@ -740,122 +766,102 @@ H5FDdsmBuffer::EndRemoteService() {
 #endif
   return(H5FD_DSM_SUCCESS);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBuffer::Put(H5FDdsmAddr Address, H5FDdsmUInt64 aLength, void *Data){
-  H5FDdsmInt32   who, MyId = this->Comm->GetId();
-  H5FDdsmAddr    astart, aend;
-  H5FDdsmInt32   len;
-  H5FDdsmUInt64  ulen;
-  H5FDdsmByte   *datap = (H5FDdsmByte *)Data;
+H5FDdsmBuffer::Put(H5FDdsmAddr address, H5FDdsmUInt64 length, H5FDdsmPointer data)
+{
+  H5FDdsmInt32 myId = this->Comm->GetId();
+  std::vector<H5FDdsmMsg*> putRequests;
 
-  while(aLength){
+  this->AddressMapper->Translate(address, length, data, putRequests);
 
-    who = this->AddressToId(Address);
-    if (who == H5FD_DSM_FAIL){
-      H5FDdsmError("Address Error");
-      return(H5FD_DSM_FAIL);
-    }
-    this->GetAddressRangeForId(who, &astart, &aend, Address);
-    ulen = min(aLength, aend - Address + 1);
-    // Because MPI uses only send/recv int size packets
-    len = static_cast<H5FDdsmInt32>(min(H5FD_DSM_INT32_MAX, ulen));
-    H5FDdsmDebug("Put " << len << " Bytes to Address " << Address << " Id = " << who);
-    if (who == MyId && !this->IsConnected) { // check if a remote DSM is connected
+  while (!putRequests.empty()) {
+    H5FDdsmMsg *putRequest = putRequests.back();
+    if ((putRequest->Dest == myId) && !this->IsConnected) { // check if a remote DSM is connected
       H5FDdsmByte *dp;
       dp = this->DataPointer;
-      dp += Address - this->StartAddress;
-      memcpy(dp, datap, len);
-
-    }else{
-      H5FDdsmInt32   status;
+      dp += putRequest->Address;
+      memcpy(dp, putRequest->Data, putRequest->Length);
+    } else {
+      H5FDdsmInt32 status;
       if (this->Comm->GetUseOneSidedComm()) {
-        H5FDdsmDebug("PUT request from " << who << " for " << len << " bytes @ " << Address);
-        status = this->PutData(who, datap, len, Address - astart);
-        if (status == H5FD_DSM_FAIL){
-          H5FDdsmError("Failed to do an RMA PUT to " << who);
+        H5FDdsmDebug("PUT request to " << putRequest->Dest << " for " << putRequest->Length << " bytes @ " << putRequest->Address);
+        status = this->PutData(putRequest->Dest, putRequest->Data, putRequest->Length, putRequest->Address);
+        if (status == H5FD_DSM_FAIL) {
+          H5FDdsmError("Failed to do an RMA PUT to " << putRequest->Dest);
           return(H5FD_DSM_FAIL);
         }
       } else {
-        status = this->SendCommandHeader(H5FD_DSM_OPCODE_PUT, who, Address, len);
-        if (status == H5FD_DSM_FAIL){
-          H5FDdsmError("Failed to send PUT Header to " << who);
+        status = this->SendCommandHeader(H5FD_DSM_OPCODE_PUT, putRequest->Dest, putRequest->Address, putRequest->Length);
+        if (status == H5FD_DSM_FAIL) {
+          H5FDdsmError("Failed to send PUT Header to " << putRequest->Dest);
           return(H5FD_DSM_FAIL);
         }
-        status = this->SendData(who, datap, len, H5FD_DSM_PUT_DATA_TAG);
-        if (status == H5FD_DSM_FAIL){
-          H5FDdsmError("Failed to send " << len << " bytes of data to " << who);
+        status = this->SendData(putRequest->Dest, putRequest->Data, putRequest->Length, H5FD_DSM_PUT_DATA_TAG);
+        if (status == H5FD_DSM_FAIL) {
+          H5FDdsmError("Failed to send " << putRequest->Length << " bytes of data to " << putRequest->Dest);
           return(H5FD_DSM_FAIL);
         }
       }
     }
-    aLength -= len;
-    Address += len;
-    datap += len;
+    putRequests.pop_back();
   }
   return(H5FD_DSM_SUCCESS);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBuffer::Get(H5FDdsmAddr Address, H5FDdsmUInt64 aLength, void *Data){
-  H5FDdsmInt32   who, MyId = this->Comm->GetId();
-  H5FDdsmAddr    astart, aend;
-  H5FDdsmInt32   len;
-  H5FDdsmUInt64  ulen;
-  H5FDdsmByte   *datap = (H5FDdsmByte *)Data;
+H5FDdsmBuffer::Get(H5FDdsmAddr address, H5FDdsmUInt64 length, H5FDdsmPointer data)
+{
+  H5FDdsmInt32 myId = this->Comm->GetId();
+  std::vector<H5FDdsmMsg*> getRequests;
 
-  while(aLength){
-    who = this->AddressToId(Address);
-    if (who == H5FD_DSM_FAIL){
-      H5FDdsmError("Address Error");
-      return(H5FD_DSM_FAIL);
-    }
-    this->GetAddressRangeForId(who, &astart, &aend, Address);
-    ulen = min(aLength, aend - Address + 1);
-    // Because MPI uses only send/recv int size packets
-    len = static_cast<H5FDdsmInt32>(min(H5FD_DSM_INT32_MAX, ulen));
-    H5FDdsmDebug("Get " << len << " Bytes from Address " << Address << " Id = " << who);
-    if ((who == MyId) && (!this->IsConnected || this->IsServer)){
+  this->AddressMapper->Translate(address, length, data, getRequests);
+
+  while (!getRequests.empty()) {
+    H5FDdsmMsg *getRequest = getRequests.back();
+
+    if ((getRequest->Dest == myId) && (!this->IsConnected || this->IsServer)) {
       H5FDdsmByte *dp;
       dp = this->DataPointer;
-      dp += Address - this->StartAddress;
-      memcpy(datap, dp, len);
-
-    }else{
+      dp += getRequest->Address;
+      memcpy(getRequest->Data, dp, getRequest->Length);
+    } else {
       H5FDdsmInt32   status;
       if (this->Comm->GetUseOneSidedComm()) {
-        H5FDdsmDebug("Get request from " << who << " for " << len << " bytes @ " << Address);
-        status = this->GetData(who, datap, len, Address - astart);
-        if (status == H5FD_DSM_FAIL){
-          H5FDdsmError("Failed to do an RMA GET from " << who);
+        H5FDdsmDebug("Get request to " << getRequest->Dest << " for " << getRequest->Length << " bytes @ " << getRequest->Address);
+        status = this->GetData(getRequest->Dest, getRequest->Data, getRequest->Length, getRequest->Address);
+        if (status == H5FD_DSM_FAIL) {
+          H5FDdsmError("Failed to do an RMA GET from " << getRequest->Dest);
           return(H5FD_DSM_FAIL);
         }
       } else {
-        status = this->SendCommandHeader(H5FD_DSM_OPCODE_GET, who, Address, len);
+        status = this->SendCommandHeader(H5FD_DSM_OPCODE_GET, getRequest->Dest, getRequest->Address, getRequest->Length);
         if (status == H5FD_DSM_FAIL){
-          H5FDdsmError("Failed to send GET Header to " << who);
+          H5FDdsmError("Failed to send GET Header to " << getRequest->Dest);
           return(H5FD_DSM_FAIL);
         }
-        status = this->ReceiveData(who, datap, len, H5FD_DSM_GET_DATA_TAG);
+        status = this->ReceiveData(getRequest->Dest, getRequest->Data, getRequest->Length, H5FD_DSM_GET_DATA_TAG);
         if (status == H5FD_DSM_FAIL){
-          H5FDdsmError("Failed to receive " << len << " bytes of data from " << who);
+          H5FDdsmError("Failed to receive " << getRequest->Length << " bytes of data from " << getRequest->Dest);
           return(H5FD_DSM_FAIL);
         }
       }
     }
-    aLength -= len;
-    Address += len;
-    datap += len;
+    getRequests.pop_back();
   }
   return(H5FD_DSM_SUCCESS);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBuffer::Acquire(H5FDdsmInt32 Index){
+H5FDdsmBuffer::Acquire(H5FDdsmInt32 Index)
+{
   H5FDdsmInt32   who, MyId = this->Comm->GetId();
   H5FDdsmInt32   RemoteStatus;
 
-  who = this->AddressToId(0);
+  who = this->AddressMapper->AddressToId(0);
   H5FDdsmDebug("Acquire :: MyId = " << MyId << " who = " << who);
   if (who == H5FD_DSM_FAIL){
     H5FDdsmError("Address Error");
@@ -895,13 +901,15 @@ H5FDdsmBuffer::Acquire(H5FDdsmInt32 Index){
   }
   return(H5FD_DSM_FAIL);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBuffer::Release(H5FDdsmInt32 Index){
+H5FDdsmBuffer::Release(H5FDdsmInt32 Index)
+{
   H5FDdsmInt32   who, MyId = this->Comm->GetId();
   H5FDdsmInt32   RemoteStatus;
 
-  who = this->AddressToId(0);
+  who = this->AddressMapper->AddressToId(0);
   if (who == H5FD_DSM_FAIL){
     H5FDdsmError("Address Error");
     return(H5FD_DSM_FAIL);
@@ -939,9 +947,11 @@ H5FDdsmBuffer::Release(H5FDdsmInt32 Index){
   }
   return(H5FD_DSM_FAIL);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBuffer::RequestLockAcquire() {
+H5FDdsmBuffer::RequestLockAcquire()
+{
   H5FDdsmInt32 status = H5FD_DSM_SUCCESS;
 
   if (this->IsServer) {
@@ -976,9 +986,11 @@ H5FDdsmBuffer::RequestLockAcquire() {
 
   return(status);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBuffer::RequestLockRelease() {
+H5FDdsmBuffer::RequestLockRelease()
+{
   H5FDdsmInt32 status = H5FD_DSM_SUCCESS;
 
   if (!this->IsLocked) {
@@ -1020,9 +1032,11 @@ H5FDdsmBuffer::RequestLockRelease() {
 
   return(status);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBuffer::RequestAccept() {
+H5FDdsmBuffer::RequestAccept()
+{
   H5FDdsmInt32 who, status = H5FD_DSM_SUCCESS;
 
   who = this->Comm->GetId();
@@ -1031,9 +1045,11 @@ H5FDdsmBuffer::RequestAccept() {
 
   return(status);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBuffer::RequestDisconnect() {
+H5FDdsmBuffer::RequestDisconnect()
+{
   H5FDdsmInt32 who, status = H5FD_DSM_SUCCESS;
 
   this->RequestLockAcquire();
@@ -1047,9 +1063,11 @@ H5FDdsmBuffer::RequestDisconnect() {
   H5FDdsmDebug("DSM disconnected on " << this->Comm->GetId());
   return(status);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBuffer::RequestServerUpdate() {
+H5FDdsmBuffer::RequestServerUpdate()
+{
   H5FDdsmInt32 who, status = H5FD_DSM_SUCCESS;
 
   // On next lock acquire, a synchronization is required
@@ -1080,9 +1098,11 @@ H5FDdsmBuffer::RequestServerUpdate() {
 
   return(status);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBuffer::RequestClearStorage() {
+H5FDdsmBuffer::RequestClearStorage()
+{
   H5FDdsmInt32 who, status = H5FD_DSM_SUCCESS;
 
   for (who = this->StartServerId ; who <= this->EndServerId ; who++) {
@@ -1091,9 +1111,11 @@ H5FDdsmBuffer::RequestClearStorage() {
   }
   return(status);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBuffer::RequestXMLExchange() {
+H5FDdsmBuffer::RequestXMLExchange()
+{
   H5FDdsmInt32 who, status = H5FD_DSM_SUCCESS;
 
   if (this->Comm->GetId() == 0) {

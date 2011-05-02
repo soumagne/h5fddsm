@@ -64,6 +64,7 @@ class H5FDdsmMsg;
 class H5FDdsmComm;
 class H5FDdsmDriver;
 class H5FDdsmStorage;
+class H5FDdsmAddressMapper;
 
 #define H5FD_DSM_TYPE_UNIFORM       0
 #define H5FD_DSM_TYPE_UNIFORM_RANGE 1
@@ -99,56 +100,49 @@ class H5FDdsm_EXPORT H5FDdsmDriver : public H5FDdsmObject {
     H5FDdsmDriver();
     virtual ~H5FDdsmDriver();
 
-  //! Type
-    H5FDdsmGetValueMacro(DsmType, H5FDdsmInt32);
-    H5FDdsmSetValueMacro(DsmType, H5FDdsmInt32);
+    // Type
+    H5FDdsmInt32 GetDsmType();
+    void SetDsmType(H5FDdsmInt32 DsmType);
 
-  //! End Address
+    // End Address
     H5FDdsmGetValueMacro(EndAddress, H5FDdsmAddr);
     H5FDdsmSetValueMacro(EndAddress, H5FDdsmAddr);
 
-  //! Start Address
+    // Start Address
     H5FDdsmGetValueMacro(StartAddress, H5FDdsmAddr);
     H5FDdsmSetValueMacro(StartAddress, H5FDdsmAddr);
 
-  //! Start Id
+    // Start Id
     H5FDdsmGetValueMacro(StartServerId, H5FDdsmInt32);
     H5FDdsmSetValueMacro(StartServerId, H5FDdsmInt32);
 
-  //! End Id
+    // End Id
     H5FDdsmGetValueMacro(EndServerId, H5FDdsmInt32);
     H5FDdsmSetValueMacro(EndServerId, H5FDdsmInt32);
 
-  //! Length
+    // Length
     H5FDdsmGetValueMacro(Length, H5FDdsmUInt64);
     H5FDdsmInt32 SetLength(H5FDdsmUInt64 Length, H5FDdsmBoolean AllowAllocate=1);
 
-  //! TotalLength
+    // TotalLength
     H5FDdsmGetValueMacro(TotalLength, H5FDdsmUInt64);
     H5FDdsmSetValueMacro(TotalLength, H5FDdsmUInt64);
 
-  //! BlockLength
+    // BlockLength
     H5FDdsmGetValueMacro(BlockLength, H5FDdsmUInt64);
     H5FDdsmSetValueMacro(BlockLength, H5FDdsmUInt64);
 
-  //! Storage
+    // Storage
     H5FDdsmGetValueMacro(Storage, H5FDdsmStorage *);
     H5FDdsmInt32   SetStorage(H5FDdsmStorage *Storage);
     H5FDdsmInt32   ClearStorage();
 
-  //! Comm
+    // Comm
     H5FDdsmGetValueMacro(Comm, H5FDdsmComm *);
     H5FDdsmSetValueMacro(Comm, H5FDdsmComm *);
 
-    //! Address Range
-    H5FDdsmInt32 GetAddressRangeForId(H5FDdsmInt32 Id, H5FDdsmAddr *Start, H5FDdsmAddr *End, H5FDdsmAddr Address);
-
-    //! Configure the system. Set the Comm and ServerIds
-    H5FDdsmInt32   ConfigureUniform(H5FDdsmComm *Comm, H5FDdsmUInt64 Length, H5FDdsmInt32 StartId=-1, H5FDdsmInt32 EndId=-1);
-    //! Configure the system. Set the Comm and ServerIds
-    H5FDdsmInt32   ConfigureBlockCyclic(H5FDdsmComm *Comm, H5FDdsmUInt64 Length, H5FDdsmUInt64 BlockLength=0, H5FDdsmInt32 StartId=-1, H5FDdsmInt32 EndId=-1);
-    
-    H5FDdsmInt32   AddressToId(H5FDdsmAddr Address);
+    // Configure the system. Set the Comm and ServerIds
+    H5FDdsmInt32   ConfigureUniform(H5FDdsmComm *Comm, H5FDdsmUInt64 Length, H5FDdsmInt32 StartId=-1, H5FDdsmInt32 EndId=-1, H5FDdsmUInt64 aBlockLength=0);
 
     H5FDdsmInt32   ProbeCommandHeader(H5FDdsmInt32 *Source);
     H5FDdsmInt32   SendCommandHeader(H5FDdsmInt32 Opcode, H5FDdsmInt32 Dest, H5FDdsmAddr Address, H5FDdsmInt32 Length);
@@ -160,20 +154,18 @@ class H5FDdsm_EXPORT H5FDdsmDriver : public H5FDdsmObject {
     H5FDdsmInt32   ReceiveInfo();
 
     // Send/Recv Methods for point-to-point comm
-    H5FDdsmInt32   SendData(H5FDdsmInt32 Dest, void *Data, H5FDdsmInt32 Length, H5FDdsmInt32 Tag);
-    H5FDdsmInt32   ReceiveData(H5FDdsmInt32 Source, void *Data, H5FDdsmInt32 Length, H5FDdsmInt32 Tag, H5FDdsmInt32 Block=1);
+    H5FDdsmInt32   SendData(H5FDdsmInt32 Dest,H5FDdsmPointer Data, H5FDdsmInt32 Length, H5FDdsmInt32 Tag);
+    H5FDdsmInt32   ReceiveData(H5FDdsmInt32 Source, H5FDdsmPointer Data, H5FDdsmInt32 Length, H5FDdsmInt32 Tag, H5FDdsmInt32 Block=1);
 
     // RMA specific operations
-    H5FDdsmInt32   PutData(H5FDdsmInt32 Dest, void *Data, H5FDdsmInt32 Length, H5FDdsmAddr Address);
-    H5FDdsmInt32   GetData(H5FDdsmInt32 Source, void *Data, H5FDdsmInt32 Length, H5FDdsmAddr Address);
+    H5FDdsmInt32   PutData(H5FDdsmInt32 Dest, H5FDdsmPointer Data, H5FDdsmInt32 Length, H5FDdsmAddr Address);
+    H5FDdsmInt32   GetData(H5FDdsmInt32 Source, H5FDdsmPointer Data, H5FDdsmInt32 Length, H5FDdsmAddr Address);
 
     virtual H5FDdsmInt32 Copy(H5FDdsmDriver *Source);
 
     H5FDdsmInt32   SendDone();
 
   protected:
-    H5FDdsmInt32    DsmType;
-
     H5FDdsmAddr     EndAddress;
     H5FDdsmAddr     StartAddress;
 
@@ -191,6 +183,8 @@ class H5FDdsm_EXPORT H5FDdsmDriver : public H5FDdsmObject {
 
     H5FDdsmInt32   *Locks;
     H5FDdsmByte    *DataPointer;
+
+    H5FDdsmAddressMapper *AddressMapper;
 };
 
 #endif // __H5FDdsmDriver_h

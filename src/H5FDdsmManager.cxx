@@ -74,7 +74,7 @@ H5FDdsmManager::H5FDdsmManager()
   this->DSMBuffer               = NULL;
   this->DSMComm                 = NULL;
   this->DsmType                 = H5FD_DSM_TYPE_UNIFORM;
-  this->DsmBlockLength          = 0;
+  this->DsmBlockLength          = H5FD_DSM_DEFAULT_BLOCK_LENGTH;
   this->DsmCommType             = H5FD_DSM_COMM_MPI;
   this->DsmUseStaticInterComm   = 0;
   this->DsmIsServer             = 1;
@@ -242,7 +242,7 @@ H5FDdsmInt32 H5FDdsmManager::CreateDSM()
       this->DSMBuffer->ConfigureUniform(this->DSMComm, length, -1, -1);
       break;
     case H5FD_DSM_TYPE_BLOCK_CYCLIC:
-      this->DSMBuffer->ConfigureBlockCyclic(this->DSMComm, length, this->DsmBlockLength, -1, -1);
+      this->DSMBuffer->ConfigureUniform(this->DSMComm, length, -1, -1, this->DsmBlockLength);
       break;
     default:
       H5FDdsmError("DSM configuration type not supported");

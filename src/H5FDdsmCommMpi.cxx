@@ -245,7 +245,7 @@ H5FDdsmCommMpi::ClosePort()
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmCommMpi::RemoteCommAccept(void *storagePointer, H5FDdsmUInt64 storageSize)
+H5FDdsmCommMpi::RemoteCommAccept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize)
 {
   if(H5FDdsmComm::RemoteCommAccept(storagePointer, storageSize) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 

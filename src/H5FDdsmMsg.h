@@ -95,15 +95,15 @@ class H5FDdsm_EXPORT H5FDdsmMsg : public H5FDdsmObject {
     H5FDdsmSetValueMacro(Length, H5FDdsmInt32);
     H5FDdsmGetValueMacro(Length, H5FDdsmInt32);
 
-    H5FDdsmSetValueMacro(Data, void *);
-    H5FDdsmGetValueMacro(Data, void *);
+    H5FDdsmSetValueMacro(Data, H5FDdsmPointer);
+    H5FDdsmGetValueMacro(Data, H5FDdsmPointer);
 
-    H5FDdsmInt32  Source;
-    H5FDdsmInt32  Dest;
-    H5FDdsmInt32  Tag;
-    H5FDdsmAddr   Address;
-    H5FDdsmInt32  Length;
-    void         *Data;
+    H5FDdsmInt32   Source;
+    H5FDdsmInt32   Dest;
+    H5FDdsmInt32   Tag;
+    H5FDdsmAddr    Address;
+    H5FDdsmInt32   Length;
+    H5FDdsmPointer Data;
 };
 
 #endif // __H5FDdsmMsg_h

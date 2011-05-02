@@ -261,7 +261,7 @@ H5FDdsmCommDmapp::ClosePort()
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmCommDmapp::RemoteCommAccept(void *storagePointer, H5FDdsmUInt64 storageSize)
+H5FDdsmCommDmapp::RemoteCommAccept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize)
 {
   MPI_Comm winComm;
   dmapp_return_t status;

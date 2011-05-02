@@ -131,7 +131,7 @@ public:
 
   virtual H5FDdsmInt32   OpenPort();
   virtual H5FDdsmInt32   ClosePort();
-  virtual H5FDdsmInt32   RemoteCommAccept(void *storagePointer, H5FDdsmUInt64 storageSize);
+  virtual H5FDdsmInt32   RemoteCommAccept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize);
   virtual H5FDdsmInt32   RemoteCommConnect();
   virtual H5FDdsmInt32   RemoteCommDisconnect();
 

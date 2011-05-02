@@ -41,10 +41,13 @@ struct H5FDdsmSteererInternals {
   SteeringEntriesString               DisabledObjects;
   //
 };
+
 //----------------------------------------------------------------------------
 H5FDdsmSteerer::H5FDdsmSteerer()
 {
 }
+
+//----------------------------------------------------------------------------
 H5FDdsmSteerer::H5FDdsmSteerer(H5FDdsmBuffer *buffer)
 {
   this->WriteToDSM                = 1;
@@ -56,12 +59,14 @@ H5FDdsmSteerer::H5FDdsmSteerer(H5FDdsmBuffer *buffer)
   this->Cache_interactionGroupId  = H5I_BADID;
   this->SetCurrentCommand("none");
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmSteerer::~H5FDdsmSteerer()
 {
   this->SetCurrentCommand(NULL);
   delete this->SteererInternals;
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmSteerer::SetCurrentCommand(H5FDdsmConstString cmd)
 {
@@ -80,6 +85,7 @@ H5FDdsmInt32 H5FDdsmSteerer::SetCurrentCommand(H5FDdsmConstString cmd)
   }
   return(H5FD_DSM_SUCCESS);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmSteerer::UpdateSteeringCommands()
 {
@@ -99,6 +105,7 @@ H5FDdsmInt32 H5FDdsmSteerer::UpdateSteeringCommands()
   this->SetCurrentCommand("none");
   return(H5FD_DSM_SUCCESS);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmSteerer::GetSteeringCommands()
 {
@@ -124,12 +131,14 @@ H5FDdsmInt32 H5FDdsmSteerer::GetSteeringCommands()
   }
   return(H5FD_DSM_SUCCESS);
 }
+
 //----------------------------------------------------------------------------
 void H5FDdsmSteerer::SetDisabledObject(H5FDdsmConstString objectName)
 {
   this->SteererInternals->DisabledObjects[objectName] =
       (this->SteererInternals->DisabledObjects[objectName]) ? false : true;
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmSteerer::UpdateDisabledObjects()
 {
@@ -168,6 +177,7 @@ H5FDdsmInt32 H5FDdsmSteerer::UpdateDisabledObjects()
   }
   return(H5FD_DSM_SUCCESS);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmSteerer::GetDisabledObjects()
 {
@@ -208,6 +218,7 @@ H5FDdsmInt32 H5FDdsmSteerer::GetDisabledObjects()
   }
   return(H5FD_DSM_SUCCESS);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmSteerer::IsObjectEnabled(H5FDdsmConstString name)
 {
@@ -218,11 +229,13 @@ H5FDdsmInt32 H5FDdsmSteerer::IsObjectEnabled(H5FDdsmConstString name)
   }
   return(ret);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmBoolean H5FDdsmSteerer::InteractionsCacheActive()
 {
   return (this->Cache_fapl!=H5I_BADID);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmSteerer::BeginInteractionsCache(unsigned int mode)
 {
@@ -264,6 +277,7 @@ H5FDdsmInt32 H5FDdsmSteerer::BeginInteractionsCache(unsigned int mode)
 
   return(ret);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmSteerer::EndInteractionsCache()
 {
@@ -280,6 +294,7 @@ H5FDdsmInt32 H5FDdsmSteerer::EndInteractionsCache()
   this->Cache_interactionGroupId = H5I_BADID;
   return (ret);
 }
+
 //----------------------------------------------------------------------------
 void H5FDdsmSteerer::BeginHideHDF5Errors()
 {
@@ -288,12 +303,14 @@ void H5FDdsmSteerer::BeginHideHDF5Errors()
   // Turn off error handling
   H5Eset_auto(H5E_DEFAULT, NULL, NULL);
 }
+
 //----------------------------------------------------------------------------
 void H5FDdsmSteerer::EndHideHDF5Errors()
 {
   // Restore previous error handler
   H5Eset_auto(H5E_DEFAULT, this->Cache_errfunc, this->Cache_errdata);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmSteerer::IsObjectPresent(H5FDdsmConstString name, int &present)
 {
@@ -326,6 +343,7 @@ H5FDdsmInt32 H5FDdsmSteerer::IsObjectPresent(H5FDdsmConstString name, int &prese
   this->EndHideHDF5Errors();
   return(ret);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmSteerer::GetScalar(H5FDdsmConstString name, H5FDdsmInt32 memType, void *data)
 {
@@ -353,6 +371,7 @@ H5FDdsmInt32 H5FDdsmSteerer::GetScalar(H5FDdsmConstString name, H5FDdsmInt32 mem
   this->EndHideHDF5Errors();
   return(ret);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmSteerer::SetScalar(H5FDdsmConstString name, H5FDdsmInt32 memType, void *data)
 {
@@ -387,6 +406,7 @@ H5FDdsmInt32 H5FDdsmSteerer::SetScalar(H5FDdsmConstString name, H5FDdsmInt32 mem
   }
   return(ret);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmSteerer::GetVector(H5FDdsmConstString name, H5FDdsmInt32 memType, hsize_t numberOfElements, void *data)
 {
@@ -417,6 +437,7 @@ H5FDdsmInt32 H5FDdsmSteerer::GetVector(H5FDdsmConstString name, H5FDdsmInt32 mem
   this->EndHideHDF5Errors();
   return(ret);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmSteerer::SetVector(H5FDdsmConstString name, H5FDdsmInt32 memType, hsize_t numberOfElements, void *data)
 {
@@ -446,6 +467,7 @@ H5FDdsmInt32 H5FDdsmSteerer::SetVector(H5FDdsmConstString name, H5FDdsmInt32 mem
   }
   return(ret);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmSteerer::GetHandle(H5FDdsmConstString name, hid_t *handle)
 {
@@ -462,6 +484,7 @@ H5FDdsmInt32 H5FDdsmSteerer::GetHandle(H5FDdsmConstString name, hid_t *handle)
   } 
   return(ret);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmSteerer::FreeHandle(hid_t handle)
 {
@@ -477,6 +500,7 @@ H5FDdsmInt32 H5FDdsmSteerer::FreeHandle(hid_t handle)
   } 
   return(ret);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmSteerer::DsmDump()
 {
@@ -487,6 +511,7 @@ H5FDdsmInt32 H5FDdsmSteerer::DsmDump()
   delete dsmDump;
   return(H5FD_DSM_SUCCESS);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmSteerer::WriteInteractions(H5FDdsmConstString name, hsize_t numberOfElements, int *data)
 {
@@ -501,6 +526,7 @@ H5FDdsmInt32 H5FDdsmSteerer::WriteInteractions(H5FDdsmConstString name, hsize_t 
   }
   return(ret);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmSteerer::WriteInteractions(H5FDdsmConstString name, hsize_t numberOfElements, double *data)
 {
@@ -515,6 +541,7 @@ H5FDdsmInt32 H5FDdsmSteerer::WriteInteractions(H5FDdsmConstString name, hsize_t 
   }
   return(ret);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmSteerer::ReadInteractions(H5FDdsmConstString name, hsize_t numberOfElements, int *data)
 {
@@ -529,6 +556,7 @@ H5FDdsmInt32 H5FDdsmSteerer::ReadInteractions(H5FDdsmConstString name, hsize_t n
   }
   return(ret);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmSteerer::ReadInteractions(H5FDdsmConstString name, hsize_t numberOfElements, double *data)
 {
@@ -543,6 +571,7 @@ H5FDdsmInt32 H5FDdsmSteerer::ReadInteractions(H5FDdsmConstString name, hsize_t n
   }
   return(ret);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmSteerer::CheckCommand(H5FDdsmConstString command)
 {

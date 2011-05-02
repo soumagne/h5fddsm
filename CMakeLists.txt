@@ -238,6 +238,7 @@ SET(H5FDdsmSources
   src/H5FDdsmStorage.cxx
   src/H5FDdsmManager.cxx
   src/H5FDdsmDump.cxx
+  src/H5FDdsmAddressMapper.cxx
   h5dump/h5dump.cxx
   h5dump/h5tools.cxx
   h5dump/h5tools_ref.cxx
@@ -313,6 +314,7 @@ SET(H5FDdsmHeaders
   ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmComm.h
   ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmCommSocket.h
   ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmCommMpi.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmAddressMapper.h
   ${H5FDdsm_BINARY_DIR}/src/H5FDdsmConfig.h
 )
 
