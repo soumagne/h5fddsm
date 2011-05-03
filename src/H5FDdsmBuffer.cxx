@@ -134,7 +134,7 @@ H5FDdsmBuffer::H5FDdsmBuffer()
 {
   this->DataPointer = 0;
   this->Locks = new H5FDdsmInt32[H5FD_DSM_MAX_LOCKS];
-  for(H5FDdsmInt32 i=0; i < H5FD_DSM_MAX_LOCKS; i++) this->Locks[i] = -1;
+  for (H5FDdsmInt32 i=0; i < H5FD_DSM_MAX_LOCKS; i++) this->Locks[i] = -1;
 
   this->ThreadDsmReady       = 0;
   this->ThreadRemoteDsmReady = 0;

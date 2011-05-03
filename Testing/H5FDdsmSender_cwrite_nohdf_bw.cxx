@@ -25,30 +25,30 @@ void write_ecrit_particule(
     dsmBuffer->RequestLockAcquire();
   }
   // Simulate get of DSM metadata
-  if (dsmBuffer->Get(metadataAddr, sizeof(entry), &entry) != H5FD_DSM_SUCCESS) {
-    std::cerr << "DsmGetEntry failed" << std::endl;
-    return;
-  }
+//  if (dsmBuffer->Get(metadataAddr, sizeof(entry), &entry) != H5FD_DSM_SUCCESS) {
+//    std::cerr << "DsmGetEntry failed" << std::endl;
+//    return;
+//  }
   dsmBuffer->GetComm()->Barrier();
 
 
   // Simulate write
-  if (dsmBuffer->Put(start*3*sizeof(H5FDdsmFloat64), len*3*sizeof(H5FDdsmFloat64), (void *) (*buf).Ddata) != H5FD_DSM_SUCCESS) {
+  if (dsmBuffer->Put(start*sizeof(H5FDdsmFloat64), len*sizeof(H5FDdsmFloat64), (void *) (*buf).Ddata) != H5FD_DSM_SUCCESS) {
     std::cerr << "can't write to DSM" << std::endl;
     return;
   }
   dirty = 1;
 
   // Simulate close
-  if (dsmBuffer->GetComm()->GetId() == 0) {
-    if (dsmBuffer->Put(metadataAddr, sizeof(entry), &entry) != H5FD_DSM_SUCCESS) {
-      std::cerr << "DsmUpdateEntry failed" << std::endl;
-      return;
-    }
-  }
+//  if (dsmBuffer->GetComm()->GetId() == 0) {
+//    if (dsmBuffer->Put(metadataAddr, sizeof(entry), &entry) != H5FD_DSM_SUCCESS) {
+//      std::cerr << "DsmUpdateEntry failed" << std::endl;
+//      return;
+//    }
+//  }
   dsmBuffer->GetComm()->Barrier();
-  MPI_Allreduce(&dirty, &isSomeoneDirty, sizeof(H5FDdsmBoolean),
-      MPI_UNSIGNED_CHAR, MPI_MAX, dsmBuffer->GetComm()->GetComm());
+//  MPI_Allreduce(&dirty, &isSomeoneDirty, sizeof(H5FDdsmBoolean),
+//      MPI_UNSIGNED_CHAR, MPI_MAX, dsmBuffer->GetComm()->GetComm());
   dsmBuffer->SetIsDataModified(1);
   dsmBuffer->RequestServerUpdate();
 
@@ -81,16 +81,18 @@ H5FDdsmFloat64 TestParticleWrite(H5FDdsmConstString filename, H5FDdsmUInt64 N, H
   initBuffer(&WriteBuffer);
 
   // create arrays for the test vars we selected above
-  doublearray = (H5FDdsmFloat64*)malloc(sizeof(H5FDdsmFloat64)*3*N);
+  doublearray = (H5FDdsmFloat64*) malloc(sizeof(H5FDdsmFloat64)*N);//(H5FDdsmFloat64*) malloc(sizeof(H5FDdsmFloat64)*3*N);
   for (i=0; i<N; i++) {
-    doublearray[3*i]   = 0.1*i;
-    doublearray[3*i+1] = 0.1*i;
-    doublearray[3*i+2] = 0.1*i;
+    doublearray[i] = 0.1*i;
+//    doublearray[3*i]   = 0.1*i;
+//    doublearray[3*i+1] = 0.1*i;
+//    doublearray[3*i+2] = 0.1*i;
   }
   WriteBuffer.Ddata = doublearray;
 
   // call the write routine with our dummy buffer
   MPI_Barrier(dcomm);
+//  fprintf(stderr, "(%d) writing %ld particles from %ld\n", dsmBuffer->GetComm()->GetId(), N, start);
   H5FDdsmFloat64 t1 = MPI_Wtime();
   write_ecrit_particule(&WriteBuffer, filename, N, start, total, dsmBuffer);
   MPI_Barrier(dcomm);
@@ -134,12 +136,12 @@ int main(int argc, char **argv)
       std::cout << "Writing to Disk" << std::endl;
     }
     for (int loop = 0; loop < LOOPS; loop++) {
-      H5FDdsmUInt64 numParticles = (H5FDdsmUInt64) (1024 * 1024 * (remoteMB - 1) /
-          (sizeof(H5FDdsmFloat64) * 3.0 * dsmManager->GetUpdateNumPieces()));
-      Bytes       = numParticles * sizeof(H5FDdsmFloat64) * 3.0; // 3 = {x,y,z}
+      H5FDdsmUInt64 numParticles = (H5FDdsmUInt64) (1024 * 1024 * (remoteMB) /
+          (sizeof(H5FDdsmFloat64) * 1.0 * dsmManager->GetUpdateNumPieces()));
+      Bytes       = numParticles * sizeof(H5FDdsmFloat64) * 1.0; // 3 = {x,y,z}
       SendBytes   = Bytes * dsmManager->GetUpdateNumPieces();
       MBytes      = SendBytes / (1024.0 * 1024.0);
-      if (MBytes < remoteMB) {
+      if (MBytes <= remoteMB) {
         totaltime = 0;
         for (int avg = 0; avg < AVERAGE; avg++) {
           if (type == 0) {
@@ -156,7 +158,7 @@ int main(int argc, char **argv)
         bandwidth = (MBytes / totaltime);
         if (dsmManager->GetUpdatePiece() == 0) {
           std::cout << "Particles/proc, "   << numParticles << ", "
-                    << "NumArrays, "        << 3            << ", "
+                    << "NumArrays, "        << 1            << ", "
                     << "NProcs, "           << dsmManager->GetUpdateNumPieces()  << ", "
                     << "Mbytes, "           << MBytes       << ", "
                     << "TotalTime, "        << totaltime    << ", "
