@@ -129,8 +129,13 @@ H5FDdsmAddressMapper::Translate(H5FDdsmAddr address, H5FDdsmUInt64 length, H5FDd
     dataRequest->Data = datap;
     dataRequest->Length = len;
     dataRequest->Dest = dest;
-    dataRequest->Address = address - astart;
-    H5FDdsmDebug("Data request to dest=" << dest << " at address=" << address << " with length=" << len);
+    if (this->DsmType == H5FD_DSM_TYPE_BLOCK_CYCLIC) {
+      H5FDdsmInt32 blockNumber = (H5FDdsmInt32) (address / ((this->DsmDriver->GetEndServerId() - this->DsmDriver->GetStartServerId() + 1) * this->DsmDriver->GetBlockLength()));
+      H5FDdsmDebug("Block number=" << blockNumber << " on dest=" << dest);
+      dataRequest->Address = address - astart + blockNumber * this->DsmDriver->GetBlockLength();
+    } else {
+      dataRequest->Address = address - astart;
+    }
     dataRequests.push_back(dataRequest);
     address += len;
     length -= len;
