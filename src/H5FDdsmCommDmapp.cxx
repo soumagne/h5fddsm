@@ -84,7 +84,7 @@ H5FDdsmCommDmapp::Init()
   rma_args.put_relaxed_ordering = DMAPP_ROUTING_ADAPTIVE;
   rma_args.max_outstanding_nb = DMAPP_DEF_OUTSTANDING_NB;
   rma_args.offload_threshold = DMAPP_OFFLOAD_THRESHOLD;
-  rma_args.max_concurrency = 1;
+  rma_args.max_concurrency = 2;
 
   // Initialize DMAPP
   status = dmapp_init(&rma_args, &actual_args);
