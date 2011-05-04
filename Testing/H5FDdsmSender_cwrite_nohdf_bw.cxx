@@ -25,10 +25,10 @@ void write_ecrit_particule(
     dsmBuffer->RequestLockAcquire();
   }
   // Simulate get of DSM metadata
-//  if (dsmBuffer->Get(metadataAddr, sizeof(entry), &entry) != H5FD_DSM_SUCCESS) {
-//    std::cerr << "DsmGetEntry failed" << std::endl;
-//    return;
-//  }
+  if (dsmBuffer->Get(metadataAddr, sizeof(entry), &entry) != H5FD_DSM_SUCCESS) {
+    std::cerr << "DsmGetEntry failed" << std::endl;
+    return;
+  }
   dsmBuffer->GetComm()->Barrier();
 
 
@@ -40,15 +40,15 @@ void write_ecrit_particule(
   dirty = 1;
 
   // Simulate close
-//  if (dsmBuffer->GetComm()->GetId() == 0) {
-//    if (dsmBuffer->Put(metadataAddr, sizeof(entry), &entry) != H5FD_DSM_SUCCESS) {
-//      std::cerr << "DsmUpdateEntry failed" << std::endl;
-//      return;
-//    }
-//  }
+  if (dsmBuffer->GetComm()->GetId() == 0) {
+    if (dsmBuffer->Put(metadataAddr, sizeof(entry), &entry) != H5FD_DSM_SUCCESS) {
+      std::cerr << "DsmUpdateEntry failed" << std::endl;
+      return;
+    }
+  }
   dsmBuffer->GetComm()->Barrier();
-//  MPI_Allreduce(&dirty, &isSomeoneDirty, sizeof(H5FDdsmBoolean),
-//      MPI_UNSIGNED_CHAR, MPI_MAX, dsmBuffer->GetComm()->GetComm());
+  MPI_Allreduce(&dirty, &isSomeoneDirty, sizeof(H5FDdsmBoolean),
+      MPI_UNSIGNED_CHAR, MPI_MAX, dsmBuffer->GetComm()->GetComm());
   dsmBuffer->SetIsDataModified(1);
   dsmBuffer->RequestServerUpdate();
 
@@ -112,12 +112,13 @@ int main(int argc, char **argv)
 {
   MPI_Comm       comm = MPI_COMM_WORLD;
   H5FDdsmFloat64 remoteMB, MBytes, Bytes, SendBytes, bandwidth;
+  H5FDdsmInt32 dataSizeMB = 0;
   H5FDdsmFloat64 totaltime;
   H5FDdsmConstString fullname = "dsm";
   H5FDdsmConstString dsm_env = getenv("H5FD_DSM_CONFIG_PATH");
   std::string hdffile;
   H5FDdsmManager *dsmManager = new H5FDdsmManager();
-  senderInit(argc, argv, dsmManager, &comm);
+  senderInit(argc, argv, dsmManager, &comm, &dataSizeMB);
 
   if (dsm_env) {
     hdffile = std::string(dsm_env) + std::string("/hdf-output.h5");
@@ -126,7 +127,11 @@ int main(int argc, char **argv)
     }
   }
 
-  remoteMB = dsmManager->GetDSMHandle()->GetTotalLength() / (1024.0 * 1024.0);
+  if (dataSizeMB) {
+    remoteMB = dataSizeMB;
+  } else {
+    remoteMB = dsmManager->GetDSMHandle()->GetTotalLength() / (1024.0 * 1024.0);
+  }
 
   for (int type = 0; type < TYPES; type++) {
     if (type == 0 && dsmManager->GetUpdatePiece() == 0) {
@@ -136,12 +141,16 @@ int main(int argc, char **argv)
       std::cout << "Writing to Disk" << std::endl;
     }
     for (int loop = 0; loop < LOOPS; loop++) {
-      H5FDdsmUInt64 numParticles = (H5FDdsmUInt64) (1024 * 1024 * (remoteMB) /
-          (sizeof(H5FDdsmFloat64) * 1.0 * dsmManager->GetUpdateNumPieces()));
-      Bytes       = numParticles * sizeof(H5FDdsmFloat64) * 1.0; // 3 = {x,y,z}
+      H5FDdsmUInt64 numParticles = (H5FDdsmUInt64) ((1024 * 1024 * remoteMB - H5FD_DSM_ALIGNMENT) /
+          (sizeof(H5FDdsmFloat64) * 1.0 * dsmManager->GetUpdateNumPieces())); // 3 = {x,y,z}
+      if (dsmManager->GetDSMHandle()->GetDsmType() == H5FD_DSM_TYPE_DYNAMIC_MASK) {
+        dsmManager->GetDSMHandle()->SetMaskLength(numParticles * sizeof(H5FDdsmFloat64) * dsmManager->GetUpdateNumPieces());
+        dsmManager->GetDSMHandle()->SendMaskLength();
+      }
+      Bytes       = numParticles * sizeof(H5FDdsmFloat64) * 1.0;
       SendBytes   = Bytes * dsmManager->GetUpdateNumPieces();
       MBytes      = SendBytes / (1024.0 * 1024.0);
-      if (MBytes <= remoteMB) {
+      if (MBytes < remoteMB) {
         totaltime = 0;
         for (int avg = 0; avg < AVERAGE; avg++) {
           if (type == 0) {

@@ -375,7 +375,7 @@ H5FDdsmDriver::ReceiveMaskLength()
   if(this->Comm->RemoteCommRecvInfo(&dsmInfo) != H5FD_DSM_SUCCESS) {
     return(H5FD_DSM_FAIL);
   }
-  this->DebugOn();
+
   if (this->Comm->GetId() == 0) {
     H5FDdsmDebug("Old Length: " << this->GetLength());
     H5FDdsmDebug("Old Total Length: " << this->GetTotalLength());
@@ -388,7 +388,7 @@ H5FDdsmDriver::ReceiveMaskLength()
     H5FDdsmDebug("New Length: " << this->GetLength());
     H5FDdsmDebug("New Total Length: " << this->GetTotalLength());
   }
-  this->DebugOff();
+
   return(H5FD_DSM_SUCCESS);
 }
 //----------------------------------------------------------------------------

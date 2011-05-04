@@ -193,8 +193,7 @@ int main(int argc, char **argv)
       std::cout << "Writing to Disk" << std::endl;
     }
     for (int loop = 0; loop < LOOPS; loop++) {
-      H5FDdsmUInt64 numParticles;
-      numParticles = (H5FDdsmUInt64) ((1024 * 1024 * remoteMB - H5FD_DSM_ALIGNMENT) /
+      H5FDdsmUInt64 numParticles = (H5FDdsmUInt64) ((1024 * 1024 * remoteMB - H5FD_DSM_ALIGNMENT) /
           (sizeof(H5FDdsmFloat64) * 3.0 * dsmManager->GetUpdateNumPieces()));
       if (dsmManager->GetDSMHandle()->GetDsmType() == H5FD_DSM_TYPE_DYNAMIC_MASK) {
         dsmManager->GetDSMHandle()->SetMaskLength(numParticles * sizeof(H5FDdsmFloat64) * 3.0 * dsmManager->GetUpdateNumPieces());
