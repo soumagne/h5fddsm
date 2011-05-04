@@ -59,6 +59,7 @@ H5FDdsmAddressMapper::GetAddressRangeForId(H5FDdsmInt32 Id, H5FDdsmAddr *Start, 
   switch (this->DsmType) {
   case H5FD_DSM_TYPE_UNIFORM:
   case H5FD_DSM_TYPE_UNIFORM_RANGE:
+  case H5FD_DSM_TYPE_DYNAMIC_MASK:
     // All Servers have same length
     *Start = (Id - this->DsmDriver->GetStartServerId()) * this->DsmDriver->GetLength();
     *End = *Start + this->DsmDriver->GetLength() - 1;
@@ -85,6 +86,7 @@ H5FDdsmAddressMapper::AddressToId(H5FDdsmAddr Address)
   switch(this->DsmType) {
   case H5FD_DSM_TYPE_UNIFORM:
   case H5FD_DSM_TYPE_UNIFORM_RANGE:
+  case H5FD_DSM_TYPE_DYNAMIC_MASK:
     // All Servers have same length
     ServerId = this->DsmDriver->GetStartServerId() + (H5FDdsmInt32)(Address / this->DsmDriver->GetLength());
     if(ServerId > this->DsmDriver->GetEndServerId()) {
@@ -93,11 +95,7 @@ H5FDdsmAddressMapper::AddressToId(H5FDdsmAddr Address)
     break;
   case H5FD_DSM_TYPE_BLOCK_CYCLIC:
     // Keep a uniform DSM but add block cyclic distribution
-    //          if (Address > this->EndAddress*(this->EndServerId - this->StartServerId + 1)) {
-    //            H5FDdsmError("Address " << Address << " is larger than end address " << this->EndAddress << " of EndServerId " << this->EndServerId);
-    //          }
-    ServerId = this->DsmDriver->GetStartServerId() +
-    ((H5FDdsmInt32)(Address / this->DsmDriver->GetBlockLength())
+    ServerId = this->DsmDriver->GetStartServerId() + ((H5FDdsmInt32)(Address / this->DsmDriver->GetBlockLength())
         % (this->DsmDriver->GetEndServerId() - this->DsmDriver->GetStartServerId() + 1));
     break;
   default:
@@ -120,19 +118,19 @@ H5FDdsmAddressMapper::Translate(H5FDdsmAddr address, H5FDdsmUInt64 length, H5FDd
   while (length) {
     H5FDdsmMsg *dataRequest = new H5FDdsmMsg;
     dest = this->AddressToId(address);
-    if (dest == H5FD_DSM_FAIL){
+    if (dest == H5FD_DSM_FAIL) {
       H5FDdsmError("Address Error");
       return(H5FD_DSM_FAIL);
     }
     this->GetAddressRangeForId(dest, &astart, &aend, address);
     ulen = min(length, aend - address + 1);
     // Because MPI uses only send/recv int size packets
-    len = static_cast<H5FDdsmInt32>(min(H5FD_DSM_INT32_MAX, ulen));
+    len = static_cast<H5FDdsmInt32> min(H5FD_DSM_INT32_MAX, ulen);
     dataRequest->Data = datap;
     dataRequest->Length = len;
     dataRequest->Dest = dest;
     dataRequest->Address = address - astart;
-
+    H5FDdsmDebug("Data request to dest=" << dest << " at address=" << address << " with length=" << len);
     dataRequests.push_back(dataRequest);
     address += len;
     length -= len;

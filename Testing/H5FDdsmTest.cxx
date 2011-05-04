@@ -90,10 +90,7 @@ void receiverInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *
   }
 
   if (argc > 3) {
-    if (!strcmp(argv[3], "Block")) {
-      dsmType = H5FD_DSM_TYPE_BLOCK_CYCLIC;
-    }
-    else if (!strcmp(argv[3], "Static") && (commType != H5FD_DSM_COMM_SOCKET)) {
+    if (!strcmp(argv[3], "Static") && (commType != H5FD_DSM_COMM_SOCKET)) {
       staticInterComm = true;
     }
   }
@@ -106,7 +103,16 @@ void receiverInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *
   }
 
   if (argc > 4) {
-    dsmBlockSize = atol(argv[4]);
+    if (!strcmp(argv[4], "Block")) {
+      dsmType = H5FD_DSM_TYPE_BLOCK_CYCLIC;
+    }
+    else if (!strcmp(argv[4], "Mask")) {
+      dsmType = H5FD_DSM_TYPE_DYNAMIC_MASK;
+    }
+  }
+
+  if (argc > 5) {
+    dsmBlockSize = atol(argv[5]);
   }
 
   //std::cout << "Process number " << rank << " of " << size - 1 << std::endl;
@@ -170,7 +176,7 @@ void receiverFinalize(H5FDdsmManager *dsmManager, MPI_Comm *comm)
 }
 
 //----------------------------------------------------------------------------
-void senderInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *comm)
+void senderInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *comm, H5FDdsmInt32 *dataSizeMB)
 {
   H5FDdsmInt32   nlocalprocs, rank;
   H5FDdsmBoolean staticInterComm = false;
@@ -195,21 +201,22 @@ void senderInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *co
   MPI_Barrier(dcomm);
 #endif
 
-  //
-  // Create a DSM manager
-  //
   if (argc > 1) {
+    if (dataSizeMB != NULL) *dataSizeMB = atoi(argv[1]);
+  }
+
+  if (argc > 2) {
     // If an argument to give the comm is passed, assume we use static mode for now
     H5FDdsmInt32 commType = H5FD_DSM_COMM_MPI;
-    if (!strcmp(argv[1], "MPI")) {
+    if (!strcmp(argv[2], "MPI")) {
       commType = H5FD_DSM_COMM_MPI;
       if (rank == 0) std::cout << "MPI Inter-Communicator selected" << std::endl;
     }
-    else if (!strcmp(argv[1], "MPI_RMA")) {
+    else if (!strcmp(argv[2], "MPI_RMA")) {
       commType = H5FD_DSM_COMM_MPI_RMA;
       if (rank == 0) std::cout << "MPI_RMA Inter-Communicator selected" << std::endl;
     }
-    else if (!strcmp(argv[1], "DMAPP")) {
+    else if (!strcmp(argv[2], "DMAPP")) {
       commType = H5FD_DSM_COMM_DMAPP;
       staticInterComm = true;
       if (rank == 0) std::cout << "DMAPP Inter-Communicator selected" << std::endl;
@@ -226,6 +233,9 @@ void senderInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *co
     MPI_Comm_size(*comm, &nlocalprocs);
     staticInterComm = true;
   }
+  //
+  // Create a DSM manager
+  //
   dsmManager->SetCommunicator(*comm);
   dsmManager->SetDsmIsServer(0);
   dsmManager->CreateDSM();

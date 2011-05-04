@@ -235,7 +235,7 @@ H5FDdsmInt32 H5FDdsmManager::CreateDSM()
   //
   if (this->DsmIsServer) {
     // Uniform Dsm : every node has a buffer the same size. (Addresses are sequential)
-    H5FDdsmUInt64 length = (H5FDdsmUInt64)(this->GetLocalBufferSizeMBytes())*1024LU*1024LU;
+    H5FDdsmUInt64 length = (H5FDdsmUInt64) (this->GetLocalBufferSizeMBytes())*1024LU*1024LU;
     switch (this->DsmType) {
     case H5FD_DSM_TYPE_UNIFORM:
     case H5FD_DSM_TYPE_UNIFORM_RANGE:
@@ -243,6 +243,10 @@ H5FDdsmInt32 H5FDdsmManager::CreateDSM()
       break;
     case H5FD_DSM_TYPE_BLOCK_CYCLIC:
       this->DSMBuffer->ConfigureUniform(this->DSMComm, length, -1, -1, this->DsmBlockLength);
+      break;
+    case H5FD_DSM_TYPE_DYNAMIC_MASK:
+      this->DSMBuffer->ConfigureUniform(this->DSMComm, length, -1, -1);
+      this->DSMBuffer->SetDsmType(H5FD_DSM_TYPE_DYNAMIC_MASK);
       break;
     default:
       H5FDdsmError("DSM configuration type not supported");

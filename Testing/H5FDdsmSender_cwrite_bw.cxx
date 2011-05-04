@@ -164,12 +164,13 @@ int main(int argc, char **argv)
 {
   MPI_Comm       comm = MPI_COMM_WORLD;
   H5FDdsmFloat64 remoteMB, MBytes, Bytes, SendBytes, bandwidth;
+  H5FDdsmInt32 dataSizeMB = 0;
   H5FDdsmFloat64 totaltime;
   H5FDdsmConstString fullname = "dsm";
   H5FDdsmConstString dsm_env = getenv("H5FD_DSM_CONFIG_PATH");
   std::string hdffile;
   H5FDdsmManager *dsmManager = new H5FDdsmManager();
-  senderInit(argc, argv, dsmManager, &comm);
+  senderInit(argc, argv, dsmManager, &comm, &dataSizeMB);
 
   if (dsm_env) {
     hdffile = std::string(dsm_env) + std::string("/hdf-output.h5");
@@ -178,7 +179,11 @@ int main(int argc, char **argv)
     }
   }
 
-  remoteMB = dsmManager->GetDSMHandle()->GetTotalLength() / (1024.0 * 1024.0);
+  if (dataSizeMB) {
+    remoteMB = dataSizeMB;
+  } else {
+    remoteMB = dsmManager->GetDSMHandle()->GetTotalLength() / (1024.0 * 1024.0);
+  }
 
   for (int type = 0; type < TYPES; type++) {
     if (type == 0 && dsmManager->GetUpdatePiece() == 0) {
@@ -188,8 +193,13 @@ int main(int argc, char **argv)
       std::cout << "Writing to Disk" << std::endl;
     }
     for (int loop = 0; loop < LOOPS; loop++) {
-      H5FDdsmUInt64 numParticles = (H5FDdsmUInt64) (1024 * 1024 * (remoteMB - 1) /
+      H5FDdsmUInt64 numParticles;
+      numParticles = (H5FDdsmUInt64) ((1024 * 1024 * remoteMB - H5FD_DSM_ALIGNMENT) /
           (sizeof(H5FDdsmFloat64) * 3.0 * dsmManager->GetUpdateNumPieces()));
+      if (dsmManager->GetDSMHandle()->GetDsmType() == H5FD_DSM_TYPE_DYNAMIC_MASK) {
+        dsmManager->GetDSMHandle()->SetMaskLength(numParticles * sizeof(H5FDdsmFloat64) * 3.0 * dsmManager->GetUpdateNumPieces());
+        dsmManager->GetDSMHandle()->SendMaskLength();
+      }
       Bytes       = numParticles * sizeof(H5FDdsmFloat64) * 3.0; // 3 = {x,y,z}
       SendBytes   = Bytes * dsmManager->GetUpdateNumPieces();
       MBytes      = SendBytes / (1024.0 * 1024.0);

@@ -33,9 +33,8 @@ ADD_EXECUTABLE(H5FDdsmTestDriver
 )
 TARGET_LINK_LIBRARIES(H5FDdsmTestDriver H5FDdsm_sys)
 
-SET(COMM_LIST Socket MPI MPI_RMA)
 FUNCTION(ADD_REMOTE_DSM_TEST full_test_name server client)
-  FOREACH(comm ${COMM_LIST})
+  FOREACH(comm Socket MPI MPI_RMA)
     ADD_TEST("${full_test_name}_${comm}"
       ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/H5FDdsmTestDriver
       --server ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${server}
@@ -51,7 +50,7 @@ MACRO(ADD_STATIC_DSM_TEST full_test_name server client)
       COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${MPIEXEC_MAX_NUMPROCS}
       ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${server}>
       64 ${comm} Static ${MPIEXEC_POSTFLAGS} : ${MPIEXEC_NUMPROC_FLAG} ${MPIEXEC_MAX_NUMPROCS} 
-      ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${client}> ${comm} ${MPIEXEC_POSTFLAGS}
+      ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${client}> 0 ${comm} ${MPIEXEC_POSTFLAGS}
     )
   ENDFOREACH(comm)
 ENDMACRO(ADD_STATIC_DSM_TEST)

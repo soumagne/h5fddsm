@@ -564,6 +564,7 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode)
       }
       // send DSM information
       this->SendInfo();
+      if (this->AddressMapper->GetDsmType() == H5FD_DSM_TYPE_DYNAMIC_MASK) this->ReceiveMaskLength();
       this->SignalConnected();
     }
     if (this->Comm->GetUseOneSidedComm()) {

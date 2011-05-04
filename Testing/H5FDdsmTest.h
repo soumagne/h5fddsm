@@ -31,7 +31,7 @@
 void receiverInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *comm);
 void receiverFinalize(H5FDdsmManager *dsmManager, MPI_Comm *comm);
 
-void senderInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *comm);
+void senderInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *comm, H5FDdsmInt32 *dataSizeMB=NULL);
 void senderFinalize(H5FDdsmManager *dsmManager, MPI_Comm *comm);
 
 #endif /* __H5FDdsmTest_h */

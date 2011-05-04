@@ -105,6 +105,17 @@ H5FDdsmDriver::SetDsmType(H5FDdsmInt32 DsmType)
 }
 //----------------------------------------------------------------------------
 H5FDdsmInt32
+H5FDdsmDriver::SetMaskLength(H5FDdsmUInt64 dataSize)
+{
+  this->MaskLength = this->Length - (dataSize / (this->EndServerId - this->StartServerId + 1));
+  // Do not make the mask fit exactly to the size of data to be written so that
+  // additional space is left for metadata
+  this->Length -= (this->MaskLength - H5FD_DSM_ALIGNMENT);
+  this->TotalLength = this->Length * (this->EndServerId - this->StartServerId + 1);
+  return(H5FD_DSM_SUCCESS);
+}
+//----------------------------------------------------------------------------
+H5FDdsmInt32
 H5FDdsmDriver::Copy(H5FDdsmDriver *Source)
 {
     this->Debug = Source->Debug;
@@ -159,7 +170,10 @@ H5FDdsmDriver::ConfigureUniform(H5FDdsmComm *aComm, H5FDdsmUInt64 aLength, H5FDd
     if ((StartId == 0) && (EndId == aComm->GetTotalSize() - 1)) {
         this->SetDsmType(H5FD_DSM_TYPE_UNIFORM);
     }
-    if (aBlockLength) this->SetDsmType(H5FD_DSM_TYPE_BLOCK_CYCLIC);
+    if (aBlockLength) {
+      this->SetDsmType(H5FD_DSM_TYPE_BLOCK_CYCLIC);
+      this->SetBlockLength(aBlockLength);
+    }
     this->SetStartServerId(StartId);
     this->SetEndServerId(EndId);
     this->SetComm(aComm);
@@ -339,6 +353,42 @@ H5FDdsmDriver::ReceiveInfo()
   this->SetEndServerId(dsmInfo.end_server_id);
   H5FDdsmDebug("endServerId received: " << this->GetEndServerId());
 
+  return(H5FD_DSM_SUCCESS);
+}
+//----------------------------------------------------------------------------
+H5FDdsmInt32
+H5FDdsmDriver::SendMaskLength()
+{
+  H5FDdsmInfo dsmInfo;
+
+  dsmInfo.length = this->GetMaskLength();
+
+  return(this->Comm->RemoteCommSendInfo(&dsmInfo));
+}
+
+//----------------------------------------------------------------------------
+H5FDdsmInt32
+H5FDdsmDriver::ReceiveMaskLength()
+{
+  H5FDdsmInfo dsmInfo;
+
+  if(this->Comm->RemoteCommRecvInfo(&dsmInfo) != H5FD_DSM_SUCCESS) {
+    return(H5FD_DSM_FAIL);
+  }
+  this->DebugOn();
+  if (this->Comm->GetId() == 0) {
+    H5FDdsmDebug("Old Length: " << this->GetLength());
+    H5FDdsmDebug("Old Total Length: " << this->GetTotalLength());
+  }
+  this->MaskLength = dsmInfo.length;
+  this->Length -= (this->MaskLength - H5FD_DSM_ALIGNMENT);
+  this->TotalLength = this->Length * (this->EndServerId - this->StartServerId + 1);
+  if (this->Comm->GetId() == 0) {
+    H5FDdsmDebug("Mask Length received: " << this->GetMaskLength());
+    H5FDdsmDebug("New Length: " << this->GetLength());
+    H5FDdsmDebug("New Total Length: " << this->GetTotalLength());
+  }
+  this->DebugOff();
   return(H5FD_DSM_SUCCESS);
 }
 //----------------------------------------------------------------------------
