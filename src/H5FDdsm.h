@@ -111,7 +111,11 @@ extern "C" {
    * Shut down the driver.
    * Users should never need to call it manually.
    */
+#ifdef HDF_NEW_VFD
+  H5FDdsm_EXPORT herr_t H5FD_dsm_term(void);
+#else
   H5FDdsm_EXPORT void   H5FD_dsm_term(void);
+#endif
 
   /* Description:
    * Set the flags that this VFL driver is capable of supporting.

@@ -200,6 +200,9 @@ static const H5FD_class_mpi_t H5FD_dsm_g = {
         "dsm",                    // name
         MAXADDR,                  // maxaddr
         H5F_CLOSE_SEMI,           // fc_degree
+#ifdef HDF_NEW_VFD
+        H5FD_dsm_term,            // terminate
+#endif
         NULL,                     // sb_size
         NULL,                     // sb_encode
         NULL,                     // sb_decode
@@ -217,7 +220,9 @@ static const H5FD_class_mpi_t H5FD_dsm_g = {
         NULL,                     // get_type_map
         NULL,                     // alloc
         NULL,                     // free
+#ifdef H5_HAVE_VFD_EXTENSIONS
         H5FD_dsm_term,            // terminate
+#endif
         H5FD_dsm_get_eoa,         // get_eoa
         H5FD_dsm_set_eoa,         // set_eoa
         H5FD_dsm_get_eof,         // get_eof
@@ -439,9 +444,14 @@ done:
  *
  *-------------------------------------------------------------------------
  */
+#ifdef HDF_NEW_VFD
+herr_t
+#else
 void
+#endif
 H5FD_dsm_term(void)
 {
+  herr_t ret_value = SUCCEED;
   FUNC_ENTER_NOAPI_NOINIT_NOFUNC(H5FD_dsm_term)
 
   DsmAutoDealloc();
@@ -449,7 +459,12 @@ H5FD_dsm_term(void)
   // Reset VFL ID
   H5FD_DSM_g = 0;
 
+done:
+#ifdef HDF_NEW_VFD
+  FUNC_LEAVE_NOAPI(ret_value);
+#else
   FUNC_LEAVE_NOAPI_VOID
+#endif
 } // end H5FD_dsm_term()
 
 /*-------------------------------------------------------------------------
