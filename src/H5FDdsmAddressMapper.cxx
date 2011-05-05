@@ -76,11 +76,14 @@ class BlockCyclicAddressMapper : public AddressMapperStrategy {
 //----------------------------------------------------------------------------
 class IntegerSizedAddressMapper : public AddressMapperStrategy {
   public:
-    IntegerSizedAddressMapper() {}
+    IntegerSizedAddressMapper(H5FDdsmUInt64 totalSize) 
+      : TotalLength(totalSize) {}
     //
     virtual H5FDdsmInt32 Translate(
       std::vector<H5FDdsmMsg> &indataRequests, 
       std::vector<H5FDdsmMsg> &outdataRequests);
+    //
+    H5FDdsmUInt64 TotalLength;
 };
 //----------------------------------------------------------------------------
 //
@@ -94,13 +97,15 @@ class IntegerSizedAddressMapper : public AddressMapperStrategy {
 //----------------------------------------------------------------------------
 class PartitionedAddressMapper : public AddressMapperStrategy {
   public:
-    PartitionedAddressMapper(H5FDdsmUInt64 bufferSize) : BufferSize(bufferSize) {}
+    PartitionedAddressMapper(H5FDdsmUInt64 partitionSize, H5FDdsmUInt64 totalSize) 
+      : PartitionSize(partitionSize), TotalLength(totalSize) {}
     //
     virtual H5FDdsmInt32 Translate(
       std::vector<H5FDdsmMsg> &indataRequests, 
       std::vector<H5FDdsmMsg> &outdataRequests);
     //
-    H5FDdsmUInt64 BufferSize;
+    H5FDdsmUInt64 PartitionSize;
+    H5FDdsmUInt64 TotalLength;
 };
 
 //----------------------------------------------------------------------------
@@ -124,7 +129,6 @@ H5FDdsmAddressMapper::~H5FDdsmAddressMapper()
 {
   delete this->AddressingStrategy;
 }
-
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
@@ -159,28 +163,26 @@ H5FDdsmInt32
 H5FDdsmAddressMapper::Translate(H5FDdsmAddr address, H5FDdsmUInt64 length, H5FDdsmPointer data, std::vector<H5FDdsmMsg> &outRequests)
 {
   if (!this->AddressingStrategy) {
-    std::cout <<       
-      this->DsmDriver->GetBlockLength() << " " << 
-      this->DsmDriver->GetLength() << " " << 
-      this->DsmDriver->GetTotalLength() << " " << std::endl;
-
     //
     // Operation order is : Cyclic->IntSized->RemoteAddress
     //
     this->AddressingStrategy = new PartitionedAddressMapper(
-      this->DsmDriver->GetLength()
+      this->DsmDriver->GetLength(),
+      this->DsmDriver->GetTotalLength()
     );
     AddressMapperStrategy *LastStrategy = this->AddressingStrategy;
     //
-    if (0 /* this->dsmCommunicator->Has32BitLimit() */) {
-      IntegerSizedAddressMapper *ISAM = new IntegerSizedAddressMapper();
+    if (1 /* this->dsmCommunicator->Has32BitLimit() */) {
+      IntegerSizedAddressMapper *ISAM = new IntegerSizedAddressMapper(
+        this->DsmDriver->GetTotalLength()
+      );
       LastStrategy->SetDelegate(ISAM);
       LastStrategy = ISAM;
     }
     //
-    if (0 && this->DsmType == H5FD_DSM_TYPE_BLOCK_CYCLIC) {
+    if (1 || this->DsmType == H5FD_DSM_TYPE_BLOCK_CYCLIC) {
       BlockCyclicAddressMapper *BCAM = new BlockCyclicAddressMapper(
-        this->DsmDriver->GetBlockLength(),
+1024*1024,//        this->DsmDriver->GetBlockLength(),
         this->DsmDriver->GetLength(),
         this->DsmDriver->GetTotalLength()
       );
@@ -217,7 +219,7 @@ H5FDdsmInt32 BlockCyclicAddressMapper::Translate(
   }
   // we distribute 0123456789ABCDEF as follows
   //
-  // if BlockSize=1(MB eg), BlockSpacing=8, {TotalSize=0x10}
+  // if BlockSize=1(MB eg), BlockSpacing=8, {TotalLength=0x10}
   //      bindex = 0123456789ABCDEF
   //      offset = 0011223344556677
   //      period = 0101010101010101
@@ -226,7 +228,7 @@ H5FDdsmInt32 BlockCyclicAddressMapper::Translate(
   // | 0 2 4 6 8 A C E . 1 3 5 7 9 B D F |
   // -------------------------------------
   //
-  // if BlockSize=1(MB eg), BlockSpacing=4, {TotalSize=0x10}
+  // if BlockSize=1(MB eg), BlockSpacing=4, {TotalLength=0x10}
   //      bindex = 0123456789ABCDEF
   //      offset = 0000111122223333
   //      period = 0123012301230123
@@ -250,7 +252,7 @@ H5FDdsmInt32 BlockCyclicAddressMapper::Translate(
       outdataRequests.push_back(newRequest);
       //
       datap        += newRequest.Length64;
-      it->Address  += newRequest.Length64;
+      it->Address  = (it->Address+newRequest.Length64)%this->TotalLength;
       it->Length64 -= newRequest.Length64;
     }
   }
@@ -281,7 +283,7 @@ IntegerSizedAddressMapper::Translate(
       outdataRequests.push_back(newRequest);
       //
       datap        += newRequest.Length;
-      it->Address  += newRequest.Length;
+      it->Address  = (it->Address+newRequest.Length)%this->TotalLength;
       it->Length64 -= newRequest.Length;
     }
   }
@@ -305,10 +307,10 @@ PartitionedAddressMapper::Translate(
     H5FDdsmByte *datap = (H5FDdsmByte*)it->Data;
     while (it->Length>0) {
       H5FDdsmMsg newRequest;
-      newRequest.Dest     = (H5FDdsmInt32)(it->Address/this->BufferSize);
-      newRequest.Address  = it->Address%this->BufferSize;
-      if ((newRequest.Address+it->Length)>this->BufferSize) {
-        newRequest.Length = (H5FDdsmInt32)(this->BufferSize-newRequest.Address);
+      newRequest.Dest     = (H5FDdsmInt32)(it->Address/this->PartitionSize);
+      newRequest.Address  = it->Address%this->PartitionSize;
+      if ((newRequest.Address+it->Length)>this->PartitionSize) {
+        newRequest.Length = (H5FDdsmInt32)(this->PartitionSize-newRequest.Address);
       }
       else {
         newRequest.Length = it->Length;
@@ -317,7 +319,7 @@ PartitionedAddressMapper::Translate(
       outdataRequests.push_back(newRequest);
       //
       datap       += newRequest.Length;
-      it->Address += newRequest.Length;
+      it->Address  = (it->Address+newRequest.Length)%this->TotalLength;
       it->Length  -= newRequest.Length;
     }
   }
