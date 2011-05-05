@@ -68,8 +68,6 @@ public:
   H5FDdsmSetValueMacro(DsmDriver, H5FDdsmDriver*);
   H5FDdsmGetValueMacro(DsmDriver, H5FDdsmDriver*);
 
-  H5FDdsmInt32 AddressToId(H5FDdsmAddr Address);
-
   // A Single access of length L, might actually straddle one or more
   // destination processes/chunks etc, so each access must pass
   // through the address translator to produce a vector of address segments.

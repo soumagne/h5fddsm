@@ -862,7 +862,7 @@ H5FDdsmBuffer::Acquire(H5FDdsmInt32 Index)
   H5FDdsmInt32   who, MyId = this->Comm->GetId();
   H5FDdsmInt32   RemoteStatus;
 
-  who = this->AddressMapper->AddressToId(0);
+//  who = this->AddressMapper->AddressToId(0);
   H5FDdsmDebug("Acquire :: MyId = " << MyId << " who = " << who);
   if (who == H5FD_DSM_FAIL){
     H5FDdsmError("Address Error");
@@ -910,7 +910,7 @@ H5FDdsmBuffer::Release(H5FDdsmInt32 Index)
   H5FDdsmInt32   who, MyId = this->Comm->GetId();
   H5FDdsmInt32   RemoteStatus;
 
-  who = this->AddressMapper->AddressToId(0);
+//  who = this->AddressMapper->AddressToId(0);
   if (who == H5FD_DSM_FAIL){
     H5FDdsmError("Address Error");
     return(H5FD_DSM_FAIL);
