@@ -31,8 +31,28 @@
 #include <vector>
 
 //struct H5FDdsmAddressMapperInternals;
-class H5FDdsmMsg;
-class H5FDdsmDriver;
+struct H5FDdsmMsg;
+class  H5FDdsmDriver;
+
+class H5FDdsm_EXPORT AddressMapperStrategy {
+  public:
+    AddressMapperStrategy() {
+      this->Delegate = NULL;
+    }
+    virtual ~AddressMapperStrategy() {
+      delete this->Delegate;
+    };
+    //
+    virtual H5FDdsmInt32 Translate(
+      std::vector<H5FDdsmMsg> &indataRequests, 
+      std::vector<H5FDdsmMsg> &outdataRequests)=0;
+    //
+    void SetDelegate(AddressMapperStrategy *d) {
+      this->Delegate = d;
+    }
+    //
+    AddressMapperStrategy *Delegate;
+};
 
 class H5FDdsm_EXPORT H5FDdsmAddressMapper : public H5FDdsmObject {
 
@@ -48,18 +68,24 @@ public:
   H5FDdsmSetValueMacro(DsmDriver, H5FDdsmDriver*);
   H5FDdsmGetValueMacro(DsmDriver, H5FDdsmDriver*);
 
-  //! Address Range
-  H5FDdsmInt32 GetAddressRangeForId(H5FDdsmInt32 Id, H5FDdsmAddr *Start,
-      H5FDdsmAddr *End, H5FDdsmAddr Address);
-
   H5FDdsmInt32 AddressToId(H5FDdsmAddr Address);
 
+  // A Single access of length L, might actually straddle one or more
+  // destination processes/chunks etc, so each access must pass
+  // through the address translator to produce a vector of address segments.
   H5FDdsmInt32 Translate(H5FDdsmAddr address, H5FDdsmUInt64 length,
-      H5FDdsmPointer data, std::vector<H5FDdsmMsg*> &dataRequests);
+      H5FDdsmPointer data, std::vector<H5FDdsmMsg> &dataRequests);
+
+  // Default strategy is set to PartitionedAddressMapper with
+  // IntegerSizedAddressMapper 
+  void SetAddressMapperStrategy(AddressMapperStrategy *s) {
+    this->AddressingStrategy = s;
+  }
 
 protected:
-  H5FDdsmInt32 DsmType;
-  H5FDdsmDriver *DsmDriver;
+  H5FDdsmInt32           DsmType;
+  H5FDdsmDriver         *DsmDriver;
+  AddressMapperStrategy *AddressingStrategy;
 };
 
 #endif /* __H5FDdsmAddressMapper_h */

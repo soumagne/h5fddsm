@@ -93,7 +93,7 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     H5FDdsmInt32 SignalUpdateReady();
     H5FDdsmInt32 WaitForUpdateReady();
 
-   // Has the data been modified
+    // Has the data been modified
     H5FDdsmGetValueMacro(IsDataModified, H5FDdsmBoolean);
     H5FDdsmSetValueMacro(IsDataModified, H5FDdsmBoolean);
 

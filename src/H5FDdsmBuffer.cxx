@@ -773,35 +773,35 @@ H5FDdsmInt32
 H5FDdsmBuffer::Put(H5FDdsmAddr address, H5FDdsmUInt64 length, H5FDdsmPointer data)
 {
   H5FDdsmInt32 myId = this->Comm->GetId();
-  std::vector<H5FDdsmMsg*> putRequests;
+  std::vector<H5FDdsmMsg> putRequests;
 
   this->AddressMapper->Translate(address, length, data, putRequests);
 
   while (!putRequests.empty()) {
-    H5FDdsmMsg *putRequest = putRequests.back();
-    if ((putRequest->Dest == myId) && !this->IsConnected) { // check if a remote DSM is connected
+    H5FDdsmMsg &putRequest = putRequests.back();
+    if ((putRequest.Dest == myId) && !this->IsConnected) { // check if a remote DSM is connected
       H5FDdsmByte *dp;
       dp = this->DataPointer;
-      dp += putRequest->Address;
-      memcpy(dp, putRequest->Data, putRequest->Length);
+      dp += putRequest.Address;
+      memcpy(dp, putRequest.Data, putRequest.Length);
     } else {
       H5FDdsmInt32 status;
       if (this->Comm->GetUseOneSidedComm()) {
-        H5FDdsmDebug("PUT request to " << putRequest->Dest << " for " << putRequest->Length << " bytes @ " << putRequest->Address);
-        status = this->PutData(putRequest->Dest, putRequest->Data, putRequest->Length, putRequest->Address);
+        H5FDdsmDebug("PUT request to " << putRequest.Dest << " for " << putRequest.Length << " bytes @ " << putRequest.Address);
+        status = this->PutData(putRequest.Dest, putRequest.Data, putRequest.Length, putRequest.Address);
         if (status == H5FD_DSM_FAIL) {
-          H5FDdsmError("Failed to do an RMA PUT to " << putRequest->Dest);
+          H5FDdsmError("Failed to do an RMA PUT to " << putRequest.Dest);
           return(H5FD_DSM_FAIL);
         }
       } else {
-        status = this->SendCommandHeader(H5FD_DSM_OPCODE_PUT, putRequest->Dest, putRequest->Address, putRequest->Length);
+        status = this->SendCommandHeader(H5FD_DSM_OPCODE_PUT, putRequest.Dest, putRequest.Address, putRequest.Length);
         if (status == H5FD_DSM_FAIL) {
-          H5FDdsmError("Failed to send PUT Header to " << putRequest->Dest);
+          H5FDdsmError("Failed to send PUT Header to " << putRequest.Dest);
           return(H5FD_DSM_FAIL);
         }
-        status = this->SendData(putRequest->Dest, putRequest->Data, putRequest->Length, H5FD_DSM_PUT_DATA_TAG);
+        status = this->SendData(putRequest.Dest, putRequest.Data, putRequest.Length, H5FD_DSM_PUT_DATA_TAG);
         if (status == H5FD_DSM_FAIL) {
-          H5FDdsmError("Failed to send " << putRequest->Length << " bytes of data to " << putRequest->Dest);
+          H5FDdsmError("Failed to send " << putRequest.Length << " bytes of data to " << putRequest.Dest);
           return(H5FD_DSM_FAIL);
         }
       }
@@ -816,36 +816,36 @@ H5FDdsmInt32
 H5FDdsmBuffer::Get(H5FDdsmAddr address, H5FDdsmUInt64 length, H5FDdsmPointer data)
 {
   H5FDdsmInt32 myId = this->Comm->GetId();
-  std::vector<H5FDdsmMsg*> getRequests;
+  std::vector<H5FDdsmMsg> getRequests;
 
   this->AddressMapper->Translate(address, length, data, getRequests);
 
   while (!getRequests.empty()) {
-    H5FDdsmMsg *getRequest = getRequests.back();
+    H5FDdsmMsg &getRequest = getRequests.back();
 
-    if ((getRequest->Dest == myId) && (!this->IsConnected || this->IsServer)) {
+    if ((getRequest.Dest == myId) && (!this->IsConnected || this->IsServer)) {
       H5FDdsmByte *dp;
       dp = this->DataPointer;
-      dp += getRequest->Address;
-      memcpy(getRequest->Data, dp, getRequest->Length);
+      dp += getRequest.Address;
+      memcpy(getRequest.Data, dp, getRequest.Length);
     } else {
       H5FDdsmInt32   status;
       if (this->Comm->GetUseOneSidedComm()) {
-        H5FDdsmDebug("Get request to " << getRequest->Dest << " for " << getRequest->Length << " bytes @ " << getRequest->Address);
-        status = this->GetData(getRequest->Dest, getRequest->Data, getRequest->Length, getRequest->Address);
+        H5FDdsmDebug("Get request to " << getRequest.Dest << " for " << getRequest.Length << " bytes @ " << getRequest.Address);
+        status = this->GetData(getRequest.Dest, getRequest.Data, getRequest.Length, getRequest.Address);
         if (status == H5FD_DSM_FAIL) {
-          H5FDdsmError("Failed to do an RMA GET from " << getRequest->Dest);
+          H5FDdsmError("Failed to do an RMA GET from " << getRequest.Dest);
           return(H5FD_DSM_FAIL);
         }
       } else {
-        status = this->SendCommandHeader(H5FD_DSM_OPCODE_GET, getRequest->Dest, getRequest->Address, getRequest->Length);
+        status = this->SendCommandHeader(H5FD_DSM_OPCODE_GET, getRequest.Dest, getRequest.Address, getRequest.Length);
         if (status == H5FD_DSM_FAIL){
-          H5FDdsmError("Failed to send GET Header to " << getRequest->Dest);
+          H5FDdsmError("Failed to send GET Header to " << getRequest.Dest);
           return(H5FD_DSM_FAIL);
         }
-        status = this->ReceiveData(getRequest->Dest, getRequest->Data, getRequest->Length, H5FD_DSM_GET_DATA_TAG);
+        status = this->ReceiveData(getRequest.Dest, getRequest.Data, getRequest.Length, H5FD_DSM_GET_DATA_TAG);
         if (status == H5FD_DSM_FAIL){
-          H5FDdsmError("Failed to receive " << getRequest->Length << " bytes of data from " << getRequest->Dest);
+          H5FDdsmError("Failed to receive " << getRequest.Length << " bytes of data from " << getRequest.Dest);
           return(H5FD_DSM_FAIL);
         }
       }

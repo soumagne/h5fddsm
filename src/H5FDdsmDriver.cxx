@@ -74,6 +74,7 @@ H5FDdsmDriver::H5FDdsmDriver()
     this->Length = 0;
     this->TotalLength = 0;
     this->BlockLength = 0;
+    this->MaskLength  = 0;
     this->Storage = new H5FDdsmStorage;
     this->StorageIsMine = 1;
     this->Comm = 0;
@@ -87,8 +88,7 @@ H5FDdsmDriver::~H5FDdsmDriver()
 {
     if(this->Storage && this->StorageIsMine) delete this->Storage;
     this->Storage = NULL;
-    if (this->AddressMapper) delete this->AddressMapper;
-    this->AddressMapper = NULL;
+    delete this->AddressMapper;
 }
 
 //----------------------------------------------------------------------------
@@ -101,7 +101,7 @@ H5FDdsmDriver::GetDsmType()
 void
 H5FDdsmDriver::SetDsmType(H5FDdsmInt32 DsmType)
 {
-    if (this->AddressMapper) this->AddressMapper->SetDsmType(DsmType);
+  this->AddressMapper->SetDsmType(DsmType);
 }
 //----------------------------------------------------------------------------
 H5FDdsmInt32

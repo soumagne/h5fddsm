@@ -74,7 +74,7 @@
 
 H5FDdsm_EXPORT const char *H5FDdsmTagToString(int tag);
 
-class H5FDdsm_EXPORT H5FDdsmMsg : public H5FDdsmObject {
+struct H5FDdsm_EXPORT H5FDdsmMsg : public H5FDdsmObject {
 
   public :
      H5FDdsmMsg();
@@ -102,7 +102,8 @@ class H5FDdsm_EXPORT H5FDdsmMsg : public H5FDdsmObject {
     H5FDdsmInt32   Dest;
     H5FDdsmInt32   Tag;
     H5FDdsmAddr    Address;
-    H5FDdsmInt32   Length;
+    H5FDdsmUInt32  Length;
+    H5FDdsmUInt64  Length64;
     H5FDdsmPointer Data;
 };
 

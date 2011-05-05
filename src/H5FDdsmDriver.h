@@ -60,11 +60,11 @@
 /*!
 */
 
-class H5FDdsmMsg;
-class H5FDdsmComm;
-class H5FDdsmDriver;
-class H5FDdsmStorage;
-class H5FDdsmAddressMapper;
+struct H5FDdsmMsg;
+class  H5FDdsmComm;
+class  H5FDdsmDriver;
+class  H5FDdsmStorage;
+class  H5FDdsmAddressMapper;
 
 #define H5FD_DSM_TYPE_UNIFORM       0
 #define H5FD_DSM_TYPE_UNIFORM_RANGE 1

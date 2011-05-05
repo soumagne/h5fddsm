@@ -77,7 +77,7 @@ typedef struct {
   H5FDdsmInt32  end_server_id;
 } H5FDdsmInfo;
 
-class H5FDdsmMsg;
+struct H5FDdsmMsg;
 
 class H5FDdsm_EXPORT H5FDdsmComm : public H5FDdsmObject {
 
