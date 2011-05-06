@@ -44,8 +44,8 @@ class H5FDdsm_EXPORT AddressMapperStrategy {
     };
     //
     virtual H5FDdsmInt32 Translate(
-      std::vector<H5FDdsmMsg> &indataRequests, 
-      std::vector<H5FDdsmMsg> &outdataRequests)=0;
+      std::vector<H5FDdsmMsg> &inRequests, 
+      std::vector<H5FDdsmMsg> &outRequests)=0;
     //
     void SetDelegate(AddressMapperStrategy *d) {
       this->Delegate = d;
