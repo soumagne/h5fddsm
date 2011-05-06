@@ -451,7 +451,9 @@ void
 #endif
 H5FD_dsm_term(void)
 {
+#ifdef HDF_NEW_VFD
   herr_t ret_value = SUCCEED;
+#endif
   FUNC_ENTER_NOAPI_NOINIT_NOFUNC(H5FD_dsm_term)
 
   DsmAutoDealloc();
@@ -459,8 +461,8 @@ H5FD_dsm_term(void)
   // Reset VFL ID
   H5FD_DSM_g = 0;
 
-done:
 #ifdef HDF_NEW_VFD
+done:
   FUNC_LEAVE_NOAPI(ret_value);
 #else
   FUNC_LEAVE_NOAPI_VOID
