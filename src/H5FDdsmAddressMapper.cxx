@@ -48,10 +48,10 @@ class BlockCyclicAddressMapper : public AddressMapperStrategy {
       H5FDdsmUInt64 blockSize, H5FDdsmUInt64 blockSpacing, H5FDdsmUInt64 totalLength) 
       : BlockSize(blockSize), BlockSpacing(blockSpacing), TotalLength(totalLength)
     {
-      this->BlocksPerCycle = this->BlockSpacing/this->BlockSize;
-      this->NumberOfCycles = this->TotalLength/this->BlockSpacing;
-      if (this->NumberOfCycles*this->BlockSpacing!=this->TotalLength ||
-          this->NumberOfCycles*this->BlocksPerCycle*this->BlockSize!=this->TotalLength) 
+      this->BlocksPerCycle = this->BlockSpacing / this->BlockSize;
+      this->NumberOfCycles = this->TotalLength / this->BlockSpacing;
+      if (this->NumberOfCycles * this->BlockSpacing != this->TotalLength ||
+          this->NumberOfCycles * this->BlocksPerCycle * this->BlockSize != this->TotalLength)
       {
         H5FDdsmError("BlockCyclic Addresses not exact multiple of Address range");
       }
@@ -158,11 +158,11 @@ H5FDdsmAddressMapper::Translate(H5FDdsmAddr address, H5FDdsmUInt64 length, H5FDd
   }
   //
   H5FDdsmMsg dataRequest;
-  dataRequest.Dest     =-1;
+  dataRequest.Dest     = -1;
   dataRequest.Length   = length;
   dataRequest.Length64 = length;
   dataRequest.Address  = address;
-  dataRequest.Data     = (H5FDdsmByte*)data;
+  dataRequest.Data     = (H5FDdsmByte*) data;
   //
   std::vector<H5FDdsmMsg> tempRequest;
   tempRequest.push_back(dataRequest);
@@ -179,7 +179,7 @@ H5FDdsmInt32 BlockCyclicAddressMapper::Translate(
   std::vector<H5FDdsmMsg> &requests = inRequests; // reference
   std::vector<H5FDdsmMsg> tempRequests;
   if (this->Delegate) {
-    if (this->Delegate->Translate(inRequests, tempRequests)!=H5FD_DSM_SUCCESS) {
+    if (this->Delegate->Translate(inRequests, tempRequests) != H5FD_DSM_SUCCESS) {
       return H5FD_DSM_FAIL;
     }
     requests = tempRequests;
@@ -204,17 +204,18 @@ H5FDdsmInt32 BlockCyclicAddressMapper::Translate(
   // | 0 4 8 C . 1 5 9 D . 2 6 A E . 3 7 B F |
   // -----------------------------------------
   //
-  for(std::vector<H5FDdsmMsg>::iterator it=requests.begin(); it!=requests.end(); ++it) {
-    H5FDdsmByte *datap = (H5FDdsmByte*)it->Data;
-    while (it->Length64>0) {
+  for(std::vector<H5FDdsmMsg>::iterator it = requests.begin(); it != requests.end(); ++it) {
+    H5FDdsmByte *datap = (H5FDdsmByte*) it->Data;
+    while (it->Length64 > 0) {
       H5FDdsmMsg newRequest;
-      H5FDdsmUInt64 bindex = it->Address/this->BlockSize;
-      H5FDdsmUInt64 offset = bindex/this->NumberOfCycles;
-      H5FDdsmUInt64 period = bindex%this->NumberOfCycles;
-      newRequest.Dest      =-1;
+      H5FDdsmUInt64 bindex = it->Address / this->BlockSize;
+      H5FDdsmUInt64 offset = bindex / this->NumberOfCycles;
+      H5FDdsmUInt64 period = bindex % this->NumberOfCycles;
+      H5FDdsmUInt64 index  = it->Address % this->BlockSize;
+      newRequest.Dest      = -1;
       newRequest.Length    = 0;
       newRequest.Length64  = min(this->BlockSize, it->Length64);
-      newRequest.Address   = period*this->BlockSpacing + offset*this->BlockSize + it->Address%this->BlockSize;
+      newRequest.Address   = period * this->BlockSpacing + offset * this->BlockSize + index;
       newRequest.Data      = datap;
       outRequests.push_back(newRequest);
       //
