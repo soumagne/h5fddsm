@@ -33,27 +33,38 @@ ADD_EXECUTABLE(H5FDdsmTestDriver
 )
 TARGET_LINK_LIBRARIES(H5FDdsmTestDriver H5FDdsm_sys)
 
-FUNCTION(ADD_REMOTE_DSM_TEST full_test_name server client)
+FUNCTION(ADD_H5FD_DSM_DYNAMIC_TEST full_test_name server client)
   FOREACH(comm Socket MPI MPI_RMA)
-    ADD_TEST("${full_test_name}_${comm}"
+    ADD_TEST("${full_test_name}_${comm}_dynamic"
       ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/H5FDdsmTestDriver
       --server ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${server}
       --client ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${client}
-      64 ${comm}
+      18 ${comm}
     )
   ENDFOREACH(comm)
-ENDFUNCTION (ADD_REMOTE_DSM_TEST)
+ENDFUNCTION(ADD_H5FD_DSM_DYNAMIC_TEST)
 
-MACRO(ADD_STATIC_DSM_TEST full_test_name server client)
+FUNCTION(ADD_H5FD_DSM_BLOCK_TEST full_test_name server client)
+  FOREACH(comm Socket MPI MPI_RMA)
+    ADD_TEST("${full_test_name}_${comm}_block"
+      ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/H5FDdsmTestDriver
+      --server ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${server}
+      --client ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${client}
+      18 ${comm} "Dynamic" "Block" 2097152
+    )
+  ENDFOREACH(comm)
+ENDFUNCTION(ADD_H5FD_DSM_BLOCK_TEST)
+
+MACRO(ADD_H5FD_DSM_STATIC_TEST full_test_name server client)
   FOREACH(comm MPI MPI_RMA)
     ADD_TEST(NAME "${full_test_name}_${comm}_static"
       COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${MPIEXEC_MAX_NUMPROCS}
       ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${server}>
-      64 ${comm} Static ${MPIEXEC_POSTFLAGS} : ${MPIEXEC_NUMPROC_FLAG} ${MPIEXEC_MAX_NUMPROCS} 
+      18 ${comm} "Static" ${MPIEXEC_POSTFLAGS} : ${MPIEXEC_NUMPROC_FLAG} ${MPIEXEC_MAX_NUMPROCS} 
       ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${client}> 0 ${comm} ${MPIEXEC_POSTFLAGS}
     )
   ENDFOREACH(comm)
-ENDMACRO(ADD_STATIC_DSM_TEST)
+ENDMACRO(ADD_H5FD_DSM_STATIC_TEST)
 
 #-----------------------------------------------------------------------------
 # Test terminology
@@ -215,21 +226,19 @@ IF(H5FD_DSM_BUILD_STEERING)
 ENDIF(H5FD_DSM_BUILD_STEERING)
 
 IF (MPIEXEC)
-  ADD_REMOTE_DSM_TEST(H5FDdsm_cwrite_bw H5FDdsmReceiver_cwrite_bw H5FDdsmSender_cwrite_bw)
-  ADD_REMOTE_DSM_TEST(H5FDdsm_cwrite_sread_bw H5FDdsmReceiver_cwrite_sread_bw H5FDdsmSender_cwrite_sread_bw)
-  ADD_REMOTE_DSM_TEST(H5FDdsm_cwrite_cread H5FDdsmReceiver_cwrite_cread H5FDdsmSender_cwrite_cread)
-  ADD_REMOTE_DSM_TEST(H5FDdsm_cwrite_sread_cwrite H5FDdsmReceiver_cwrite_sread_cwrite H5FDdsmSender_cwrite_sread_cwrite)
-  ADD_REMOTE_DSM_TEST(H5FDdsm_cwrite_swrite_cread H5FDdsmReceiver_cwrite_swrite_cread H5FDdsmSender_cwrite_swrite_cread)
+  SET(H5FDdsm_tests
+    cwrite_bw
+    cwrite_sread_bw
+    cwrite_cread
+    cwrite_sread_cwrite
+    cwrite_swrite_cread
+  )
   IF(H5FD_DSM_BUILD_STEERING)
-    ADD_REMOTE_DSM_TEST(H5FDdsm_steer H5FDdsmReceiver_steer H5FDdsmSender_steer)
+    SET(H5FDdsm_tests ${H5FDdsm_tests} steer)
   ENDIF(H5FD_DSM_BUILD_STEERING)
-
-  ADD_STATIC_DSM_TEST(H5FDdsm_cwrite_bw H5FDdsmReceiver_cwrite_bw H5FDdsmSender_cwrite_bw)
-  ADD_STATIC_DSM_TEST(H5FDdsm_cwrite_sread_bw H5FDdsmReceiver_cwrite_sread_bw H5FDdsmSender_cwrite_sread_bw)
-  ADD_STATIC_DSM_TEST(H5FDdsm_cwrite_cread H5FDdsmReceiver_cwrite_cread H5FDdsmSender_cwrite_cread)
-  ADD_STATIC_DSM_TEST(H5FDdsm_cwrite_sread_cwrite H5FDdsmReceiver_cwrite_sread_cwrite H5FDdsmSender_cwrite_sread_cwrite)
-  ADD_STATIC_DSM_TEST(H5FDdsm_cwrite_swrite_cread H5FDdsmReceiver_cwrite_swrite_cread H5FDdsmSender_cwrite_swrite_cread)
-  IF(H5FD_DSM_BUILD_STEERING)
-    ADD_STATIC_DSM_TEST(H5FDdsm_steer H5FDdsmReceiver_steer H5FDdsmSender_steer)
-  ENDIF(H5FD_DSM_BUILD_STEERING)
+  FOREACH(H5FDdsm_test ${H5FDdsm_tests})
+    ADD_H5FD_DSM_DYNAMIC_TEST(H5FDdsm_${H5FDdsm_test} H5FDdsmReceiver_${H5FDdsm_test} H5FDdsmSender_${H5FDdsm_test})
+    ADD_H5FD_DSM_STATIC_TEST(H5FDdsm_${H5FDdsm_test} H5FDdsmReceiver_${H5FDdsm_test} H5FDdsmSender_${H5FDdsm_test})
+    ADD_H5FD_DSM_BLOCK_TEST(H5FDdsm_${H5FDdsm_test} H5FDdsmReceiver_${H5FDdsm_test} H5FDdsmSender_${H5FDdsm_test})
+  ENDFOREACH(H5FDdsm_test)
 ENDIF (MPIEXEC)
