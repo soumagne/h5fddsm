@@ -32,15 +32,14 @@
 #define min(a,b)  (((a) < (b)) ? (a) : (b))
 #endif
 #endif  /* NOMINMAX for _WIN32 compatibility */
+
 //----------------------------------------------------------------------------
-//
 // BlockCyclicAddressMapper breaks accesses into smaller blocks
 // which are scattered cyclically over the entire address range to better utilize
 // all network links. 
 // Warning : Destination Rank Ids are undefined. You must eventually pass 
 // the result of this operation through PartitionedAddressMapper
 // Warning: The input to (and output from) this address mapper use 64 bit addresses
-//
 //----------------------------------------------------------------------------
 class BlockCyclicAddressMapper : public AddressMapperStrategy {
   public:
@@ -67,14 +66,13 @@ class BlockCyclicAddressMapper : public AddressMapperStrategy {
     H5FDdsmUInt64 BlocksPerCycle;
     H5FDdsmUInt64 NumberOfCycles;
 };
+
 //----------------------------------------------------------------------------
-//
 // IntegerSizedAddressMapper breaks accesses into int32 sized (0x7FFF)
 // accesses if they exceed this size. MPI does not currently (as of 2011)
 // allow MPI_Send or other read/writes larger than 32 bit.
 // Warning: The input to this address mapper uses 64 bit addresses
 // but the output uses 32 bit addresses
-//
 //----------------------------------------------------------------------------
 class IntegerSizedAddressMapper : public AddressMapperStrategy {
   public:
@@ -84,15 +82,14 @@ class IntegerSizedAddressMapper : public AddressMapperStrategy {
       std::vector<H5FDdsmMsg> &inRequests, 
       std::vector<H5FDdsmMsg> &outRequests);
 };
+
 //----------------------------------------------------------------------------
-//
 // PartitionedAddressMapper maps addresses into DSM rank/address
 // pairs and breaks packets that cross process boundaries into
 // multiple accesses.
 // Warning: The input (and output) are 32bit addresses
 // Warning: his implementation assumes all processes have the same local buffer
 // size. Future improvements would allow some nodes to have larger/smaller buffers
-//
 //----------------------------------------------------------------------------
 class PartitionedAddressMapper : public AddressMapperStrategy {
   public:
@@ -132,9 +129,7 @@ H5FDdsmInt32
 H5FDdsmAddressMapper::Translate(H5FDdsmAddr address, H5FDdsmUInt64 length, H5FDdsmPointer data, std::vector<H5FDdsmMsg> &outRequests)
 {
   if (!this->AddressingStrategy) {
-    //
     // Operation order is : Cyclic->IntSized->RemoteAddress
-    //
     this->AddressingStrategy = new PartitionedAddressMapper(
       this->DsmDriver->GetLength()
     );
@@ -171,7 +166,7 @@ H5FDdsmAddressMapper::Translate(H5FDdsmAddr address, H5FDdsmUInt64 length, H5FDd
   //
   return(H5FD_DSM_SUCCESS);
 }
-//----------------------------------------------------------------------------
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32 BlockCyclicAddressMapper::Translate(
   std::vector<H5FDdsmMsg> &inRequests, std::vector<H5FDdsmMsg> &outRequests)
@@ -208,14 +203,14 @@ H5FDdsmInt32 BlockCyclicAddressMapper::Translate(
     H5FDdsmByte *datap = (H5FDdsmByte*) it->Data;
     while (it->Length64 > 0) {
       H5FDdsmMsg newRequest;
-      H5FDdsmUInt64 bindex = it->Address / this->BlockSize;
-      H5FDdsmUInt64 offset = bindex / this->NumberOfCycles;
+      H5FDdsmUInt64 bindex = (H5FDdsmUInt64) (it->Address / this->BlockSize);
+      H5FDdsmUInt64 offset = (H5FDdsmUInt64) (bindex / this->NumberOfCycles);
       H5FDdsmUInt64 period = bindex % this->NumberOfCycles;
-      H5FDdsmUInt64 index  = it->Address % this->BlockSize;
+      H5FDdsmUInt64 aindex = it->Address % this->BlockSize;
       newRequest.Dest      = -1;
       newRequest.Length    = 0;
       newRequest.Length64  = min(this->BlockSize, it->Length64);
-      newRequest.Address   = period * this->BlockSpacing + offset * this->BlockSize + index;
+      newRequest.Address   = period * this->BlockSpacing + offset * this->BlockSize + aindex;
       newRequest.Data      = datap;
       outRequests.push_back(newRequest);
       //
@@ -226,6 +221,7 @@ H5FDdsmInt32 BlockCyclicAddressMapper::Translate(
   }
   return(H5FD_DSM_SUCCESS);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32
 IntegerSizedAddressMapper::Translate(
@@ -257,6 +253,7 @@ IntegerSizedAddressMapper::Translate(
   }
   return(H5FD_DSM_SUCCESS);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32 
 PartitionedAddressMapper::Translate(
@@ -288,16 +285,3 @@ PartitionedAddressMapper::Translate(
   }
   return(H5FD_DSM_SUCCESS);
 }
-//----------------------------------------------------------------------------
-/*
-      if (newRequest.Length<0) {
-        std::cout           
-          << "Address   " << it->Address << "\n" 
-          << "Length    " << it->Length  << "\n" 
-          << "Address   " << newRequest.Address << "\n" 
-          << "Length    " << newRequest.Length << "\n" 
-          << "remaining "  << "\n"; 
-        
-        newRequest.Length = 87654321;
-      }
-*/
