@@ -138,7 +138,6 @@ int main(int argc, char *argv[])
         // printf("Trying to read %d * %llu particles\n", nremoteprocs, numParticles);
       }
       TestParticleRead(fullname, dsmManager->GetUpdatePiece(), nremoteprocs*numParticles, comm, dsmManager->GetDSMHandle());
-      dsmManager->H5Dump();
       // Sync here
       MPI_Barrier(comm);
       // Clean up for next step
