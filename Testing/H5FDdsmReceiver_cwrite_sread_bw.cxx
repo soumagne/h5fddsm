@@ -109,7 +109,7 @@ double TestParticleRead(const char *filename, int rank, hsize_t N,
         // if (rank == 0) printf("DSM read test PASSED\n");
     }
     else {
-      fprintf(stderr,"DSM read test FAILED for PE %d, %d or more wrong values\n", rank, fail_count);
+      fprintf(stderr,"DSM read test FAILED for PE %d, %d or more wrong values at step %d\n", rank, fail_count, step_increment);
     }
   }
   // free all array pointers

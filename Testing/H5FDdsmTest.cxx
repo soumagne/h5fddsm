@@ -105,6 +105,7 @@ void receiverInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *
   if (argc > 4) {
     if (!strcmp(argv[4], "Block")) {
       dsmType = H5FD_DSM_TYPE_BLOCK_CYCLIC;
+      if (rank == 0) std::cout << "Block Cyclic redistribution selected" << std::endl;
     }
     else if (!strcmp(argv[4], "Mask")) {
       dsmType = H5FD_DSM_TYPE_DYNAMIC_MASK;
@@ -143,8 +144,11 @@ void receiverInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *
   H5FDdsmUInt32 serversize = (dsmManager->GetDSMHandle()->GetEndServerId() -
       dsmManager->GetDSMHandle()->GetStartServerId() + 1);
   if (rank == 0) {
-    std::cout << "DSM server memory size is : " << totalMB << " MB" << std::endl;
-    std::cout << "DSM server process count  : " <<  serversize << std::endl;
+    std::cout << "DSM server memory size is: " << totalMB << " MBytes"
+        << " (" << dsmManager->GetDSMHandle()->GetTotalLength() << " Bytes)" << std::endl;
+    std::cout << "DSM server process count: " <<  serversize << std::endl;
+    if (dsmType == H5FD_DSM_TYPE_BLOCK_CYCLIC) std::cout << "Block size: "
+        <<  dsmManager->GetDSMHandle()->GetBlockLength() << " Bytes" << std::endl;
   }
 
   // The output comment below must not be deleted, it allows ctest to detect
@@ -252,8 +256,12 @@ void senderInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *co
   remoteMB = dsmManager->GetDSMHandle()->GetTotalLength() / (1024.0 * 1024.0);
   numServers = dsmManager->GetDSMHandle()->GetEndServerId() - dsmManager->GetDSMHandle()->GetStartServerId() + 1;
   if (rank == 0) {
-    std::cout << "DSM server memory size is : " << remoteMB << " MB" << std::endl;
-    std::cout << "DSM server process count  : " << numServers << std::endl;
+    std::cout << "DSM server memory size is: " << remoteMB << " MBytes"
+        << " (" << dsmManager->GetDSMHandle()->GetTotalLength() << " Bytes)" << std::endl;
+    std::cout << "DSM server process count: " <<  numServers << std::endl;
+    if (dsmManager->GetDSMHandle()->GetDsmType() == H5FD_DSM_TYPE_BLOCK_CYCLIC) {
+      std::cout << "Block size: " <<  dsmManager->GetDSMHandle()->GetBlockLength() << " Bytes" << std::endl;
+    }
   }
 }
 
