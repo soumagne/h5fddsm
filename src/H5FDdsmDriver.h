@@ -171,8 +171,6 @@ class H5FDdsm_EXPORT H5FDdsmDriver : public H5FDdsmObject {
     H5FDdsmInt32   PutData(H5FDdsmInt32 Dest, H5FDdsmPointer Data, H5FDdsmInt32 Length, H5FDdsmAddr Address);
     H5FDdsmInt32   GetData(H5FDdsmInt32 Source, H5FDdsmPointer Data, H5FDdsmInt32 Length, H5FDdsmAddr Address);
 
-    virtual H5FDdsmInt32 Copy(H5FDdsmDriver *Source);
-
     H5FDdsmInt32   SendDone();
 
   protected:
@@ -192,7 +190,6 @@ class H5FDdsm_EXPORT H5FDdsmDriver : public H5FDdsmObject {
 
     H5FDdsmComm    *Comm;
 
-    H5FDdsmInt32   *Locks;
     H5FDdsmByte    *DataPointer;
 
     H5FDdsmAddressMapper *AddressMapper;

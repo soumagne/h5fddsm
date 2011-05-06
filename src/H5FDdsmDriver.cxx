@@ -78,7 +78,6 @@ H5FDdsmDriver::H5FDdsmDriver()
     this->Storage = new H5FDdsmStorage;
     this->StorageIsMine = 1;
     this->Comm = 0;
-    this->Locks = 0;
     this->DataPointer = (H5FDdsmByte *)this->Storage->GetDataPointer();
     this->AddressMapper = new H5FDdsmAddressMapper(this);
 }
@@ -113,27 +112,6 @@ H5FDdsmDriver::SetMaskLength(H5FDdsmUInt64 dataSize)
   this->Length -= (this->MaskLength - H5FD_DSM_ALIGNMENT);
   this->TotalLength = this->Length * (this->EndServerId - this->StartServerId + 1);
   return(H5FD_DSM_SUCCESS);
-}
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmDriver::Copy(H5FDdsmDriver *Source)
-{
-    this->Debug = Source->Debug;
-//    this->DsmType = Source->DsmType;
-    if (this->Storage) delete this->Storage;
-    this->Storage = Source->GetStorage();
-    this->StorageIsMine = 0;
-    this->DataPointer = (H5FDdsmByte *)this->Storage->GetDataPointer();
-    // For Alignment
-    this->Length = Source->Length;
-    this->TotalLength = Source->TotalLength;
-    this->StartAddress = Source->StartAddress;
-    this->EndAddress = Source->EndAddress;
-    this->Comm = Source->Comm;
-    this->StartServerId = Source->StartServerId;
-    this->EndServerId = Source->EndServerId;
-    this->Locks = Source->Locks;
-    return(H5FD_DSM_SUCCESS);
 }
 
 //----------------------------------------------------------------------------
