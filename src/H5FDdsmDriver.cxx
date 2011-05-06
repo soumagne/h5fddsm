@@ -160,6 +160,7 @@ H5FDdsmDriver::ConfigureUniform(H5FDdsmComm *aComm, H5FDdsmUInt64 aLength, H5FDd
         if (aBlockLength) {
           // For optimization we make the DSM length fit to a multiple of block size
           this->SetLength((H5FDdsmUInt64(aLength/aBlockLength))*aBlockLength, 1);
+//          std::cout << "Length set to " << (H5FDdsmUInt64(aLength/aBlockLength))*aBlockLength << std::endl;
         } else {
           this->SetLength(aLength, 1);
         }
@@ -173,7 +174,7 @@ H5FDdsmDriver::ConfigureUniform(H5FDdsmComm *aComm, H5FDdsmUInt64 aLength, H5FDd
       }
     }
     // this->ServiceMsg->Source = this->Msg->Source = this->RemoteServiceMsg->Source = this->Comm->GetId();
-    this->TotalLength = aLength * (EndId - StartId + 1);
+    this->TotalLength = this->GetLength() * (EndId - StartId + 1);
     return(H5FD_DSM_SUCCESS);
 }
 
