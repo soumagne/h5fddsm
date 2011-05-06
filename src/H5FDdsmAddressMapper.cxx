@@ -154,7 +154,7 @@ H5FDdsmAddressMapper::Translate(H5FDdsmAddr address, H5FDdsmUInt64 length, H5FDd
   //
   H5FDdsmMsg dataRequest;
   dataRequest.Dest     = -1;
-  dataRequest.Length   = length;
+  dataRequest.Length   = static_cast<H5FDdsmInt32> (length);
   dataRequest.Length64 = length;
   dataRequest.Address  = address;
   dataRequest.Data     = (H5FDdsmByte*) data;
@@ -162,7 +162,7 @@ H5FDdsmAddressMapper::Translate(H5FDdsmAddr address, H5FDdsmUInt64 length, H5FDd
   std::vector<H5FDdsmMsg> tempRequest;
   tempRequest.push_back(dataRequest);
   //
-  this->AddressingStrategy->Translate(tempRequest,outRequests);
+  this->AddressingStrategy->Translate(tempRequest, outRequests);
   //
   return(H5FD_DSM_SUCCESS);
 }
@@ -204,12 +204,14 @@ H5FDdsmInt32 BlockCyclicAddressMapper::Translate(
     while (it->Length64 > 0) {
       H5FDdsmMsg newRequest;
       H5FDdsmUInt64 bindex = (H5FDdsmUInt64) (it->Address / this->BlockSize);
-      H5FDdsmUInt64 offset = (H5FDdsmUInt64) (bindex / this->NumberOfCycles);
+
       H5FDdsmUInt64 period = bindex % this->NumberOfCycles;
+      H5FDdsmUInt64 offset = (H5FDdsmUInt64) (bindex / this->NumberOfCycles);
       H5FDdsmUInt64 aindex = it->Address % this->BlockSize;
+
       newRequest.Dest      = -1;
-      newRequest.Length    = 0;
       newRequest.Length64  = min(this->BlockSize, it->Length64);
+      newRequest.Length    = static_cast<H5FDdsmInt32> (newRequest.Length64);
       newRequest.Address   = period * this->BlockSpacing + offset * this->BlockSize + aindex;
       newRequest.Data      = datap;
       outRequests.push_back(newRequest);
@@ -242,7 +244,7 @@ IntegerSizedAddressMapper::Translate(
       H5FDdsmMsg newRequest;
       newRequest.Dest    = -1;
       newRequest.Address = it->Address;
-      newRequest.Length  = (H5FDdsmInt32) min(H5FD_DSM_INT32_MAX, it->Length64);
+      newRequest.Length  = static_cast<H5FDdsmInt32> min(H5FD_DSM_INT32_MAX, it->Length64);
       newRequest.Data    = datap;
       outRequests.push_back(newRequest);
       //
@@ -274,7 +276,7 @@ PartitionedAddressMapper::Translate(
       H5FDdsmMsg newRequest;
       newRequest.Dest    = (H5FDdsmInt32) (it->Address / this->PartitionSize);
       newRequest.Address = it->Address % this->PartitionSize;
-      newRequest.Length  = (H5FDdsmInt32) min(this->PartitionSize - newRequest.Address, it->Length);
+      newRequest.Length  = min(static_cast<H5FDdsmInt32> (this->PartitionSize - newRequest.Address), it->Length);
       newRequest.Data    = datap;
       outRequests.push_back(newRequest);
       //
