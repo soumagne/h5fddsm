@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Project                 : H5FDdsm
-  Module                  : H5FDdsmStorage.h
+  Module                  : H5FDdsmStorageMpiRma.h
 
   Authors:
      John Biddiscombe     Jerome Soumagne
@@ -23,28 +23,20 @@
 
 =========================================================================*/
 
-#ifndef __H5FDdsmStorage_h
-#define __H5FDdsmStorage_h
+#ifndef __H5FDdsmStorageMpiRma_h
+#define __H5FDdsmStorageMpiRma_h
 
-#include "H5FDdsmObject.h"
+#include "H5FDdsmStorage.h"
 
-class H5FDdsm_EXPORT H5FDdsmStorage : public H5FDdsmObject {
+class H5FDdsm_EXPORT H5FDdsmStorageMpiRma : public H5FDdsmStorage {
 
 public:
-  H5FDdsmStorage();
-  virtual ~H5FDdsmStorage();
-
-  H5FDdsmPointer GetDataPointer(H5FDdsmAddr Addr = 0);
-
-  H5FDdsmGetValueMacro(Length, H5FDdsmUInt64);
-  H5FDdsmInt32 SetLength(H5FDdsmUInt64 Length, H5FDdsmBoolean AllowAllocate=1);
+  H5FDdsmStorageMpiRma();
+  virtual ~H5FDdsmStorageMpiRma();
 
 protected:
-  virtual H5FDdsmInt32 Allocate();
-  virtual H5FDdsmInt32 Deallocate();
-
-  H5FDdsmPointer   DataPointer;
-  H5FDdsmUInt64    Length;
+  H5FDdsmInt32 Allocate();
+  H5FDdsmInt32 Deallocate();
 };
 
-#endif // __H5FDdsmStorage_h
+#endif // __H5FDdsmStorageMpiRma_h

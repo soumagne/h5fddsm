@@ -108,27 +108,21 @@ class H5FDdsm_EXPORT H5FDdsmDriver : public H5FDdsmObject {
 
     // End Address
     H5FDdsmGetValueMacro(EndAddress, H5FDdsmAddr);
-    H5FDdsmSetValueMacro(EndAddress, H5FDdsmAddr);
 
     // Start Address
     H5FDdsmGetValueMacro(StartAddress, H5FDdsmAddr);
-    H5FDdsmSetValueMacro(StartAddress, H5FDdsmAddr);
 
     // Start Id
     H5FDdsmGetValueMacro(StartServerId, H5FDdsmInt32);
-    H5FDdsmSetValueMacro(StartServerId, H5FDdsmInt32);
 
     // End Id
     H5FDdsmGetValueMacro(EndServerId, H5FDdsmInt32);
-    H5FDdsmSetValueMacro(EndServerId, H5FDdsmInt32);
 
     // Length
     H5FDdsmGetValueMacro(Length, H5FDdsmUInt64);
-    H5FDdsmInt32 SetLength(H5FDdsmUInt64 Length, H5FDdsmBoolean AllowAllocate=1);
 
     // TotalLength
     H5FDdsmGetValueMacro(TotalLength, H5FDdsmUInt64);
-    H5FDdsmSetValueMacro(TotalLength, H5FDdsmUInt64);
 
     // BlockLength
     H5FDdsmGetValueMacro(BlockLength, H5FDdsmUInt64);
@@ -174,6 +168,8 @@ class H5FDdsm_EXPORT H5FDdsmDriver : public H5FDdsmObject {
     H5FDdsmInt32   SendDone();
 
   protected:
+    H5FDdsmInt32   SetLength(H5FDdsmUInt64 Length, H5FDdsmBoolean AllowAllocate=1);
+
     H5FDdsmAddr     EndAddress;
     H5FDdsmAddr     StartAddress;
 
@@ -186,7 +182,6 @@ class H5FDdsm_EXPORT H5FDdsmDriver : public H5FDdsmObject {
     H5FDdsmUInt64   MaskLength;
 
     H5FDdsmStorage *Storage;
-    H5FDdsmInt32    StorageIsMine;
 
     H5FDdsmComm    *Comm;
 

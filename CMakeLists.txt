@@ -250,6 +250,7 @@ SET(H5FDdsmSources
   src/H5FDdsmMsg.cxx
   src/H5FDdsmSocket.cxx
   src/H5FDdsmStorage.cxx
+  src/H5FDdsmStorageMpiRma.cxx
   src/H5FDdsmManager.cxx
   src/H5FDdsmDump.cxx
   src/H5FDdsmAddressMapper.cxx
