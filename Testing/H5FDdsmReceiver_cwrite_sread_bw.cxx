@@ -74,6 +74,7 @@ void freeBuffer(ParticleBuffer_t *buffer) {
 double TestParticleRead(const char *filename, int rank, hsize_t N,
     MPI_Comm comm, H5FDdsmBuffer *dsmBuffer)
 {
+  H5FDdsmInt32 status = H5FD_DSM_SUCCESS;
   ParticleBuffer_t ReadBuffer;
   hsize_t   i;
   double   *doublearray;
@@ -92,10 +93,7 @@ double TestParticleRead(const char *filename, int rank, hsize_t N,
 
   // call the write routine with our dummy buffer
   MPI_Barrier(comm);
-  double t1 = MPI_Wtime();
   particle_read(&ReadBuffer, filename, rank, dsmBuffer);
-  MPI_Barrier(comm);
-  double t2 = MPI_Wtime();
 
   if (rank == 0 && step_increment < 5) {
     /* Check the results the first times. */
@@ -112,15 +110,18 @@ double TestParticleRead(const char *filename, int rank, hsize_t N,
       fprintf(stderr,"DSM read test FAILED for PE %d, %d or more wrong values at step %d\n", rank, fail_count, step_increment);
     }
   }
+  MPI_Bcast(&fail_count, 1, MPI_INT, 0, comm);
+  if (fail_count > 0) status = H5FD_DSM_FAIL;
   // free all array pointers
   freeBuffer(&ReadBuffer);
   step_increment++;
-  return t2-t1;
+  return(status);
 };
 //----------------------------------------------------------------------------
 int main(int argc, char *argv[])
 {
   H5FDdsmInt32 nremoteprocs;
+  H5FDdsmInt32 status;
   MPI_Comm comm = MPI_COMM_WORLD;
   H5FDdsmConstString fullname = "dsm";
   hsize_t numParticles = 0;

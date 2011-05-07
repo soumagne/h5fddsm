@@ -53,6 +53,7 @@
 #include "H5FDdsmComm.h"
 #include "H5FDdsmMsg.h"
 #include "H5FDdsmStorage.h"
+#include "H5FDdsmStorageMpiRma.h"
 #include "H5FDdsmAddressMapper.h"
 
 // Align
@@ -75,17 +76,16 @@ H5FDdsmDriver::H5FDdsmDriver()
     this->TotalLength = 0;
     this->BlockLength = 0;
     this->MaskLength  = 0;
-    this->Storage = new H5FDdsmStorage;
-    this->StorageIsMine = 1;
-    this->Comm = 0;
-    this->DataPointer = (H5FDdsmByte *)this->Storage->GetDataPointer();
+    this->Storage = NULL;
+    this->Comm = NULL;
+    this->DataPointer = NULL;
     this->AddressMapper = new H5FDdsmAddressMapper(this);
 }
 
 //----------------------------------------------------------------------------
 H5FDdsmDriver::~H5FDdsmDriver()
 {
-    if(this->Storage && this->StorageIsMine) delete this->Storage;
+    if(this->Storage) delete this->Storage;
     this->Storage = NULL;
     delete this->AddressMapper;
 }
@@ -118,7 +118,7 @@ H5FDdsmDriver::SetMaskLength(H5FDdsmUInt64 dataSize)
 H5FDdsmInt32
 H5FDdsmDriver::SetStorage(H5FDdsmStorage *aStorage)
 {
-    if(this->Storage && this->StorageIsMine) delete this->Storage;
+    if(this->Storage) delete this->Storage;
     this->Storage = aStorage;
     this->DataPointer = (H5FDdsmByte *)this->Storage->GetDataPointer();
     return(H5FD_DSM_SUCCESS);
@@ -128,7 +128,7 @@ H5FDdsmDriver::SetStorage(H5FDdsmStorage *aStorage)
 H5FDdsmInt32
 H5FDdsmDriver::ClearStorage()
 {
-  if(this->Storage && this->StorageIsMine) {
+  if(this->Storage) {
     H5FDdsmDebug("Resetting storage");
     H5FDdsmDebug("start address: " << this->StartAddress);
     H5FDdsmDebug("end address: " << this->EndAddress);
@@ -152,15 +152,13 @@ H5FDdsmDriver::ConfigureUniform(H5FDdsmComm *aComm, H5FDdsmUInt64 aLength, H5FDd
       this->SetDsmType(H5FD_DSM_TYPE_BLOCK_CYCLIC);
       this->SetBlockLength(aBlockLength);
     }
-    this->SetStartServerId(StartId);
-    this->SetEndServerId(EndId);
+    this->StartServerId = StartId;
+    this->EndServerId = EndId;
     this->SetComm(aComm);
     if ((aComm->GetId() >= StartId) && (aComm->GetId() <= EndId)) {
-        this->Storage->SetComm(aComm);
         if (aBlockLength) {
           // For optimization we make the DSM length fit to a multiple of block size
-          this->SetLength((H5FDdsmUInt64(aLength/aBlockLength))*aBlockLength, 1);
-//          std::cout << "Length set to " << (H5FDdsmUInt64(aLength/aBlockLength))*aBlockLength << std::endl;
+          this->SetLength((H5FDdsmUInt64(aLength / aBlockLength)) * aBlockLength, 1);
         } else {
           this->SetLength(aLength, 1);
         }
@@ -168,12 +166,11 @@ H5FDdsmDriver::ConfigureUniform(H5FDdsmComm *aComm, H5FDdsmUInt64 aLength, H5FDd
         this->EndAddress = this->StartAddress + aLength - 1;
     } else {
       if (aBlockLength) {
-        this->Length = (H5FDdsmUInt64(aLength/aBlockLength))*aBlockLength;
+        this->Length = (H5FDdsmUInt64(aLength / aBlockLength)) * aBlockLength;
       } else {
         this->Length = aLength;
       }
     }
-    // this->ServiceMsg->Source = this->Msg->Source = this->RemoteServiceMsg->Source = this->Comm->GetId();
     this->TotalLength = this->GetLength() * (EndId - StartId + 1);
     return(H5FD_DSM_SUCCESS);
 }
@@ -198,13 +195,25 @@ H5FDdsmDriver::SendDone()
 H5FDdsmInt32
 H5FDdsmDriver::SetLength(H5FDdsmUInt64 aLength, H5FDdsmBoolean AllowAllocate)
 {
-    if(this->Storage->SetLength(aLength, AllowAllocate) != H5FD_DSM_SUCCESS) {
-        H5FDdsmError("Cannot set Dsm Length to " << Length);
-        return(H5FD_DSM_FAIL);
+  if (!this->Storage) {
+    if (this->Comm) {
+      if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
+        this->Storage = new H5FDdsmStorageMpiRma;
+      } else {
+        this->Storage = new H5FDdsmStorage;
+      }
+    } else {
+      H5FDdsmError("Storage has not been initialized");
+      return(H5FD_DSM_FAIL);
     }
-    this->Length = aLength;
-    this->DataPointer = (H5FDdsmByte *)this->Storage->GetDataPointer();
-    return(H5FD_DSM_SUCCESS);
+  }
+  if (this->Storage->SetLength(aLength, AllowAllocate) != H5FD_DSM_SUCCESS) {
+    H5FDdsmError("Cannot set Dsm Length to " << Length);
+    return(H5FD_DSM_FAIL);
+  }
+  this->Length = aLength;
+  this->DataPointer = (H5FDdsmByte *)this->Storage->GetDataPointer();
+  return(H5FD_DSM_SUCCESS);
 }
 
 //----------------------------------------------------------------------------
@@ -320,16 +329,16 @@ H5FDdsmDriver::ReceiveInfo()
   this->SetLength(dsmInfo.length, 0);
   H5FDdsmDebug("Length received: " << this->GetLength());
 
-  this->SetTotalLength(dsmInfo.total_length);
+  this->TotalLength = dsmInfo.total_length;
   H5FDdsmDebug("totalLength received: " << this->GetTotalLength());
 
   this->SetBlockLength(dsmInfo.block_length);
   H5FDdsmDebug("blockLength received: " << this->GetBlockLength());
 
-  this->SetStartServerId(dsmInfo.start_server_id);
+  this->StartServerId = dsmInfo.start_server_id;
   H5FDdsmDebug("startServerId received: " << this->GetStartServerId());
 
-  this->SetEndServerId(dsmInfo.end_server_id);
+  this->EndServerId = dsmInfo.end_server_id;
   H5FDdsmDebug("endServerId received: " << this->GetEndServerId());
 
   return(H5FD_DSM_SUCCESS);

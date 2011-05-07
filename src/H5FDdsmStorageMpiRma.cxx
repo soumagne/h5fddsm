@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Project                 : H5FDdsm
-  Module                  : H5FDdsmStorage.cxx
+  Module                  : H5FDdsmStorageMpiRma.cxx
 
   Authors:
      John Biddiscombe     Jerome Soumagne
@@ -23,57 +23,37 @@
 
 =========================================================================*/
 
-#include "H5FDdsmStorage.h"
+#include "H5FDdsmStorageMpiRma.h"
 
-#include <cstdlib>
-#include <cstdio>
-
-//----------------------------------------------------------------------------
-H5FDdsmStorage::H5FDdsmStorage()
-{
-  this->DataPointer = NULL;
-}
+#include <mpi.h>
 
 //----------------------------------------------------------------------------
-H5FDdsmStorage::~H5FDdsmStorage()
+H5FDdsmStorageMpiRma::H5FDdsmStorageMpiRma() {}
+
+//----------------------------------------------------------------------------
+H5FDdsmStorageMpiRma::~H5FDdsmStorageMpiRma()
 {
   this->Deallocate();
 }
 
 //----------------------------------------------------------------------------
-H5FDdsmPointer H5FDdsmStorage::GetDataPointer(H5FDdsmAddr Addr)
+H5FDdsmInt32 H5FDdsmStorageMpiRma::Allocate()
 {
-  H5FDdsmByte  *pointer;
-  pointer = (H5FDdsmByte*) this->DataPointer;
-  pointer += sizeof(H5FDdsmAddr) * Addr;
-  return((H5FDdsmPointer)pointer);
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32  H5FDdsmStorage::SetLength(H5FDdsmUInt64 Length, H5FDdsmBoolean AllowAllocate)
-{
-  this->Length = Length;
-  if (AllowAllocate) {
-    if (this->Allocate() != H5FD_DSM_SUCCESS) {
-      return(H5FD_DSM_FAIL);
-    }
-  }
-  return(H5FD_DSM_SUCCESS);
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32 H5FDdsmStorage::Allocate()
-{
+  int err;
   if (this->DataPointer) {
-    // try to reallocate
-    this->DataPointer = realloc(this->DataPointer, this->Length*sizeof(H5FDdsmByte));
-  } else {
-    H5FDdsmDebug("Allocating memory with calloc");
-    this->DataPointer = calloc(this->Length, sizeof(H5FDdsmByte));
+    MPI_Free_mem(this->DataPointer);
+    this->DataPointer = NULL;
   }
-  if (this->DataPointer == NULL) {
+  H5FDdsmDebug("Allocating memory with MPI_Alloc_mem");
+  err = MPI_Alloc_mem(this->Length*sizeof(H5FDdsmByte), MPI_INFO_NULL, &this->DataPointer);
+  if ((this->DataPointer == NULL) || err) {
+    int errclass;
+    // An error of MPI_ERR_NO_MEM is allowed
+    MPI_Error_class(err, &errclass);
+    if (errclass == MPI_ERR_NO_MEM) {
+      H5FDdsmError("MPI_Alloc_mem failed, not enough memory");
+    }
     H5FDdsmError("Allocation Failed, unable to allocate " << this->Length);
-    perror("Alloc :" );
     return(H5FD_DSM_FAIL);
   }
   H5FDdsmDebug("Allocation Succeeded");
@@ -81,11 +61,11 @@ H5FDdsmInt32 H5FDdsmStorage::Allocate()
 }
 
 //----------------------------------------------------------------------------
-H5FDdsmInt32 H5FDdsmStorage::Deallocate()
+H5FDdsmInt32 H5FDdsmStorageMpiRma::Deallocate()
 {
   if (this->DataPointer) {
-    H5FDdsmDebug("Deallocating memory with free");
-    free(this->DataPointer);
+    H5FDdsmDebug("Deallocating memory with MPI_Free_mem");
+    MPI_Free_mem(this->DataPointer);
   }
   this->DataPointer = NULL;
   return(H5FD_DSM_SUCCESS);
