@@ -146,7 +146,7 @@ H5FDdsmFloat64 TestParticleWrite(H5FDdsmConstString filename, H5FDdsmUInt64 N, H
 };
 
 //----------------------------------------------------------------------------
-#define LOOPS       10
+#define LOOPS       1
 #define AVERAGE     5
 #define TYPES       1 // 2 if disk output test required
 
@@ -164,7 +164,7 @@ int main(int argc, char **argv)
   if (dsm_env) {
     hdffile = std::string(dsm_env) + std::string("/hdf-output.h5");
     if (dsmManager->GetUpdatePiece() == 0) {
-      std::cout << "HDF output goes to : " << hdffile.c_str() << std::endl;
+      std::cout << "# HDF output goes to : " << hdffile.c_str() << std::endl;
     }
   }
 
@@ -172,10 +172,10 @@ int main(int argc, char **argv)
 
   for (int type = 0; type < TYPES; type++) {
     if (type == 0 && dsmManager->GetUpdatePiece() == 0) {
-      std::cout << "Writing to DSM" << std::endl;
+      std::cout << "# Writing to DSM" << std::endl;
     }
     else if (type == 1 && dsmManager->GetUpdatePiece() == 0) {
-      std::cout << "Writing to Disk" << std::endl;
+      std::cout << "# Writing to Disk" << std::endl;
     }
     for (int loop = 0; loop < LOOPS; loop++) {
       H5FDdsmUInt64 numParticles = (H5FDdsmUInt64) (1024 * 1024 * (remoteMB - 1) /

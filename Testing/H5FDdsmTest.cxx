@@ -46,11 +46,11 @@ void receiverInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *
   //
   if (rank == 0) {
     if (provided != MPI_THREAD_MULTIPLE) {
-      std::cout << "MPI_THREAD_MULTIPLE not set, you may need to recompile your "
+      std::cout << "# MPI_THREAD_MULTIPLE not set, you may need to recompile your "
           << "MPI distribution with threads enabled" << std::endl;
     }
     else {
-      std::cout << "MPI_THREAD_MULTIPLE is OK" << std::endl;
+      std::cout << "# MPI_THREAD_MULTIPLE is OK" << std::endl;
     }
   }
 
@@ -72,20 +72,20 @@ void receiverInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *
   if (argc > 2) {
     if (!strcmp(argv[2], "Socket")) {
       commType = H5FD_DSM_COMM_SOCKET;
-      if (rank == 0) std::cout << "SOCKET Inter-Communicator selected" << std::endl;
+      if (rank == 0) std::cout << "# SOCKET Inter-Communicator selected" << std::endl;
     }
     else if (!strcmp(argv[2], "MPI")) {
       commType = H5FD_DSM_COMM_MPI;
-      if (rank == 0) std::cout << "MPI Inter-Communicator selected" << std::endl;
+      if (rank == 0) std::cout << "# MPI Inter-Communicator selected" << std::endl;
     }
     else if (!strcmp(argv[2], "MPI_RMA")) {
       commType = H5FD_DSM_COMM_MPI_RMA;
-      if (rank == 0) std::cout << "MPI_RMA Inter-Communicator selected" << std::endl;
+      if (rank == 0) std::cout << "# MPI_RMA Inter-Communicator selected" << std::endl;
     }
     else if (!strcmp(argv[2], "DMAPP")) {
       commType = H5FD_DSM_COMM_DMAPP;
       staticInterComm = true;
-      if (rank == 0) std::cout << "DMAPP Inter-Communicator selected" << std::endl;
+      if (rank == 0) std::cout << "# DMAPP Inter-Communicator selected" << std::endl;
     }
   }
 
@@ -105,7 +105,7 @@ void receiverInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *
   if (argc > 4) {
     if (!strcmp(argv[4], "Block")) {
       dsmType = H5FD_DSM_TYPE_BLOCK_CYCLIC;
-      if (rank == 0) std::cout << "Block Cyclic redistribution selected" << std::endl;
+      if (rank == 0) std::cout << "# Block Cyclic redistribution selected" << std::endl;
     }
     else if (!strcmp(argv[4], "Mask")) {
       dsmType = H5FD_DSM_TYPE_DYNAMIC_MASK;
@@ -143,18 +143,18 @@ void receiverInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *
   H5FDdsmFloat64 totalMB = (H5FDdsmFloat64) (dsmManager->GetDSMHandle()->GetTotalLength()/(1024*1024));
   H5FDdsmUInt32 serversize = (dsmManager->GetDSMHandle()->GetEndServerId() -
       dsmManager->GetDSMHandle()->GetStartServerId() + 1);
-  if (rank == 0) {
-    std::cout << "DSM server memory size is: " << totalMB << " MBytes"
-        << " (" << dsmManager->GetDSMHandle()->GetTotalLength() << " Bytes)" << std::endl;
-    std::cout << "DSM server process count: " <<  serversize << std::endl;
-    if (dsmType == H5FD_DSM_TYPE_BLOCK_CYCLIC) std::cout << "Block size: "
-        <<  dsmManager->GetDSMHandle()->GetBlockLength() << " Bytes" << std::endl;
-  }
+//  if (rank == 0) {
+//    std::cout << "# DSM server memory size is: " << totalMB << " MBytes"
+//        << " (" << dsmManager->GetDSMHandle()->GetTotalLength() << " Bytes)" << std::endl;
+//    std::cout << "# DSM server process count: " <<  serversize << std::endl;
+//    if (dsmType == H5FD_DSM_TYPE_BLOCK_CYCLIC) std::cout << "Block size: "
+//        <<  dsmManager->GetDSMHandle()->GetBlockLength() << " Bytes" << std::endl;
+//  }
 
   // The output comment below must not be deleted, it allows ctest to detect
   // when the server is initialized
   MPI_Barrier(*comm);
-  if (rank == 0) std::cout << "Waiting for client..." << std::endl;
+  if (rank == 0) std::cout << "# Waiting for client..." << std::endl;
   dsmManager->WaitForConnected();
 }
 
@@ -214,16 +214,13 @@ void senderInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *co
     H5FDdsmInt32 commType = H5FD_DSM_COMM_MPI;
     if (!strcmp(argv[2], "MPI")) {
       commType = H5FD_DSM_COMM_MPI;
-      if (rank == 0) std::cout << "MPI Inter-Communicator selected" << std::endl;
     }
     else if (!strcmp(argv[2], "MPI_RMA")) {
       commType = H5FD_DSM_COMM_MPI_RMA;
-      if (rank == 0) std::cout << "MPI_RMA Inter-Communicator selected" << std::endl;
     }
     else if (!strcmp(argv[2], "DMAPP")) {
       commType = H5FD_DSM_COMM_DMAPP;
       staticInterComm = true;
-      if (rank == 0) std::cout << "DMAPP Inter-Communicator selected" << std::endl;
     }
     dsmManager->SetDsmCommType(commType);
     dsmManager->SetDsmUseStaticInterComm(1);
@@ -256,11 +253,11 @@ void senderInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *co
   remoteMB = dsmManager->GetDSMHandle()->GetTotalLength() / (1024.0 * 1024.0);
   numServers = dsmManager->GetDSMHandle()->GetEndServerId() - dsmManager->GetDSMHandle()->GetStartServerId() + 1;
   if (rank == 0) {
-    std::cout << "DSM server memory size is: " << remoteMB << " MBytes"
+    std::cout << "# DSM server memory size is: " << remoteMB << " MBytes"
         << " (" << dsmManager->GetDSMHandle()->GetTotalLength() << " Bytes)" << std::endl;
-    std::cout << "DSM server process count: " <<  numServers << std::endl;
+    std::cout << "# DSM server process count: " <<  numServers << std::endl;
     if (dsmManager->GetDSMHandle()->GetDsmType() == H5FD_DSM_TYPE_BLOCK_CYCLIC) {
-      std::cout << "Block size: " <<  dsmManager->GetDSMHandle()->GetBlockLength() << " Bytes" << std::endl;
+      std::cout << "# Block size: " <<  dsmManager->GetDSMHandle()->GetBlockLength() << " Bytes" << std::endl;
     }
   }
 }
