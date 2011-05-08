@@ -121,7 +121,6 @@ double TestParticleRead(const char *filename, int rank, hsize_t N,
 int main(int argc, char *argv[])
 {
   H5FDdsmInt32 nremoteprocs;
-  H5FDdsmInt32 status;
   MPI_Comm comm = MPI_COMM_WORLD;
   H5FDdsmConstString fullname = "dsm";
   hsize_t numParticles = 0;

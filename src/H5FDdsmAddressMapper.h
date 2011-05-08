@@ -34,7 +34,7 @@
 struct H5FDdsmMsg;
 class  H5FDdsmDriver;
 
-class H5FDdsm_EXPORT AddressMapperStrategy {
+class H5FDdsm_EXPORT AddressMapperStrategy : public H5FDdsmObject {
   public:
     AddressMapperStrategy() {
       this->Delegate = NULL;
