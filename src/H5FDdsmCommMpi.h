@@ -63,35 +63,34 @@ public:
   H5FDdsmGetStringMacro(DsmMasterHostName);
   void SetDsmMasterHostName(H5FDdsmConstString hostName);
 
-  H5FDdsmInt32   Init();
-  H5FDdsmInt32   Send(H5FDdsmMsg *Msg);
-  H5FDdsmInt32   Receive(H5FDdsmMsg *Msg, H5FDdsmInt32 Channel=0);
+  virtual H5FDdsmInt32   Init();
+
+  H5FDdsmInt32           Send(H5FDdsmMsg *Msg);
+  H5FDdsmInt32           Receive(H5FDdsmMsg *Msg, H5FDdsmInt32 Channel=0);
+  H5FDdsmInt32           Probe(H5FDdsmMsg *Msg);
+
   // Additional methods for one sided communications
-  H5FDdsmInt32   PutData(H5FDdsmMsg *DataMsg);
-  H5FDdsmInt32   GetData(H5FDdsmMsg *DataMsg);
-  //
-  H5FDdsmInt32   Probe(H5FDdsmMsg *Msg);
-  H5FDdsmInt32   Barrier();
+  virtual H5FDdsmInt32   Put(H5FDdsmMsg *DataMsg);
+  virtual H5FDdsmInt32   Get(H5FDdsmMsg *DataMsg);
+  virtual H5FDdsmInt32   WindowSync();
 
-  H5FDdsmInt32   OpenPort();
-  H5FDdsmInt32   ClosePort();
-  H5FDdsmInt32   RemoteCommAccept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize);
-  H5FDdsmInt32   RemoteCommConnect();
-  H5FDdsmInt32   RemoteCommDisconnect();
+  H5FDdsmInt32           OpenPort();
+  H5FDdsmInt32           ClosePort();
+  virtual H5FDdsmInt32   Accept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize);
+  virtual H5FDdsmInt32   Connect();
+  virtual H5FDdsmInt32   Disconnect();
 
-  H5FDdsmInt32   RemoteCommSync();
-  H5FDdsmInt32   RemoteCommRecvReady();
-  H5FDdsmInt32   RemoteCommSendReady();
+  H5FDdsmInt32           RecvReady();
+  H5FDdsmInt32           SendReady();
 
-  H5FDdsmInt32   RemoteCommRecvInfo(H5FDdsmInfo *dsmInfo);
-  H5FDdsmInt32   RemoteCommSendInfo(H5FDdsmInfo *dsmInfo);
+  H5FDdsmInt32           RecvInfo(H5FDdsmInfo *dsmInfo);
+  H5FDdsmInt32           SendInfo(H5FDdsmInfo *dsmInfo);
 
-  H5FDdsmInt32   RemoteCommSendXML(H5FDdsmString file, H5FDdsmInt32 dest);
-  H5FDdsmInt32   RemoteCommRecvXML(H5FDdsmString *file);
+  H5FDdsmInt32           SendXML(H5FDdsmString file, H5FDdsmInt32 dest);
+  H5FDdsmInt32           RecvXML(H5FDdsmString *file);
 
 protected:
   MPI_Comm       InterComm;
-  MPI_Win        Win;
   H5FDdsmByte    DsmMasterHostName[MPI_MAX_PORT_NAME];
 };
 

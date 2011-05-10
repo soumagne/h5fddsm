@@ -31,6 +31,7 @@
 
 #define DSM_COMM_SOCKET_PORT_INIT 22000
 #define DSM_COMM_SOCKET_PORT_DATA 23000
+
 //----------------------------------------------------------------------------
 H5FDdsmCommSocket::H5FDdsmCommSocket()
 {
@@ -50,9 +51,11 @@ H5FDdsmCommSocket::~H5FDdsmCommSocket()
   if (this->DsmMasterSocket) delete this->DsmMasterSocket;
   this->DsmMasterSocket = NULL;
 }
+
 //----------------------------------------------------------------------------
 void
-H5FDdsmCommSocket::SetDsmMasterHostName(const char *hostName) {
+H5FDdsmCommSocket::SetDsmMasterHostName(const char *hostName)
+{
   strcpy(this->DsmMasterHostName, hostName);
 }
 
@@ -60,7 +63,7 @@ H5FDdsmCommSocket::SetDsmMasterHostName(const char *hostName) {
 H5FDdsmInt32
 H5FDdsmCommSocket::Init()
 {
-  if(H5FDdsmComm::Init() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+  if (H5FDdsmComm::Init() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
   if (this->Id == 0) {
     this->DsmMasterSocket = new H5FDdsmSocket();
@@ -73,24 +76,33 @@ H5FDdsmCommSocket::Init()
 
   return(H5FD_DSM_SUCCESS);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmCommSocket::Probe(H5FDdsmMsg *Msg)
+H5FDdsmCommSocket::Send(H5FDdsmMsg *Msg)
 {
-  int         nid, flag=0;
-  MPI_Status  Status;
+  H5FDdsmInt32   status;
 
-  if (H5FDdsmComm::Probe(Msg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
-  if (this->CommChannel == H5FD_DSM_INTRA_COMM) {
-    MPI_Iprobe(MPI_ANY_SOURCE, Msg->Tag, this->IntraComm, &flag, &Status);
-    if (flag) {
-      nid = Status.MPI_SOURCE;
-      Msg->SetSource(nid);
-      return(H5FD_DSM_SUCCESS);
+  if (H5FDdsmComm::Send(Msg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+
+  if (this->CommChannel == H5FD_DSM_INTER_COMM) {
+    H5FDdsmDebug("(" << this->Id << ") Sending to remote DSM " << Msg->Length << " bytes to " << Msg->Dest << " Tag = " << H5FDdsmTagToString(Msg->Tag));
+    this->InterComm[Msg->Dest]->Send(Msg->Data, Msg->Length);
+  }
+  else {
+    H5FDdsmDebug("(" << this->Id << ") Sending " << Msg->Length << " bytes to " << Msg->Dest << " Tag = " << H5FDdsmTagToString(Msg->Tag));
+    status = MPI_Send(Msg->Data, Msg->Length, MPI_UNSIGNED_CHAR, Msg->Dest, Msg->Tag, this->IntraComm);
+    if (status != MPI_SUCCESS) {
+      H5FDdsmError("Id = " << this->Id << " MPI_Send failed to send " << Msg->Length << " Bytes to " << Msg->Dest);
+      return(H5FD_DSM_FAIL);
     }
   }
-  return(H5FD_DSM_FAIL);
+
+  H5FDdsmDebug("(" << this->Id << ") Sent " << Msg->Length << " bytes to " << Msg->Dest);
+
+  return(H5FD_DSM_SUCCESS);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32
 H5FDdsmCommSocket::Receive(H5FDdsmMsg *Msg, H5FDdsmInt32 Channel)
@@ -140,40 +152,26 @@ H5FDdsmCommSocket::Receive(H5FDdsmMsg *Msg, H5FDdsmInt32 Channel)
   }
   return(H5FD_DSM_SUCCESS);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmCommSocket::Send(H5FDdsmMsg *Msg)
+H5FDdsmCommSocket::Probe(H5FDdsmMsg *Msg)
 {
-  H5FDdsmInt32   status;
+  int         nid, flag=0;
+  MPI_Status  Status;
 
-  if (H5FDdsmComm::Send(Msg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
-
-  if (this->CommChannel == H5FD_DSM_INTER_COMM) {
-    H5FDdsmDebug("(" << this->Id << ") Sending to remote DSM " << Msg->Length << " bytes to " << Msg->Dest << " Tag = " << H5FDdsmTagToString(Msg->Tag));
-    this->InterComm[Msg->Dest]->Send(Msg->Data, Msg->Length);
-  }
-  else {
-    H5FDdsmDebug("(" << this->Id << ") Sending " << Msg->Length << " bytes to " << Msg->Dest << " Tag = " << H5FDdsmTagToString(Msg->Tag));
-    status = MPI_Send(Msg->Data, Msg->Length, MPI_UNSIGNED_CHAR, Msg->Dest, Msg->Tag, this->IntraComm);
-    if (status != MPI_SUCCESS) {
-      H5FDdsmError("Id = " << this->Id << " MPI_Send failed to send " << Msg->Length << " Bytes to " << Msg->Dest);
-      return(H5FD_DSM_FAIL);
+  if (H5FDdsmComm::Probe(Msg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+  if (this->CommChannel == H5FD_DSM_INTRA_COMM) {
+    MPI_Iprobe(MPI_ANY_SOURCE, Msg->Tag, this->IntraComm, &flag, &Status);
+    if (flag) {
+      nid = Status.MPI_SOURCE;
+      Msg->SetSource(nid);
+      return(H5FD_DSM_SUCCESS);
     }
   }
-
-  H5FDdsmDebug("(" << this->Id << ") Sent " << Msg->Length << " bytes to " << Msg->Dest);
-
-  return(H5FD_DSM_SUCCESS);
+  return(H5FD_DSM_FAIL);
 }
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmCommSocket::Barrier()
-{
-  if (H5FDdsmComm::Barrier() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
-  MPI_Barrier(this->IntraComm);
 
-  return(H5FD_DSM_SUCCESS);
-}
 //----------------------------------------------------------------------------
 H5FDdsmInt32
 H5FDdsmCommSocket::OpenPort()
@@ -195,6 +193,7 @@ H5FDdsmCommSocket::OpenPort()
 
   return(H5FD_DSM_SUCCESS);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32
 H5FDdsmCommSocket::ClosePort()
@@ -211,11 +210,12 @@ H5FDdsmCommSocket::ClosePort()
 
   return(H5FD_DSM_SUCCESS);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmCommSocket::RemoteCommAccept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize)
+H5FDdsmCommSocket::Accept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize)
 {
-  if (H5FDdsmComm::RemoteCommAccept(storagePointer, storageSize) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+  if (H5FDdsmComm::Accept(storagePointer, storageSize) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
   // TODO Needed if we want to insert a timeout
   // if (this->MasterSocket->Select(100) <= 0 ) return(H5FD_DSM_FAIL);
@@ -244,13 +244,14 @@ H5FDdsmCommSocket::RemoteCommAccept(H5FDdsmPointer storagePointer, H5FDdsmUInt64
 
   return(H5FD_DSM_SUCCESS);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmCommSocket::RemoteCommConnect()
+H5FDdsmCommSocket::Connect()
 {
   H5FDdsmInt32 isMasterConnected = H5FD_DSM_FAIL;
 
-  if (H5FDdsmComm::RemoteCommConnect() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+  if (H5FDdsmComm::Connect() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
   if (this->Id == 0) {
     if (this->DsmMasterSocket->Connect(this->DsmMasterHostName, this->DsmMasterPort) == 0) {
@@ -285,19 +286,20 @@ H5FDdsmCommSocket::RemoteCommConnect()
     return(H5FD_DSM_FAIL);
   }
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmCommSocket::RemoteCommDisconnect()
+H5FDdsmCommSocket::Disconnect()
 {
-  if (H5FDdsmComm::RemoteCommDisconnect() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+  if (H5FDdsmComm::Disconnect() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
   this->Barrier();
   if (this->InterComm[0]->GetClientSocketDescriptor() < 0) {
     H5FDdsmDebug("Client is now disconnecting");
-    this->RemoteCommRecvReady();
+    this->RecvReady();
   } else {
     H5FDdsmDebug("Server is now disconnecting");
-    this->RemoteCommSendReady();
+    this->SendReady();
   }
   for (int i=0; i<H5FD_DSM_MAX_SOCKET; i++) {
     if (this->InterComm[i]) delete this->InterComm[i];
@@ -306,13 +308,14 @@ H5FDdsmCommSocket::RemoteCommDisconnect()
   this->CommChannel = H5FD_DSM_INTRA_COMM;
   return(H5FD_DSM_SUCCESS);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmCommSocket::RemoteCommRecvReady()
+H5FDdsmCommSocket::RecvReady()
 {
-  if (H5FDdsmComm::RemoteCommRecvReady() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
-
   H5FDdsmByte ready[6];
+
+  if (H5FDdsmComm::RecvReady() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
   if (this->Id == 0) {
     this->InterComm[0]->Receive(ready, sizeof(ready));
@@ -322,13 +325,14 @@ H5FDdsmCommSocket::RemoteCommRecvReady()
 
   return(H5FD_DSM_SUCCESS);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmCommSocket::RemoteCommSendReady()
+H5FDdsmCommSocket::SendReady()
 {
-  if (H5FDdsmComm::RemoteCommSendReady() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
-
   H5FDdsmByte ready[6] = "ready";
+
+  if (H5FDdsmComm::SendReady() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
   if (this->Id == 0) {
     H5FDdsmDebug("Send ready: " << ready);
@@ -338,11 +342,12 @@ H5FDdsmCommSocket::RemoteCommSendReady()
 
   return(H5FD_DSM_SUCCESS);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmCommSocket::RemoteCommRecvInfo(H5FDdsmInfo *dsmInfo)
+H5FDdsmCommSocket::RecvInfo(H5FDdsmInfo *dsmInfo)
 {
-  if (H5FDdsmComm::RemoteCommRecvInfo(dsmInfo) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+  if (H5FDdsmComm::RecvInfo(dsmInfo) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
   if (this->Id == 0) {
     H5FDdsmDebug("Receiving DSM Info...");
@@ -356,11 +361,12 @@ H5FDdsmCommSocket::RemoteCommRecvInfo(H5FDdsmInfo *dsmInfo)
 
   return(H5FD_DSM_SUCCESS);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmCommSocket::RemoteCommSendInfo(H5FDdsmInfo *dsmInfo)
+H5FDdsmCommSocket::SendInfo(H5FDdsmInfo *dsmInfo)
 {
-  if (H5FDdsmComm::RemoteCommSendInfo(dsmInfo) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+  if (H5FDdsmComm::SendInfo(dsmInfo) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
   if (this->Id == 0) {
     H5FDdsmDebug("Sending DSM Info...");
@@ -370,11 +376,12 @@ H5FDdsmCommSocket::RemoteCommSendInfo(H5FDdsmInfo *dsmInfo)
   this->Barrier();
   return(H5FD_DSM_SUCCESS);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmCommSocket::RemoteCommSendXML(H5FDdsmString file, H5FDdsmInt32 dest)
+H5FDdsmCommSocket::SendXML(H5FDdsmString file, H5FDdsmInt32 dest)
 {
-  if (H5FDdsmComm::RemoteCommSendXML(file, dest) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+  if (H5FDdsmComm::SendXML(file, dest) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
   //
   if (this->Id == 0) {
     H5FDdsmInt32 length = (H5FDdsmInt32)strlen(file) + 1;
@@ -394,13 +401,14 @@ H5FDdsmCommSocket::RemoteCommSendXML(H5FDdsmString file, H5FDdsmInt32 dest)
   H5FDdsmDebug("Send DSM XML Completed");
   return(H5FD_DSM_SUCCESS);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmCommSocket::RemoteCommRecvXML(H5FDdsmString *file)
+H5FDdsmCommSocket::RecvXML(H5FDdsmString *file)
 {
   H5FDdsmInt32 length; // string is null terminated on send
   //
-  if (H5FDdsmComm::RemoteCommRecvXML(file) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+  if (H5FDdsmComm::RecvXML(file) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
   //
   if (this->CommChannel == H5FD_DSM_INTER_COMM) {
     this->InterComm[0]->Receive(&length, sizeof(H5FDdsmInt32));
@@ -420,7 +428,7 @@ H5FDdsmCommSocket::RemoteCommRecvXML(H5FDdsmString *file)
   H5FDdsmDebug("Recv DSM XML: " << *file);
   return(H5FD_DSM_SUCCESS);
 }
-//----------------------------------------------------------------------------
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32
 H5FDdsmCommSocket::InterCommServerConnect()
@@ -489,6 +497,7 @@ H5FDdsmCommSocket::InterCommServerConnect()
   H5FDdsmDebug("Cleaned well interCommHostName/masterInterCommHostName");
   return H5FD_DSM_SUCCESS;
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32
 H5FDdsmCommSocket::InterCommClientConnect()

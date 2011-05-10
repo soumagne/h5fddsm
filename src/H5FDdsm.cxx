@@ -368,7 +368,7 @@ DsmBufferConnect(H5FDdsmBuffer *dsmBuffer)
 {
   // Initialize the connection if it has not been done already
   if (!dsmBuffer->GetIsConnected()) {
-    if (dsmBuffer->GetComm()->RemoteCommConnect() == H5FD_DSM_SUCCESS) {
+    if (dsmBuffer->GetComm()->Connect() == H5FD_DSM_SUCCESS) {
       PRINT_DSM_INFO(dsmBuffer->GetComm()->GetId(), "Connected!");
       dsmBuffer->SetIsConnected(true);
       dsmBuffer->ReceiveInfo();

@@ -114,33 +114,34 @@ public:
   H5FDdsmGetValueMacro(UseStaticInterComm, H5FDdsmBoolean);
 
   H5FDdsmInt32           DupComm(MPI_Comm Source);
+  H5FDdsmInt32           Barrier();
+  H5FDdsmInt32           ChannelSynced(H5FDdsmInt32 who, H5FDdsmInt32 *syncId);
 
   virtual H5FDdsmInt32   Init();
+
   virtual H5FDdsmInt32   Send(H5FDdsmMsg *Msg);
   virtual H5FDdsmInt32   Receive(H5FDdsmMsg *Msg, H5FDdsmInt32 Channel=0);
-  // Additional methods for one sided communications
-  virtual H5FDdsmInt32   PutData(H5FDdsmMsg *DataMsg);
-  virtual H5FDdsmInt32   GetData(H5FDdsmMsg *DataMsg);
-  //
   virtual H5FDdsmInt32   Probe(H5FDdsmMsg *Msg);
-  virtual H5FDdsmInt32   Barrier();
+
+  // Additional methods for one sided communications
+  virtual H5FDdsmInt32   Put(H5FDdsmMsg *DataMsg);
+  virtual H5FDdsmInt32   Get(H5FDdsmMsg *DataMsg);
+  virtual H5FDdsmInt32   WindowSync();
 
   virtual H5FDdsmInt32   OpenPort();
   virtual H5FDdsmInt32   ClosePort();
-  virtual H5FDdsmInt32   RemoteCommAccept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize);
-  virtual H5FDdsmInt32   RemoteCommConnect();
-  virtual H5FDdsmInt32   RemoteCommDisconnect();
+  virtual H5FDdsmInt32   Accept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize);
+  virtual H5FDdsmInt32   Connect();
+  virtual H5FDdsmInt32   Disconnect();
 
-  virtual H5FDdsmInt32   RemoteCommSync();
-  virtual H5FDdsmInt32   RemoteCommChannelSynced(H5FDdsmInt32 who, H5FDdsmInt32 *syncId);
-  virtual H5FDdsmInt32   RemoteCommRecvReady();
-  virtual H5FDdsmInt32   RemoteCommSendReady();
+  virtual H5FDdsmInt32   RecvReady();
+  virtual H5FDdsmInt32   SendReady();
 
-  virtual H5FDdsmInt32   RemoteCommRecvInfo(H5FDdsmInfo *dsmInfo);
-  virtual H5FDdsmInt32   RemoteCommSendInfo(H5FDdsmInfo *dsmInfo);
+  virtual H5FDdsmInt32   RecvInfo(H5FDdsmInfo *dsmInfo);
+  virtual H5FDdsmInt32   SendInfo(H5FDdsmInfo *dsmInfo);
 
-  virtual H5FDdsmInt32   RemoteCommSendXML(H5FDdsmString file, H5FDdsmInt32 dest);
-  virtual H5FDdsmInt32   RemoteCommRecvXML(H5FDdsmString *file);
+  virtual H5FDdsmInt32   SendXML(H5FDdsmString file, H5FDdsmInt32 dest);
+  virtual H5FDdsmInt32   RecvXML(H5FDdsmString *file);
 
 protected:
   MPI_Comm           IntraComm;

@@ -142,7 +142,7 @@ ELSE (NOT H5FD_DSM_EXTERNALLY_CONFIGURED)
 ENDIF (NOT H5FD_DSM_EXTERNALLY_CONFIGURED)
 INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
 IF(HDF5_VERSION_MAJOR)
-  MESSAGE("HDF5 version number reports as ${HDF5_VERSION_MAJOR}.${HDF5_VERSION_MINOR}")
+#  MESSAGE("HDF5 version number reports as ${HDF5_VERSION_MAJOR}.${HDF5_VERSION_MINOR}")
   IF(HDF5_VERSION_MAJOR GREATER 1.8)
     SET(HDF5_GREATER_1_8 TRUE)
     ADD_DEFINITIONS(-DHDF_NEW_VFD)
@@ -243,6 +243,7 @@ SET(H5FDdsmSources
   src/H5FDdsmBuffer.cxx
   src/H5FDdsmComm.cxx
   src/H5FDdsmCommMpi.cxx
+  src/H5FDdsmCommMpiRma.cxx
   src/H5FDdsmCommSocket.cxx
   src/H5FDdsmDriver.cxx
   src/H5FDdsmIniFile.cxx
@@ -329,6 +330,7 @@ SET(H5FDdsmHeaders
   ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmComm.h
   ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmCommSocket.h
   ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmCommMpi.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmCommMpiRma.h
   ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmAddressMapper.h
   ${H5FDdsm_BINARY_DIR}/src/H5FDdsmConfig.h
 )

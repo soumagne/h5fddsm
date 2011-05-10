@@ -30,7 +30,6 @@
 
 #include <vector>
 
-//struct H5FDdsmAddressMapperInternals;
 struct H5FDdsmMsg;
 class  H5FDdsmDriver;
 

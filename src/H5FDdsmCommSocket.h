@@ -47,22 +47,21 @@ public:
   H5FDdsmInt32   Send(H5FDdsmMsg *Msg);
   H5FDdsmInt32   Receive(H5FDdsmMsg *Msg, H5FDdsmInt32 Channel=0);
   H5FDdsmInt32   Probe(H5FDdsmMsg *Msg);
-  H5FDdsmInt32   Barrier();
 
   H5FDdsmInt32   OpenPort();
   H5FDdsmInt32   ClosePort();
-  H5FDdsmInt32   RemoteCommAccept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize);
-  H5FDdsmInt32   RemoteCommConnect();
-  H5FDdsmInt32   RemoteCommDisconnect();
+  H5FDdsmInt32   Accept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize);
+  H5FDdsmInt32   Connect();
+  H5FDdsmInt32   Disconnect();
 
-  H5FDdsmInt32   RemoteCommRecvReady();
-  H5FDdsmInt32   RemoteCommSendReady();
+  H5FDdsmInt32   RecvReady();
+  H5FDdsmInt32   SendReady();
 
-  H5FDdsmInt32   RemoteCommRecvInfo(H5FDdsmInfo *dsmInfo);
-  H5FDdsmInt32   RemoteCommSendInfo(H5FDdsmInfo *dsmInfo);
+  H5FDdsmInt32   RecvInfo(H5FDdsmInfo *dsmInfo);
+  H5FDdsmInt32   SendInfo(H5FDdsmInfo *dsmInfo);
 
-  H5FDdsmInt32   RemoteCommSendXML(H5FDdsmString file, H5FDdsmInt32 dest);
-  H5FDdsmInt32   RemoteCommRecvXML(H5FDdsmString *file);
+  H5FDdsmInt32   SendXML(H5FDdsmString file, H5FDdsmInt32 dest);
+  H5FDdsmInt32   RecvXML(H5FDdsmString *file);
 
 protected:
   H5FDdsmInt32   InterCommServerConnect();

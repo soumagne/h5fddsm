@@ -87,146 +87,15 @@ H5FDdsmComm::DupComm(MPI_Comm Source)
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmComm::Init()
-{
-  H5FDdsmInt32 size, rank;
-
-  if(MPI_Comm_size(this->IntraComm, &size) != MPI_SUCCESS) return(H5FD_DSM_FAIL);
-  if(MPI_Comm_rank(this->IntraComm, &rank) != MPI_SUCCESS) return(H5FD_DSM_FAIL);
-
-  this->Id = rank;
-  this->IntraSize = size;
-  return(H5FD_DSM_SUCCESS);
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmComm::Probe(H5FDdsmMsg *Msg)
-{
-  if(Msg->Tag <= 0) Msg->Tag = H5FD_DSM_DEFAULT_TAG;
-  return(H5FD_DSM_SUCCESS);
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmComm::Receive(H5FDdsmMsg *Msg, H5FDdsmInt32 Channel)
-{
-  if(Msg->Tag <= 0) Msg->Tag = H5FD_DSM_DEFAULT_TAG;
-  if(Msg->Length <= 0 ){
-    H5FDdsmError("Cannot Receive Message of Length = " << Msg->Length);
-    return(H5FD_DSM_FAIL);
-  }
-  if(Msg->Data <= 0 ){
-    H5FDdsmError("Cannot Receive Message into Data Buffer = " << Msg->Length);
-    return(H5FD_DSM_FAIL);
-  }
-  return(H5FD_DSM_SUCCESS);
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmComm::Send(H5FDdsmMsg *Msg)
-{
-  if(Msg->Tag <= 0) Msg->Tag = H5FD_DSM_DEFAULT_TAG;
-  if(Msg->Length <= 0 ){
-    H5FDdsmError("Cannot Send Message of Length = " << Msg->Length);
-    return(H5FD_DSM_FAIL);
-  }
-  if(Msg->Data <= 0 ){
-    H5FDdsmError("Cannot Send Message from Data Buffer = " << Msg->Length);
-    return(H5FD_DSM_FAIL);
-  }
-  return(H5FD_DSM_SUCCESS);
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmComm::GetData(H5FDdsmMsg *DataMsg)
-{
-  if(DataMsg->Tag <= 0) DataMsg->Tag = H5FD_DSM_DEFAULT_TAG;
-  if(DataMsg->Length <= 0 ){
-    H5FDdsmError("Cannot Get Message of Length = " << DataMsg->Length);
-    return(H5FD_DSM_FAIL);
-  }
-  if(DataMsg->Data <= 0 ){
-    H5FDdsmError("Cannot Get Message into Data Buffer = " << DataMsg->Length);
-    return(H5FD_DSM_FAIL);
-  }
-  return(H5FD_DSM_SUCCESS);
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmComm::PutData(H5FDdsmMsg *DataMsg)
-{
-  if(DataMsg->Tag <= 0) DataMsg->Tag = H5FD_DSM_DEFAULT_TAG;
-  if(DataMsg->Length <= 0 ){
-    H5FDdsmError("Cannot Put Message of Length = " << DataMsg->Length);
-    return(H5FD_DSM_FAIL);
-  }
-  if(DataMsg->Data <= 0 ){
-    H5FDdsmError("Cannot Put Message from Data Buffer = " << DataMsg->Length);
-    return(H5FD_DSM_FAIL);
-  }
-  return(H5FD_DSM_SUCCESS);
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32
 H5FDdsmComm::Barrier()
 {
+  MPI_Barrier(this->IntraComm);
   return(H5FD_DSM_SUCCESS);
 }
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmComm::OpenPort()
-{
-  return(H5FD_DSM_SUCCESS);
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmComm::ClosePort()
-{
-  return(H5FD_DSM_SUCCESS);
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmComm::RemoteCommAccept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize)
-{
-  if (!storagePointer) {
-    H5FDdsmError("Null Data Pointer passed to CommAccept");
-    return(H5FD_DSM_FAIL);
-  }
-  return(H5FD_DSM_SUCCESS);
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmComm::RemoteCommConnect()
-{
-  return(H5FD_DSM_SUCCESS);
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmComm::RemoteCommDisconnect()
-{
-  return(H5FD_DSM_SUCCESS);
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmComm::RemoteCommSync()
-{
-  return(H5FD_DSM_SUCCESS);
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmComm::RemoteCommChannelSynced(H5FDdsmInt32 who, H5FDdsmInt32 *syncId)
+H5FDdsmComm::ChannelSynced(H5FDdsmInt32 who, H5FDdsmInt32 *syncId)
 {
   static std::queue<H5FDdsmInt32> syncQueue;
   H5FDdsmInt32 ret = H5FD_DSM_FALSE;
@@ -271,42 +140,174 @@ H5FDdsmComm::RemoteCommChannelSynced(H5FDdsmInt32 who, H5FDdsmInt32 *syncId)
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmComm::RemoteCommRecvReady()
+H5FDdsmComm::Init()
+{
+  H5FDdsmInt32 size, rank;
+
+  if(MPI_Comm_size(this->IntraComm, &size) != MPI_SUCCESS) return(H5FD_DSM_FAIL);
+  if(MPI_Comm_rank(this->IntraComm, &rank) != MPI_SUCCESS) return(H5FD_DSM_FAIL);
+
+  this->Id = rank;
+  this->IntraSize = size;
+  return(H5FD_DSM_SUCCESS);
+}
+
+//----------------------------------------------------------------------------
+H5FDdsmInt32
+H5FDdsmComm::Send(H5FDdsmMsg *Msg)
+{
+  if(Msg->Tag <= 0) Msg->Tag = H5FD_DSM_DEFAULT_TAG;
+  if(Msg->Length <= 0 ){
+    H5FDdsmError("Cannot Send Message of Length = " << Msg->Length);
+    return(H5FD_DSM_FAIL);
+  }
+  if(Msg->Data <= 0 ){
+    H5FDdsmError("Cannot Send Message from Data Buffer = " << Msg->Length);
+    return(H5FD_DSM_FAIL);
+  }
+  return(H5FD_DSM_SUCCESS);
+}
+
+//----------------------------------------------------------------------------
+H5FDdsmInt32
+H5FDdsmComm::Receive(H5FDdsmMsg *Msg, H5FDdsmInt32 Channel)
+{
+  if(Msg->Tag <= 0) Msg->Tag = H5FD_DSM_DEFAULT_TAG;
+  if(Msg->Length <= 0 ){
+    H5FDdsmError("Cannot Receive Message of Length = " << Msg->Length);
+    return(H5FD_DSM_FAIL);
+  }
+  if(Msg->Data <= 0 ){
+    H5FDdsmError("Cannot Receive Message into Data Buffer = " << Msg->Length);
+    return(H5FD_DSM_FAIL);
+  }
+  return(H5FD_DSM_SUCCESS);
+}
+
+//----------------------------------------------------------------------------
+H5FDdsmInt32
+H5FDdsmComm::Probe(H5FDdsmMsg *Msg)
+{
+  if(Msg->Tag <= 0) Msg->Tag = H5FD_DSM_DEFAULT_TAG;
+  return(H5FD_DSM_SUCCESS);
+}
+
+//----------------------------------------------------------------------------
+H5FDdsmInt32
+H5FDdsmComm::Put(H5FDdsmMsg *DataMsg)
+{
+  if(DataMsg->Tag <= 0) DataMsg->Tag = H5FD_DSM_DEFAULT_TAG;
+  if(DataMsg->Length <= 0 ){
+    H5FDdsmError("Cannot Put Message of Length = " << DataMsg->Length);
+    return(H5FD_DSM_FAIL);
+  }
+  if(DataMsg->Data <= 0 ){
+    H5FDdsmError("Cannot Put Message from Data Buffer = " << DataMsg->Length);
+    return(H5FD_DSM_FAIL);
+  }
+  return(H5FD_DSM_SUCCESS);
+}
+
+//----------------------------------------------------------------------------
+H5FDdsmInt32
+H5FDdsmComm::Get(H5FDdsmMsg *DataMsg)
+{
+  if(DataMsg->Tag <= 0) DataMsg->Tag = H5FD_DSM_DEFAULT_TAG;
+  if(DataMsg->Length <= 0 ){
+    H5FDdsmError("Cannot Get Message of Length = " << DataMsg->Length);
+    return(H5FD_DSM_FAIL);
+  }
+  if(DataMsg->Data <= 0 ){
+    H5FDdsmError("Cannot Get Message into Data Buffer = " << DataMsg->Length);
+    return(H5FD_DSM_FAIL);
+  }
+  return(H5FD_DSM_SUCCESS);
+}
+
+//----------------------------------------------------------------------------
+H5FDdsmInt32
+H5FDdsmComm::WindowSync()
 {
   return(H5FD_DSM_SUCCESS);
 }
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmComm::RemoteCommSendReady()
+H5FDdsmComm::OpenPort()
 {
   return(H5FD_DSM_SUCCESS);
 }
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmComm::RemoteCommRecvInfo(H5FDdsmInfo *dsmInfo)
+H5FDdsmComm::ClosePort()
 {
   return(H5FD_DSM_SUCCESS);
 }
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmComm::RemoteCommSendInfo(H5FDdsmInfo *dsmInfo)
+H5FDdsmComm::Accept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize)
+{
+  if (!storagePointer) {
+    H5FDdsmError("Null Data Pointer passed to Accept");
+    return(H5FD_DSM_FAIL);
+  }
+  return(H5FD_DSM_SUCCESS);
+}
+
+//----------------------------------------------------------------------------
+H5FDdsmInt32
+H5FDdsmComm::Connect()
 {
   return(H5FD_DSM_SUCCESS);
 }
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmComm::RemoteCommSendXML(H5FDdsmString file, H5FDdsmInt32 dest)
+H5FDdsmComm::Disconnect()
 {
   return(H5FD_DSM_SUCCESS);
 }
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmComm::RemoteCommRecvXML(H5FDdsmString *file)
+H5FDdsmComm::RecvReady()
+{
+  return(H5FD_DSM_SUCCESS);
+}
+
+//----------------------------------------------------------------------------
+H5FDdsmInt32
+H5FDdsmComm::SendReady()
+{
+  return(H5FD_DSM_SUCCESS);
+}
+
+//----------------------------------------------------------------------------
+H5FDdsmInt32
+H5FDdsmComm::RecvInfo(H5FDdsmInfo *dsmInfo)
+{
+  return(H5FD_DSM_SUCCESS);
+}
+
+//----------------------------------------------------------------------------
+H5FDdsmInt32
+H5FDdsmComm::SendInfo(H5FDdsmInfo *dsmInfo)
+{
+  return(H5FD_DSM_SUCCESS);
+}
+
+//----------------------------------------------------------------------------
+H5FDdsmInt32
+H5FDdsmComm::SendXML(H5FDdsmString file, H5FDdsmInt32 dest)
+{
+  return(H5FD_DSM_SUCCESS);
+}
+
+//----------------------------------------------------------------------------
+H5FDdsmInt32
+H5FDdsmComm::RecvXML(H5FDdsmString *file)
 {
   return(H5FD_DSM_SUCCESS);
 }

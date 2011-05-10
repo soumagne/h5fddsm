@@ -480,7 +480,7 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode)
     break;
   // H5FD_DSM_LOCK_RELEASE
   case H5FD_DSM_LOCK_RELEASE:
-    if (this->Comm->RemoteCommChannelSynced(who, &syncId) || !this->IsConnected) {
+    if (this->Comm->ChannelSynced(who, &syncId) || !this->IsConnected) {
       this->Comm->SetCommChannel(H5FD_DSM_INTRA_COMM);
       if (!this->IsLocked) {
         H5FDdsmLockError("already released");
@@ -504,7 +504,7 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode)
   case H5FD_DSM_ACCEPT:
     if (!this->IsConnected) {
       this->IsConnecting = true;
-      status = this->Comm->RemoteCommAccept(this->DataPointer, this->Length);
+      status = this->Comm->Accept(this->DataPointer, this->Length);
       this->IsConnecting = false;
       if (status == H5FD_DSM_FAIL) {
         H5FDdsmError("RemoteCommAccept Failed");
@@ -517,7 +517,7 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode)
     }
     if (this->Comm->GetUseOneSidedComm()) {
       this->Comm->SetCommChannel(H5FD_DSM_INTER_COMM);
-      this->Comm->RemoteCommSync();
+      this->Comm->WindowSync();
     } else {
 #ifdef H5FD_DSM_HAVE_STEERING
       if (!this->RemoteServiceThreadPtr) this->StartRemoteService();
@@ -529,9 +529,9 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode)
     break;
   // H5FD_DSM_DISCONNECT
   case H5FD_DSM_DISCONNECT:
-    if (this->Comm->RemoteCommChannelSynced(who, &syncId)) {
+    if (this->Comm->ChannelSynced(who, &syncId)) {
       H5FDdsmDebug("( " << this->Comm->GetId() << " ) Freeing now remote channel");
-      this->Comm->RemoteCommDisconnect();
+      this->Comm->Disconnect();
       this->IsConnected = false;
       H5FDdsmDebug("DSM disconnected on " << this->Comm->GetId() << ", Switched to Local channel");
       // Because we may have been waiting for an update ready
@@ -540,7 +540,7 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode)
     break;
   // H5FD_DSM_SERVER_UPDATE
   case H5FD_DSM_SERVER_UPDATE:
-    if (this->Comm->RemoteCommChannelSynced(who, &syncId)) {
+    if (this->Comm->ChannelSynced(who, &syncId)) {
       this->Comm->SetCommChannel(H5FD_DSM_INTRA_COMM);
       if (Address & H5FD_DSM_DATA_MODIFIED) {
         this->IsDataModified = true;
@@ -564,14 +564,14 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode)
     break;
   // H5FD_DSM_CLEAR_STORAGE
   case H5FD_DSM_CLEAR_STORAGE:
-    if (this->Comm->RemoteCommChannelSynced(who, &syncId)) {
+    if (this->Comm->ChannelSynced(who, &syncId)) {
       this->ClearStorage();
     }
     break;
   // H5FD_DSM_XML_EXCHANGE
   case H5FD_DSM_XML_EXCHANGE:
     // Receive XML File and put it in a DSM buffer field for further reading
-    this->Comm->RemoteCommRecvXML(&this->XMLDescription);
+    this->Comm->RecvXML(&this->XMLDescription);
     break;
   // DEFAULT
   default :
@@ -646,7 +646,7 @@ H5FDdsmBuffer::RemoteService(H5FDdsmInt32 *ReturnOpcode)
 
     switch(Opcode){
     case H5FD_DSM_LOCK_ACQUIRE:
-      if (this->Comm->RemoteCommChannelSynced(who, &syncId)) {
+      if (this->Comm->ChannelSynced(who, &syncId)) {
 #ifdef _WIN32
         WaitForSingleObject(this->Lock, INFINITE);
 #else
@@ -734,24 +734,17 @@ H5FDdsmBuffer::Put(H5FDdsmAddr address, H5FDdsmUInt64 length, H5FDdsmPointer dat
       memcpy(dp, putRequest.Data, putRequest.Length);
     } else {
       H5FDdsmInt32 status;
-      if (this->Comm->GetUseOneSidedComm()) {
-        H5FDdsmDebug("PUT request to " << putRequest.Dest << " for " << putRequest.Length << " bytes @ " << putRequest.Address);
-        status = this->PutData(putRequest.Dest, putRequest.Data, putRequest.Length, putRequest.Address);
-        if (status == H5FD_DSM_FAIL) {
-          H5FDdsmError("Failed to do an RMA PUT to " << putRequest.Dest);
-          return(H5FD_DSM_FAIL);
-        }
-      } else {
+      if (!this->Comm->GetUseOneSidedComm()) {
         status = this->SendCommandHeader(H5FD_DSM_OPCODE_PUT, putRequest.Dest, putRequest.Address, putRequest.Length);
         if (status == H5FD_DSM_FAIL) {
           H5FDdsmError("Failed to send PUT Header to " << putRequest.Dest);
           return(H5FD_DSM_FAIL);
         }
-        status = this->SendData(putRequest.Dest, putRequest.Data, putRequest.Length, H5FD_DSM_PUT_DATA_TAG);
-        if (status == H5FD_DSM_FAIL) {
-          H5FDdsmError("Failed to send " << putRequest.Length << " bytes of data to " << putRequest.Dest);
-          return(H5FD_DSM_FAIL);
-        }
+      }
+      status = this->SendData(putRequest.Dest, putRequest.Data, putRequest.Length, H5FD_DSM_PUT_DATA_TAG, putRequest.Address);
+      if (status == H5FD_DSM_FAIL) {
+        H5FDdsmError("Failed to send " << putRequest.Length << " bytes of data to " << putRequest.Dest);
+        return(H5FD_DSM_FAIL);
       }
     }
     putRequests.pop_back();
@@ -778,24 +771,17 @@ H5FDdsmBuffer::Get(H5FDdsmAddr address, H5FDdsmUInt64 length, H5FDdsmPointer dat
       memcpy(getRequest.Data, dp, getRequest.Length);
     } else {
       H5FDdsmInt32   status;
-      if (this->Comm->GetUseOneSidedComm()) {
-        H5FDdsmDebug("Get request to " << getRequest.Dest << " for " << getRequest.Length << " bytes @ " << getRequest.Address);
-        status = this->GetData(getRequest.Dest, getRequest.Data, getRequest.Length, getRequest.Address);
-        if (status == H5FD_DSM_FAIL) {
-          H5FDdsmError("Failed to do an RMA GET from " << getRequest.Dest);
-          return(H5FD_DSM_FAIL);
-        }
-      } else {
+      if (!this->Comm->GetUseOneSidedComm()) {
         status = this->SendCommandHeader(H5FD_DSM_OPCODE_GET, getRequest.Dest, getRequest.Address, getRequest.Length);
-        if (status == H5FD_DSM_FAIL){
+        if (status == H5FD_DSM_FAIL) {
           H5FDdsmError("Failed to send GET Header to " << getRequest.Dest);
           return(H5FD_DSM_FAIL);
         }
-        status = this->ReceiveData(getRequest.Dest, getRequest.Data, getRequest.Length, H5FD_DSM_GET_DATA_TAG);
-        if (status == H5FD_DSM_FAIL){
-          H5FDdsmError("Failed to receive " << getRequest.Length << " bytes of data from " << getRequest.Dest);
-          return(H5FD_DSM_FAIL);
-        }
+      }
+      status = this->ReceiveData(getRequest.Dest, getRequest.Data, getRequest.Length, H5FD_DSM_GET_DATA_TAG, getRequest.Address);
+      if (status == H5FD_DSM_FAIL) {
+        H5FDdsmError("Failed to receive " << getRequest.Length << " bytes of data from " << getRequest.Dest);
+        return(H5FD_DSM_FAIL);
       }
     }
     getRequests.pop_back();
@@ -818,7 +804,7 @@ H5FDdsmBuffer::RequestLockAcquire()
   } else {
     if (this->Comm->GetUseOneSidedComm()) {
       // After possible RMA put, need to sync windows before further operations
-      if (this->IsSyncRequired) this->Comm->RemoteCommSync();
+      if (this->IsSyncRequired) this->Comm->WindowSync();
       this->IsSyncRequired = false;
     } else {
 #ifdef H5FD_DSM_HAVE_STEERING
@@ -913,7 +899,7 @@ H5FDdsmBuffer::RequestDisconnect()
     H5FDdsmDebug("Send disconnection request to " << who);
     status = this->SendCommandHeader(H5FD_DSM_DISCONNECT, who, 0, 0);
   }
-  status = this->Comm->RemoteCommDisconnect();
+  status = this->Comm->Disconnect();
   this->IsConnected = false;
   H5FDdsmDebug("DSM disconnected on " << this->Comm->GetId());
   return(status);

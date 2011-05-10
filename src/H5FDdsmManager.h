@@ -23,11 +23,7 @@
 #define __H5FDdsmManager_h
 
 #include "H5FDdsmBuffer.h"
-#include "H5FDdsmCommSocket.h"
-#include "H5FDdsmCommMpi.h"
-#ifdef H5FD_DSM_HAVE_DMAPP
-#include "H5FDdsmCommDmapp.h"
-#endif
+#include "H5FDdsmComm.h"
 
 struct H5FDdsmManagerInternals;
 

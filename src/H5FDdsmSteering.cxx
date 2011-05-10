@@ -115,7 +115,7 @@ herr_t H5FD_dsm_steering_update()
       dsmBuffer->GetIsSyncRequired() && !dsmBuffer->GetIsServer()) {
     // After possible RMA put / get from the server, need to sync windows before
     // further operations
-    dsmBuffer->GetComm()->RemoteCommSync();
+    dsmBuffer->GetComm()->WindowSync();
     dsmBuffer->SetIsSyncRequired(false);
   }
 
@@ -181,7 +181,7 @@ herr_t H5FD_dsm_steering_wait()
 
   if (dsmBuffer->GetComm()->GetUseOneSidedComm() &&
       dsmBuffer->GetIsSyncRequired() && !dsmBuffer->GetIsServer()) {
-    dsmBuffer->GetComm()->RemoteCommSync();
+    dsmBuffer->GetComm()->WindowSync();
     dsmBuffer->SetIsSyncRequired(false);
   }
 

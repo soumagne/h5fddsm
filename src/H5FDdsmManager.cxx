@@ -16,12 +16,12 @@
 
 =========================================================================*/
 #include "H5FDdsmManager.h"
-//
-#include <vector>
-#include <string>
-//
-#include "mpi.h"
-//
+#include "H5FDdsmCommSocket.h"
+#include "H5FDdsmCommMpi.h"
+#include "H5FDdsmCommMpiRma.h"
+#ifdef H5FD_DSM_HAVE_DMAPP
+#include "H5FDdsmCommDmapp.h"
+#endif
 #include "H5FDdsmIniFile.h"
 #ifdef H5FD_DSM_HAVE_STEERING
 #include "H5FDdsmSteerer.h"
@@ -33,6 +33,9 @@
   #define access _access
   #define atoll _atoi64 
 #endif
+
+#include <vector>
+#include <string>
 
 struct H5FDdsmManagerInternals
 {
@@ -200,13 +203,12 @@ H5FDdsmInt32 H5FDdsmManager::CreateDSM()
   //
   switch (this->GetDsmCommType()) {
   case H5FD_DSM_COMM_MPI:
-  case H5FD_DSM_COMM_MPI_RMA:
     this->DSMComm = new H5FDdsmCommMpi();
     H5FDdsmDebug("Using MPI Intercomm...");
-    if (this->GetDsmCommType() == H5FD_DSM_COMM_MPI_RMA) {
-      this->DSMComm->SetUseOneSidedComm(true);
-      H5FDdsmDebug("Using RMA Intercomm...");
-    }
+    break;
+  case H5FD_DSM_COMM_MPI_RMA:
+    this->DSMComm = new H5FDdsmCommMpiRma();
+    H5FDdsmDebug("Using MPI RMA Intercomm...");
     break;
   case H5FD_DSM_COMM_SOCKET:
     this->DSMComm = new H5FDdsmCommSocket();
@@ -215,7 +217,6 @@ H5FDdsmInt32 H5FDdsmManager::CreateDSM()
 #ifdef H5FD_DSM_HAVE_DMAPP
   case H5FD_DSM_COMM_DMAPP:
     this->DSMComm = new H5FDdsmCommDmapp();
-    this->DSMComm->SetUseOneSidedComm(true);
     H5FDdsmDebug("Using DMAPP Intercomm...");
     break;
 #endif
@@ -349,7 +350,7 @@ void H5FDdsmManager::ConnectDSM(H5FDdsmBoolean persist)
 #endif
 
     do {
-      status = this->DSMBuffer->GetComm()->RemoteCommConnect();
+      status = this->DSMBuffer->GetComm()->Connect();
       if (status == H5FD_DSM_SUCCESS) {
         H5FDdsmDebug("Connected!");
         this->DSMBuffer->SetIsConnected(true);
@@ -373,7 +374,7 @@ void H5FDdsmManager::ConnectInterCommDSM()
   if (this->DsmIsServer) {
     this->DSMBuffer->RequestAccept();
   } else {
-    status = this->DSMBuffer->GetComm()->RemoteCommConnect();
+    status = this->DSMBuffer->GetComm()->Connect();
     if (status == H5FD_DSM_SUCCESS) {
       H5FDdsmDebug("Connected!");
       this->DSMBuffer->SetIsConnected(true);
@@ -507,7 +508,7 @@ void H5FDdsmManager::SendDSMXML()
   if (this->XMLStringSend != NULL) {
     int commServerSize = this->DSMBuffer->GetEndServerId() - this->DSMBuffer->GetStartServerId() + 1;
     for (int i=0; i<commServerSize; i++) {
-      this->DSMBuffer->GetComm()->RemoteCommSendXML(this->XMLStringSend, i);
+      this->DSMBuffer->GetComm()->SendXML(this->XMLStringSend, i);
     }
   }
   this->DSMBuffer->GetComm()->Barrier();
