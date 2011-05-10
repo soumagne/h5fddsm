@@ -58,7 +58,8 @@ int main(int argc, char **argv)
     if (dsmManager->GetUpdatePiece() == 0) {
       printf("%ld particles/proc (3 arrays) -- %lf MB\n", numParticles, MBytes);
       printf("%-*s%*s", 10, "# NumProcs", 20, "Bandwidth (MB/s)");
-      if (dsmManager->GetDSMHandle()->GetDsmType() == H5FD_DSM_TYPE_BLOCK_CYCLIC) {
+      if (dsmManager->GetDSMHandle()->GetDsmType() == H5FD_DSM_TYPE_BLOCK_CYCLIC ||
+          dsmManager->GetDSMHandle()->GetDsmType() == H5FD_DSM_TYPE_BLOCK_RANDOM) {
         printf("%*s", 20, "Block Size (Bytes)");
       }
       printf("\n");
@@ -91,7 +92,8 @@ int main(int argc, char **argv)
         bandwidth = (MBytes / totaltime);
         if (dsmManager->GetUpdatePiece() == 0) {
           printf("%-*d%*.*f", 10, dsmManager->GetUpdateNumPieces(), 20, 2, bandwidth);
-          if (dsmManager->GetDSMHandle()->GetDsmType() == H5FD_DSM_TYPE_BLOCK_CYCLIC) {
+          if (dsmManager->GetDSMHandle()->GetDsmType() == H5FD_DSM_TYPE_BLOCK_CYCLIC
+              || dsmManager->GetDSMHandle()->GetDsmType() == H5FD_DSM_TYPE_BLOCK_RANDOM) {
             printf("%*ld", 20, dsmManager->GetDSMHandle()->GetBlockLength());
           }
           printf("\n");

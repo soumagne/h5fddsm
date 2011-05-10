@@ -101,11 +101,11 @@ class BlockRandomAddressMapper : public AddressMapperStrategy {
       this->Shuffle.resize(this->NumberOfBlocks);
       std::generate(this->Shuffle.begin(), this->Shuffle.end(), generator(0));
       random_shuffle(this->Shuffle.begin(), this->Shuffle.end());
-      std::cout << "\nShuffle contents:";
-      for (std::vector<int>::iterator it=this->Shuffle.begin(); it!=this->Shuffle.end(); ++it) {
-        std::cout << " " << *it;
-      }
-      std::cout << std::endl;
+//      std::cout << "\nShuffle contents:";
+//      for (std::vector<int>::iterator it=this->Shuffle.begin(); it!=this->Shuffle.end(); ++it) {
+//        std::cout << " " << *it;
+//      }
+//      std::cout << std::endl;
 
     }
     //

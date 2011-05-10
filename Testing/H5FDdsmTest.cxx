@@ -355,7 +355,7 @@ void receiverInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *
     }
     else if (!strcmp(argv[4], "RBlock")) {
       dsmType = H5FD_DSM_TYPE_BLOCK_RANDOM;
-      std::cout << "RBlock type detected " << std::endl;
+      if (rank == 0) std::cout << "# Random Block redistribution selected" << std::endl;
     }
   }
 
