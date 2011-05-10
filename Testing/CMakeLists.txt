@@ -76,23 +76,33 @@ ENDMACRO(ADD_H5FD_DSM_STATIC_TEST)
 #-----------------------------------------------------------------------------
 #
 #-----------------------------------------------------------------------------
+# H5FDdsmTest : Lib used by tests contains main test initialization etc
+#-----------------------------------------------------------------------------
+ADD_LIBRARY(H5FDdsmTestLib STATIC
+  H5FDdsmTest.cxx
+)
+TARGET_LINK_LIBRARIES(H5FDdsmTestLib
+  H5FDdsm
+)
+
+#-----------------------------------------------------------------------------
 # H5FDdsmSender_cwrite_nohdf_bw : Bandwidth test of DSM write operations
 #-----------------------------------------------------------------------------
 ADD_EXECUTABLE(H5FDdsmSender_cwrite_nohdf_bw
-  H5FDdsmSender_cwrite_nohdf_bw.cxx H5FDdsmTest.cxx
+  H5FDdsmSender_cwrite_nohdf_bw.cxx
 )
 TARGET_LINK_LIBRARIES(H5FDdsmSender_cwrite_nohdf_bw
-  H5FDdsm
+  H5FDdsmTestLib
 )
 SET_LINK_OPTIONS(H5FDdsmSender_cwrite_nohdf_bw)
 #-----------------------------------------------------------------------------
 # H5FDdsmSender_cwrite_bw : Bandwidth test of DSM write operations
 #-----------------------------------------------------------------------------
 ADD_EXECUTABLE(H5FDdsmSender_cwrite_bw
-  H5FDdsmSender_cwrite_bw.cxx H5FDdsmTest.cxx
+  H5FDdsmSender_cwrite_bw.cxx
 )
 TARGET_LINK_LIBRARIES(H5FDdsmSender_cwrite_bw
-  H5FDdsm
+  H5FDdsmTestLib
 )
 SET_LINK_OPTIONS(H5FDdsmSender_cwrite_bw)
 
@@ -100,10 +110,10 @@ SET_LINK_OPTIONS(H5FDdsmSender_cwrite_bw)
 # H5FDdsmReceiver_cwrite_bw : Bandwidth test receiver (does not do anything except hosting data)
 #-----------------------------------------------------------------------------
 ADD_EXECUTABLE(H5FDdsmReceiver_cwrite_bw
-  H5FDdsmReceiver_cwrite_bw.cxx H5FDdsmTest.cxx
+  H5FDdsmReceiver_cwrite_bw.cxx
 )
 TARGET_LINK_LIBRARIES(H5FDdsmReceiver_cwrite_bw
-  H5FDdsm
+  H5FDdsmTestLib
 )
 SET_LINK_OPTIONS(H5FDdsmReceiver_cwrite_bw)
 
@@ -111,10 +121,10 @@ SET_LINK_OPTIONS(H5FDdsmReceiver_cwrite_bw)
 # H5FDdsmSender_cwrite_sread_bw : Data validity test of DSM write operations
 #-----------------------------------------------------------------------------
 ADD_EXECUTABLE(H5FDdsmSender_cwrite_sread_bw
-  H5FDdsmSender_cwrite_sread_bw.cxx H5FDdsmTest.cxx
+  H5FDdsmSender_cwrite_sread_bw.cxx
 )
 TARGET_LINK_LIBRARIES(H5FDdsmSender_cwrite_sread_bw
-  H5FDdsm
+  H5FDdsmTestLib
 )
 SET_LINK_OPTIONS(H5FDdsmSender_cwrite_sread_bw)
 
@@ -122,10 +132,10 @@ SET_LINK_OPTIONS(H5FDdsmSender_cwrite_sread_bw)
 # H5FDdsmReceiver_cwrite_sread_bw : Data validity test receiver - Checks received data
 #-----------------------------------------------------------------------------
 ADD_EXECUTABLE(H5FDdsmReceiver_cwrite_sread_bw
-  H5FDdsmReceiver_cwrite_sread_bw.cxx H5FDdsmTest.cxx
+  H5FDdsmReceiver_cwrite_sread_bw.cxx
 )
 TARGET_LINK_LIBRARIES(H5FDdsmReceiver_cwrite_sread_bw
-  H5FDdsm
+  H5FDdsmTestLib
 )
 SET_LINK_OPTIONS(H5FDdsmReceiver_cwrite_sread_bw)
 
@@ -133,10 +143,10 @@ SET_LINK_OPTIONS(H5FDdsmReceiver_cwrite_sread_bw)
 # H5FDdsmSender_cwrite_cread : Send data as a client and test RDONLY mode
 #-----------------------------------------------------------------------------
 ADD_EXECUTABLE(H5FDdsmSender_cwrite_cread
-  H5FDdsmSender_cwrite_cread.cxx H5FDdsmTest.cxx
+  H5FDdsmSender_cwrite_cread.cxx
 )
 TARGET_LINK_LIBRARIES(H5FDdsmSender_cwrite_cread
-  H5FDdsm
+  H5FDdsmTestLib
 )
 SET_LINK_OPTIONS(H5FDdsmSender_cwrite_cread)
 
@@ -144,10 +154,10 @@ SET_LINK_OPTIONS(H5FDdsmSender_cwrite_cread)
 # H5FDdsmReceiver_cwrite_cread : Receive data as a server and dump the data
 #-----------------------------------------------------------------------------
 ADD_EXECUTABLE(H5FDdsmReceiver_cwrite_cread
-  H5FDdsmReceiver_cwrite_cread.cxx H5FDdsmTest.cxx
+  H5FDdsmReceiver_cwrite_cread.cxx
 )
 TARGET_LINK_LIBRARIES(H5FDdsmReceiver_cwrite_cread
-  H5FDdsm
+  H5FDdsmTestLib
 )
 SET_LINK_OPTIONS(H5FDdsmReceiver_cwrite_cread)
 
@@ -155,10 +165,10 @@ SET_LINK_OPTIONS(H5FDdsmReceiver_cwrite_cread)
 # H5FDdsmSender_cwrite_sread_cwrite : Send data as a client and test RDWR mode
 #-----------------------------------------------------------------------------
 ADD_EXECUTABLE(H5FDdsmSender_cwrite_sread_cwrite
-  H5FDdsmSender_cwrite_sread_cwrite.cxx H5FDdsmTest.cxx
+  H5FDdsmSender_cwrite_sread_cwrite.cxx
 )
 TARGET_LINK_LIBRARIES(H5FDdsmSender_cwrite_sread_cwrite
-  H5FDdsm
+  H5FDdsmTestLib
 )
 SET_LINK_OPTIONS(H5FDdsmSender_cwrite_sread_cwrite)
 
@@ -166,10 +176,10 @@ SET_LINK_OPTIONS(H5FDdsmSender_cwrite_sread_cwrite)
 # H5FDdsmReceiver_cwrite_sread_cwrite : Receive data as a server and dump the data
 #-----------------------------------------------------------------------------
 ADD_EXECUTABLE(H5FDdsmReceiver_cwrite_sread_cwrite
-  H5FDdsmReceiver_cwrite_sread_cwrite.cxx H5FDdsmTest.cxx
+  H5FDdsmReceiver_cwrite_sread_cwrite.cxx
 )
 TARGET_LINK_LIBRARIES(H5FDdsmReceiver_cwrite_sread_cwrite
-  H5FDdsm
+  H5FDdsmTestLib
 )
 SET_LINK_OPTIONS(H5FDdsmReceiver_cwrite_sread_cwrite)
 
@@ -178,10 +188,10 @@ SET_LINK_OPTIONS(H5FDdsmReceiver_cwrite_sread_cwrite)
 #                      hand back and dump the data
 #-----------------------------------------------------------------------------
 ADD_EXECUTABLE(H5FDdsmSender_cwrite_swrite_cread
-  H5FDdsmSender_cwrite_swrite_cread.cxx H5FDdsmTest.cxx
+  H5FDdsmSender_cwrite_swrite_cread.cxx
 )
 TARGET_LINK_LIBRARIES(H5FDdsmSender_cwrite_swrite_cread
-  H5FDdsm
+  H5FDdsmTestLib
 )
 SET_LINK_OPTIONS(H5FDdsmSender_cwrite_swrite_cread)
 
@@ -190,10 +200,10 @@ SET_LINK_OPTIONS(H5FDdsmSender_cwrite_swrite_cread)
 #                        an array into a newly created steering group
 #-----------------------------------------------------------------------------
 ADD_EXECUTABLE(H5FDdsmReceiver_cwrite_swrite_cread
-  H5FDdsmReceiver_cwrite_swrite_cread.cxx H5FDdsmTest.cxx
+  H5FDdsmReceiver_cwrite_swrite_cread.cxx
 )
 TARGET_LINK_LIBRARIES(H5FDdsmReceiver_cwrite_swrite_cread
-  H5FDdsm
+  H5FDdsmTestLib
 )
 SET_LINK_OPTIONS(H5FDdsmReceiver_cwrite_swrite_cread)
 
@@ -203,10 +213,10 @@ IF(H5FD_DSM_BUILD_STEERING)
   #                      to give hand back and dump the data
   #-----------------------------------------------------------------------------
   ADD_EXECUTABLE(H5FDdsmSender_steer
-    H5FDdsmSender_steer.cxx H5FDdsmTest.cxx
+    H5FDdsmSender_steer.cxx
   )
   TARGET_LINK_LIBRARIES(H5FDdsmSender_steer
-    H5FDdsm
+    H5FDdsmTestLib
   )
   SET_LINK_OPTIONS(H5FDdsmSender_steer)
 
@@ -215,10 +225,10 @@ IF(H5FD_DSM_BUILD_STEERING)
   #                        update steered objects
   #-----------------------------------------------------------------------------
   ADD_EXECUTABLE(H5FDdsmReceiver_steer
-    H5FDdsmReceiver_steer.cxx H5FDdsmTest.cxx
+    H5FDdsmReceiver_steer.cxx
   )
   TARGET_LINK_LIBRARIES(H5FDdsmReceiver_steer
-    H5FDdsm
+    H5FDdsmTestLib
   )
   SET_LINK_OPTIONS(H5FDdsmReceiver_steer)
 
