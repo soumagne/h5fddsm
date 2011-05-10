@@ -196,7 +196,8 @@ H5FDdsmCommDmapp::Accept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSiz
 H5FDdsmInt32
 H5FDdsmCommDmapp::Connect()
 {
-  MPI_Comm     winComm;
+  MPI_Comm   winComm;
+  MPI_Status recvStatus;
 
   if(H5FDdsmCommMpi::Connect() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
