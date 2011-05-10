@@ -140,7 +140,8 @@ H5FDdsmDriver::ClearStorage()
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmDriver::ConfigureUniform(H5FDdsmComm *aComm, H5FDdsmUInt64 aLength, H5FDdsmInt32 StartId, H5FDdsmInt32 EndId, H5FDdsmUInt64 aBlockLength)
+H5FDdsmDriver::ConfigureUniform(H5FDdsmComm *aComm, H5FDdsmUInt64 aLength, H5FDdsmInt32 StartId, H5FDdsmInt32 EndId, 
+  H5FDdsmUInt64 aBlockLength, bool random)
 {
     if (StartId < 0) StartId = 0;
     if (EndId < 0) EndId = aComm->GetIntraSize() - 1;
@@ -149,7 +150,12 @@ H5FDdsmDriver::ConfigureUniform(H5FDdsmComm *aComm, H5FDdsmUInt64 aLength, H5FDd
         this->SetDsmType(H5FD_DSM_TYPE_UNIFORM);
     }
     if (aBlockLength) {
-      this->SetDsmType(H5FD_DSM_TYPE_BLOCK_CYCLIC);
+      if (!random) {
+        this->SetDsmType(H5FD_DSM_TYPE_BLOCK_CYCLIC);
+      }
+      else {
+        this->SetDsmType(H5FD_DSM_TYPE_BLOCK_RANDOM);
+      }
       this->SetBlockLength(aBlockLength);
     }
     this->StartServerId = StartId;

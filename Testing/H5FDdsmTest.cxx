@@ -353,6 +353,10 @@ void receiverInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *
     else if (!strcmp(argv[4], "Mask")) {
       dsmType = H5FD_DSM_TYPE_DYNAMIC_MASK;
     }
+    else if (!strcmp(argv[4], "RBlock")) {
+      dsmType = H5FD_DSM_TYPE_BLOCK_RANDOM;
+      std::cout << "RBlock type detected " << std::endl;
+    }
   }
 
   if (argc > 5) {

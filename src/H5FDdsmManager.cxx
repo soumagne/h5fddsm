@@ -242,7 +242,10 @@ H5FDdsmInt32 H5FDdsmManager::CreateDSM()
       this->DSMBuffer->ConfigureUniform(this->DSMComm, length, -1, -1);
       break;
     case H5FD_DSM_TYPE_BLOCK_CYCLIC:
-      this->DSMBuffer->ConfigureUniform(this->DSMComm, length, -1, -1, this->DsmBlockLength);
+      this->DSMBuffer->ConfigureUniform(this->DSMComm, length, -1, -1, this->DsmBlockLength, false);
+      break;
+    case H5FD_DSM_TYPE_BLOCK_RANDOM:
+      this->DSMBuffer->ConfigureUniform(this->DSMComm, length, -1, -1, this->DsmBlockLength, true);
       break;
     case H5FD_DSM_TYPE_DYNAMIC_MASK:
       this->DSMBuffer->ConfigureUniform(this->DSMComm, length, -1, -1);

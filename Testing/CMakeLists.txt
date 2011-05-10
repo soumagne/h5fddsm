@@ -44,13 +44,13 @@ FUNCTION(ADD_H5FD_DSM_DYNAMIC_TEST full_test_name server client)
   ENDFOREACH(comm)
 ENDFUNCTION(ADD_H5FD_DSM_DYNAMIC_TEST)
 
-FUNCTION(ADD_H5FD_DSM_BLOCK_TEST full_test_name server client)
+FUNCTION(ADD_H5FD_DSM_BLOCK_TEST full_test_name blocktype server client)
   FOREACH(comm Socket MPI MPI_RMA)
-    ADD_TEST("${full_test_name}_${comm}_block"
+    ADD_TEST("${full_test_name}_${comm}_${blocktype}"
       ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/H5FDdsmTestDriver
       --server ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${server}
       --client ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${client}
-      18 ${comm} "Dynamic" "Block" 2097152
+      18 ${comm} "Dynamic" "${blocktype}" 2097152
     )
   ENDFOREACH(comm)
 ENDFUNCTION(ADD_H5FD_DSM_BLOCK_TEST)
@@ -249,6 +249,7 @@ IF (MPIEXEC)
   FOREACH(H5FDdsm_test ${H5FDdsm_tests})
     ADD_H5FD_DSM_DYNAMIC_TEST(H5FDdsm_${H5FDdsm_test} H5FDdsmReceiver_${H5FDdsm_test} H5FDdsmSender_${H5FDdsm_test})
     ADD_H5FD_DSM_STATIC_TEST(H5FDdsm_${H5FDdsm_test} H5FDdsmReceiver_${H5FDdsm_test} H5FDdsmSender_${H5FDdsm_test})
-    ADD_H5FD_DSM_BLOCK_TEST(H5FDdsm_${H5FDdsm_test} H5FDdsmReceiver_${H5FDdsm_test} H5FDdsmSender_${H5FDdsm_test})
+    ADD_H5FD_DSM_BLOCK_TEST(H5FDdsm_${H5FDdsm_test} Block  H5FDdsmReceiver_${H5FDdsm_test} H5FDdsmSender_${H5FDdsm_test})
+    ADD_H5FD_DSM_BLOCK_TEST(H5FDdsm_${H5FDdsm_test} RBlock H5FDdsmReceiver_${H5FDdsm_test} H5FDdsmSender_${H5FDdsm_test})
   ENDFOREACH(H5FDdsm_test)
 ENDIF (MPIEXEC)

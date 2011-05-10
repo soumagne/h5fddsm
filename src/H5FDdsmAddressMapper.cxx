@@ -26,6 +26,7 @@
 #include "H5FDdsmAddressMapper.h"
 #include "H5FDdsmDriver.h"
 #include "H5FDdsmMsg.h"
+#include <algorithm>
 
 #ifndef NOMINMAX
 #ifndef min
@@ -33,6 +34,8 @@
 #endif
 #endif  /* NOMINMAX for _WIN32 compatibility */
 
+//#undef H5FDdsmDebug
+//#define H5FDdsmDebug(x) std::cout << x <<std::endl;
 //----------------------------------------------------------------------------
 // BlockCyclicAddressMapper breaks accesses into smaller blocks
 // which are scattered cyclically over the entire address range to better utilize
@@ -75,6 +78,55 @@ class BlockCyclicAddressMapper : public AddressMapperStrategy {
 };
 
 //----------------------------------------------------------------------------
+// BlockRandomAddressMapper breaks accesses into smaller blocks
+// which are scattered randomly over the entire address range to better utilize
+// all network links. The random distribution is intended to help avoid
+// possible periodic collisions when using the block cyclic pattern.
+// Warning : Destination Rank Ids are undefined. You must eventually pass 
+// the result of this operation through PartitionedAddressMapper
+// Warning: The input to (and output from) this address mapper use 64 bit addresses
+//----------------------------------------------------------------------------
+class BlockRandomAddressMapper : public AddressMapperStrategy {
+  public:
+    BlockRandomAddressMapper(
+      H5FDdsmUInt64 blockSize, H5FDdsmUInt64 seed, H5FDdsmUInt64 totalLength) 
+      : BlockSize(blockSize), TotalLength(totalLength)
+    {
+      
+      this->NumberOfBlocks = this->TotalLength / this->BlockSize;
+      if (this->NumberOfBlocks * this->BlockSize != this->TotalLength)
+      {
+        H5FDdsmError("BlockRandom Addresses not exact multiple of BlockSize");
+      }
+      this->Shuffle.resize(this->NumberOfBlocks);
+      std::generate(this->Shuffle.begin(), this->Shuffle.end(), generator(0));
+      random_shuffle(this->Shuffle.begin(), this->Shuffle.end());
+      std::cout << "\nShuffle contents:";
+      for (std::vector<int>::iterator it=this->Shuffle.begin(); it!=this->Shuffle.end(); ++it) {
+        std::cout << " " << *it;
+      }
+      std::cout << std::endl;
+
+    }
+    //
+    virtual H5FDdsmInt32 Translate(
+      std::vector<H5FDdsmMsg> &inRequests, 
+      std::vector<H5FDdsmMsg> &outRequests);
+    //
+    H5FDdsmUInt64             BlockSize;
+    H5FDdsmUInt64             TotalLength;
+    H5FDdsmUInt64             NumberOfBlocks;
+    std::vector<H5FDdsmInt32> Shuffle;
+
+    // a simple 1,2,3...N generator
+    struct generator { 
+      H5FDdsmInt32 x;
+      generator(H5FDdsmInt32 seed) : x(seed) { }
+      H5FDdsmInt32 operator ()() { return x++; }
+    };
+};
+
+//----------------------------------------------------------------------------
 // IntegerSizedAddressMapper breaks accesses into int32 sized (0x7FFF)
 // accesses if they exceed this size. MPI does not currently (as of 2011)
 // allow MPI_Send or other read/writes larger than 32 bit.
@@ -102,7 +154,7 @@ class PartitionedAddressMapper : public AddressMapperStrategy {
   public:
     PartitionedAddressMapper(H5FDdsmUInt64 partitionSize) : PartitionSize(partitionSize)
     {
-      H5FDdsmDebug("PartitionSize: " << std::hex << this->PartitionSize);
+      H5FDdsmDebug("PartitionSize : " << std::hex << this->PartitionSize);
     }
     //
     virtual H5FDdsmInt32 Translate(
@@ -160,6 +212,15 @@ H5FDdsmAddressMapper::Translate(H5FDdsmAddr address, H5FDdsmUInt64 length, H5FDd
       LastStrategy->SetDelegate(BCAM);
       LastStrategy = BCAM;
     }
+    else if (this->DsmType == H5FD_DSM_TYPE_BLOCK_RANDOM) {
+      BlockRandomAddressMapper *BRAM = new BlockRandomAddressMapper(
+        this->DsmDriver->GetBlockLength(),
+        this->DsmDriver->GetLength(),
+        this->DsmDriver->GetTotalLength()
+      );
+      LastStrategy->SetDelegate(BRAM);
+      LastStrategy = BRAM;
+    }
   }
   //
   H5FDdsmMsg dataRequest;
@@ -189,6 +250,7 @@ H5FDdsmInt32 BlockCyclicAddressMapper::Translate(
     }
     requests = tempRequests;
   }
+
   // we distribute 0123456789ABCDEF as follows
   //
   // if BlockSize=1(MB eg), BlockSpacing=8, {TotalLength=0x10}
@@ -212,6 +274,9 @@ H5FDdsmInt32 BlockCyclicAddressMapper::Translate(
   for(std::vector<H5FDdsmMsg>::iterator it = requests.begin(); it != requests.end(); ++it) {
     H5FDdsmByte *datap = (H5FDdsmByte*) it->Data;
     //
+    H5FDdsmDebug(std::endl
+        << "Input Address : " << std::hex << it->Address << std::endl
+        << "Input Length  : " << std::hex << it->Length64 << std::endl);
     while (it->Length64 > 0) {
       H5FDdsmMsg newRequest;
       H5FDdsmUInt64 bindex = (H5FDdsmUInt64) (it->Address / this->BlockSize);
@@ -227,9 +292,54 @@ H5FDdsmInt32 BlockCyclicAddressMapper::Translate(
       outRequests.push_back(newRequest);
       //
       H5FDdsmDebug(std::endl
-          << "Input Address     : " << std::hex << it->Address << std::endl
-          << "Translated Length : " << std::hex << newRequest.Length64 << std::endl
-          << "Translated Address: " << std::hex << newRequest.Address);
+          << "\tInput Address     : " << std::hex << it->Address << std::endl
+          << "\tTranslated Length : " << std::hex << newRequest.Length64 << std::endl
+          << "\tTranslated Address: " << std::hex << newRequest.Address);
+      //
+      datap        += newRequest.Length64;
+      it->Address  += newRequest.Length64;
+      it->Length64 -= newRequest.Length64;
+    }
+  }
+  return(H5FD_DSM_SUCCESS);
+}
+
+//----------------------------------------------------------------------------
+H5FDdsmInt32 BlockRandomAddressMapper::Translate(
+  std::vector<H5FDdsmMsg> &inRequests, std::vector<H5FDdsmMsg> &outRequests)
+{
+  std::vector<H5FDdsmMsg> &requests = inRequests; // reference
+  std::vector<H5FDdsmMsg> tempRequests;
+  if (this->Delegate) {
+    if (this->Delegate->Translate(inRequests, tempRequests) != H5FD_DSM_SUCCESS) {
+      return H5FD_DSM_FAIL;
+    }
+    requests = tempRequests;
+  }
+
+  for(std::vector<H5FDdsmMsg>::iterator it = requests.begin(); it != requests.end(); ++it) {
+    H5FDdsmByte *datap = (H5FDdsmByte*) it->Data;
+    //
+    H5FDdsmDebug(std::endl
+        << "Input Address : " << std::hex << it->Address << std::endl
+        << "Input Length  : " << std::hex << it->Length64 << std::endl);
+    while (it->Length64 > 0) {
+      H5FDdsmMsg newRequest;
+      H5FDdsmUInt64 bindex = (H5FDdsmUInt64) (it->Address / this->BlockSize);
+      H5FDdsmUInt64 aindex = it->Address % this->BlockSize;
+      H5FDdsmUInt64 index  = this->Shuffle[bindex];
+      //
+      newRequest.Dest      = -1;
+      newRequest.Address   = (index * this->BlockSize) + aindex;
+      newRequest.Length64  = min((this->BlockSize - aindex), it->Length64);
+      newRequest.Length    = static_cast<H5FDdsmInt32> (newRequest.Length64);
+      newRequest.Data      = datap;
+      outRequests.push_back(newRequest);
+      //
+      H5FDdsmDebug(std::endl
+          << "\tInput Address     : " << std::hex << it->Address << std::endl
+          << "\tTranslated Length : " << std::hex << newRequest.Length64 << std::endl
+          << "\tTranslated Address: " << std::hex << newRequest.Address);
       //
       datap        += newRequest.Length64;
       it->Address  += newRequest.Length64;
@@ -294,7 +404,7 @@ PartitionedAddressMapper::Translate(
     H5FDdsmByte *datap = (H5FDdsmByte*) it->Data;
     while (it->Length > 0) {
       H5FDdsmMsg newRequest;
-      newRequest.Dest    = it->Address / this->PartitionSize;
+      newRequest.Dest    = static_cast<H5FDdsmInt32>(it->Address / this->PartitionSize);
       newRequest.Address = it->Address % this->PartitionSize;
       newRequest.Length  = min(static_cast<H5FDdsmInt32> (this->PartitionSize - newRequest.Address), it->Length);
       newRequest.Data    = datap;
