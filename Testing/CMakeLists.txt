@@ -78,10 +78,10 @@ ENDMACRO(ADD_H5FD_DSM_STATIC_TEST)
 #-----------------------------------------------------------------------------
 # H5FDdsmTest : Lib used by tests contains main test initialization etc
 #-----------------------------------------------------------------------------
-ADD_LIBRARY(H5FDdsmTestLib STATIC
+ADD_LIBRARY(H5FDdsmTesting STATIC
   H5FDdsmTest.cxx
 )
-TARGET_LINK_LIBRARIES(H5FDdsmTestLib
+TARGET_LINK_LIBRARIES(H5FDdsmTesting
   H5FDdsm
 )
 
@@ -92,7 +92,7 @@ ADD_EXECUTABLE(H5FDdsmSender_cwrite_nohdf_bw
   H5FDdsmSender_cwrite_nohdf_bw.cxx
 )
 TARGET_LINK_LIBRARIES(H5FDdsmSender_cwrite_nohdf_bw
-  H5FDdsmTestLib
+  H5FDdsmTesting
 )
 SET_LINK_OPTIONS(H5FDdsmSender_cwrite_nohdf_bw)
 #-----------------------------------------------------------------------------
@@ -102,7 +102,7 @@ ADD_EXECUTABLE(H5FDdsmSender_cwrite_bw
   H5FDdsmSender_cwrite_bw.cxx
 )
 TARGET_LINK_LIBRARIES(H5FDdsmSender_cwrite_bw
-  H5FDdsmTestLib
+  H5FDdsmTesting
 )
 SET_LINK_OPTIONS(H5FDdsmSender_cwrite_bw)
 
@@ -113,7 +113,7 @@ ADD_EXECUTABLE(H5FDdsmReceiver_cwrite_bw
   H5FDdsmReceiver_cwrite_bw.cxx
 )
 TARGET_LINK_LIBRARIES(H5FDdsmReceiver_cwrite_bw
-  H5FDdsmTestLib
+  H5FDdsmTesting
 )
 SET_LINK_OPTIONS(H5FDdsmReceiver_cwrite_bw)
 
@@ -124,7 +124,7 @@ ADD_EXECUTABLE(H5FDdsmSender_cwrite_sread_bw
   H5FDdsmSender_cwrite_sread_bw.cxx
 )
 TARGET_LINK_LIBRARIES(H5FDdsmSender_cwrite_sread_bw
-  H5FDdsmTestLib
+  H5FDdsmTesting
 )
 SET_LINK_OPTIONS(H5FDdsmSender_cwrite_sread_bw)
 
@@ -135,7 +135,7 @@ ADD_EXECUTABLE(H5FDdsmReceiver_cwrite_sread_bw
   H5FDdsmReceiver_cwrite_sread_bw.cxx
 )
 TARGET_LINK_LIBRARIES(H5FDdsmReceiver_cwrite_sread_bw
-  H5FDdsmTestLib
+  H5FDdsmTesting
 )
 SET_LINK_OPTIONS(H5FDdsmReceiver_cwrite_sread_bw)
 
@@ -146,7 +146,7 @@ ADD_EXECUTABLE(H5FDdsmSender_cwrite_cread
   H5FDdsmSender_cwrite_cread.cxx
 )
 TARGET_LINK_LIBRARIES(H5FDdsmSender_cwrite_cread
-  H5FDdsmTestLib
+  H5FDdsmTesting
 )
 SET_LINK_OPTIONS(H5FDdsmSender_cwrite_cread)
 
@@ -157,7 +157,7 @@ ADD_EXECUTABLE(H5FDdsmReceiver_cwrite_cread
   H5FDdsmReceiver_cwrite_cread.cxx
 )
 TARGET_LINK_LIBRARIES(H5FDdsmReceiver_cwrite_cread
-  H5FDdsmTestLib
+  H5FDdsmTesting
 )
 SET_LINK_OPTIONS(H5FDdsmReceiver_cwrite_cread)
 
@@ -168,7 +168,7 @@ ADD_EXECUTABLE(H5FDdsmSender_cwrite_sread_cwrite
   H5FDdsmSender_cwrite_sread_cwrite.cxx
 )
 TARGET_LINK_LIBRARIES(H5FDdsmSender_cwrite_sread_cwrite
-  H5FDdsmTestLib
+  H5FDdsmTesting
 )
 SET_LINK_OPTIONS(H5FDdsmSender_cwrite_sread_cwrite)
 
@@ -179,7 +179,7 @@ ADD_EXECUTABLE(H5FDdsmReceiver_cwrite_sread_cwrite
   H5FDdsmReceiver_cwrite_sread_cwrite.cxx
 )
 TARGET_LINK_LIBRARIES(H5FDdsmReceiver_cwrite_sread_cwrite
-  H5FDdsmTestLib
+  H5FDdsmTesting
 )
 SET_LINK_OPTIONS(H5FDdsmReceiver_cwrite_sread_cwrite)
 
@@ -191,7 +191,7 @@ ADD_EXECUTABLE(H5FDdsmSender_cwrite_swrite_cread
   H5FDdsmSender_cwrite_swrite_cread.cxx
 )
 TARGET_LINK_LIBRARIES(H5FDdsmSender_cwrite_swrite_cread
-  H5FDdsmTestLib
+  H5FDdsmTesting
 )
 SET_LINK_OPTIONS(H5FDdsmSender_cwrite_swrite_cread)
 
@@ -203,7 +203,7 @@ ADD_EXECUTABLE(H5FDdsmReceiver_cwrite_swrite_cread
   H5FDdsmReceiver_cwrite_swrite_cread.cxx
 )
 TARGET_LINK_LIBRARIES(H5FDdsmReceiver_cwrite_swrite_cread
-  H5FDdsmTestLib
+  H5FDdsmTesting
 )
 SET_LINK_OPTIONS(H5FDdsmReceiver_cwrite_swrite_cread)
 
@@ -216,7 +216,7 @@ IF(H5FD_DSM_BUILD_STEERING)
     H5FDdsmSender_steer.cxx
   )
   TARGET_LINK_LIBRARIES(H5FDdsmSender_steer
-    H5FDdsmTestLib
+    H5FDdsmTesting
   )
   SET_LINK_OPTIONS(H5FDdsmSender_steer)
 
@@ -228,7 +228,7 @@ IF(H5FD_DSM_BUILD_STEERING)
     H5FDdsmReceiver_steer.cxx
   )
   TARGET_LINK_LIBRARIES(H5FDdsmReceiver_steer
-    H5FDdsmTestLib
+    H5FDdsmTesting
   )
   SET_LINK_OPTIONS(H5FDdsmReceiver_steer)
 
