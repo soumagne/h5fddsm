@@ -71,8 +71,8 @@ void WriteParticlesHDF5(
     H5FD_dsm_init();
     H5Pset_fapl_dsm(acc_plist_id, MPI_COMM_WORLD, dsmBuffer);
     H5CHECK_ERROR(status, "H5Pset_fapl_dsm");
-    status = H5Pset_alignment(acc_plist_id, dsmBuffer->GetBlockLength()/2, dsmBuffer->GetBlockLength());
     if (dsmBuffer->GetBlockLength() > 0) {
+      status = H5Pset_alignment(acc_plist_id, dsmBuffer->GetBlockLength()/2, dsmBuffer->GetBlockLength());
       std::cout << "H5P Alignment : " << std::hex << dsmBuffer->GetBlockLength() << std::endl;
       H5CHECK_ERROR(acc_plist_id, "h5pset_alignment");
     }
