@@ -50,7 +50,6 @@ struct H5FDdsmCommDmappInternals
 //----------------------------------------------------------------------------
 H5FDdsmCommDmapp::H5FDdsmCommDmapp()
 {
-  this->CommType = H5FD_DSM_COMM_DMAPP;
   this->InterComm = MPI_COMM_NULL;
   this->CommChannel = H5FD_DSM_INTRA_COMM;
   this->Win = MPI_WIN_NULL;

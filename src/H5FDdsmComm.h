@@ -64,7 +64,7 @@
 #define H5FD_DSM_COMM_MPI_RMA    0x12
 #define H5FD_DSM_COMM_DMAPP      0x13
 
-// Macros to switch between remote/local channels
+// Macros to switch between intra/inter communicators
 #define H5FD_DSM_INTRA_COMM  0x20
 #define H5FD_DSM_INTER_COMM  0x21
 
@@ -100,10 +100,6 @@ public:
   // InterSize
   H5FDdsmGetValueMacro(InterSize, H5FDdsmInt32);
   H5FDdsmSetValueMacro(InterSize, H5FDdsmInt32);
-
-  //! CommType
-  H5FDdsmGetValueMacro(CommType, H5FDdsmInt32);
-  H5FDdsmSetValueMacro(CommType, H5FDdsmInt32);
 
   //! CommChannel
   H5FDdsmGetValueMacro(CommChannel, H5FDdsmInt32);
@@ -151,7 +147,6 @@ protected:
   H5FDdsmInt32       Id;
   H5FDdsmInt32       IntraSize;
   H5FDdsmInt32       InterSize;
-  H5FDdsmInt32       CommType;
   H5FDdsmInt32       CommChannel;
 
   H5FDdsmBoolean     UseOneSidedComm;

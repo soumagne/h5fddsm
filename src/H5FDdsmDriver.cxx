@@ -197,7 +197,7 @@ H5FDdsmDriver::SetLength(H5FDdsmUInt64 aLength, H5FDdsmBoolean AllowAllocate)
 {
   if (!this->Storage) {
     if (this->Comm) {
-      if (this->Comm->GetCommType() == H5FD_DSM_COMM_MPI_RMA) {
+      if (this->Comm->GetUseOneSidedComm()) {
         this->Storage = new H5FDdsmStorageMpiRma;
       } else {
         this->Storage = new H5FDdsmStorage;

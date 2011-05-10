@@ -202,7 +202,6 @@ H5FDdsmInt32 H5FDdsmManager::CreateDSM()
   case H5FD_DSM_COMM_MPI:
   case H5FD_DSM_COMM_MPI_RMA:
     this->DSMComm = new H5FDdsmCommMpi();
-    this->DSMComm->SetCommType(this->GetDsmCommType());
     H5FDdsmDebug("Using MPI Intercomm...");
     if (this->GetDsmCommType() == H5FD_DSM_COMM_MPI_RMA) {
       this->DSMComm->SetUseOneSidedComm(true);
