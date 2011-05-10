@@ -175,7 +175,7 @@ void WriteParticlesDSM(
   }
   dsmBuffer->GetComm()->Barrier();
   MPI_Allreduce(&dirty, &isSomeoneDirty, sizeof(H5FDdsmBoolean),
-      MPI_UNSIGNED_CHAR, MPI_MAX, dsmBuffer->GetComm()->GetComm());
+      MPI_UNSIGNED_CHAR, MPI_MAX, dsmBuffer->GetComm()->GetIntraComm());
   dsmBuffer->SetIsDataModified(1);
   dsmBuffer->RequestServerUpdate();
 }

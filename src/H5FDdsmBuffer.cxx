@@ -468,20 +468,20 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode)
 #ifdef H5FD_DSM_HAVE_STEERING
   // H5FD_DSM_COMM_SWITCH
   case H5FD_DSM_COMM_SWITCH:
-    if (this->Comm->GetCommChannel() == H5FD_DSM_COMM_CHANNEL_LOCAL) {
+    if (this->Comm->GetCommChannel() == H5FD_DSM_INTRA_COMM) {
       // The remote service must be stopped before the main service can start to listen on the inter-communicator
       this->EndRemoteService();
-      this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_REMOTE);
+      this->Comm->SetCommChannel(H5FD_DSM_INTER_COMM);
       H5FDdsmDebug("Listening on Remote");
     } else {
-      this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_LOCAL);
+      this->Comm->SetCommChannel(H5FD_DSM_INTRA_COMM);
       H5FDdsmDebug("Listening on Local");
     }
     break;
   // H5FD_DSM_LOCK_RELEASE
   case H5FD_DSM_LOCK_RELEASE:
     if (this->Comm->RemoteCommChannelSynced(who, &syncId) || !this->IsConnected) {
-      this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_LOCAL);
+      this->Comm->SetCommChannel(H5FD_DSM_INTRA_COMM);
       if (!this->IsLocked) {
         H5FDdsmLockError("already released");
       } else {
@@ -516,13 +516,13 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode)
       this->SignalConnected();
     }
     if (this->Comm->GetUseOneSidedComm()) {
-      this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_REMOTE);
+      this->Comm->SetCommChannel(H5FD_DSM_INTER_COMM);
       this->Comm->RemoteCommSync();
     } else {
 #ifdef H5FD_DSM_HAVE_STEERING
       if (!this->RemoteServiceThreadPtr) this->StartRemoteService();
 #else
-      this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_REMOTE);
+      this->Comm->SetCommChannel(H5FD_DSM_INTER_COMM);
       this->Comm->Barrier();
 #endif
     }
@@ -541,7 +541,7 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode)
   // H5FD_DSM_SERVER_UPDATE
   case H5FD_DSM_SERVER_UPDATE:
     if (this->Comm->RemoteCommChannelSynced(who, &syncId)) {
-      this->Comm->SetCommChannel(H5FD_DSM_COMM_CHANNEL_LOCAL);
+      this->Comm->SetCommChannel(H5FD_DSM_INTRA_COMM);
       if (Address & H5FD_DSM_DATA_MODIFIED) {
         this->IsDataModified = true;
         this->UpdateLevel = (H5FDdsmInt32)Address - H5FD_DSM_DATA_MODIFIED;

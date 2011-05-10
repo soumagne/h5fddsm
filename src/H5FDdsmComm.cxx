@@ -57,7 +57,7 @@
 //----------------------------------------------------------------------------
 H5FDdsmComm::H5FDdsmComm()
 {
-  this->Comm = MPI_COMM_NULL;
+  this->IntraComm = MPI_COMM_NULL;
 
   this->UseOneSidedComm = 0;
   this->UseStaticInterComm = 0;
@@ -68,10 +68,10 @@ H5FDdsmComm::H5FDdsmComm()
 //----------------------------------------------------------------------------
 H5FDdsmComm::~H5FDdsmComm()
 {
-  if (this->Comm != MPI_COMM_NULL) {
-    MPI_Comm_free(&this->Comm);
+  if (this->IntraComm != MPI_COMM_NULL) {
+    MPI_Comm_free(&this->IntraComm);
   }
-  this->Comm = MPI_COMM_NULL;
+  this->IntraComm = MPI_COMM_NULL;
 }
 
 //----------------------------------------------------------------------------
@@ -81,7 +81,8 @@ H5FDdsmComm::DupComm(MPI_Comm Source)
   MPI_Comm    NewComm;
 
   MPI_Comm_dup(Source, &NewComm);
-  return(this->SetComm(NewComm));
+  this->IntraComm = NewComm;
+  return(H5FD_DSM_SUCCESS);
 }
 
 //----------------------------------------------------------------------------
@@ -90,11 +91,11 @@ H5FDdsmComm::Init()
 {
   H5FDdsmInt32 size, rank;
 
-  if(MPI_Comm_size(this->Comm, &size) != MPI_SUCCESS) return(H5FD_DSM_FAIL);
-  if(MPI_Comm_rank(this->Comm, &rank) != MPI_SUCCESS) return(H5FD_DSM_FAIL);
+  if(MPI_Comm_size(this->IntraComm, &size) != MPI_SUCCESS) return(H5FD_DSM_FAIL);
+  if(MPI_Comm_rank(this->IntraComm, &rank) != MPI_SUCCESS) return(H5FD_DSM_FAIL);
 
-  this->SetId(rank);
-  this->SetTotalSize(size);
+  this->Id = rank;
+  this->IntraSize = size;
   return(H5FD_DSM_SUCCESS);
 }
 

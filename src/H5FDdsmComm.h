@@ -65,8 +65,8 @@
 #define H5FD_DSM_COMM_DMAPP      0x13
 
 // Macros to switch between remote/local channels
-#define H5FD_DSM_COMM_CHANNEL_LOCAL  0x20
-#define H5FD_DSM_COMM_CHANNEL_REMOTE 0x21
+#define H5FD_DSM_INTRA_COMM  0x20
+#define H5FD_DSM_INTER_COMM  0x21
 
 typedef struct {
   H5FDdsmInt32  type;
@@ -86,16 +86,16 @@ public:
   virtual ~H5FDdsmComm();
 
   // Set/Get the Internal MPI Communicator
-  H5FDdsmSetValueMacro(Comm, MPI_Comm);
-  H5FDdsmGetValueMacro(Comm, MPI_Comm);
+  H5FDdsmSetValueMacro(IntraComm, MPI_Comm);
+  H5FDdsmGetValueMacro(IntraComm, MPI_Comm);
 
-  // Id
+  // Id (local to Intra-Communicator)
   H5FDdsmGetValueMacro(Id, H5FDdsmInt32);
   H5FDdsmSetValueMacro(Id, H5FDdsmInt32);
 
-  // Total
-  H5FDdsmGetValueMacro(TotalSize, H5FDdsmInt32);
-  H5FDdsmSetValueMacro(TotalSize, H5FDdsmInt32);
+  // IntraSize
+  H5FDdsmGetValueMacro(IntraSize, H5FDdsmInt32);
+  H5FDdsmSetValueMacro(IntraSize, H5FDdsmInt32);
 
   // InterSize
   H5FDdsmGetValueMacro(InterSize, H5FDdsmInt32);
@@ -147,9 +147,9 @@ public:
   virtual H5FDdsmInt32   RemoteCommRecvXML(H5FDdsmString *file);
 
 protected:
-  MPI_Comm           Comm;
+  MPI_Comm           IntraComm;
   H5FDdsmInt32       Id;
-  H5FDdsmInt32       TotalSize;
+  H5FDdsmInt32       IntraSize;
   H5FDdsmInt32       InterSize;
   H5FDdsmInt32       CommType;
   H5FDdsmInt32       CommChannel;

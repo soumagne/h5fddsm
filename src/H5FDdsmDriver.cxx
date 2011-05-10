@@ -143,9 +143,9 @@ H5FDdsmInt32
 H5FDdsmDriver::ConfigureUniform(H5FDdsmComm *aComm, H5FDdsmUInt64 aLength, H5FDdsmInt32 StartId, H5FDdsmInt32 EndId, H5FDdsmUInt64 aBlockLength)
 {
     if (StartId < 0) StartId = 0;
-    if (EndId < 0) EndId = aComm->GetTotalSize() - 1;
+    if (EndId < 0) EndId = aComm->GetIntraSize() - 1;
     this->SetDsmType(H5FD_DSM_TYPE_UNIFORM_RANGE);
-    if ((StartId == 0) && (EndId == aComm->GetTotalSize() - 1)) {
+    if ((StartId == 0) && (EndId == aComm->GetIntraSize() - 1)) {
         this->SetDsmType(H5FD_DSM_TYPE_UNIFORM);
     }
     if (aBlockLength) {
@@ -275,7 +275,7 @@ H5FDdsmDriver::ReceiveCommandHeader(H5FDdsmInt32 *Opcode, H5FDdsmInt32 *Source, 
     status = this->Comm->Probe(&Msg);
     if ((status != H5FD_DSM_FAIL) || Block){
         if (IsRemoteService) {
-          status  = this->Comm->Receive(&Msg, H5FD_DSM_COMM_CHANNEL_REMOTE);
+          status  = this->Comm->Receive(&Msg, H5FD_DSM_INTER_COMM);
         } else {
           status  = this->Comm->Receive(&Msg);
         }

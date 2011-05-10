@@ -123,7 +123,7 @@ H5FDdsmInt32 H5FDdsmSteerer::GetSteeringCommands()
   }
 
   MPI_Bcast(metadata.steering_cmd, sizeof(metadata.steering_cmd),
-      MPI_UNSIGNED_CHAR, 0, this->DsmBuffer->GetComm()->GetComm());
+      MPI_UNSIGNED_CHAR, 0, this->DsmBuffer->GetComm()->GetIntraComm());
   H5FDdsmDebug("Received steering command: " << metadata.steering_cmd);
   if (this->CheckCommand((H5FDdsmConstString) metadata.steering_cmd) == H5FD_DSM_SUCCESS) {
     // Steering command successfully treated, clear it
@@ -202,10 +202,10 @@ H5FDdsmInt32 H5FDdsmSteerer::GetDisabledObjects()
 
   MPI_Bcast(&metadata.disabled_objects.number_of_objects,
       sizeof(metadata.disabled_objects.number_of_objects),
-      MPI_UNSIGNED_CHAR, 0, this->DsmBuffer->GetComm()->GetComm());
+      MPI_UNSIGNED_CHAR, 0, this->DsmBuffer->GetComm()->GetIntraComm());
   MPI_Bcast(metadata.disabled_objects.object_names,
       sizeof(metadata.disabled_objects.object_names),
-      MPI_UNSIGNED_CHAR, 0, this->DsmBuffer->GetComm()->GetComm());
+      MPI_UNSIGNED_CHAR, 0, this->DsmBuffer->GetComm()->GetIntraComm());
 
   H5FDdsmDebug("Received nb of Disabled objects: " << metadata.disabled_objects.number_of_objects);
 

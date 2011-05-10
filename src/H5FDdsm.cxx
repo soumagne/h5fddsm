@@ -647,7 +647,7 @@ H5Pget_fapl_dsm(hid_t fapl_id, MPI_Comm *dsmComm /* out */, void **dsmBuffer /* 
     HGOTO_ERROR(H5E_PLIST, H5E_BADVALUE, FAIL, "bad VFL driver info");
 
   if (dsmComm) {
-    *dsmComm = fa->buffer->GetComm()->GetComm();
+    *dsmComm = fa->buffer->GetComm()->GetIntraComm();
   }
   if (dsmBuffer) *dsmBuffer = fa->buffer;
 
@@ -849,7 +849,7 @@ H5FD_dsm_close(H5FD_t *_file)
       // We're now ready to read from the DSM
       // Gather all the dirty flags because some processes may not have written yet
       MPI_Allreduce(&file->dirty, &isSomeoneDirty, sizeof(hbool_t),
-          MPI_UNSIGNED_CHAR, MPI_MAX, file->DsmBuffer->GetComm()->GetComm());
+          MPI_UNSIGNED_CHAR, MPI_MAX, file->DsmBuffer->GetComm()->GetIntraComm());
       if (isSomeoneDirty) {
         file->DsmBuffer->SetIsDataModified(true);
         if (file->DsmBuffer->GetUpdateServerOnClose()) {
@@ -1277,7 +1277,7 @@ H5FD_dsm_mpi_size(const H5FD_t *_file)
   assert(H5FD_DSM==file->pub.driver_id);
 
   /* Set return value */
-  ret_value = file->DsmBuffer->GetComm()->GetTotalSize();
+  ret_value = file->DsmBuffer->GetComm()->GetIntraSize();
 
 done:
   FUNC_LEAVE_NOAPI(ret_value)
@@ -1308,7 +1308,7 @@ H5FD_dsm_communicator(const H5FD_t *_file)
   assert(H5FD_DSM==file->pub.driver_id);
 
   // Set return value
-  ret_value = file->DsmBuffer->GetComm()->GetComm();
+  ret_value = file->DsmBuffer->GetComm()->GetIntraComm();
 
 done:
   FUNC_LEAVE_NOAPI(ret_value)
