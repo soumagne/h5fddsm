@@ -30,9 +30,6 @@
 #include <cstdlib>
 
 //----------------------------------------------------------------------------
-/* names of above arrays for convenience when using H5Part IO */
-H5FDdsmConstString ArrayNames = "Position";
-//----------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------
 void initBuffer(ParticleBuffer_t *buffer) {
@@ -98,7 +95,7 @@ void WriteParticlesHDF5(
   H5CHECK_ERROR(group_id, "H5Gopen");
 
   /* Create Dataset, Write Data, Close Dataset */
-  dataset_id = H5Dcreate(group_id, ArrayNames, H5T_NATIVE_DOUBLE, file_space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  dataset_id = H5Dcreate(group_id, DATASETNAME, H5T_NATIVE_DOUBLE, file_space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   H5CHECK_ERROR(dataset_id, "H5Dcreate");
 
   /* create a data space for particles local to this process */

@@ -33,7 +33,7 @@
 // Names of datasets and groups
 #define GROUPNAME       "Step#0"
 #define TIME_ATTRIBUTE  "TimeValue"
-#define DATASETNAME     "Pressure"
+#define DATASETNAME     "Position"
 
 extern "C" {
 
