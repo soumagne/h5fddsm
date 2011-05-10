@@ -151,12 +151,12 @@ H5FDdsmCommDmapp::Get(H5FDdsmMsg *DataMsg)
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmCommDmapp::RemoteCommAccept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize)
+H5FDdsmCommDmapp::Accept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize)
 {
   MPI_Comm winComm;
   dmapp_return_t status;
 
-  if(H5FDdsmCommMpi::RemoteCommAccept(storagePointer, storageSize) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+  if(H5FDdsmCommMpi::Accept(storagePointer, storageSize) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
   MPI_Intercomm_merge(this->InterComm, 0, &winComm);
   if (MPI_Win_create(storagePointer, storageSize*sizeof(H5FDdsmByte), sizeof(H5FDdsmByte), MPI_INFO_NULL, winComm, &this->Win) != MPI_SUCCESS){
@@ -194,11 +194,11 @@ H5FDdsmCommDmapp::RemoteCommAccept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmCommDmapp::RemoteCommConnect()
+H5FDdsmCommDmapp::Connect()
 {
   MPI_Comm     winComm;
 
-  if(H5FDdsmCommMpi::RemoteCommConnect() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+  if(H5FDdsmCommMpi::Connect() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
   MPI_Intercomm_merge(this->InterComm, 1, &winComm);
 
@@ -233,9 +233,9 @@ H5FDdsmCommDmapp::RemoteCommConnect()
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmCommDmapp::RemoteCommDisconnect()
+H5FDdsmCommDmapp::Disconnect()
 {
-  if(H5FDdsmCommMpi::RemoteCommDisconnect() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+  if(H5FDdsmCommMpi::Disconnect() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
   if (this->IsStorageSegRegistered) {
     dmapp_mem_unregister(&this->StorageSegDesc);
