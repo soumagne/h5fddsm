@@ -151,6 +151,18 @@ H5FDdsmCommDmapp::Get(H5FDdsmMsg *DataMsg)
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
+H5FDdsmCommDmapp::WindowSync()
+{
+  if (H5FDdsmCommMpi::WindowSync() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+
+  if (this->Win != MPI_WIN_NULL) {
+    MPI_Win_fence(0, this->Win);
+  }
+  return(H5FD_DSM_SUCCESS);
+}
+
+//----------------------------------------------------------------------------
+H5FDdsmInt32
 H5FDdsmCommDmapp::Accept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize)
 {
   MPI_Comm winComm;
