@@ -239,7 +239,7 @@ H5FDdsmFloat64 TestParticleWrite(
     MPI_Comm dcomm, H5FDdsmBuffer *dsmBuffer, FuncPointer pointer)
 {
   ParticleBuffer WriteBuffer;
-  H5FDdsmUInt64 i, start, total;
+  H5FDdsmUInt64 start, total;
   H5FDdsmFloat64 *doublearray;
   static H5FDdsmInt32 step_increment = 0;
 
@@ -250,8 +250,8 @@ H5FDdsmFloat64 TestParticleWrite(
 
   // create arrays for the test vars we selected above
   doublearray = (H5FDdsmFloat64*)malloc(sizeof(H5FDdsmFloat64)*C*N);
-  for (i=0; i<N; i++) {
-    for (int c=0; c<C; c++) {
+  for (H5FDdsmUInt64 i=0; i<N; i++) {
+    for (H5FDdsmUInt64 c=0; c<C; c++) {
       doublearray[C*i+c] = static_cast<H5FDdsmFloat64>(i + start + step_increment);
     }
   }
@@ -383,9 +383,9 @@ void receiverInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *
     dsmManager->PublishDSM();
   }
   //
-  H5FDdsmFloat64 totalMB = (H5FDdsmFloat64) (dsmManager->GetDSMHandle()->GetTotalLength()/(1024*1024));
-  H5FDdsmUInt32 serversize = (dsmManager->GetDSMHandle()->GetEndServerId() -
-      dsmManager->GetDSMHandle()->GetStartServerId() + 1);
+//  H5FDdsmFloat64 totalMB = (H5FDdsmFloat64) (dsmManager->GetDSMHandle()->GetTotalLength()/(1024*1024));
+//  H5FDdsmUInt32 serversize = (dsmManager->GetDSMHandle()->GetEndServerId() -
+//      dsmManager->GetDSMHandle()->GetStartServerId() + 1);
 //  if (rank == 0) {
 //    std::cout << "# DSM server memory size is: " << totalMB << " MBytes"
 //        << " (" << dsmManager->GetDSMHandle()->GetTotalLength() << " Bytes)" << std::endl;
