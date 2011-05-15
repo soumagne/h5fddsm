@@ -62,10 +62,10 @@ int main(int argc, char **argv)
               H5FD_dsm_steering_scalar_get("WaitForGui", H5T_NATIVE_INT, &waitForGui);
             }
 
-            totaltime += TestParticleWrite(fullname, numParticles, 3, dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(), comm, dsmManager->GetDSMHandle(), usingHDF);
+            totaltime += TestParticleWrite(fullname, numParticles, 3, 1, dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(), comm, dsmManager->GetDSMHandle(), usingHDF);
           }
           else if (type == 1) {
-            totaltime += TestParticleWrite(hdffile.c_str(), numParticles, 3, dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(), comm, NULL, usingHDF);
+            totaltime += TestParticleWrite(hdffile.c_str(), numParticles, 3, 1, dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(), comm, NULL, usingHDF);
           }
         }
         totaltime = totaltime / AVERAGE;

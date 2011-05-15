@@ -51,11 +51,11 @@ int main(int argc, char **argv)
             // We have configured everything manually using the DSM manager, so pass the buffer
             // into the read/write code so that we can use the dsm that we have setup
             // otherwise it creates a new DSM server object
-            totaltime += TestParticleWrite(fullname, numParticles, 1, dsmManager->GetUpdatePiece(),
+            totaltime += TestParticleWrite(fullname, numParticles, 1, 1, dsmManager->GetUpdatePiece(),
                 dsmManager->GetUpdateNumPieces(), comm, dsmManager->GetDSMHandle(), usingHDF);
           }
           else if (type==1) {
-            totaltime += TestParticleWrite(hdffile.c_str(), numParticles, 1, dsmManager->GetUpdatePiece(),
+            totaltime += TestParticleWrite(hdffile.c_str(), numParticles, 1, 1, dsmManager->GetUpdatePiece(),
                 dsmManager->GetUpdateNumPieces(), comm, NULL, usingHDF);
           }
         }

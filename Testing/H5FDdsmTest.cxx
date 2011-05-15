@@ -28,6 +28,7 @@
 #include "H5FDdsm.h"
 
 #include <cstdlib>
+#include <string>
 
 //----------------------------------------------------------------------------
 
@@ -51,7 +52,7 @@ void freeBuffer(ParticleBuffer_t *buffer) {
 /*******************************************************************/
 void WriteParticlesHDF5(
     ParticleBuffer *buf, H5FDdsmConstString filename,
-    H5FDdsmUInt64 N, H5FDdsmUInt64 C, H5FDdsmUInt64 start, H5FDdsmUInt64 total, H5FDdsmBuffer *dsmBuffer)
+    H5FDdsmUInt64 N, H5FDdsmUInt64 C, H5FDdsmUInt32 numberOfDataSets, H5FDdsmUInt64 start, H5FDdsmUInt64 total, H5FDdsmBuffer *dsmBuffer)
 {
   hid_t      file_id, group_id, dataset_id, xfer_plist_id;
   hid_t      file_space_id, mem_space_id;
@@ -59,6 +60,7 @@ void WriteParticlesHDF5(
   hsize_t    count[2]    = {total, C};
   hsize_t    offset[2]   = {start, 0};
   hsize_t    localdim[2] = {N,     C};
+  hsize_t    rank = (C == 1) ? 1 : 2;
   herr_t     status = 0;
 
   /* Set up file access property list with parallel I/O */
@@ -87,45 +89,57 @@ void WriteParticlesHDF5(
   H5CHECK_ERROR(status, "H5Pclose(acc_plist_id)");
 
   /* Create the file_space_id */
-  file_space_id = H5Screate_simple(2, count, NULL);
+  file_space_id = H5Screate_simple(rank, count, NULL);
   H5CHECK_ERROR(file_space_id, "H5Screate_simple");
 
   // Create a group to hold this time step (for H5Part compatibility)
   group_id = H5Gcreate(file_id, GROUPNAME, 0, H5P_DEFAULT, H5P_DEFAULT);
   H5CHECK_ERROR(group_id, "H5Gopen");
 
-  /* Create Dataset, Write Data, Close Dataset */
-  dataset_id = H5Dcreate(group_id, DATASETNAME, H5T_NATIVE_DOUBLE, file_space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-  H5CHECK_ERROR(dataset_id, "H5Dcreate");
+  for (H5FDdsmUInt32 dataSetIndex = 0; dataSetIndex < numberOfDataSets; dataSetIndex++) {
+    std::string dataSetName;
 
-  /* create a data space for particles local to this process */
-  mem_space_id = H5Screate_simple(2, localdim, NULL);
-  H5CHECK_ERROR(mem_space_id, "H5Screate_simple");
+    if (numberOfDataSets > 1) {
+      char dataSetIndexString[16];
+      sprintf(dataSetIndexString, "%d", dataSetIndex);
+      dataSetName = std::string(DATASETNAME) + std::string(dataSetIndexString);
+    } else {
+      dataSetName = DATASETNAME;
+    }
 
-  /* select a hyperslab into the filespace for our local particles */
-  status = H5Sselect_hyperslab(file_space_id, H5S_SELECT_SET, offset, NULL, localdim, NULL );
-  H5CHECK_ERROR(status, "H5Sselect_hyperslab");
+    /* Create Dataset, Write Data, Close Dataset */
+    dataset_id = H5Dcreate(group_id, dataSetName.c_str(), H5T_NATIVE_DOUBLE, file_space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    H5CHECK_ERROR(dataset_id, "H5Dcreate");
 
-  /* Create Dataset, Write Data, Close Dataset */
-  if (dsmBuffer) {
-    status = H5Dwrite(dataset_id, H5T_NATIVE_DOUBLE, mem_space_id, file_space_id, H5P_DEFAULT, (*buf).Ddata);
+    /* create a data space for particles local to this process */
+    mem_space_id = H5Screate_simple(rank, localdim, NULL);
+    H5CHECK_ERROR(mem_space_id, "H5Screate_simple");
+
+    /* select a hyperslab into the filespace for our local particles */
+    status = H5Sselect_hyperslab(file_space_id, H5S_SELECT_SET, offset, NULL, localdim, NULL );
+    H5CHECK_ERROR(status, "H5Sselect_hyperslab");
+
+    /* Create Dataset, Write Data, Close Dataset */
+    if (dsmBuffer) {
+      status = H5Dwrite(dataset_id, H5T_NATIVE_DOUBLE, mem_space_id, file_space_id, H5P_DEFAULT, (*buf).Ddata);
+      H5CHECK_ERROR(status, "H5Dwrite");
+    } else {
+      xfer_plist_id = H5Pcreate(H5P_DATASET_XFER);
+      H5CHECK_ERROR(xfer_plist_id, "H5Pcreate(H5P_DATASET_XFER)");
+      H5Pset_dxpl_mpio(xfer_plist_id, H5FD_MPIO_COLLECTIVE);
+      status = H5Dwrite(dataset_id, H5T_NATIVE_DOUBLE, mem_space_id, file_space_id, xfer_plist_id, (*buf).Ddata);
+      H5CHECK_ERROR(status, "H5Dwrite");
+      status = H5Pclose(xfer_plist_id);
+      H5CHECK_ERROR(status, "H5Pclose(xfer_plist_id)");
+    }
     H5CHECK_ERROR(status, "H5Dwrite");
-  } else {
-    xfer_plist_id = H5Pcreate(H5P_DATASET_XFER);
-    H5CHECK_ERROR(xfer_plist_id, "H5Pcreate(H5P_DATASET_XFER)");
-    H5Pset_dxpl_mpio(xfer_plist_id, H5FD_MPIO_COLLECTIVE);
-    status = H5Dwrite(dataset_id, H5T_NATIVE_DOUBLE, mem_space_id, file_space_id, xfer_plist_id, (*buf).Ddata);
-    H5CHECK_ERROR(status, "H5Dwrite");
-    status = H5Pclose(xfer_plist_id);
-    H5CHECK_ERROR(status, "H5Pclose(xfer_plist_id)");
+
+    /* Release resources */
+    status = H5Sclose(mem_space_id);
+    H5CHECK_ERROR(status, "H5Sclose");
+    status = H5Dclose(dataset_id);
+    H5CHECK_ERROR(status, "H5Dclose");
   }
-  H5CHECK_ERROR(status, "H5Dwrite");
-
-  /* Release resources */
-  status = H5Sclose(mem_space_id);
-  H5CHECK_ERROR(status, "H5Sclose");
-  status = H5Dclose(dataset_id);
-  H5CHECK_ERROR(status, "H5Dclose");
   status = H5Sclose(file_space_id);
   H5CHECK_ERROR(status, "H5Sclose");
   status = H5Gclose(group_id);
@@ -142,7 +156,7 @@ void WriteParticlesHDF5(
 /*******************************************************************/
 void WriteParticlesDSM(
     ParticleBuffer *buf, H5FDdsmConstString filename,
-    H5FDdsmUInt64 N, H5FDdsmUInt64 C, H5FDdsmUInt64 start, H5FDdsmUInt64 total, H5FDdsmBuffer *dsmBuffer)
+    H5FDdsmUInt64 N, H5FDdsmUInt64 C, H5FDdsmUInt32 numberOfDataSets, H5FDdsmUInt64 start, H5FDdsmUInt64 total, H5FDdsmBuffer *dsmBuffer)
 {
   H5FDdsmAddr metadataAddr = (H5FDdsmAddr) (dsmBuffer->GetTotalLength() - sizeof(H5FDdsmMetaData));
   H5FDdsmEntry entry;
@@ -234,7 +248,7 @@ void particle_read(
 // C = numComponents
 //----------------------------------------------------------------------------
 H5FDdsmFloat64 TestParticleWrite(
-    H5FDdsmConstString filename, H5FDdsmUInt64 N, H5FDdsmUInt64 C, 
+    H5FDdsmConstString filename, H5FDdsmUInt64 N, H5FDdsmUInt64 C, H5FDdsmUInt32 numberOfDataSets,
     H5FDdsmInt32 mpiId, H5FDdsmInt32 mpiNum,
     MPI_Comm dcomm, H5FDdsmBuffer *dsmBuffer, FuncPointer pointer)
 {
@@ -260,7 +274,7 @@ H5FDdsmFloat64 TestParticleWrite(
   // call the write routine with our dummy buffer
   MPI_Barrier(dcomm);
   H5FDdsmFloat64 t1 = MPI_Wtime();
-  pointer(&WriteBuffer, filename, N, C, start, total, dsmBuffer);
+  pointer(&WriteBuffer, filename, N, C, numberOfDataSets, start, total, dsmBuffer);
   MPI_Barrier(dcomm);
   H5FDdsmFloat64 t2 = MPI_Wtime();
 

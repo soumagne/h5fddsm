@@ -6,10 +6,12 @@
 #include <cstdio>
 
 //----------------------------------------------------------------------------
-#define LOOPS       1
-#define AVERAGE     20
-#define SKIP        10
-#define TYPES       1 // 2 if disk output test required
+#define LOOPS         1
+#define AVERAGE      20
+#define SKIP         10
+#define NUM_DATASETS  1
+#define DIM_DATASETS  3
+#define TYPES         1 // 2 if disk output test required
 //----------------------------------------------------------------------------
 
 int main(int argc, char **argv)
@@ -38,13 +40,16 @@ int main(int argc, char **argv)
     remoteMB = dsmManager->GetDSMHandle()->GetTotalLength() / (1024.0 * 1024.0);
   }
 
-  numParticles = (H5FDdsmUInt64) ((1024 * 1024 * remoteMB - H5FD_DSM_ALIGNMENT) /
-      (sizeof(H5FDdsmFloat64) * 3.0 * dsmManager->GetUpdateNumPieces()));
+  // When writing multiple NUM_DATASETS the metadata size is increased so must keep more space
+  // in the DSM
+  numParticles = (H5FDdsmUInt64) ((1024 * 1024 * remoteMB - H5FD_DSM_ALIGNMENT * NUM_DATASETS) /
+      (sizeof(H5FDdsmFloat64) * DIM_DATASETS * dsmManager->GetUpdateNumPieces()));
+  numParticles /= NUM_DATASETS;
   if (dsmManager->GetDSMHandle()->GetDsmType() == H5FD_DSM_TYPE_DYNAMIC_MASK) {
-    dsmManager->GetDSMHandle()->SetMaskLength(numParticles * sizeof(H5FDdsmFloat64) * 3 * dsmManager->GetUpdateNumPieces());
+    dsmManager->GetDSMHandle()->SetMaskLength(numParticles * sizeof(H5FDdsmFloat64) * DIM_DATASETS * dsmManager->GetUpdateNumPieces());
     dsmManager->GetDSMHandle()->SendMaskLength();
   }
-  Bytes       = numParticles * sizeof(H5FDdsmFloat64) * 3.0; // 3 = {x,y,z}
+  Bytes       = numParticles * sizeof(H5FDdsmFloat64) * DIM_DATASETS * NUM_DATASETS; // 3 = {x,y,z}
   SendBytes   = Bytes * dsmManager->GetUpdateNumPieces();
   MBytes      = SendBytes / (1024.0 * 1024.0);
 
@@ -56,7 +61,8 @@ int main(int argc, char **argv)
       printf("# Writing to Disk ");
     }
     if (dsmManager->GetUpdatePiece() == 0) {
-      printf("%ld particles/proc (3 arrays) -- %lf MB\n", numParticles, MBytes);
+      printf("%ld particles/proc (%d dataset(s) of dim %d) -- %lf MB\n", numParticles,
+          NUM_DATASETS, DIM_DATASETS, MBytes);
       printf("%-*s%*s", 10, "# NumProcs", 20, "Bandwidth (MB/s)");
       if (dsmManager->GetDSMHandle()->GetDsmType() == H5FD_DSM_TYPE_BLOCK_CYCLIC ||
           dsmManager->GetDSMHandle()->GetDsmType() == H5FD_DSM_TYPE_BLOCK_RANDOM) {
@@ -69,10 +75,10 @@ int main(int argc, char **argv)
       // Warming up
       for (int skip = 0; skip < SKIP; skip++) {
         if (type == 0) {
-          TestParticleWrite(fullname, numParticles, 3, dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(), comm, dsmManager->GetDSMHandle(), usingHDF);
+          TestParticleWrite(fullname, numParticles, DIM_DATASETS, NUM_DATASETS, dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(), comm, dsmManager->GetDSMHandle(), usingHDF);
         }
         else if (type == 1) {
-          TestParticleWrite(hdffile.c_str(), numParticles, 3, dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(), comm, NULL, usingHDF);
+          TestParticleWrite(hdffile.c_str(), numParticles, DIM_DATASETS, NUM_DATASETS, dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(), comm, NULL, usingHDF);
         }
       }
       for (int loop = 0; loop < LOOPS; loop++) {
@@ -82,10 +88,10 @@ int main(int argc, char **argv)
             // We have configured everything manually using the DSM manager, so pass the buffer
             // into the read/write code so that we can use the dsm that we have setup
             // otherwise it creates a new DSM server object
-            totaltime += TestParticleWrite(fullname, numParticles, 3, dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(), comm, dsmManager->GetDSMHandle(), usingHDF);
+            totaltime += TestParticleWrite(fullname, numParticles, DIM_DATASETS, NUM_DATASETS, dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(), comm, dsmManager->GetDSMHandle(), usingHDF);
           }
           else if (type == 1) {
-            totaltime += TestParticleWrite(hdffile.c_str(), numParticles, 3, dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(), comm, NULL, usingHDF);
+            totaltime += TestParticleWrite(hdffile.c_str(), numParticles, DIM_DATASETS, NUM_DATASETS, dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(), comm, NULL, usingHDF);
           }
         }
         totaltime = totaltime / AVERAGE;
