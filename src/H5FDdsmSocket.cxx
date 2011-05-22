@@ -58,7 +58,6 @@
 #include <cstdio>
 
 #ifdef _WIN32
-#define WSA_VERSION MAKEWORD(1,1)
 #define H5FDdsmCloseSocketMacro(sock) (closesocket(sock))
 #else
 #define H5FDdsmCloseSocketMacro(sock) (close(sock))
@@ -165,7 +164,7 @@ H5FDdsmSocket::Bind(int port, const char *node)
   memset(&hints, 0, sizeof(struct addrinfo));
   hints.ai_family = AF_INET;
   hints.ai_socktype = SOCK_STREAM;
-  hints.ai_flags = AI_PASSIVE; /* For wildcard IP address */
+//  hints.ai_flags = AI_PASSIVE; /* For wildcard IP address */
   hints.ai_protocol = IPPROTO_TCP;
   hints.ai_canonname = NULL;
   hints.ai_addr = NULL;
@@ -183,7 +182,7 @@ H5FDdsmSocket::Bind(int port, const char *node)
   }
 
   for (rp = result; rp != NULL; rp = rp->ai_next) {
-    sfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+    sfd = (int) socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
     if (sfd == -1) continue;
 
 #ifdef _WIN32
@@ -191,7 +190,7 @@ H5FDdsmSocket::Bind(int port, const char *node)
 #else
     if (bind(sfd, rp->ai_addr, rp->ai_addrlen) == 0) break; /* Success */
 #endif
-    close(sfd);
+    H5FDdsmCloseSocketMacro(sfd);
   }
 
   if (rp == NULL) { /* No address succeeded */
@@ -306,7 +305,7 @@ H5FDdsmSocket::Connect(const char* node, int port)
   }
 
   for (rp = result; rp != NULL; rp = rp->ai_next) {
-    sfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+    sfd = (int) socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
     if (sfd == -1) continue;
 
 #ifdef _WIN32
@@ -314,7 +313,7 @@ H5FDdsmSocket::Connect(const char* node, int port)
 #else
     if (connect(sfd, rp->ai_addr, rp->ai_addrlen) != -1) break; /* Success */
 #endif
-    close(sfd);
+    H5FDdsmCloseSocketMacro(sfd);
   }
 
   if (rp == NULL) { /* No address succeeded */
