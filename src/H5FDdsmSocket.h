@@ -116,9 +116,8 @@ public:
   const char* GetHostName();
 
   // Description:
-  // Returns first local hostname and addr found.
+  // Returns local hostname found.
   const char* GetLocalHostName();
-  const char* GetLocalHostAddr();
 
   // Description:
   // Selects set of sockets. Returns 0 on timeout, -1 on error.
