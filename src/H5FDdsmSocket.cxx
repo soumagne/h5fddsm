@@ -42,8 +42,8 @@
 #include "H5FDdsmSocket.h"
 
 #ifdef _WIN32
-#include <windows.h>
-#include <winsock.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
 #else
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -181,7 +181,7 @@ H5FDdsmSocket::Bind(int port, const char *node)
   hints.ai_family = AF_INET;
   hints.ai_socktype = SOCK_STREAM;
   hints.ai_flags = AI_PASSIVE; /* For wildcard IP address */
-  hints.ai_protocol = 0; /* Any protocol */
+  hints.ai_protocol = IPPROTO_TCP;
   hints.ai_canonname = NULL;
   hints.ai_addr = NULL;
   hints.ai_next = NULL;
@@ -206,7 +206,11 @@ H5FDdsmSocket::Bind(int port, const char *node)
 #endif
 
   for (rp = result; rp != NULL; rp = rp->ai_next) {
+#ifdef _WIN32
+    if (bind(this->SocketDescriptor, rp->ai_addr, (int) rp->ai_addrlen) == 0) break; /* Success */
+#else
     if (bind(this->SocketDescriptor, rp->ai_addr, rp->ai_addrlen) == 0) break; /* Success */
+#endif
   }
 
   if (rp == NULL) { /* No address succeeded */
@@ -309,7 +313,7 @@ H5FDdsmSocket::Connect(const char* node, int port)
   hints.ai_family = AF_INET;
   hints.ai_socktype = SOCK_STREAM;
   hints.ai_flags = 0;
-  hints.ai_protocol = 0; /* Any protocol */
+  hints.ai_protocol = IPPROTO_TCP;
 
   s = getaddrinfo(node, service, &hints, &result);
   if (s != 0) {
@@ -319,7 +323,11 @@ H5FDdsmSocket::Connect(const char* node, int port)
   }
 
   for (rp = result; rp != NULL; rp = rp->ai_next) {
+#ifdef _WIN32
+    if (connect(this->SocketDescriptor, rp->ai_addr, (int) rp->ai_addrlen) != -1) break; /* Success */
+#else
     if (connect(this->SocketDescriptor, rp->ai_addr, rp->ai_addrlen) != -1) break; /* Success */
+#endif
   }
 
   if (rp == NULL) { /* No address succeeded */
