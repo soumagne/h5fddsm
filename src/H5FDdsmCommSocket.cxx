@@ -67,12 +67,7 @@ H5FDdsmCommSocket::Init()
 
   if (this->Id == 0) {
     this->DsmMasterSocket = new H5FDdsmSocket();
-    if (this->DsmMasterSocket->Create() == H5FD_DSM_FAIL) {
-      H5FDdsmError("Create DsmMasterSocket failed");
-      return(H5FD_DSM_FAIL);
-    }
   }
-  this->Barrier();
 
   return(H5FD_DSM_SUCCESS);
 }
@@ -202,10 +197,6 @@ H5FDdsmCommSocket::ClosePort()
   if (this->Id == 0) {
     // close MasterSocket
     this->DsmMasterSocket->Close();
-    if (this->DsmMasterSocket->Create() == H5FD_DSM_FAIL) {
-      H5FDdsmError("Create DsmMasterSocket failed");
-      return(H5FD_DSM_FAIL);
-    }
   }
 
   return(H5FD_DSM_SUCCESS);
@@ -448,7 +439,6 @@ H5FDdsmCommSocket::InterCommServerConnect()
   for (int sock=0; sock<(this->InterSize); sock++) {
     int bindPort = DSM_COMM_SOCKET_PORT_DATA + sock_offset + sock;
     this->InterComm[sock] = new H5FDdsmSocket();
-    this->InterComm[sock]->Create();
     while (1) {
       if (this->InterComm[sock]->Bind(bindPort, this->DsmMasterHostName) < 0) {
         bindPort++;
@@ -548,7 +538,6 @@ H5FDdsmCommSocket::InterCommClientConnect()
     H5FDdsmInt32 tmpPort = interCommPort[sock];
     strncpy(tmpHost, interCommHostName+sock*MPI_MAX_PORT_NAME, MPI_MAX_PORT_NAME);
     this->InterComm[sock] = new H5FDdsmSocket();
-    this->InterComm[sock]->Create();
     // Connect
     H5FDdsmDebug("Connecting intercomm socket " << sock << " on " << this->Id << " to " << tmpHost << ":" << tmpPort);
     this->InterComm[sock]->Connect(tmpHost, tmpPort);

@@ -69,11 +69,6 @@ public:
   int WinSockCleanup();
 
   // Description:
-  // Creates an endpoint for communication and returns the descriptor.
-  // -1 indicates error.
-  int Create();
-
-  // Description:
   // Close the socket.
   int Close();
 

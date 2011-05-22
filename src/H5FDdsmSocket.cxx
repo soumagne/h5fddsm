@@ -134,21 +134,6 @@ H5FDdsmSocket::WinSockCleanup()
 
 //-----------------------------------------------------------------------------
 int
-H5FDdsmSocket::Create()
-{
-  if ((this->SocketDescriptor = (int) socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-    return -1;
-  }
-  // Eliminate windows 0.2 second delay sending (buffering) data.
-  int on = 1;
-  if (setsockopt(this->SocketDescriptor, IPPROTO_TCP, TCP_NODELAY, (char*) &on,
-      sizeof(on))) {
-    return -1;
-  }
-  return 0;
-}
-//-----------------------------------------------------------------------------
-int
 H5FDdsmSocket::Close()
 {
   if (this->SocketDescriptor < 0) return -1;
@@ -173,7 +158,7 @@ H5FDdsmSocket::Bind(int port, const char *node)
 {
   struct addrinfo hints;
   struct addrinfo *result, *rp;
-  int s = 0, opt = 1;
+  int sfd, s;
   char service[64];
 
   sprintf(service, "%d", port);
@@ -197,20 +182,16 @@ H5FDdsmSocket::Bind(int port, const char *node)
     return -1;
   }
 
-  // Allow the socket to be bound to an address that is already in use
-#ifdef _WIN32
-  setsockopt(this->SocketDescriptor, SOL_SOCKET, SO_REUSEADDR, (char*) &opt, sizeof(int));
-#else
-  setsockopt(this->SocketDescriptor, SOL_SOCKET, SO_REUSEADDR, (void *) &opt,
-      sizeof(int));
-#endif
-
   for (rp = result; rp != NULL; rp = rp->ai_next) {
+    sfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+    if (sfd == -1) continue;
+
 #ifdef _WIN32
-    if (bind(this->SocketDescriptor, rp->ai_addr, (int) rp->ai_addrlen) == 0) break; /* Success */
+    if (bind(sfd, rp->ai_addr, (int) rp->ai_addrlen) == 0) break; /* Success */
 #else
-    if (bind(this->SocketDescriptor, rp->ai_addr, rp->ai_addrlen) == 0) break; /* Success */
+    if (bind(sfd, rp->ai_addr, rp->ai_addrlen) == 0) break; /* Success */
 #endif
+    close(sfd);
   }
 
   if (rp == NULL) { /* No address succeeded */
@@ -218,6 +199,7 @@ H5FDdsmSocket::Bind(int port, const char *node)
     freeaddrinfo(result);
     return -1;
   }
+  this->SocketDescriptor = sfd;
   freeaddrinfo(result);
   return 0;
 }
@@ -300,10 +282,11 @@ H5FDdsmSocket::Connect(const char* node, int port)
 {
   struct addrinfo hints;
   struct addrinfo *result, *rp;
-  int s;
+  int sfd, s;
   char service[64];
 
-  if (this->SocketDescriptor < 0) {
+  if (this->SocketDescriptor > 0) {
+    H5FDdsmError("Attempting to connect a connected socket");
     return -1;
   }
 
@@ -323,11 +306,15 @@ H5FDdsmSocket::Connect(const char* node, int port)
   }
 
   for (rp = result; rp != NULL; rp = rp->ai_next) {
+    sfd = socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
+    if (sfd == -1) continue;
+
 #ifdef _WIN32
-    if (connect(this->SocketDescriptor, rp->ai_addr, (int) rp->ai_addrlen) != -1) break; /* Success */
+    if (connect(sfd, rp->ai_addr, (int) rp->ai_addrlen) != -1) break; /* Success */
 #else
-    if (connect(this->SocketDescriptor, rp->ai_addr, rp->ai_addrlen) != -1) break; /* Success */
+    if (connect(sfd, rp->ai_addr, rp->ai_addrlen) != -1) break; /* Success */
 #endif
+    close(sfd);
   }
 
   if (rp == NULL) { /* No address succeeded */
@@ -335,6 +322,7 @@ H5FDdsmSocket::Connect(const char* node, int port)
     freeaddrinfo(result);
     return -1;
   }
+  this->SocketDescriptor = sfd;
   freeaddrinfo(result);
   return 0;
 }
