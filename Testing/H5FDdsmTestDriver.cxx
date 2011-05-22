@@ -425,7 +425,6 @@ int H5FDdsmTestDriver::Main(int argc, char* argv[])
 
   // Report the output of the processes.
   int clientPipe = 1;
-  int serverPipe = 1;
 
   string output;
   int mpiError = 0;
@@ -441,8 +440,8 @@ int H5FDdsmTestDriver::Main(int argc, char* argv[])
     // for this->ServerExitTimeOut, then we'll kill the servers, if needed.
     double timeout = (clientPipe)? 0.1 : this->ServerExitTimeOut;
     output = "";
-    serverPipe = this->WaitForAndPrintLine("server", server, output, timeout,
-                                           ServerStdOut, ServerStdErr, 0);
+    this->WaitForAndPrintLine("server", server, output, timeout,
+                              ServerStdOut, ServerStdErr, 0);
     if(!mpiError && this->OutputStringHasError("server", output))
       {
       mpiError = 1;

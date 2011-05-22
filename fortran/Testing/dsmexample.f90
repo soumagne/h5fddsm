@@ -45,7 +45,7 @@
      INTEGER :: rank = 2 ! Dataset rank
 
      INTEGER :: error    ! Error flags
-     INTEGER :: i, j
+     INTEGER(HSIZE_T) :: i, j
      !
      ! MPI definitions and calls.
      !
@@ -65,7 +65,7 @@
      ALLOCATE ( data(dimsf(1),dimsf(2)))
      do i = 1, dimsf(2)
      do j = 1, dimsf(1)
-        data(j,i) = j - 1 + (i-1)*dimsf(1)
+        data(j,i) = INT(j - 1 + (i-1)*dimsf(1))
      enddo
      enddo
      !
