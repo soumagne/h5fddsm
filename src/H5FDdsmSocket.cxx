@@ -164,7 +164,7 @@ H5FDdsmSocket::Bind(int port, const char *node)
   memset(&hints, 0, sizeof(struct addrinfo));
   hints.ai_family = AF_INET;
   hints.ai_socktype = SOCK_STREAM;
-//  hints.ai_flags = AI_PASSIVE; /* For wildcard IP address */
+  // hints.ai_flags = AI_PASSIVE; // For wildcard IP address
   hints.ai_protocol = IPPROTO_TCP;
   hints.ai_canonname = NULL;
   hints.ai_addr = NULL;
@@ -182,18 +182,25 @@ H5FDdsmSocket::Bind(int port, const char *node)
   }
 
   for (rp = result; rp != NULL; rp = rp->ai_next) {
+    int opt = 1;
     sfd = (int) socket(rp->ai_family, rp->ai_socktype, rp->ai_protocol);
     if (sfd == -1) continue;
+    // Allow the socket to be bound to an address that is already in use
+#ifdef _WIN32
+    setsockopt(sfd, SOL_SOCKET, SO_REUSEADDR, (char*) &opt, sizeof(int));
+#else
+    setsockopt(sfd, SOL_SOCKET, SO_REUSEADDR, (void *) &opt, sizeof(int));
+#endif
 
 #ifdef _WIN32
-    if (bind(sfd, rp->ai_addr, (int) rp->ai_addrlen) == 0) break; /* Success */
+    if (bind(sfd, rp->ai_addr, (int) rp->ai_addrlen) == 0) break; // Success
 #else
-    if (bind(sfd, rp->ai_addr, rp->ai_addrlen) == 0) break; /* Success */
+    if (bind(sfd, rp->ai_addr, rp->ai_addrlen) == 0) break; // Success
 #endif
     H5FDdsmCloseSocketMacro(sfd);
   }
 
-  if (rp == NULL) { /* No address succeeded */
+  if (rp == NULL) { // No address succeeded
     H5FDdsmError("Could not bind");
     freeaddrinfo(result);
     return -1;
@@ -232,7 +239,7 @@ H5FDdsmSocket::Select(unsigned long msec)
   FD_SET(socketdescriptor, &rset);
   int res = select((int) socketdescriptor + 1, &rset, 0, 0, tvalptr);
   if (res == 0) {
-    return 0;//for time limit expire
+    return 0;// for time limit expire
   }
 
   if (res < 0 || !(FD_ISSET(socketdescriptor, &rset))) {
@@ -289,7 +296,7 @@ H5FDdsmSocket::Connect(const char* node, int port)
     return -1;
   }
 
-  /* Obtain address(es) matching host/port */
+  // Obtain address(es) matching host/port
   sprintf(service, "%d", port);
   memset(&hints, 0, sizeof(struct addrinfo));
   hints.ai_family = AF_INET;
@@ -309,14 +316,14 @@ H5FDdsmSocket::Connect(const char* node, int port)
     if (sfd == -1) continue;
 
 #ifdef _WIN32
-    if (connect(sfd, rp->ai_addr, (int) rp->ai_addrlen) != -1) break; /* Success */
+    if (connect(sfd, rp->ai_addr, (int) rp->ai_addrlen) != -1) break; // Success
 #else
-    if (connect(sfd, rp->ai_addr, rp->ai_addrlen) != -1) break; /* Success */
+    if (connect(sfd, rp->ai_addr, rp->ai_addrlen) != -1) break; // Success
 #endif
     H5FDdsmCloseSocketMacro(sfd);
   }
 
-  if (rp == NULL) { /* No address succeeded */
+  if (rp == NULL) { // No address succeeded
     fprintf(stderr, "Could not connect\n");
     freeaddrinfo(result);
     return -1;
