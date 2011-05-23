@@ -60,7 +60,7 @@ void WriteParticlesHDF5(
   hsize_t    count[2]    = {total, C};
   hsize_t    offset[2]   = {start, 0};
   hsize_t    localdim[2] = {N,     C};
-  hsize_t    rank = (C == 1) ? 1 : 2;
+  int        rank = (C == 1) ? 1 : 2;
   herr_t     status = 0;
 
   /* Set up file access property list with parallel I/O */

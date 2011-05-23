@@ -17,8 +17,8 @@
 int main(int argc, char **argv)
 {
   MPI_Comm       comm = MPI_COMM_WORLD;
-  H5FDdsmFloat64 remoteMB, MBytes, Bytes, SendBytes, bandwidth;
-  H5FDdsmUInt64  numParticles;
+  H5FDdsmFloat64 remoteMB, MBytes, bandwidth;
+  H5FDdsmUInt64  numParticles, SendBytes, Bytes;
   H5FDdsmInt32   dataSizeMB = 0;
   H5FDdsmFloat64 totaltime;
   H5FDdsmConstString fullname = "dsm";

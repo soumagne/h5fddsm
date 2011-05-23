@@ -141,25 +141,27 @@ H5FDdsmSocket::Close()
 
   if (this->SocketDescriptor < 0) return -1;
 
-  // shutdown the connection since no more data will be sent
+  if (!this->IsServer) {
+    // shutdown the connection since no more data will be sent
 #ifdef _WIN32
-  s = shutdown(this->SocketDescriptor, SD_SEND);
-  if (s == SOCKET_ERROR) {
-    H5FDdsmError("shutdown failed with error: " << WSAGetLastError());
-    H5FDdsmCloseSocketMacro(this->ClientSocketDescriptor);
-    return -1;
-  }
+    s = shutdown(this->SocketDescriptor, SD_SEND);
+    if (s == SOCKET_ERROR) {
+      H5FDdsmError("shutdown failed with error: " << WSAGetLastError());
+      H5FDdsmCloseSocketMacro(this->SocketDescriptor);
+      this->SocketDescriptor = -1;
+      return -1;
+    }
 #else
-  s = shutdown(this->SocketDescriptor, SHUT_WR);
-  if (s < 0) {
-    H5FDdsmError("shutdown failed");
-    H5FDdsmCloseSocketMacro(this->SocketDescriptor);
-    return -1;
-  }
+    s = shutdown(this->SocketDescriptor, SHUT_WR);
+    if (s < 0) {
+      H5FDdsmError("shutdown failed");
+      H5FDdsmCloseSocketMacro(this->SocketDescriptor);
+      this->SocketDescriptor = -1;
+      return -1;
+    }
 #endif
 
-  if (!this->IsServer) {
-    // Receive until the peer closes down the connection
+    // Wait until the peer closes down the connection
     do {
       char recvbuf[1];
       int recvbuflen = 1;
@@ -170,11 +172,11 @@ H5FDdsmSocket::Close()
       else if (s == 0) {
         H5FDdsmDebug("Connection closed");
       } else {
-  #ifdef _WIN32
+#ifdef _WIN32
         H5FDdsmError("recv failed with error: " << WSAGetLastError());
-  #else
+#else
         H5FDdsmError("recv failed");
-  #endif
+#endif
         H5FDdsmCloseSocketMacro(this->SocketDescriptor);
         this->SocketDescriptor = -1;
         return -1;
@@ -214,7 +216,7 @@ H5FDdsmSocket::CloseClient()
   }
 #endif
 
-  // Receive until the peer shuts down the connection
+  // Wait until the peer shuts down the connection
   do {
     char recvbuf[1];
     int recvbuflen = 1;
@@ -330,7 +332,7 @@ H5FDdsmSocket::Select(unsigned long msec)
   FD_SET(socketdescriptor, &rset);
   int res = select((int) socketdescriptor + 1, &rset, 0, 0, tvalptr);
   if (res == 0) {
-    return 0;// for time limit expire
+    return 0; // for time limit expire
   }
 
   if (res < 0 || !(FD_ISSET(socketdescriptor, &rset))) {
