@@ -156,7 +156,7 @@ H5FDdsmCommDmapp::WindowSync()
   if (H5FDdsmCommMpi::WindowSync() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
   if (this->Win != MPI_WIN_NULL) {
-    MPI_Win_fence(0, this->Win);
+    MPI_Barrier(this->InterComm);
   }
   return(H5FD_DSM_SUCCESS);
 }

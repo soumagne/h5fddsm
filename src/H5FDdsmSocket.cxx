@@ -168,8 +168,7 @@ H5FDdsmSocket::Close()
       s = recv(this->SocketDescriptor, recvbuf, recvbuflen, 0);
       if (s > 0) {
         H5FDdsmError("Closing, no more data should be received");
-      }
-      else if (s == 0) {
+      } else if (s == 0) {
         H5FDdsmDebug("Connection closed");
       } else {
 #ifdef _WIN32
@@ -223,8 +222,7 @@ H5FDdsmSocket::CloseClient()
     s = recv(this->ClientSocketDescriptor, recvbuf, recvbuflen, 0);
     if (s > 0) {
       H5FDdsmError("Closing, no more data should be received");
-    }
-    else if (s == 0) {
+    } else if (s == 0) {
       H5FDdsmDebug("Connection closing...");
     } else {
 #ifdef _WIN32
