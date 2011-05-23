@@ -70,6 +70,8 @@ H5FDdsmSocket::H5FDdsmSocket()
 {
   this->SocketDescriptor = -1;
   this->ClientSocketDescriptor = -1;
+
+  this->IsServer = 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -135,7 +137,51 @@ H5FDdsmSocket::WinSockCleanup()
 int
 H5FDdsmSocket::Close()
 {
+  int s;
+
   if (this->SocketDescriptor < 0) return -1;
+
+  // shutdown the connection since no more data will be sent
+#ifdef _WIN32
+  s = shutdown(this->SocketDescriptor, SD_SEND);
+  if (s == SOCKET_ERROR) {
+    H5FDdsmError("shutdown failed with error: " << WSAGetLastError());
+    H5FDdsmCloseSocketMacro(this->ClientSocketDescriptor);
+    return -1;
+  }
+#else
+  s = shutdown(this->SocketDescriptor, SHUT_WR);
+  if (s < 0) {
+    H5FDdsmError("shutdown failed");
+    H5FDdsmCloseSocketMacro(this->SocketDescriptor);
+    return -1;
+  }
+#endif
+
+  if (!this->IsServer) {
+    // Receive until the peer closes down the connection
+    do {
+      char recvbuf[1];
+      int recvbuflen = 1;
+      s = recv(this->SocketDescriptor, recvbuf, recvbuflen, 0);
+      if (s > 0) {
+        H5FDdsmError("Closing, no more data should be received");
+      }
+      else if (s == 0) {
+        H5FDdsmDebug("Connection closed");
+      } else {
+  #ifdef _WIN32
+        H5FDdsmError("recv failed with error: " << WSAGetLastError());
+  #else
+        H5FDdsmError("recv failed");
+  #endif
+        H5FDdsmCloseSocketMacro(this->SocketDescriptor);
+        this->SocketDescriptor = -1;
+        return -1;
+      }
+    } while (s > 0);
+  }
+
   if (H5FDdsmCloseSocketMacro(this->SocketDescriptor) < 0) return -1;
   this->SocketDescriptor = -1;
   return 0;
@@ -145,7 +191,51 @@ H5FDdsmSocket::Close()
 int
 H5FDdsmSocket::CloseClient()
 {
+  int s;
+
   if (this->ClientSocketDescriptor < 0) return -1;
+
+  // shutdown the connection since no more data will be sent
+#ifdef _WIN32
+  s = shutdown(this->ClientSocketDescriptor, SD_SEND);
+  if (s == SOCKET_ERROR) {
+    H5FDdsmError("shutdown failed with error: " << WSAGetLastError());
+    H5FDdsmCloseSocketMacro(this->ClientSocketDescriptor);
+    this->ClientSocketDescriptor = -1;
+    return -1;
+  }
+#else
+  s = shutdown(this->ClientSocketDescriptor, SHUT_WR);
+  if (s < 0) {
+    H5FDdsmError("shutdown failed");
+    H5FDdsmCloseSocketMacro(this->ClientSocketDescriptor);
+    this->ClientSocketDescriptor = -1;
+    return -1;
+  }
+#endif
+
+  // Receive until the peer shuts down the connection
+  do {
+    char recvbuf[1];
+    int recvbuflen = 1;
+    s = recv(this->ClientSocketDescriptor, recvbuf, recvbuflen, 0);
+    if (s > 0) {
+      H5FDdsmError("Closing, no more data should be received");
+    }
+    else if (s == 0) {
+      H5FDdsmDebug("Connection closing...");
+    } else {
+#ifdef _WIN32
+      H5FDdsmError("recv failed with error: " << WSAGetLastError());
+#else
+      H5FDdsmError("recv failed");
+#endif
+      H5FDdsmCloseSocketMacro(this->ClientSocketDescriptor);
+      this->ClientSocketDescriptor = -1;
+      return -1;
+    }
+  } while (s > 0);
+
   if (H5FDdsmCloseSocketMacro(this->ClientSocketDescriptor) < 0) return -1;
   this->ClientSocketDescriptor = -1;
   return 0;
@@ -206,6 +296,7 @@ H5FDdsmSocket::Bind(int port, const char *node)
     return -1;
   }
   this->SocketDescriptor = sfd;
+  this->IsServer = 1;
   freeaddrinfo(result);
   return 0;
 }

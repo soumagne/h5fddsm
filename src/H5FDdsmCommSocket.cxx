@@ -287,10 +287,8 @@ H5FDdsmCommSocket::Disconnect()
   this->Barrier();
   if (this->InterComm[0]->GetClientSocketDescriptor() < 0) {
     H5FDdsmDebug("Client is now disconnecting");
-    this->RecvReady();
   } else {
     H5FDdsmDebug("Server is now disconnecting");
-    this->SendReady();
   }
   for (int i=0; i<H5FD_DSM_MAX_SOCKET; i++) {
     if (this->InterComm[i]) delete this->InterComm[i];

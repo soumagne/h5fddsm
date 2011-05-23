@@ -138,6 +138,9 @@ public:
 protected:
   int SocketDescriptor;
   int ClientSocketDescriptor;
+
+private:
+  int IsServer;
 };
 
 
