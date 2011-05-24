@@ -50,7 +50,7 @@ void freeBuffer(ParticleBuffer_t *buffer) {
 /* total = total to be written by all all processes                */
 /* collective : 1=collective IO, 0=independent (default 0)         */
 /*******************************************************************/
-void WriteParticlesHDF5(
+void particleWriteHdf(
     ParticleBuffer *buf, H5FDdsmConstString filename,
     H5FDdsmUInt64 N, H5FDdsmUInt64 C, H5FDdsmUInt32 numberOfDataSets, H5FDdsmUInt64 start, H5FDdsmUInt64 total, H5FDdsmBuffer *dsmBuffer)
 {
@@ -154,7 +154,7 @@ void WriteParticlesHDF5(
 /* start = start index for this write                              */
 /* total = total to be written by all all processes                */
 /*******************************************************************/
-void WriteParticlesDSM(
+void particleWriteDsm(
     ParticleBuffer *buf, H5FDdsmConstString filename,
     H5FDdsmUInt64 N, H5FDdsmUInt64 C, H5FDdsmUInt32 numberOfDataSets, H5FDdsmUInt64 start, H5FDdsmUInt64 total, H5FDdsmBuffer *dsmBuffer)
 {
@@ -195,7 +195,7 @@ void WriteParticlesDSM(
 }
 
 //----------------------------------------------------------------------------
-void particle_read(
+void particleReadHdf(
     ParticleBuffer_t *buf, const char *filename, int rank,
     H5FDdsmBuffer *dsmBuffer)
 {
@@ -248,8 +248,8 @@ void particle_read(
 // C = numComponents
 //----------------------------------------------------------------------------
 H5FDdsmFloat64 TestParticleWrite(
-    H5FDdsmConstString filename, H5FDdsmUInt64 N, H5FDdsmUInt64 C, H5FDdsmUInt32 numberOfDataSets,
-    H5FDdsmInt32 mpiId, H5FDdsmInt32 mpiNum,
+    H5FDdsmConstString filename, H5FDdsmUInt64 N, H5FDdsmUInt64 C,
+    H5FDdsmUInt32 numberOfDataSets, H5FDdsmInt32 mpiId, H5FDdsmInt32 mpiNum,
     MPI_Comm dcomm, H5FDdsmBuffer *dsmBuffer, FuncPointer pointer)
 {
   ParticleBuffer WriteBuffer;
@@ -282,6 +282,57 @@ H5FDdsmFloat64 TestParticleWrite(
   freeBuffer(&WriteBuffer);
   step_increment++;
   return t2-t1;
+};
+
+//----------------------------------------------------------------------------
+H5FDdsmFloat64 TestParticleRead(
+    H5FDdsmConstString filename, H5FDdsmInt32 rank, H5FDdsmUInt64 N,
+    MPI_Comm comm, H5FDdsmBuffer *dsmBuffer)
+{
+  H5FDdsmInt32 status = H5FD_DSM_SUCCESS;
+  ParticleBuffer_t ReadBuffer;
+  hsize_t   i;
+  H5FDdsmFloat64 *doublearray;
+  H5FDdsmInt32 fail_count = 0;
+  static H5FDdsmInt32 step_increment = 0;
+
+  // set all array pointers to zero
+  initBuffer(&ReadBuffer);
+
+  // create arrays for the test vars we selected above
+  doublearray = (H5FDdsmFloat64*) malloc(sizeof(H5FDdsmFloat64) * N);
+  for (i = 0; i < N; i++) {
+    doublearray[i] = 0;
+  }
+  ReadBuffer.Ddata = doublearray;
+
+  // call the write routine with our dummy buffer
+  MPI_Barrier(comm);
+  particleReadHdf(&ReadBuffer, filename, rank, dsmBuffer);
+
+  if (rank == 0 && step_increment < 5) {
+    /* Check the results the first times. */
+    for (i=0; i<N; i++) {
+      if((doublearray[i] != (i + step_increment)) && (fail_count < 10)) {
+        fprintf(stderr," doublearray[%llu] is %llu, should be %llu\n", i,
+            (hsize_t) doublearray[i], (i + step_increment));
+        fail_count++;
+      }
+    }
+    if (fail_count == 0) {
+        // if (rank == 0) printf("DSM read test PASSED\n");
+    }
+    else {
+      fprintf(stderr,"DSM read test FAILED for PE %d, %d or more wrong values at step %d\n",
+          rank, fail_count, step_increment);
+    }
+  }
+  MPI_Bcast(&fail_count, 1, MPI_INT, 0, comm);
+  if (fail_count > 0) status = H5FD_DSM_FAIL;
+  // free all array pointers
+  freeBuffer(&ReadBuffer);
+  step_increment++;
+  return(status);
 };
 
 //----------------------------------------------------------------------------

@@ -344,55 +344,6 @@ H5FDdsmBuffer::RemoteServiceThread()
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBuffer::ServiceInit()
-{
-  H5FDdsmInt32   status = H5FD_DSM_SUCCESS;
-
-  return(status);
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmBuffer::ServiceOnce(H5FDdsmInt32 *ReturnOpcode)
-{
-  H5FDdsmInt32   status = H5FD_DSM_FAIL;
-
-  // this->Msg->SetTag(H5FD_DSM_COMMAND_TAG);
-  // status = this->Comm->Check(this->Msg);
-  if (status != H5FD_DSM_SUCCESS){
-    // Nothing to do
-    return(H5FD_DSM_SUCCESS);
-  }
-  // Service One Call
-  H5FDdsmDebug(".... Service a Call");
-  return(this->Service(ReturnOpcode));
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmBuffer::ServiceUntilIdle(H5FDdsmInt32 *ReturnOpcode)
-{
-  H5FDdsmInt32   status = H5FD_DSM_SUCCESS;
-
-  while(status == H5FD_DSM_SUCCESS){
-    // this->Msg->SetTag(H5FD_DSM_COMMAND_TAG);
-    // status = this->Comm->Check(this->Msg);
-    if (status != H5FD_DSM_SUCCESS){
-      // Nothing to do
-      return(H5FD_DSM_SUCCESS);
-    }
-    // Service One Call
-    status = this->Service(ReturnOpcode);
-    if (status != H5FD_DSM_SUCCESS){
-      H5FDdsmError("ServiceUntilIdle detected error in Service() Method");
-      return(H5FD_DSM_FAIL);
-    }
-  }
-  return(H5FD_DSM_SUCCESS);
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32
 H5FDdsmBuffer::ServiceLoop(H5FDdsmInt32 *ReturnOpcode)
 {
   H5FDdsmInt32   op, status = H5FD_DSM_SUCCESS;

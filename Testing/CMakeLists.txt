@@ -33,6 +33,13 @@ ADD_EXECUTABLE(H5FDdsmTestDriver
 )
 TARGET_LINK_LIBRARIES(H5FDdsmTestDriver H5FDdsm_sys)
 
+MACRO(ADD_H5FD_DSM_PARALLEL_TEST full_test_name test_prog)
+  ADD_TEST(NAME "${full_test_name}"
+    COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${MPIEXEC_MAX_NUMPROCS}
+    ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${test_prog}> ${MPIEXEC_POSTFLAGS}
+  )
+ENDMACRO(ADD_H5FD_DSM_PARALLEL_TEST)
+
 FUNCTION(ADD_H5FD_DSM_DYNAMIC_TEST full_test_name server client)
   FOREACH(comm Socket MPI MPI_RMA)
     ADD_TEST("${full_test_name}_${comm}_dynamic"
@@ -86,6 +93,17 @@ TARGET_LINK_LIBRARIES(H5FDdsmTesting
 )
 
 #-----------------------------------------------------------------------------
+# H5FDdsmStandAlone : Simple parallel write/read test to a DSM (not connected)
+#-----------------------------------------------------------------------------
+ADD_EXECUTABLE(H5FDdsmStandAlone
+  H5FDdsmStandAlone.cxx
+)
+TARGET_LINK_LIBRARIES(H5FDdsmStandAlone
+  H5FDdsmTesting
+)
+SET_LINK_OPTIONS(H5FDdsmStandAlone)
+
+#-----------------------------------------------------------------------------
 # H5FDdsmSender_cwrite_nohdf_bw : Bandwidth test of DSM write operations
 #-----------------------------------------------------------------------------
 ADD_EXECUTABLE(H5FDdsmSender_cwrite_nohdf_bw
@@ -95,6 +113,7 @@ TARGET_LINK_LIBRARIES(H5FDdsmSender_cwrite_nohdf_bw
   H5FDdsmTesting
 )
 SET_LINK_OPTIONS(H5FDdsmSender_cwrite_nohdf_bw)
+
 #-----------------------------------------------------------------------------
 # H5FDdsmSender_cwrite_bw : Bandwidth test of DSM write operations
 #-----------------------------------------------------------------------------
@@ -246,6 +265,7 @@ IF (MPIEXEC)
   IF(H5FD_DSM_BUILD_STEERING)
     SET(H5FDdsm_tests ${H5FDdsm_tests} steer)
   ENDIF(H5FD_DSM_BUILD_STEERING)
+  ADD_H5FD_DSM_PARALLEL_TEST(H5FDdsm_StandAlone H5FDdsmStandAlone)
   FOREACH(H5FDdsm_test ${H5FDdsm_tests})
     ADD_H5FD_DSM_DYNAMIC_TEST(H5FDdsm_${H5FDdsm_test} H5FDdsmReceiver_${H5FDdsm_test} H5FDdsmSender_${H5FDdsm_test})
     ADD_H5FD_DSM_STATIC_TEST(H5FDdsm_${H5FDdsm_test} H5FDdsmReceiver_${H5FDdsm_test} H5FDdsmSender_${H5FDdsm_test})

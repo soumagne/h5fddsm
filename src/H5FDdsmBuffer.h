@@ -130,9 +130,6 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     void *         ServiceThread();
     void *         RemoteServiceThread();
 
-    H5FDdsmInt32   ServiceInit();
-    H5FDdsmInt32   ServiceOnce(H5FDdsmInt32 *ReturnOpcode=0);
-    H5FDdsmInt32   ServiceUntilIdle(H5FDdsmInt32 *ReturnOpcode=0);
     H5FDdsmInt32   ServiceLoop(H5FDdsmInt32 *ReturnOpcode=0);
     H5FDdsmInt32   Service(H5FDdsmInt32 *ReturnOpcode=0);
     H5FDdsmInt32   StartService();
