@@ -138,6 +138,7 @@ int
 H5FDdsmSocket::Close()
 {
   int s;
+  int err_data_count = 0;
 
   if (this->SocketDescriptor < 0) return -1;
 
@@ -167,7 +168,8 @@ H5FDdsmSocket::Close()
       int recvbuflen = 1;
       s = recv(this->SocketDescriptor, recvbuf, recvbuflen, 0);
       if (s > 0) {
-        H5FDdsmError("Closing, no more data should be received");
+        if (!err_data_count) H5FDdsmError("Closing, no more data should be received");
+        err_data_count++;
       } else if (s == 0) {
         H5FDdsmDebug("Connection closed");
       } else {
@@ -193,6 +195,7 @@ int
 H5FDdsmSocket::CloseClient()
 {
   int s;
+  int err_data_count = 0;
 
   if (this->ClientSocketDescriptor < 0) return -1;
 
@@ -221,7 +224,8 @@ H5FDdsmSocket::CloseClient()
     int recvbuflen = 1;
     s = recv(this->ClientSocketDescriptor, recvbuf, recvbuflen, 0);
     if (s > 0) {
-      H5FDdsmError("Closing, no more data should be received");
+      if (!err_data_count) H5FDdsmError("Closing, no more data should be received");
+      err_data_count++;
     } else if (s == 0) {
       H5FDdsmDebug("Connection closing...");
     } else {

@@ -144,7 +144,8 @@ H5FDdsmInt32 H5FDdsmSteerer::UpdateDisabledObjects()
 {
   H5FDdsmAddr addr;
   H5FDdsmMetaData metadata;
-  int index = 0;
+  static H5FDdsmInt32 prev_index = 0;
+  H5FDdsmInt32 index = 0;
 
   memset(&metadata, 0, sizeof(metadata));
   for (H5FDdsmSteererInternals::SteeringEntriesString::iterator iter =
@@ -157,7 +158,7 @@ H5FDdsmInt32 H5FDdsmSteerer::UpdateDisabledObjects()
   }
   metadata.disabled_objects.number_of_objects = index;
 
-  if (index) {
+  if (index != prev_index) {
     addr = (H5FDdsmAddr) (this->DsmBuffer->GetTotalLength() - sizeof(metadata) + sizeof(metadata.entry)
         + sizeof(metadata.steering_cmd));
     // Only one of the processes writing to the DSM needs to write file metadata
@@ -175,6 +176,7 @@ H5FDdsmInt32 H5FDdsmSteerer::UpdateDisabledObjects()
     }
     this->DsmBuffer->GetComm()->Barrier();
   }
+  prev_index = index;
   return(H5FD_DSM_SUCCESS);
 }
 
