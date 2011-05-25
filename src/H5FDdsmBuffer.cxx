@@ -685,6 +685,8 @@ H5FDdsmBuffer::Put(H5FDdsmAddr address, H5FDdsmUInt64 length, H5FDdsmPointer dat
       memcpy(dp, putRequest.Data, putRequest.Length);
     } else {
       H5FDdsmInt32 status;
+      H5FDdsmDebug("PUT request to " << putRequest.Dest << " for "
+          << putRequest.Length << " bytes @ " << putRequest.Address);
       if (!this->Comm->GetUseOneSidedComm()) {
         status = this->SendCommandHeader(H5FD_DSM_OPCODE_PUT, putRequest.Dest, putRequest.Address, putRequest.Length);
         if (status == H5FD_DSM_FAIL) {
@@ -722,6 +724,8 @@ H5FDdsmBuffer::Get(H5FDdsmAddr address, H5FDdsmUInt64 length, H5FDdsmPointer dat
       memcpy(getRequest.Data, dp, getRequest.Length);
     } else {
       H5FDdsmInt32   status;
+      H5FDdsmDebug("Get request to " << getRequest.Dest << " for "
+          << getRequest.Length << " bytes @ " << getRequest.Address);
       if (!this->Comm->GetUseOneSidedComm()) {
         status = this->SendCommandHeader(H5FD_DSM_OPCODE_GET, getRequest.Dest, getRequest.Address, getRequest.Length);
         if (status == H5FD_DSM_FAIL) {

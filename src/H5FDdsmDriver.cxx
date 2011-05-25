@@ -152,8 +152,7 @@ H5FDdsmDriver::ConfigureUniform(H5FDdsmComm *aComm, H5FDdsmUInt64 aLength, H5FDd
     if (aBlockLength) {
       if (!random) {
         this->SetDsmType(H5FD_DSM_TYPE_BLOCK_CYCLIC);
-      }
-      else {
+      } else {
         this->SetDsmType(H5FD_DSM_TYPE_BLOCK_RANDOM);
       }
       this->SetBlockLength(aBlockLength);
