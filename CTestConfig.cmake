@@ -1,7 +1,3 @@
-SET (CTEST_DROP_SITE "http://svn.cscs.ch:8081")
-SET (CTEST_DROP_LOCATION "CSCS-Main")
-SET (CTEST_TRIGGER_SITE "http://${CTEST_DROP_SITE}/${CTEST_DROP_LOCATION}")
-
 ## This file should be placed in the root directory of your project.
 ## Then modify the CMakeLists.txt file in the root directory of your
 ## project to incorporate the testing dashboard.

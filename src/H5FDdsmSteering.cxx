@@ -367,7 +367,7 @@ done:
 }
 
 //----------------------------------------------------------------------------
-// Function:    H5FD_dsm_steering_scalar_get
+// Function:    H5FD_dsm_steering_scalar_set
 //
 // Purpose:     Set the scalar value corresponding to the property name given in the template.
 //
@@ -429,7 +429,7 @@ done:
 }
 
 //----------------------------------------------------------------------------
-// Function:    H5FD_dsm_steering_vector_get
+// Function:    H5FD_dsm_steering_vector_set
 //
 // Purpose:     Set the vector valued corresponding to the property name given in the template.
 //
