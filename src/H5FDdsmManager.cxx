@@ -600,6 +600,7 @@ void H5FDdsmManager::WriteSteeredData()
           this->ManagerInternals->SteeringValuesInt.back();
       this->DSMBuffer->GetSteerer()->WriteInteractions(entryInt.Text.c_str(),
           entryInt.NumberOfElements, entryInt.Values);
+      delete []entryInt.Values;
       this->ManagerInternals->SteeringValuesInt.pop_back();
     }
     while (!this->ManagerInternals->SteeringValuesDouble.empty()) {
@@ -607,6 +608,7 @@ void H5FDdsmManager::WriteSteeredData()
           this->ManagerInternals->SteeringValuesDouble.back();
       this->DSMBuffer->GetSteerer()->WriteInteractions(entryDouble.Text.c_str(),
           entryDouble.NumberOfElements, entryDouble.Values);
+      delete []entryDouble.Values;
       this->ManagerInternals->SteeringValuesDouble.pop_back();
     }
     this->DSMBuffer->GetSteerer()->EndInteractionsCache();

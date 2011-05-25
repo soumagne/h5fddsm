@@ -44,24 +44,45 @@ int main(int argc, char **argv)
   H5FD_dsm_steering_wait();
   // Step 2: steered values are retrieved
   if (dsmManager->GetUpdatePiece() == 0) {
-    H5FDdsmInt32 WaitForGuiSet, NewCenterSet;
-    H5FD_dsm_steering_is_set("WaitForGui", &WaitForGuiSet);
-    assert(WaitForGuiSet);
-    if (WaitForGuiSet) {
-      H5FDdsmBoolean waitForGui;
-      H5FD_dsm_steering_scalar_get("WaitForGui", H5T_NATIVE_INT, &waitForGui);
-      std::cout << "Got scalar value WaitForGui: " <<  waitForGui << std::endl;
-      assert(waitForGui);
+    H5FDdsmInt32 intScalarSet, intVectorSet;
+    H5FDdsmInt32 doubleScalarSet, doubleVectorSet;
+
+    H5FD_dsm_steering_is_set("IntScalarTest", &intScalarSet);
+    assert(intScalarSet);
+    if (intScalarSet) {
+      H5FDdsmBoolean intScalar;
+      H5FD_dsm_steering_scalar_get("IntScalarTest", H5T_NATIVE_INT, &intScalar);
+      std::cout << "Got scalar value IntScalarTest: " << intScalar << std::endl;
+      assert(intScalar);
     }
 
-    H5FD_dsm_steering_is_set("NewCenter", &NewCenterSet);
-    assert(NewCenterSet);
-    if (NewCenterSet) {
-      H5FDdsmInt32 center[3];
-      H5FD_dsm_steering_vector_get("NewCenter", H5T_NATIVE_INT, 3, center);
-      std::cout << "Got vector values NewCenter: " <<  center[0] << ", "
-          << center[1] << ", " << center[2] << std::endl;
-      for (int i = 0; i < 3; i++) assert(center[i] == (i + 1));
+    H5FD_dsm_steering_is_set("IntVectorTest", &intVectorSet);
+    assert(intVectorSet);
+    if (intVectorSet) {
+      H5FDdsmInt32 intVector[3];
+      H5FD_dsm_steering_vector_get("IntVectorTest", H5T_NATIVE_INT, 3, intVector);
+      std::cout << "Got vector values IntVectorTest: " << intVector[0] << ", "
+          << intVector[1] << ", " << intVector[2] << std::endl;
+      for (int i = 0; i < 3; i++) assert(intVector[i] == (i + 1));
+    }
+
+    H5FD_dsm_steering_is_set("DoubleScalarTest", &doubleScalarSet);
+    assert(doubleScalarSet);
+    if (doubleScalarSet) {
+      H5FDdsmFloat64 doubleScalar;
+      H5FD_dsm_steering_scalar_get("DoubleScalarTest", H5T_NATIVE_DOUBLE, &doubleScalar);
+      std::cout << "Got scalar value DoubleScalarTest: " << doubleScalar << std::endl;
+      assert(doubleScalar==3.14);
+    }
+
+    H5FD_dsm_steering_is_set("DoubleVectorTest", &doubleVectorSet);
+    assert(doubleVectorSet);
+    if (doubleVectorSet) {
+      H5FDdsmFloat64 doubleVector[3];
+      H5FD_dsm_steering_vector_get("DoubleVectorTest", H5T_NATIVE_DOUBLE, 3, doubleVector);
+      std::cout << "Got vector values DoubleVectorTest: " <<  doubleVector[0] << ", "
+          << doubleVector[1] << ", " << doubleVector[2] << std::endl;
+      for (int i = 0; i < 3; i++) assert(doubleVector[i] == (i + 1.001));
     }
   }
 

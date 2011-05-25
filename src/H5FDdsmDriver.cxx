@@ -263,7 +263,8 @@ H5FDdsmDriver::SendCommandHeader(H5FDdsmInt32 Opcode, H5FDdsmInt32 Dest, H5FDdsm
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmDriver::ReceiveCommandHeader(H5FDdsmInt32 *Opcode, H5FDdsmInt32 *Source, H5FDdsmAddr *Address, H5FDdsmInt32 *aLength, H5FDdsmInt32 IsRemoteService, H5FDdsmInt32 RemoteSource)
+H5FDdsmDriver::ReceiveCommandHeader(H5FDdsmInt32 *Opcode, H5FDdsmInt32 *Source,
+    H5FDdsmAddr *Address, H5FDdsmInt32 *aLength, H5FDdsmInt32 IsRemoteService, H5FDdsmInt32 RemoteSource)
 {
   H5FDdsmCommand  Cmd;
   H5FDdsmInt32    status = H5FD_DSM_FAIL;
@@ -383,7 +384,8 @@ H5FDdsmDriver::ReceiveMaskLength()
 }
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmDriver::SendData(H5FDdsmInt32 Dest, H5FDdsmPointer Data, H5FDdsmInt32 aLength, H5FDdsmInt32 Tag, H5FDdsmAddr aAddress)
+H5FDdsmDriver::SendData(H5FDdsmInt32 Dest, H5FDdsmPointer Data,
+    H5FDdsmInt32 aLength, H5FDdsmInt32 Tag, H5FDdsmAddr aAddress)
 {
   H5FDdsmMsg Msg;
 
@@ -403,7 +405,8 @@ H5FDdsmDriver::SendData(H5FDdsmInt32 Dest, H5FDdsmPointer Data, H5FDdsmInt32 aLe
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmDriver::ReceiveData(H5FDdsmInt32 Source, H5FDdsmPointer Data, H5FDdsmInt32 aLength, H5FDdsmInt32 Tag, H5FDdsmAddr aAddress)
+H5FDdsmDriver::ReceiveData(H5FDdsmInt32 Source, H5FDdsmPointer Data,
+    H5FDdsmInt32 aLength, H5FDdsmInt32 Tag, H5FDdsmAddr aAddress)
 {
   H5FDdsmMsg Msg;
 

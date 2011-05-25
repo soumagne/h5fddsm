@@ -95,6 +95,9 @@ struct H5FDdsm_EXPORT H5FDdsmMsg : public H5FDdsmObject {
     H5FDdsmSetValueMacro(Length, H5FDdsmInt32);
     H5FDdsmGetValueMacro(Length, H5FDdsmInt32);
 
+    H5FDdsmSetValueMacro(Length64, H5FDdsmUInt64);
+    H5FDdsmGetValueMacro(Length64, H5FDdsmUInt64);
+
     H5FDdsmSetValueMacro(Data, H5FDdsmPointer);
     H5FDdsmGetValueMacro(Data, H5FDdsmPointer);
 

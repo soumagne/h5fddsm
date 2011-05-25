@@ -13,8 +13,10 @@ int main(int argc, char *argv[])
 
   while (dsmManager->GetDsmIsConnected()) {
     if (dsmManager->WaitForUpdateReady() > 0) {
-      H5FDdsmInt32 waitForGui = 1;
-      H5FDdsmInt32 center[] = {1, 2, 3};
+      H5FDdsmInt32 intScalar = 1;
+      H5FDdsmInt32 intVector[] = {1, 2, 3};
+      H5FDdsmFloat64 doubleScalar = 3.14;
+      H5FDdsmFloat64 doubleVector[] = {1.001, 2.001, 3.001};
       // H5Dump
       // dsmManager->H5DumpLight();
       // Sync here
@@ -31,8 +33,10 @@ int main(int argc, char *argv[])
       case 2:
         // Simulate control taken by an arbitrary app, modifies values and
         // give back hand by sending a play
-        dsmManager->SetSteeringValues("WaitForGui", 1, &waitForGui);
-        dsmManager->SetSteeringValues("NewCenter", 3, center);
+        dsmManager->SetSteeringValues("IntScalarTest", 1, &intScalar);
+        dsmManager->SetSteeringValues("IntVectorTest", 3, intVector);
+        dsmManager->SetSteeringValues("DoubleScalarTest", 1, &doubleScalar);
+        dsmManager->SetSteeringValues("DoubleVectorTest", 3, doubleVector);
         dsmManager->SetSteeringCommand("play");
         break;
       default:

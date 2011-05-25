@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
   while (dsmManager->GetDsmIsConnected()) {
     if (dsmManager->WaitForUpdateReady() > 0) {
       // H5Dump
-      dsmManager->H5DumpLight();
+      dsmManager->H5Dump();
       // Sync here
       MPI_Barrier(comm);
       // Clean up for next step
