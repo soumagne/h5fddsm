@@ -725,7 +725,7 @@ H5FDdsmInt32 H5FDdsmManager::GetInteractionsGroupPresent()
   return(ret);
 }
 //----------------------------------------------------------------------------
-void H5FDdsmManager::SetDisabledObject(H5FDdsmString objectName)
+void H5FDdsmManager::SetDisabledObject(H5FDdsmConstString objectName)
 {
   this->ManagerInternals->RequestedDisabledObjects.push_back(objectName);
 }

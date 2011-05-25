@@ -390,7 +390,7 @@ H5FDdsmInt32 H5FDdsmSteerer::SetScalar(H5FDdsmConstString name, H5FDdsmInt32 mem
     attributeId = H5Aopen(this->Cache_interactionGroupId, name, H5P_DEFAULT);
   }
   else {
-    attributeId = H5Acreate(this->Cache_interactionGroupId, name, memType,memspaceId, H5P_DEFAULT, H5P_DEFAULT);
+    attributeId = H5Acreate(this->Cache_interactionGroupId, name, memType, memspaceId, H5P_DEFAULT, H5P_DEFAULT);
   }
   if (attributeId < 0) {
     ret = H5FD_DSM_FAIL;
@@ -398,7 +398,6 @@ H5FDdsmInt32 H5FDdsmSteerer::SetScalar(H5FDdsmConstString name, H5FDdsmInt32 mem
     if (H5Awrite(attributeId, memType, data) < 0) {
       ret = H5FD_DSM_FAIL;
     }
-    this->DsmBuffer->GetComm()->Barrier();
     H5Aclose(attributeId);
   }
   H5Sclose(memspaceId);
@@ -457,7 +456,7 @@ H5FDdsmInt32 H5FDdsmSteerer::SetVector(H5FDdsmConstString name, H5FDdsmInt32 mem
   if (datasetId < 0) {
     ret = H5FD_DSM_FAIL;
   } else {
-    if (H5Dwrite(datasetId, memType, H5S_ALL, H5S_ALL, H5P_DEFAULT, data) < 0) {
+    if ((this->DsmBuffer->GetComm()->GetId() == 0) && H5Dwrite(datasetId, memType, H5S_ALL, H5S_ALL, H5P_DEFAULT, data) < 0) {
       ret = H5FD_DSM_FAIL;
     }
     H5Dclose(datasetId);

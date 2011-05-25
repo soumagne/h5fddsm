@@ -179,7 +179,7 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
 
     // Description:
     // Set/Unset objects
-    void SetDisabledObject(H5FDdsmString objectName);
+    void SetDisabledObject(H5FDdsmConstString objectName);
 #endif
 
   protected:
