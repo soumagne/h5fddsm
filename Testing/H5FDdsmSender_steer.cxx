@@ -12,6 +12,8 @@
 int main(int argc, char **argv)
 {
   MPI_Comm comm = MPI_COMM_WORLD;
+  H5FDdsmInt32 intScalarSet, intVectorSet;
+  H5FDdsmInt32 doubleScalarSet, doubleVectorSet;
   H5FDdsmFloat64 remoteMB;
   H5FDdsmUInt64 numParticles;
   H5FDdsmConstString fullname = "dsm";
@@ -41,49 +43,52 @@ int main(int argc, char **argv)
 
   H5FD_dsm_steering_update();
 
-  H5FD_dsm_steering_wait();
+//  H5FD_dsm_steering_wait();
   // Step 2: steered values are retrieved
-  if (dsmManager->GetUpdatePiece() == 0) {
-    H5FDdsmInt32 intScalarSet, intVectorSet;
-    H5FDdsmInt32 doubleScalarSet, doubleVectorSet;
-
-    H5FD_dsm_steering_is_set("IntScalarTest", &intScalarSet);
-    assert(intScalarSet);
-    if (intScalarSet) {
-      H5FDdsmBoolean intScalar;
-      H5FD_dsm_steering_scalar_get("IntScalarTest", H5T_NATIVE_INT, &intScalar);
+  H5FD_dsm_steering_is_set("IntScalarTest", &intScalarSet);
+  assert(intScalarSet);
+  if (intScalarSet) {
+    H5FDdsmBoolean intScalar;
+    H5FD_dsm_steering_scalar_get("IntScalarTest", H5T_NATIVE_INT, &intScalar);
+    if (dsmManager->GetUpdatePiece() == 0) {
       std::cout << "Got scalar value IntScalarTest: " << intScalar << std::endl;
-      assert(intScalar);
     }
+    assert(intScalar);
+  }
 
-    H5FD_dsm_steering_is_set("IntVectorTest", &intVectorSet);
-    assert(intVectorSet);
-    if (intVectorSet) {
-      H5FDdsmInt32 intVector[3];
-      H5FD_dsm_steering_vector_get("IntVectorTest", H5T_NATIVE_INT, 3, intVector);
+  H5FD_dsm_steering_is_set("IntVectorTest", &intVectorSet);
+  assert(intVectorSet);
+  if (intVectorSet) {
+    H5FDdsmInt32 intVector[3];
+    H5FD_dsm_steering_vector_get("IntVectorTest", H5T_NATIVE_INT, 3, intVector);
+    if (dsmManager->GetUpdatePiece() == 0) {
       std::cout << "Got vector values IntVectorTest: " << intVector[0] << ", "
           << intVector[1] << ", " << intVector[2] << std::endl;
-      for (int i = 0; i < 3; i++) assert(intVector[i] == (i + 1));
     }
+    for (int i = 0; i < 3; i++) assert(intVector[i] == (i + 1));
+  }
 
-    H5FD_dsm_steering_is_set("DoubleScalarTest", &doubleScalarSet);
-    assert(doubleScalarSet);
-    if (doubleScalarSet) {
-      H5FDdsmFloat64 doubleScalar;
-      H5FD_dsm_steering_scalar_get("DoubleScalarTest", H5T_NATIVE_DOUBLE, &doubleScalar);
+  H5FD_dsm_steering_is_set("DoubleScalarTest", &doubleScalarSet);
+  assert(doubleScalarSet);
+  if (doubleScalarSet) {
+    H5FDdsmFloat64 doubleScalar;
+    H5FD_dsm_steering_scalar_get("DoubleScalarTest", H5T_NATIVE_DOUBLE, &doubleScalar);
+    if (dsmManager->GetUpdatePiece() == 0) {
       std::cout << "Got scalar value DoubleScalarTest: " << doubleScalar << std::endl;
-      assert(doubleScalar==3.14);
     }
+    assert(doubleScalar==3.14);
+  }
 
-    H5FD_dsm_steering_is_set("DoubleVectorTest", &doubleVectorSet);
-    assert(doubleVectorSet);
-    if (doubleVectorSet) {
-      H5FDdsmFloat64 doubleVector[3];
-      H5FD_dsm_steering_vector_get("DoubleVectorTest", H5T_NATIVE_DOUBLE, 3, doubleVector);
+  H5FD_dsm_steering_is_set("DoubleVectorTest", &doubleVectorSet);
+  assert(doubleVectorSet);
+  if (doubleVectorSet) {
+    H5FDdsmFloat64 doubleVector[3];
+    H5FD_dsm_steering_vector_get("DoubleVectorTest", H5T_NATIVE_DOUBLE, 3, doubleVector);
+    if (dsmManager->GetUpdatePiece() == 0) {
       std::cout << "Got vector values DoubleVectorTest: " <<  doubleVector[0] << ", "
           << doubleVector[1] << ", " << doubleVector[2] << std::endl;
-      for (int i = 0; i < 3; i++) assert(doubleVector[i] == (i + 1.001));
     }
+    for (int i = 0; i < 3; i++) assert(doubleVector[i] == (i + 1.001));
   }
 
   senderFinalize(dsmManager, &comm);

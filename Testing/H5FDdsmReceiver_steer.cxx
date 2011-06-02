@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
         dsmManager->SetSteeringValues("IntVectorTest", 3, intVector);
         dsmManager->SetSteeringValues("DoubleScalarTest", 1, &doubleScalar);
         dsmManager->SetSteeringValues("DoubleVectorTest", 3, doubleVector);
-        dsmManager->SetSteeringCommand("play");
+//        dsmManager->SetSteeringCommand("play");
         break;
       default:
         break;
