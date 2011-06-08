@@ -324,7 +324,7 @@ H5FDdsmBuffer::ServiceThread()
   this->ThreadDsmReady = 1;
   this->ServiceLoop(&ReturnOpcode);
   this->ThreadDsmReady = 0;
-  H5FDdsmDebug("Ending DSM Service on node " << this->Comm->GetId() << " last op = " << ReturnOpcode);
+//  H5FDdsmDebug("Ending DSM Service on node " << this->Comm->GetId() << " last op = " << ReturnOpcode);
   return((void *)this);
 }
 
