@@ -64,8 +64,6 @@
 class H5FDdsmSteerer;
 #endif
 
-#define H5FD_DSM_MAX_LOCKS 32
-
 #define H5FD_DSM_UPDATE_LEVEL_MAX 0x4
 
 //! Base comm object for Distributed Shared Memory implementation
@@ -175,8 +173,12 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     H5FDdsmBoolean          IsConnecting;
     H5FDdsmBoolean          IsConnected;
 #ifdef _WIN32
+#if (_WIN32_WINNT <= _WIN32_WINNT_WS03)
+    HANDLE                  ConnectedEvent;
+#else
     CRITICAL_SECTION        ConnectedCritSection;
     CONDITION_VARIABLE      ConnectedCond;
+#endif
 #else
     pthread_mutex_t         ConnectedMutex;
     pthread_cond_t          ConnectedCond;
@@ -186,8 +188,12 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
 
     H5FDdsmBoolean          IsUpdateReady;
 #ifdef _WIN32
+#if (_WIN32_WINNT <= _WIN32_WINNT_WS03)
+    HANDLE                  UpdateReadyEvent;
+#else
     CRITICAL_SECTION        UpdateReadyCritSection;
     CONDITION_VARIABLE      UpdateReadyCond;
+#endif
 #else
     pthread_mutex_t         UpdateReadyMutex;
     pthread_cond_t          UpdateReadyCond;

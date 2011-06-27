@@ -145,8 +145,12 @@ H5FDdsmBuffer::H5FDdsmBuffer()
   this->IsConnecting = false;
   this->IsConnected  = false;
 #ifdef _WIN32
+#if (_WIN32_WINNT <= _WIN32_WINNT_WS03)
+  this->ConnectedEvent = CreateEvent(NULL, FALSE, FALSE, TEXT("ConnectedEvent"));
+#else
   InitializeCriticalSection  (&this->ConnectedCritSection);
   InitializeConditionVariable(&this->ConnectedCond);
+#endif
 #else
   pthread_mutex_init(&this->ConnectedMutex, NULL);
   pthread_cond_init (&this->ConnectedCond, NULL);
@@ -156,8 +160,12 @@ H5FDdsmBuffer::H5FDdsmBuffer()
 
   this->IsUpdateReady  = false;
 #ifdef _WIN32
+#if (_WIN32_WINNT <= _WIN32_WINNT_WS03)
+  this->UpdateReadyEvent = CreateEvent(NULL, FALSE, FALSE, TEXT("UpdateReadyEvent"));
+#else
   InitializeCriticalSection  (&this->UpdateReadyCritSection);
   InitializeConditionVariable(&this->UpdateReadyCond);
+#endif
 #else
   pthread_mutex_init(&this->UpdateReadyMutex, NULL);
   pthread_cond_init (&this->UpdateReadyCond, NULL);
@@ -190,7 +198,15 @@ H5FDdsmBuffer::~H5FDdsmBuffer()
 {
   if (this->IsServer) this->EndService();
 
-#ifndef _WIN32
+#ifdef _WIN32
+#if (_WIN32_WINNT <= _WIN32_WINNT_WS03)
+  CloseHandle(this->ConnectedEvent);
+  CloseHandle(this->UpdateReadyEvent);
+#else
+  DeleteCriticalSection(&this->ConnectedCritSection);
+  DeleteCriticalSection(&this->UpdateReadyCritSection);
+#endif
+#else
   pthread_mutex_destroy(&this->ConnectedMutex);
   pthread_cond_destroy (&this->ConnectedCond);
   pthread_mutex_destroy(&this->UpdateReadyMutex);
@@ -214,14 +230,20 @@ H5FDdsmInt32
 H5FDdsmBuffer::SignalConnected()
 {
 #ifdef _WIN32
+#if (_WIN32_WINNT > _WIN32_WINNT_WS03)
   EnterCriticalSection(&this->ConnectedCritSection);
+#endif
 #else
   pthread_mutex_lock(&this->ConnectedMutex);
 #endif
   this->IsConnected = true;
 #ifdef _WIN32
+#if (_WIN32_WINNT <= _WIN32_WINNT_WS03)
+  SetEvent(this->ConnectedEvent);
+#else
   WakeConditionVariable(&this->ConnectedCond);
   LeaveCriticalSection (&this->ConnectedCritSection);
+#endif
 #else
   pthread_cond_signal(&this->ConnectedCond);
   H5FDdsmDebug("Sent connected condition signal");
@@ -237,14 +259,20 @@ H5FDdsmBuffer::WaitForConnected()
   H5FDdsmInt32 ret = H5FD_DSM_FAIL;
 
 #ifdef _WIN32
+#if (_WIN32_WINNT > _WIN32_WINNT_WS03)
   EnterCriticalSection(&this->ConnectedCritSection);
+#endif
 #else
   pthread_mutex_lock(&this->ConnectedMutex);
 #endif
   while (!this->IsConnected) {
     H5FDdsmDebug("Thread going into wait for update ready...");
 #ifdef _WIN32
+#if (_WIN32_WINNT <= _WIN32_WINNT_WS03)
+    WaitForSingleObject(this->ConnectedEvent, INFINITE);
+#else
     SleepConditionVariableCS(&this->ConnectedCond, &this->ConnectedCritSection, INFINITE);
+#endif
 #else
     pthread_cond_wait(&this->ConnectedCond, &this->ConnectedMutex);
 #endif
@@ -254,7 +282,9 @@ H5FDdsmBuffer::WaitForConnected()
     ret = H5FD_DSM_SUCCESS;
   }
 #ifdef _WIN32
+#if (_WIN32_WINNT > _WIN32_WINNT_WS03)
   LeaveCriticalSection(&this->ConnectedCritSection);
+#endif
 #else
   pthread_mutex_unlock(&this->ConnectedMutex);
 #endif
@@ -266,14 +296,20 @@ H5FDdsmInt32
 H5FDdsmBuffer::SignalUpdateReady()
 {
 #ifdef _WIN32
+#if (_WIN32_WINNT > _WIN32_WINNT_WS03)
   EnterCriticalSection(&this->UpdateReadyCritSection);
+#endif
 #else
   pthread_mutex_lock(&this->UpdateReadyMutex);
 #endif
   this->IsUpdateReady = true;
 #ifdef _WIN32
+#if (_WIN32_WINNT <= _WIN32_WINNT_WS03)
+  SetEvent(this->UpdateReadyEvent);
+#else
   WakeConditionVariable(&this->UpdateReadyCond);
   LeaveCriticalSection (&this->UpdateReadyCritSection);
+#endif
 #else
   pthread_cond_signal(&this->UpdateReadyCond);
   H5FDdsmDebug("Sent update ready condition signal");
@@ -289,14 +325,20 @@ H5FDdsmBuffer::WaitForUpdateReady()
   H5FDdsmInt32 ret = H5FD_DSM_FAIL;
 
 #ifdef _WIN32
+#if (_WIN32_WINNT > _WIN32_WINNT_WS03)
   EnterCriticalSection(&this->UpdateReadyCritSection);
+#endif
 #else
   pthread_mutex_lock(&this->UpdateReadyMutex);
 #endif
   while (!this->IsUpdateReady && this->IsConnected) {
     H5FDdsmDebug("Thread going into wait for update ready...");
 #ifdef _WIN32
+#if (_WIN32_WINNT <= _WIN32_WINNT_WS03)
+    WaitForSingleObject(this->UpdateReadyEvent, INFINITE);
+#else
     SleepConditionVariableCS(&this->UpdateReadyCond, &this->UpdateReadyCritSection, INFINITE);
+#endif
 #else
     pthread_cond_wait(&this->UpdateReadyCond, &this->UpdateReadyMutex);
 #endif
@@ -307,7 +349,9 @@ H5FDdsmBuffer::WaitForUpdateReady()
     ret = H5FD_DSM_SUCCESS;
   }
 #ifdef _WIN32
+#if (_WIN32_WINNT > _WIN32_WINNT_WS03)
   LeaveCriticalSection(&this->UpdateReadyCritSection);
+#endif
 #else
   pthread_mutex_unlock(&this->UpdateReadyMutex);
 #endif
