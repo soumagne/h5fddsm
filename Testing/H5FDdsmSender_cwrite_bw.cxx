@@ -55,14 +55,14 @@ int main(int argc, char **argv)
 
   for (int type = 0; type < TYPES; type++) {
     if (type == 0 && dsmManager->GetUpdatePiece() == 0) {
-      printf("# Writing to DSM ");
+      std::cout << "# Writing to DSM ";
     }
     else if (type == 1 && dsmManager->GetUpdatePiece() == 0) {
-      printf("# Writing to Disk ");
+      std::cout << "# Writing to Disk ";
     }
     if (dsmManager->GetUpdatePiece() == 0) {
-      printf("%ld particles/proc (%d dataset(s) of dim %d) -- %lf MB\n", numParticles,
-          NUM_DATASETS, DIM_DATASETS, MBytes);
+      std::cout << numParticles << " particles/proc (" << NUM_DATASETS
+        << " dataset(s) of dim " << DIM_DATASETS << ") -- " << MBytes << "MB" << std::endl;
       printf("%-*s%*s", 10, "# NumProcs", 20, "Bandwidth (MB/s)");
       if (dsmManager->GetDSMHandle()->GetDsmType() == H5FD_DSM_TYPE_BLOCK_CYCLIC ||
           dsmManager->GetDSMHandle()->GetDsmType() == H5FD_DSM_TYPE_BLOCK_RANDOM) {

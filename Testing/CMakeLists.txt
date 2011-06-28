@@ -40,13 +40,15 @@ MACRO(ADD_H5FD_DSM_PARALLEL_TEST full_test_name test_prog)
   )
 ENDMACRO(ADD_H5FD_DSM_PARALLEL_TEST)
 
+SET(H5FD_DSM_TESTING_LENGTH "18" CACHE STRING "DSM total length used for testing")
+
 FUNCTION(ADD_H5FD_DSM_DYNAMIC_TEST full_test_name server client)
   FOREACH(comm Socket MPI MPI_RMA)
     ADD_TEST("${full_test_name}_${comm}_dynamic"
       ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/H5FDdsmTestDriver
       --server ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${server}
       --client ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${client}
-      18 ${comm}
+      ${H5FD_DSM_TESTING_LENGTH} ${comm}
     )
   ENDFOREACH(comm)
 ENDFUNCTION(ADD_H5FD_DSM_DYNAMIC_TEST)
@@ -57,7 +59,7 @@ FUNCTION(ADD_H5FD_DSM_BLOCK_TEST full_test_name blocktype server client)
       ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/H5FDdsmTestDriver
       --server ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${server}
       --client ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${client}
-      18 ${comm} "Dynamic" "${blocktype}" 2097152
+      ${H5FD_DSM_TESTING_LENGTH} ${comm} "Dynamic" "${blocktype}" 2097152
     )
   ENDFOREACH(comm)
 ENDFUNCTION(ADD_H5FD_DSM_BLOCK_TEST)
@@ -67,7 +69,7 @@ MACRO(ADD_H5FD_DSM_STATIC_TEST full_test_name server client)
     ADD_TEST(NAME "${full_test_name}_${comm}_static"
       COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${MPIEXEC_MAX_NUMPROCS}
       ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${server}>
-      18 ${comm} "Static" ${MPIEXEC_POSTFLAGS} : ${MPIEXEC_NUMPROC_FLAG} ${MPIEXEC_MAX_NUMPROCS} 
+      ${H5FD_DSM_TESTING_LENGTH} ${comm} "Static" ${MPIEXEC_POSTFLAGS} : ${MPIEXEC_NUMPROC_FLAG} ${MPIEXEC_MAX_NUMPROCS}
       ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${client}> 0 ${comm} ${MPIEXEC_POSTFLAGS}
     )
   ENDFOREACH(comm)
