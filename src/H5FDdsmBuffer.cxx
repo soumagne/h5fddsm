@@ -145,8 +145,8 @@ H5FDdsmBuffer::H5FDdsmBuffer()
   this->IsConnecting = false;
   this->IsConnected  = false;
 #ifdef _WIN32
-#if (_WIN32_WINNT <= _WIN32_WINNT_WS03)
-  this->ConnectedEvent = CreateEvent(NULL, FALSE, FALSE, TEXT("ConnectedEvent"));
+#if (WINVER <= H5FD_DSM_CONDVAR_MINVER)
+  this->ConnectedEvent = CreateEvent(NULL, TRUE, FALSE, TEXT("ConnectedEvent"));
 #else
   InitializeCriticalSection  (&this->ConnectedCritSection);
   InitializeConditionVariable(&this->ConnectedCond);
@@ -160,8 +160,8 @@ H5FDdsmBuffer::H5FDdsmBuffer()
 
   this->IsUpdateReady  = false;
 #ifdef _WIN32
-#if (_WIN32_WINNT <= _WIN32_WINNT_WS03)
-  this->UpdateReadyEvent = CreateEvent(NULL, FALSE, FALSE, TEXT("UpdateReadyEvent"));
+#if (WINVER <= H5FD_DSM_CONDVAR_MINVER)
+  this->UpdateReadyEvent = CreateEvent(NULL, TRUE, FALSE, TEXT("UpdateReadyEvent"));
 #else
   InitializeCriticalSection  (&this->UpdateReadyCritSection);
   InitializeConditionVariable(&this->UpdateReadyCond);
@@ -199,7 +199,7 @@ H5FDdsmBuffer::~H5FDdsmBuffer()
   if (this->IsServer) this->EndService();
 
 #ifdef _WIN32
-#if (_WIN32_WINNT <= _WIN32_WINNT_WS03)
+#if (WINVER <= H5FD_DSM_CONDVAR_MINVER)
   CloseHandle(this->ConnectedEvent);
   CloseHandle(this->UpdateReadyEvent);
 #else
@@ -230,7 +230,7 @@ H5FDdsmInt32
 H5FDdsmBuffer::SignalConnected()
 {
 #ifdef _WIN32
-#if (_WIN32_WINNT > _WIN32_WINNT_WS03)
+#if (WINVER > H5FD_DSM_CONDVAR_MINVER)
   EnterCriticalSection(&this->ConnectedCritSection);
 #endif
 #else
@@ -238,7 +238,7 @@ H5FDdsmBuffer::SignalConnected()
 #endif
   this->IsConnected = true;
 #ifdef _WIN32
-#if (_WIN32_WINNT <= _WIN32_WINNT_WS03)
+#if (WINVER <= H5FD_DSM_CONDVAR_MINVER)
   SetEvent(this->ConnectedEvent);
 #else
   WakeConditionVariable(&this->ConnectedCond);
@@ -259,7 +259,7 @@ H5FDdsmBuffer::WaitForConnected()
   H5FDdsmInt32 ret = H5FD_DSM_FAIL;
 
 #ifdef _WIN32
-#if (_WIN32_WINNT > _WIN32_WINNT_WS03)
+#if (WINVER > H5FD_DSM_CONDVAR_MINVER)
   EnterCriticalSection(&this->ConnectedCritSection);
 #endif
 #else
@@ -268,8 +268,9 @@ H5FDdsmBuffer::WaitForConnected()
   while (!this->IsConnected) {
     H5FDdsmDebug("Thread going into wait for update ready...");
 #ifdef _WIN32
-#if (_WIN32_WINNT <= _WIN32_WINNT_WS03)
+#if (WINVER <= H5FD_DSM_CONDVAR_MINVER)
     WaitForSingleObject(this->ConnectedEvent, INFINITE);
+    ResetEvent(this->ConnectedEvent);
 #else
     SleepConditionVariableCS(&this->ConnectedCond, &this->ConnectedCritSection, INFINITE);
 #endif
@@ -282,7 +283,7 @@ H5FDdsmBuffer::WaitForConnected()
     ret = H5FD_DSM_SUCCESS;
   }
 #ifdef _WIN32
-#if (_WIN32_WINNT > _WIN32_WINNT_WS03)
+#if (WINVER > H5FD_DSM_CONDVAR_MINVER)
   LeaveCriticalSection(&this->ConnectedCritSection);
 #endif
 #else
@@ -296,7 +297,7 @@ H5FDdsmInt32
 H5FDdsmBuffer::SignalUpdateReady()
 {
 #ifdef _WIN32
-#if (_WIN32_WINNT > _WIN32_WINNT_WS03)
+#if (WINVER > H5FD_DSM_CONDVAR_MINVER)
   EnterCriticalSection(&this->UpdateReadyCritSection);
 #endif
 #else
@@ -304,7 +305,7 @@ H5FDdsmBuffer::SignalUpdateReady()
 #endif
   this->IsUpdateReady = true;
 #ifdef _WIN32
-#if (_WIN32_WINNT <= _WIN32_WINNT_WS03)
+#if (WINVER <= H5FD_DSM_CONDVAR_MINVER)
   SetEvent(this->UpdateReadyEvent);
 #else
   WakeConditionVariable(&this->UpdateReadyCond);
@@ -325,7 +326,7 @@ H5FDdsmBuffer::WaitForUpdateReady()
   H5FDdsmInt32 ret = H5FD_DSM_FAIL;
 
 #ifdef _WIN32
-#if (_WIN32_WINNT > _WIN32_WINNT_WS03)
+#if (WINVER > H5FD_DSM_CONDVAR_MINVER)
   EnterCriticalSection(&this->UpdateReadyCritSection);
 #endif
 #else
@@ -334,8 +335,9 @@ H5FDdsmBuffer::WaitForUpdateReady()
   while (!this->IsUpdateReady && this->IsConnected) {
     H5FDdsmDebug("Thread going into wait for update ready...");
 #ifdef _WIN32
-#if (_WIN32_WINNT <= _WIN32_WINNT_WS03)
+#if (WINVER <= H5FD_DSM_CONDVAR_MINVER)
     WaitForSingleObject(this->UpdateReadyEvent, INFINITE);
+    ResetEvent(this->UpdateReadyEvent);
 #else
     SleepConditionVariableCS(&this->UpdateReadyCond, &this->UpdateReadyCritSection, INFINITE);
 #endif
@@ -349,7 +351,7 @@ H5FDdsmBuffer::WaitForUpdateReady()
     ret = H5FD_DSM_SUCCESS;
   }
 #ifdef _WIN32
-#if (_WIN32_WINNT > _WIN32_WINNT_WS03)
+#if (WINVER > H5FD_DSM_CONDVAR_MINVER)
   LeaveCriticalSection(&this->UpdateReadyCritSection);
 #endif
 #else

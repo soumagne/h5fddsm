@@ -56,6 +56,7 @@
 
 #ifdef _WIN32
   #include <windows.h>
+  #define H5FD_DSM_CONDVAR_MINVER _WIN32_WINNT_LONGHORN
 #else
   #include <pthread.h>
 #endif
@@ -173,7 +174,7 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     H5FDdsmBoolean          IsConnecting;
     H5FDdsmBoolean          IsConnected;
 #ifdef _WIN32
-#if (_WIN32_WINNT <= _WIN32_WINNT_WS03)
+#if (WINVER <= H5FD_DSM_CONDVAR_MINVER)
     HANDLE                  ConnectedEvent;
 #else
     CRITICAL_SECTION        ConnectedCritSection;
@@ -188,7 +189,7 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
 
     H5FDdsmBoolean          IsUpdateReady;
 #ifdef _WIN32
-#if (_WIN32_WINNT <= _WIN32_WINNT_WS03)
+#if (WINVER <= H5FD_DSM_CONDVAR_MINVER)
     HANDLE                  UpdateReadyEvent;
 #else
     CRITICAL_SECTION        UpdateReadyCritSection;
