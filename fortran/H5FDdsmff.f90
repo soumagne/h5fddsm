@@ -48,12 +48,25 @@ MODULE H5FDDSM
 !
 !----------------------------------------------------------------------
   SUBROUTINE h5pset_fapl_dsm_f(prp_id, comm, hdferr)
+    !DEC$if defined(BUILD_H5FD_DSM_DLL)
+    !DEC$ ATTRIBUTES DLLEXPORT :: h5pset_fapl_dsm_f
+    !DEC$endif
     IMPLICIT NONE
     INTEGER(HID_T), INTENT(IN) :: prp_id ! Property list identifier
     INTEGER, INTENT(IN)  :: comm         ! Default communicator
     INTEGER, INTENT(OUT) :: hdferr       ! Error code
 
-    INTEGER, EXTERNAL :: h5pset_fapl_dsm_c
+    INTERFACE
+       INTEGER FUNCTION h5pset_fapl_dsm_c(prp_id, comm)
+         USE H5GLOBAL
+         !DEC$IF DEFINED(H5FD_DSM_F90_WIN32)
+         !DEC$ATTRIBUTES C,reference,decorate,alias:'H5PSET_FAPL_DSM_C'::h5pset_fapl_dsm_c
+         !DEC$ENDIF
+         INTEGER(HID_T), INTENT(IN) :: prp_id
+         INTEGER, INTENT(IN) :: comm
+       END FUNCTION h5pset_fapl_dsm_c
+    END INTERFACE
+
     hdferr = h5pset_fapl_dsm_c(prp_id, comm)
   END SUBROUTINE h5pset_fapl_dsm_f
 
@@ -74,12 +87,25 @@ MODULE H5FDDSM
 !
 !----------------------------------------------------------------------
   SUBROUTINE h5pget_fapl_dsm_f(prp_id, comm, hdferr)
+    !DEC$if defined(BUILD_H5FD_DSM_DLL)
+    !DEC$ ATTRIBUTES DLLEXPORT :: h5pget_fapl_dsm_f
+    !DEC$endif
     IMPLICIT NONE
     INTEGER(HID_T), INTENT(IN) :: prp_id ! Property list identifier
     INTEGER, INTENT(OUT) :: comm ! buffer to return communicator
     INTEGER, INTENT(OUT) :: hdferr  ! Error code
 
-    INTEGER, EXTERNAL :: h5pget_fapl_dsm_c
+    INTERFACE
+       INTEGER FUNCTION h5pget_fapl_dsm_c(prp_id, comm)
+         USE H5GLOBAL
+         !DEC$IF DEFINED(H5FD_DSM_F90_WIN32)
+         !DEC$ATTRIBUTES C,reference,decorate,alias:'H5PGET_FAPL_DSM_C'::h5pget_fapl_dsm_c
+         !DEC$ENDIF
+         INTEGER(HID_T), INTENT(IN) :: prp_id
+         INTEGER, INTENT(OUT) :: comm
+       END FUNCTION h5pget_fapl_dsm_c
+    END INTERFACE
+
     hdferr = h5pget_fapl_dsm_c(prp_id, comm)
   END SUBROUTINE h5pget_fapl_dsm_f
 
@@ -100,18 +126,31 @@ MODULE H5FDDSM
 !
 !----------------------------------------------------------------------
   SUBROUTINE h5fd_dsm_set_mode_f(mode, hdferr)
+    !DEC$if defined(BUILD_H5FD_DSM_DLL)
+    !DEC$ ATTRIBUTES DLLEXPORT :: h5fd_dsm_set_mode_f
+    !DEC$endif
     IMPLICIT NONE
     INTEGER, INTENT(IN)  :: mode         ! DSM mode to use
     INTEGER, INTENT(OUT) :: hdferr       ! Error code
     INTEGER :: err_0, err_1
 
-    INTEGER, EXTERNAL :: h5fd_dsm_set_mode_c
+    INTERFACE
+       INTEGER FUNCTION h5fd_dsm_set_mode_c(mode)
+         USE H5GLOBAL
+         !DEC$IF DEFINED(H5FD_DSM_F90_WIN32)
+         !DEC$ATTRIBUTES C,reference,decorate,alias:'H5FD_DSM_SET_MODE_C'::h5fd_dsm_set_mode_c
+         !DEC$ENDIF
+       INTEGER, INTENT(IN)  :: mode
+       END FUNCTION h5fd_dsm_set_mode_c
+    END INTERFACE
+
     INTERFACE
       INTEGER FUNCTION h5fd_dsm_init_flags_c(i_H5FD_dsm_flags)
         USE H5FDDSM_GLOBAL
         INTEGER i_H5FD_dsm_flags(H5FD_DSM_FLAGS_LEN)
       END FUNCTION h5fd_dsm_init_flags_c
     END INTERFACE
+
     err_0 = h5fd_dsm_init_flags_c(H5FD_dsm_flags)
     err_1 = h5fd_dsm_set_mode_c(mode)
     hdferr = err_0 + err_1
@@ -133,10 +172,21 @@ MODULE H5FDDSM
 !
 !----------------------------------------------------------------------
   SUBROUTINE h5fd_dsm_server_update_f(hdferr)
+    !DEC$if defined(BUILD_H5FD_DSM_DLL)
+    !DEC$ ATTRIBUTES DLLEXPORT :: h5fd_dsm_server_update_f
+    !DEC$endif
     IMPLICIT NONE
     INTEGER, INTENT(OUT) :: hdferr       ! Error code
 
-    INTEGER, EXTERNAL :: h5fd_dsm_server_update_c
+    INTERFACE
+       INTEGER FUNCTION h5fd_dsm_server_update_c()
+         USE H5GLOBAL
+         !DEC$IF DEFINED(H5FD_DSM_F90_WIN32)
+         !DEC$ATTRIBUTES C,reference,decorate,alias:'H5FD_DSM_SERVER_UPDATE_C'::h5fd_dsm_server_update_c
+         !DEC$ENDIF
+       END FUNCTION h5fd_dsm_server_update_c
+    END INTERFACE
+
     hdferr = h5fd_dsm_server_update_c()
   END SUBROUTINE h5fd_dsm_server_update_f
 
