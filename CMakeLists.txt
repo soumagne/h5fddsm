@@ -310,13 +310,13 @@ ENDIF (H5FD_DSM_BUILD_FORTRAN)
 #-----------------------------------------------------------------------------
 # Testing
 #-----------------------------------------------------------------------------
-OPTION(H5FD_DSM_BUILD_TESTING "Build Testing code." ON)
+OPTION(BUILD_TESTING "Build H5FDdsm Complete Testing" ON)
 
-IF(H5FD_DSM_BUILD_TESTING)
+IF(BUILD_TESTING)
   ENABLE_TESTING()
   INCLUDE(CTest)
   ADD_SUBDIRECTORY(Testing)
-ENDIF(H5FD_DSM_BUILD_TESTING)
+ENDIF(BUILD_TESTING)
 
 #-----------------------------------------------------------------------------
 # Specify project header files to be installed

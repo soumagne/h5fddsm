@@ -105,7 +105,7 @@ SET_TARGET_PROPERTIES (H5FDdsm_fortran
 #-----------------------------------------------------------------------------
 # Build the Fortran Tests
 #-----------------------------------------------------------------------------
-IF(H5FD_DSM_BUILD_TESTING)
+IF(BUILD_TESTING)
   SET(H5FDdsm_FORTRAN_TEST_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/Testing/dsmexample.f90
   )
@@ -120,7 +120,7 @@ IF(H5FD_DSM_BUILD_TESTING)
     H5FDdsm_fortran
  )
 
-ENDIF(H5FD_DSM_BUILD_TESTING)
+ENDIF(BUILD_TESTING)
 
 #-----------------------------------------------------------------------------
 # Add Target(s) to CMake Install for import into other projects
