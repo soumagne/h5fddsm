@@ -146,11 +146,25 @@ INSTALL (
 )
 
 #-----------------------------------------------------------------------------
+# Specify project header files to be installed
+#-----------------------------------------------------------------------------
+SET(H5FDdsmFortranHeaders
+  ${CMAKE_CURRENT_SOURCE_DIR}/H5f90dsmproto.h
+)
+
+IF (H5FD_DSM_BUILD_STEERING)
+  SET(H5FDdsmFortranHeaders
+    ${CMAKE_CURRENT_SOURCE_DIR}/H5f90dsmSteeringproto.h
+    ${H5FDdsmFortranHeaders}
+  )
+ENDIF (H5FD_DSM_BUILD_STEERING)
+
+#-----------------------------------------------------------------------------
 # Add file(s) to CMake Install
 #-----------------------------------------------------------------------------
 INSTALL (
   FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/H5f90dsmproto.h
+    ${H5FDdsmFortranHeaders}
   DESTINATION
     ${H5FD_DSM_INSTALL_INCLUDE_DIR}/fortran
   COMPONENT
