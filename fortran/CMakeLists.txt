@@ -2,6 +2,14 @@ cmake_minimum_required (VERSION 2.8)
 PROJECT (H5FDdsm_F90 C CXX Fortran)
 
 #-----------------------------------------------------------------------------
+# Add MPI Fortran library on win32
+#-----------------------------------------------------------------------------
+IF (WIN32)
+  FIND_LIBRARY(MPI_FORTRAN_LIBRARY NAMES fmpich2
+    HINTS $ENV{ProgramFiles}/MPICH2/lib)
+ENDIF (WIN32)
+
+#-----------------------------------------------------------------------------
 # Add debug information to default flags (intel Fortran) : JB
 #-----------------------------------------------------------------------------
 IF(CMAKE_Fortran_COMPILER MATCHES ifort)
@@ -46,7 +54,7 @@ TARGET_LINK_LIBRARIES(H5FDdsm_f90CStub
   H5FDdsm
   hdf5_fortran
   hdf5_f90cstub
-  ${MPI_FORTRAN_LIBRARY}  
+  ${MPI_LIBRARY}
 )
 
 SET_LIB_OPTIONS(H5FDdsm_f90CStub)
@@ -77,6 +85,7 @@ ADD_LIBRARY(H5FDdsm_fortran
 
 TARGET_LINK_LIBRARIES(H5FDdsm_fortran
   H5FDdsm_f90CStub
+  ${MPI_FORTRAN_LIBRARY}
 )
 
 SET_LIB_OPTIONS(H5FDdsm_fortran)
