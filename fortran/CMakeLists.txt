@@ -54,7 +54,7 @@ TARGET_LINK_LIBRARIES(H5FDdsm_f90CStub
   H5FDdsm
   hdf5_fortran
   hdf5_f90cstub
-  ${MPI_LIBRARY}
+  ${MPI_LIBRARY}  
 )
 
 SET_LIB_OPTIONS(H5FDdsm_f90CStub)
