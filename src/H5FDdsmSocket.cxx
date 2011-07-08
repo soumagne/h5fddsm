@@ -262,7 +262,11 @@ H5FDdsmSocket::Bind(int port, const char *node)
 
   sprintf(service, "%d", port);
   memset(&hints, 0, sizeof(struct addrinfo));
+#ifdef _WIN32
+  hints.ai_family = AF_INET;
+#else
   hints.ai_family = AF_UNSPEC;
+#endif
   hints.ai_socktype = SOCK_STREAM;
   hints.ai_flags = AI_PASSIVE; // For wildcard IP address
   hints.ai_protocol = IPPROTO_TCP;
@@ -419,7 +423,11 @@ H5FDdsmSocket::Connect(const char* node, int port)
   // Obtain address(es) matching host/port
   sprintf(service, "%d", port);
   memset(&hints, 0, sizeof(struct addrinfo));
+#ifdef _WIN32
+  hints.ai_family = AF_INET;
+#else
   hints.ai_family = AF_UNSPEC;
+#endif
   hints.ai_socktype = SOCK_STREAM;
   hints.ai_flags = 0;
   hints.ai_protocol = IPPROTO_TCP;

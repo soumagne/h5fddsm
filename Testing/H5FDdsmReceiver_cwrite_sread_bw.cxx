@@ -8,7 +8,8 @@ int main(int argc, char *argv[])
   H5FDdsmInt32 nRemoteProcs;
   MPI_Comm comm = MPI_COMM_WORLD;
   H5FDdsmConstString fullname = "dsm";
-  H5FDdsmUInt64 numParticles, remoteMB;
+  H5FDdsmUInt64 numParticles;
+  H5FDdsmFloat64 remoteMB;
   H5FDdsmManager *dsmManager = new H5FDdsmManager();
   receiverInit(argc, argv, dsmManager, &comm);
 

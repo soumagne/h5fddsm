@@ -8,7 +8,8 @@ main(int argc, char * argv[])
 {
   H5FDdsmInt32 provided, rank, size;
   H5FDdsmUInt32 dsmSize = 16, numServers; // default MB
-  H5FDdsmUInt64 numParticles, dataMB;
+  H5FDdsmUInt64 numParticles;
+  H5FDdsmFloat64 dataMB;
   H5FDdsmConstString fullname = "dsm";
   MPI_Comm comm = MPI_COMM_WORLD;
 
