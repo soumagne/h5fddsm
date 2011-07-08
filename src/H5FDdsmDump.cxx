@@ -46,7 +46,7 @@ H5FDdsmDump::Dump()
   std::ostringstream stream;
   H5dump(4, (const char**) argv, stream, this->DsmBuffer);
   MPI_Comm_rank(MPI_COMM_WORLD, &print_rank);
-  if(print_rank == 0) std::cout << stream.str() << std::endl;
+  if (print_rank == 0) std::cout << stream.str() << std::endl;
 }
 //----------------------------------------------------------------------------
 void
@@ -57,7 +57,7 @@ H5FDdsmDump::DumpLight()
   std::ostringstream stream;
   H5dump(5, (const char**) argv, stream, this->DsmBuffer);
   MPI_Comm_rank(MPI_COMM_WORLD, &print_rank);
-  if(print_rank == 0) std::cout << stream.str() << std::endl;
+  if (print_rank == 0) std::cout << stream.str() << std::endl;
 }
 //----------------------------------------------------------------------------
 void

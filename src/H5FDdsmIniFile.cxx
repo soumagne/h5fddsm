@@ -42,7 +42,7 @@ H5FDdsmIniFile::~H5FDdsmIniFile(void) {}
 void Trim(std::string& str, const std::string & ChrsToTrim = " \t\n\r", int TrimDir = 0)
 {
     size_t startIndex = str.find_first_not_of(ChrsToTrim);
-    if (startIndex == std::string::npos){str.erase(); return;}
+    if (startIndex == std::string::npos) {str.erase(); return;}
     if (TrimDir < 2) str = str.substr(startIndex, str.size()-startIndex);
     if (TrimDir!=1) str = str.substr(0, str.find_last_not_of(ChrsToTrim) + 1);
 }
@@ -61,11 +61,11 @@ bool H5FDdsmIniFile::Load(string FileName, vector<Record>& content)
   while(!std::getline(inFile, s).eof())    // Read until the end of the file
   {
     Trim(s);                               // Trim whitespace from the ends
-    if(!s.empty())                         // Make sure its not a blank line
+    if (!s.empty())                         // Make sure its not a blank line
     {
       Record r;                            // Define a new record
 
-      if((s[0]=='#')||(s[0]==';'))         // Is this a commented line?
+      if ((s[0]=='#')||(s[0]==';'))         // Is this a commented line?
       {
         if ((s.find('[')==string::npos)&&  // If there is no [ or =
           (s.find('=')==string::npos))     // Then it's a comment
@@ -78,7 +78,7 @@ bool H5FDdsmIniFile::Load(string FileName, vector<Record>& content)
         }                                  // Remove any more whitespace
       } else r.Commented = ' ';            // else mark it as not being a comment
 
-      if(s.find('[')!=string::npos)        // Is this line a section?
+      if (s.find('[')!=string::npos)        // Is this line a section?
       {    
         s.erase(s.begin());                // Erase the leading bracket
         s.erase(s.find(']'));              // Erase the trailing bracket
@@ -90,7 +90,7 @@ bool H5FDdsmIniFile::Load(string FileName, vector<Record>& content)
         CurrentSection = s;
       }
 
-      if(s.find('=')!=string::npos)        // Is this line a Key/Value?
+      if (s.find('=')!=string::npos)        // Is this line a Key/Value?
       {
         r.Comments = comments;             // Add the comments string (if any)
         comments = "";                     // Clear the comments for re-use
@@ -98,7 +98,7 @@ bool H5FDdsmIniFile::Load(string FileName, vector<Record>& content)
         r.Key = s.substr(0,s.find('='));   // Set the Key value to everything before the = sign
         r.Value = s.substr(s.find('=')+1); // Set the Value to everything after the = sign
       }
-      if(comments == "")                   // Don't add a record yet if its a comment line
+      if (comments == "")                   // Don't add a record yet if its a comment line
         content.push_back(r);              // Add the record to content
     }
   }
@@ -115,7 +115,7 @@ bool H5FDdsmIniFile::Save(string FileName, vector<Record>& content)
   for (int i=0;i<(int)content.size();i++)  // Loop through each vector
   {
     outFile << content[i].Comments;        // Write out the comments
-    if(content[i].Key == "")               // Is this a section?
+    if (content[i].Key == "")               // Is this a section?
       outFile << content[i].Commented << "[" 
       << content[i].Section << "]" << endl;// Then format the section
     else
@@ -136,9 +136,9 @@ string H5FDdsmIniFile::Content(string FileName)
   {
     for (int i=0;i<(int)content.size();i++)// Loop through the content
     {
-      if(content[i].Comments != "") s += content[i].Comments;       // Add the comments
-      if(content[i].Commented != ' ') s += content[i].Commented;    // If this is commented, then add it
-      if((content[i].Key == ""))                                    // Is this a section?
+      if (content[i].Comments != "") s += content[i].Comments;       // Add the comments
+      if (content[i].Commented != ' ') s += content[i].Commented;    // If this is commented, then add it
+      if ((content[i].Key == ""))                                    // Is this a section?
         s += '[' + content[i].Section + ']';                        // Add the section
       else s += content[i].Key + '=' + content[i].Value;            // Or the Key value to the return srting
 
@@ -159,7 +159,7 @@ vector<string> H5FDdsmIniFile::GetSectionNames(string FileName)
   {
     for (int i=0;i<(int)content.size();i++)     // Loop through the content
     {
-      if(content[i].Key =="")                   // If there is no key value, then its a section
+      if (content[i].Key =="")                   // If there is no key value, then its a section
         data.push_back(content[i].Section);     // Add the section to the return data
     }
   }
@@ -176,7 +176,7 @@ vector<H5FDdsmIniFile::Record> H5FDdsmIniFile::GetSection(string SectionName, st
   {
     for (int i=0;i<(int)content.size();i++)     // Loop through the content
     {
-      if((content[i].Section == SectionName) && // If this is the section name we want
+      if ((content[i].Section == SectionName) && // If this is the section name we want
         (content[i].Key != ""))                 // but not the section name itself
         data.push_back(content[i]);             // Add the record to the return data
     }
@@ -191,7 +191,7 @@ bool H5FDdsmIniFile::RecordExists(string KeyName, string SectionName, string Fil
 
   if (Load(FileName, content))                  // Make sure the file is loaded
   {
-    vector<Record>::iterator iter = std::find_if(content.begin(), 
+    vector<Record>::iterator iter = std::find_if (content.begin(),
         content.end(), 
         H5FDdsmIniFile::RecordSectionKeyIs(SectionName,KeyName));     // Locate the Section/Key
 
@@ -206,7 +206,7 @@ bool H5FDdsmIniFile::SectionExists(string SectionName, string FileName)
 
   if (Load(FileName, content))                      // Make sure the file is loaded
   {
-    vector<Record>::iterator iter = std::find_if(content.begin(), 
+    vector<Record>::iterator iter = std::find_if (content.begin(),
         content.end(), 
         H5FDdsmIniFile::RecordSectionIs(SectionName));          // Locate the Section
 
@@ -226,7 +226,7 @@ vector<H5FDdsmIniFile::Record> H5FDdsmIniFile::GetRecord(string KeyName, string 
 
   if (Load(FileName, content))                  // Make sure the file is loaded
   {
-    vector<Record>::iterator iter = std::find_if(content.begin(), 
+    vector<Record>::iterator iter = std::find_if (content.begin(),
         content.end(), 
         H5FDdsmIniFile::RecordSectionKeyIs(SectionName,KeyName));     // Locate the Record
 
@@ -241,7 +241,7 @@ string H5FDdsmIniFile::GetValue(string KeyName, string SectionName, string FileN
 {
   vector<Record> content = GetRecord(KeyName,SectionName, FileName);    // Get the Record
 
-  if(!content.empty())                              // Make sure there is a value to return
+  if (!content.empty())                              // Make sure there is a value to return
     return content[0].Value;                        // And return the value
 
   return "";                                        // No value was found
@@ -253,7 +253,7 @@ bool H5FDdsmIniFile::SetValue(string KeyName, string Value, string SectionName, 
 
   if (Load(FileName, content))                      // Make sure the file is loaded
   {
-    if(!SectionExists(SectionName,FileName))              // If the Section doesn't exist
+    if (!SectionExists(SectionName,FileName))              // If the Section doesn't exist
     {
       Record s = {"",' ',SectionName,"",""};              // Define a new section
       Record r = {"",' ',SectionName,KeyName,Value};      // Define a new record
@@ -262,9 +262,9 @@ bool H5FDdsmIniFile::SetValue(string KeyName, string Value, string SectionName, 
       return Save(FileName,content);                      // Save
     }
 
-    if(!RecordExists(KeyName,SectionName,FileName))       // If the Key doesn't exist
+    if (!RecordExists(KeyName,SectionName,FileName))       // If the Key doesn't exist
     {
-      vector<Record>::iterator iter = std::find_if(content.begin(), 
+      vector<Record>::iterator iter = std::find_if (content.begin(),
         content.end(), 
         H5FDdsmIniFile::RecordSectionIs(SectionName));          // Locate the Section
       iter++;                                             // Advance just past the section
@@ -273,7 +273,7 @@ bool H5FDdsmIniFile::SetValue(string KeyName, string Value, string SectionName, 
       return Save(FileName,content);                      // Save
     }
 
-    vector<Record>::iterator iter = std::find_if(content.begin(), 
+    vector<Record>::iterator iter = std::find_if (content.begin(),
         content.end(), 
         H5FDdsmIniFile::RecordSectionKeyIs(SectionName,KeyName)); // Locate the Record
 
@@ -293,7 +293,7 @@ bool H5FDdsmIniFile::RenameSection(string OldSectionName, string NewSectionName,
     for(vector<Record>::iterator iter = content.begin(); 
       iter < content.end(); iter++)                 // Loop through the records
     {
-      if(iter->Section == OldSectionName)           // Is this the OldSectionName?
+      if (iter->Section == OldSectionName)           // Is this the OldSectionName?
         iter->Section = NewSectionName;             // Now its the NewSectionName
     }
     return Save(FileName,content);                  // Save
@@ -308,7 +308,7 @@ bool H5FDdsmIniFile::CommentRecord(CommentChar cc, string KeyName,string Section
 
   if (Load(FileName, content))                      // Make sure the file is loaded
   {
-    vector<Record>::iterator iter = std::find_if(content.begin(), 
+    vector<Record>::iterator iter = std::find_if (content.begin(),
         content.end(), 
         H5FDdsmIniFile::RecordSectionKeyIs(SectionName,KeyName)); // Locate the Section/Key
 
@@ -327,7 +327,7 @@ bool H5FDdsmIniFile::UnCommentRecord(string KeyName,string SectionName,string Fi
 
   if (Load(FileName, content))                      // Make sure the file is loaded
   {
-    vector<Record>::iterator iter = std::find_if(content.begin(), 
+    vector<Record>::iterator iter = std::find_if (content.begin(),
         content.end(), 
         H5FDdsmIniFile::RecordSectionKeyIs(SectionName,KeyName));      // Locate the Section/Key
 
@@ -348,7 +348,7 @@ bool H5FDdsmIniFile::CommentSection(char CommentChar, string SectionName, string
   {
     for(vector<Record>::iterator iter = content.begin(); iter < content.end(); iter++)
     {
-      if(iter->Section == SectionName)                // Is this the right section?
+      if (iter->Section == SectionName)                // Is this the right section?
         iter->Commented = CommentChar;                // Change the comment value
     }
     return Save(FileName,content);                    // Save
@@ -365,7 +365,7 @@ bool H5FDdsmIniFile::UnCommentSection(string SectionName, string FileName)
   {
     for(vector<Record>::iterator iter = content.begin(); iter < content.end(); iter++)
     {
-      if(iter->Section == SectionName)                // Is this the right section?
+      if (iter->Section == SectionName)                // Is this the right section?
         iter->Commented = ' ';                        // Remove the comment value
     }                                  
     return Save(FileName,content);                    // Save
@@ -380,7 +380,7 @@ bool H5FDdsmIniFile::DeleteRecord(string KeyName, string SectionName, string Fil
 
   if (Load(FileName, content))                      // Make sure the file is loaded
   {
-    vector<Record>::iterator iter = std::find_if(content.begin(), 
+    vector<Record>::iterator iter = std::find_if (content.begin(),
         content.end(), 
         H5FDdsmIniFile::RecordSectionKeyIs(SectionName,KeyName)); // Locate the Section/Key
 
@@ -401,7 +401,7 @@ bool H5FDdsmIniFile::DeleteSection(string SectionName, string FileName)
   {
     for(int i=(int)content.size()-1;i>-1;i--)      // Iterate backwards through the content
     {              
-      if(content[i].Section == SectionName)        // Is this related to the Section?
+      if (content[i].Section == SectionName)        // Is this related to the Section?
         content.erase (content.begin()+i);         // Then erase it
     }
 
@@ -418,7 +418,7 @@ bool H5FDdsmIniFile::SetSectionComments(string Comments, string SectionName, str
   {
     for(vector<Record>::iterator iter = content.begin(); iter < content.end(); iter++)                  // Loop through the records
     {
-      if((iter->Section == SectionName) &&         // Is this the Section?
+      if ((iter->Section == SectionName) &&         // Is this the Section?
         (iter->Key == ""))                         // And not a record
       {  
         if (Comments.size() >= 2)                  // Is there a comment?
@@ -441,7 +441,7 @@ bool H5FDdsmIniFile::SetRecordComments(string Comments, string KeyName, string S
 
   if (Load(FileName, content))                                    // Make sure the file is loaded
   {
-    vector<Record>::iterator iter = std::find_if(content.begin(), 
+    vector<Record>::iterator iter = std::find_if (content.begin(),
         content.end(), 
         H5FDdsmIniFile::RecordSectionKeyIs(SectionName,KeyName));       // Locate the Section/Key
 
@@ -469,7 +469,7 @@ vector<H5FDdsmIniFile::Record> H5FDdsmIniFile::GetSections(string FileName)
   {
     for (int i=0;i<(int)content.size();i++)                       // Loop through the content
     {
-      if(content[i].Key == "")                                    // If this is a section 
+      if (content[i].Key == "")                                    // If this is a section
         data.push_back(content[i]);                               // Add the record to the return data
     }
   }
@@ -482,10 +482,10 @@ bool H5FDdsmIniFile::Sort(string FileName, bool Descending)
   vector<H5FDdsmIniFile::Record> content;                               // Used to hold the sorted content
   vector<H5FDdsmIniFile::Record> sections = GetSections(FileName);      // Get a list of Sections
 
-  if(!sections.empty())                                           // Is there anything to process?
+  if (!sections.empty())                                           // Is there anything to process?
   {
 
-    if(Descending)                                                // Descending or Ascending?
+    if (Descending)                                                // Descending or Ascending?
       std::sort(sections.begin(), sections.end(), DescendingSectionSort());
     else                                                          // Sort the Sections
       std::sort(sections.begin(), sections.end(), AscendingSectionSort());
@@ -496,7 +496,7 @@ bool H5FDdsmIniFile::Sort(string FileName, bool Descending)
 
       vector<H5FDdsmIniFile::Record> records = GetSection(iter->Section ,FileName); // Get a list of Records for this section
 
-      if(Descending)                                              // Descending or Ascending?
+      if (Descending)                                              // Descending or Ascending?
         std::sort(records.begin(), records.end(), DescendingRecordSort());
       else                                                        // Sort the Records
         std::sort(records.begin(), records.end(), AscendingRecordSort());

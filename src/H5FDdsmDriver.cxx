@@ -85,7 +85,7 @@ H5FDdsmDriver::H5FDdsmDriver()
 //----------------------------------------------------------------------------
 H5FDdsmDriver::~H5FDdsmDriver()
 {
-    if(this->Storage) delete this->Storage;
+    if (this->Storage) delete this->Storage;
     this->Storage = NULL;
     delete this->AddressMapper;
 }
@@ -118,7 +118,7 @@ H5FDdsmDriver::SetMaskLength(H5FDdsmUInt64 dataSize)
 H5FDdsmInt32
 H5FDdsmDriver::SetStorage(H5FDdsmStorage *aStorage)
 {
-    if(this->Storage) delete this->Storage;
+    if (this->Storage) delete this->Storage;
     this->Storage = aStorage;
     this->DataPointer = (H5FDdsmByte *)this->Storage->GetDataPointer();
     return(H5FD_DSM_SUCCESS);
@@ -128,7 +128,7 @@ H5FDdsmDriver::SetStorage(H5FDdsmStorage *aStorage)
 H5FDdsmInt32
 H5FDdsmDriver::ClearStorage()
 {
-  if(this->Storage) {
+  if (this->Storage) {
     H5FDdsmDebug("Resetting storage");
     H5FDdsmDebug("start address: " << this->StartAddress);
     H5FDdsmDebug("end address: " << this->EndAddress);
@@ -186,7 +186,7 @@ H5FDdsmDriver::SendDone()
 {
     H5FDdsmInt32   who, status = H5FD_DSM_SUCCESS;
 
-    for(who = this->StartServerId ; who <= this->EndServerId ; who++){
+    for(who = this->StartServerId ; who <= this->EndServerId ; who++) {
       status = this->SendCommandHeader(H5FD_DSM_OPCODE_DONE, who, 0, 0);
       if (status != H5FD_DSM_SUCCESS) {
         H5FDdsmError("Cannot send termination command to DSM process " << who);
@@ -283,7 +283,7 @@ H5FDdsmDriver::ReceiveCommandHeader(H5FDdsmInt32 *Opcode, H5FDdsmInt32 *Source,
   } else {
     status  = this->Comm->Receive(&Msg);
   }
-  if (status == H5FD_DSM_FAIL){
+  if (status == H5FD_DSM_FAIL) {
     H5FDdsmError("Communicator Receive Failed");
     return(H5FD_DSM_FAIL);
   } else {
@@ -323,7 +323,7 @@ H5FDdsmDriver::ReceiveInfo()
 {
   H5FDdsmInfo dsmInfo;
 
-  if(this->Comm->RecvInfo(&dsmInfo) != H5FD_DSM_SUCCESS) {
+  if (this->Comm->RecvInfo(&dsmInfo) != H5FD_DSM_SUCCESS) {
     return(H5FD_DSM_FAIL);
   }
   this->SetDsmType(dsmInfo.type);
@@ -363,7 +363,7 @@ H5FDdsmDriver::ReceiveMaskLength()
 {
   H5FDdsmInfo dsmInfo;
 
-  if(this->Comm->RecvInfo(&dsmInfo) != H5FD_DSM_SUCCESS) {
+  if (this->Comm->RecvInfo(&dsmInfo) != H5FD_DSM_SUCCESS) {
     return(H5FD_DSM_FAIL);
   }
 

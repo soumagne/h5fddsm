@@ -548,7 +548,7 @@ H5FDdsmSocket::Send(const void* data, int length)
     }
     total += n;
   } while (total < length);
-  return 0;
+  return total;
 }
 
 //-----------------------------------------------------------------------------
