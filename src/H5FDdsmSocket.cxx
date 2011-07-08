@@ -45,11 +45,10 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #else
+#include <cstdlib>
+#include <cstring>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
-#include <netinet/tcp.h>
-#include <arpa/inet.h>
 #include <netdb.h>
 #include <unistd.h>
 #include <errno.h>
@@ -63,13 +62,14 @@
 #define H5FDdsmCloseSocketMacro(sock) (close(sock))
 #endif
 
-#define QLEN 5
-
 //-----------------------------------------------------------------------------
 H5FDdsmSocket::H5FDdsmSocket()
 {
   this->SocketDescriptor = -1;
   this->ClientSocketDescriptor = -1;
+
+  this->HostName = (char*) malloc(NI_MAXHOST);
+  this->Port = 0;
 
   this->IsServer = 0;
 }
@@ -79,6 +79,9 @@ H5FDdsmSocket::~H5FDdsmSocket()
 {
   if (this->ClientSocketDescriptor != -1) this->CloseClient();
   if (this->SocketDescriptor != -1) this->Close();
+
+  if (this->HostName) free(this->HostName);
+  this->HostName = NULL;
 }
 
 //-----------------------------------------------------------------------------
@@ -252,13 +255,16 @@ H5FDdsmSocket::Bind(int port, const char *node)
   struct addrinfo hints;
   struct addrinfo *result, *rp;
   int sfd, s;
-  char service[64];
+  char service[NI_MAXSERV];
+  char result_host[NI_MAXHOST], result_service[NI_MAXSERV];
+  struct sockaddr_storage result_host_addr;
+  socklen_t result_host_addr_len = sizeof(struct sockaddr_storage);
 
   sprintf(service, "%d", port);
   memset(&hints, 0, sizeof(struct addrinfo));
-  hints.ai_family = AF_INET;
+  hints.ai_family = AF_UNSPEC;
   hints.ai_socktype = SOCK_STREAM;
-  // hints.ai_flags = AI_PASSIVE; // For wildcard IP address
+  hints.ai_flags = AI_PASSIVE; // For wildcard IP address
   hints.ai_protocol = IPPROTO_TCP;
   hints.ai_canonname = NULL;
   hints.ai_addr = NULL;
@@ -302,6 +308,25 @@ H5FDdsmSocket::Bind(int port, const char *node)
   this->SocketDescriptor = sfd;
   this->IsServer = 1;
   freeaddrinfo(result);
+
+  if (getsockname(this->SocketDescriptor, (struct sockaddr *) &result_host_addr,
+      &result_host_addr_len) != 0) {
+    H5FDdsmError("getsockname: could not retrieve socket name information");
+    return NULL;
+  }
+  s = getnameinfo((struct sockaddr *) &result_host_addr, result_host_addr_len,
+      result_host, NI_MAXHOST, result_service, NI_MAXSERV, NI_NUMERICHOST | NI_NUMERICSERV);
+  if (s == 0) {
+    H5FDdsmDebug("host=" << result_host << ", serv=" << result_service);
+  } else {
+    H5FDdsmError("getnameinfo: " << gai_strerror(s));
+  }
+  if ((strcmp("0.0.0.0", result_host) == 0) ||
+      (strcmp("0.0.0.0.0.0", result_host) == 0)) {
+    gethostname(result_host, NI_MAXHOST);
+  }
+  strcpy(this->HostName, result_host);
+  this->Port = atoi(result_service);
   return 0;
 }
 
@@ -374,7 +399,7 @@ H5FDdsmSocket::Listen()
   if (this->SocketDescriptor < 0) {
     return -1;
   }
-  return listen(this->SocketDescriptor, QLEN);
+  return listen(this->SocketDescriptor, SOMAXCONN);
 }
 
 //-----------------------------------------------------------------------------
@@ -384,7 +409,7 @@ H5FDdsmSocket::Connect(const char* node, int port)
   struct addrinfo hints;
   struct addrinfo *result, *rp;
   int sfd, s;
-  char service[64];
+  char service[NI_MAXSERV];
 
   if (this->SocketDescriptor > 0) {
     H5FDdsmError("Attempting to connect a connected socket");
@@ -394,7 +419,7 @@ H5FDdsmSocket::Connect(const char* node, int port)
   // Obtain address(es) matching host/port
   sprintf(service, "%d", port);
   memset(&hints, 0, sizeof(struct addrinfo));
-  hints.ai_family = AF_INET;
+  hints.ai_family = AF_UNSPEC;
   hints.ai_socktype = SOCK_STREAM;
   hints.ai_flags = 0;
   hints.ai_protocol = IPPROTO_TCP;
@@ -419,49 +444,13 @@ H5FDdsmSocket::Connect(const char* node, int port)
   }
 
   if (rp == NULL) { // No address succeeded
-    fprintf(stderr, "Could not connect\n");
+    H5FDdsmError("Could not connect");
     freeaddrinfo(result);
     return -1;
   }
   this->SocketDescriptor = sfd;
   freeaddrinfo(result);
   return 0;
-}
-
-//-----------------------------------------------------------------------------
-int
-H5FDdsmSocket::GetPort()
-{
-  struct sockaddr_in sockinfo;
-  memset(&sockinfo, 0, sizeof(sockinfo));
-#ifdef _WIN32
-  int sizebuf = sizeof(sockinfo);
-#else
-  socklen_t sizebuf = sizeof(sockinfo);
-#endif
-  if (getsockname(this->SocketDescriptor,
-      reinterpret_cast<sockaddr*> (&sockinfo), &sizebuf) != 0) {
-    return -1;
-  }
-  return ntohs(sockinfo.sin_port);
-}
-
-//-----------------------------------------------------------------------------
-const char*
-H5FDdsmSocket::GetHostName()
-{
-  struct sockaddr_in sockinfo;
-  memset(&sockinfo, 0, sizeof(sockinfo));
-#ifdef _WIN32
-  int sizebuf = sizeof(sockinfo);
-#else
-  socklen_t sizebuf = sizeof(sockinfo);
-#endif
-  if (getsockname(this->SocketDescriptor,
-      reinterpret_cast<sockaddr*> (&sockinfo), &sizebuf) != 0) {
-    return NULL;
-  }
-  return (const char*) inet_ntoa(sockinfo.sin_addr);
 }
 
 //-----------------------------------------------------------------------------
