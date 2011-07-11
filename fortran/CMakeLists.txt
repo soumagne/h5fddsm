@@ -19,9 +19,11 @@ IF(CMAKE_Fortran_COMPILER MATCHES ifort)
   IF (WIN32 AND MSVC)
     set(CMAKE_Fortran_FLAGS_DEBUG "/debug:full /dbglibs" CACHE
       "Default debug compiler flags" STRING FORCE)
+    set(CMAKE_Fortran_FLAGS_RELWITHDEBINFO "/debug:full /dbglibs" CACHE
+      "Default debug compiler flags" STRING FORCE)
     set(CMAKE_EXE_LINKER_FLAGS_DEBUG "/DEBUG" CACHE
       "Default debug linker flags" STRING FORCE)
-      MESSAGE("Adding ifort flags")
+    MESSAGE("Adding ifort flags")
   ENDIF (WIN32 AND MSVC)
 ENDIF(CMAKE_Fortran_COMPILER MATCHES ifort)
 
@@ -56,7 +58,6 @@ ADD_LIBRARY(H5FDdsm_f90CStub
 TARGET_LINK_LIBRARIES(H5FDdsm_f90CStub
   H5FDdsm
   ${MPI_LIBRARY}
-  ${MPI_EXTRA_LIBRARY}
 )
 
 SET_LIB_OPTIONS(H5FDdsm_f90CStub)
