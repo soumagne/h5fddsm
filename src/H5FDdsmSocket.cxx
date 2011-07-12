@@ -316,7 +316,7 @@ H5FDdsmSocket::Bind(int port, const char *node)
   if (getsockname(this->SocketDescriptor, (struct sockaddr *) &result_host_addr,
       &result_host_addr_len) != 0) {
     H5FDdsmError("getsockname: could not retrieve socket name information");
-    return NULL;
+    return -1;
   }
   s = getnameinfo((struct sockaddr *) &result_host_addr, result_host_addr_len,
       result_host, NI_MAXHOST, result_service, NI_MAXSERV, NI_NUMERICHOST | NI_NUMERICSERV);
