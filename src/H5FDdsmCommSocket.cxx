@@ -37,7 +37,6 @@ H5FDdsmCommSocket::H5FDdsmCommSocket()
 {
   for (int i=0; i<H5FD_DSM_MAX_SOCKET; i++) this->InterComm[i] = NULL;
   this->DsmMasterSocket = NULL;
-  this->CommChannel  = H5FD_DSM_INTRA_COMM;
   this->DsmMasterPort = 0;
 }
 

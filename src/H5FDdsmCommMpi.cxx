@@ -58,7 +58,6 @@
 H5FDdsmCommMpi::H5FDdsmCommMpi()
 {
   this->InterComm = MPI_COMM_NULL;
-  this->CommChannel = H5FD_DSM_INTRA_COMM;
 }
 
 //----------------------------------------------------------------------------
