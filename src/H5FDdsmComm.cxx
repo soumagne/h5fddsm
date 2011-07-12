@@ -57,12 +57,14 @@
 //----------------------------------------------------------------------------
 H5FDdsmComm::H5FDdsmComm()
 {
-  this->IntraComm = MPI_COMM_NULL;
-
-  this->UseOneSidedComm = 0;
+  this->IntraComm          = MPI_COMM_NULL;
+  this->Id                 = -1;
+  this->IntraSize          = -1;
+  this->InterSize          = -1;
+  this->CommChannel        = -1;
+  this->UseOneSidedComm    = 0;
   this->UseStaticInterComm = 0;
-
-  this->SyncChannels = 0;
+  this->SyncChannels       = 0;
 }
 
 //----------------------------------------------------------------------------
