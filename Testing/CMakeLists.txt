@@ -55,7 +55,7 @@ ENDFUNCTION(ADD_H5FD_DSM_DYNAMIC_TEST)
 
 FUNCTION(ADD_H5FD_DSM_BLOCK_TEST full_test_name blocktype server client)
   FOREACH(comm Socket MPI MPI_RMA)
-    ADD_TEST("${full_test_name}_${comm}_${blocktype}"
+    ADD_TEST("${full_test_name}_${comm}_dynamic_${blocktype}"
       ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/H5FDdsmTestDriver
       --server ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${server}
       --client ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${client}
