@@ -59,7 +59,7 @@ int_f nh5pset_fapl_dsm_c(hid_t_f *prp_id, int_f* comm)
 {
      int      ret_value = -1;
      hid_t    c_prp_id  = *prp_id;
-     MPI_Comm c_comm   = *comm;
+     MPI_Comm c_comm    = MPI_Comm_f2c(*comm);
      herr_t ret;
 
      /*
@@ -105,7 +105,7 @@ int_f nh5pget_fapl_dsm_c(hid_t_f *prp_id, int_f* comm)
  *---------------------------------------------------------------------------*/
 int_f nh5fd_dsm_set_mode_c(int_f* mode)
 {
-     int      ret_value = -1;
+     int        ret_value = -1;
      unsigned long c_mode = *mode;
      herr_t ret;
 
