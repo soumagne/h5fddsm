@@ -596,13 +596,11 @@ H5Pset_fapl_dsm(hid_t fapl_id, MPI_Comm dsmComm, void *dsmBuffer)
 
 #ifdef H5FD_DSM_HAVE_STEERING
   if (!fa.buffer->GetSteerer()->GetWriteToDSM() || 
-      (!fa.buffer->GetIsConnected() && !fa.buffer->GetIsServer()))
-  {
+      (!fa.buffer->GetIsConnected() && !fa.buffer->GetIsServer())) {
     // next time step will go back to the DSM if a steering asked for writing to the disk
     if (fa.buffer->GetSteerer()) fa.buffer->GetSteerer()->SetWriteToDSM(1);
 #else
- if (!fa.buffer->GetIsConnected() && !fa.buffer->GetIsServer())
-  {
+ if (!fa.buffer->GetIsConnected() && !fa.buffer->GetIsServer()) {
 #endif
     // When the set_fapl_dsm is called with a NULL dsmBuffer argument and no connection can be established
     // use automatically the MPIO driver
@@ -1162,9 +1160,9 @@ H5FD_dsm_write(H5FD_t *_file, H5FD_mem_t UNUSED type, hid_t UNUSED dxpl_id,
   }
 
   // Write from BUF to DSM
-  if (file->DsmBuffer->Put(file->start + addr, size, (void *) buf) != H5FD_DSM_SUCCESS)
+  if (file->DsmBuffer->Put(file->start + addr, size, (void *) buf) != H5FD_DSM_SUCCESS) {
     HGOTO_ERROR(H5E_VFL, H5E_WRITEERROR, FAIL, "can't write to DSM");
-
+  }
   file->dirty = TRUE;
 
 done: 
@@ -1337,7 +1335,7 @@ H5FD_dsm_query(const H5FD_t *_file, unsigned long *flags)
   FUNC_ENTER_NOAPI(H5FD_dsm_query, FAIL)
 
   /* Set the VFL feature flags that this driver supports */
-  if(flags && !file->DsmBuffer->GetIsReadOnly()) { // If it is read-only use the driver serially
+  if (flags && !file->DsmBuffer->GetIsReadOnly()) { // If it is read-only use the driver serially
     *flags=0;
     *flags|=H5FD_FEAT_AGGREGATE_METADATA;  /* OK to aggregate metadata allocations */
     *flags|=H5FD_FEAT_AGGREGATE_SMALLDATA; /* OK to aggregate "small" raw data allocations */

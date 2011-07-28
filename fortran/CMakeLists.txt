@@ -4,10 +4,13 @@ PROJECT (H5FDdsm_F90 C CXX Fortran)
 #-----------------------------------------------------------------------------
 # Add MPI Fortran library on win32
 #-----------------------------------------------------------------------------
-IF (WIN32)
-  FIND_LIBRARY(MPI_FORTRAN_LIBRARY NAMES fmpich2
+IF (WIN32 AND CMAKE_MAJOR_VERSION EQUAL 2 AND CMAKE_MINOR_VERSION EQUAL 8
+  AND CMAKE_PATCH_VERSION LESS 5)
+# Now defined with CMake v2.8.5
+  FIND_LIBRARY(MPI_Fortran_LIBRARIES NAMES fmpich2 mpichf90
     HINTS $ENV{ProgramFiles}/MPICH2/lib)
-ENDIF (WIN32)
+ENDIF (WIN32 AND CMAKE_MAJOR_VERSION EQUAL 2 AND CMAKE_MINOR_VERSION EQUAL 8
+  AND CMAKE_PATCH_VERSION LESS 5)
 
 #-----------------------------------------------------------------------------
 # Add debug information to default flags (intel Fortran) : JB
@@ -16,9 +19,11 @@ IF(CMAKE_Fortran_COMPILER MATCHES ifort)
   IF (WIN32 AND MSVC)
     set(CMAKE_Fortran_FLAGS_DEBUG "/debug:full /dbglibs" CACHE
       "Default debug compiler flags" STRING FORCE)
+    set(CMAKE_Fortran_FLAGS_RELWITHDEBINFO "/debug:full /dbglibs" CACHE
+      "Default debug compiler flags" STRING FORCE)
     set(CMAKE_EXE_LINKER_FLAGS_DEBUG "/DEBUG" CACHE
       "Default debug linker flags" STRING FORCE)
-      MESSAGE("Adding ifort flags")
+    MESSAGE("Adding ifort flags")
   ENDIF (WIN32 AND MSVC)
 ENDIF(CMAKE_Fortran_COMPILER MATCHES ifort)
 
@@ -52,9 +57,7 @@ ADD_LIBRARY(H5FDdsm_f90CStub
 
 TARGET_LINK_LIBRARIES(H5FDdsm_f90CStub
   H5FDdsm
-  hdf5_fortran
-  hdf5_f90cstub
-  ${MPI_LIBRARY}  
+  ${MPI_LIBRARY}
 )
 
 SET_LIB_OPTIONS(H5FDdsm_f90CStub)
@@ -84,8 +87,10 @@ ADD_LIBRARY(H5FDdsm_fortran
 )
 
 TARGET_LINK_LIBRARIES(H5FDdsm_fortran
+  hdf5_fortran
   H5FDdsm_f90CStub
-  ${MPI_FORTRAN_LIBRARY}
+  hdf5_f90cstub
+  ${MPI_Fortran_LIBRARIES}
 )
 
 SET_LIB_OPTIONS(H5FDdsm_fortran)

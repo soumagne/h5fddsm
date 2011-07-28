@@ -103,12 +103,12 @@ public:
   // Description:
   // Returns the port to which the socket is connected.
   // -1 on error.
-  int GetPort();
+  H5FDdsmGetValueMacro(Port, int);
 
   // Description:
   // Returns the hostname to which the socket is connected.
   // -1 on error.
-  const char* GetHostName();
+  H5FDdsmGetValueMacro(HostName, const char*);
 
   // Description:
   // Returns local hostname found.
@@ -138,6 +138,9 @@ public:
 protected:
   int SocketDescriptor;
   int ClientSocketDescriptor;
+
+  char *HostName;
+  int   Port;
 
 private:
   int IsServer;

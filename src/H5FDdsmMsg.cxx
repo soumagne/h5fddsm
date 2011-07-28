@@ -55,7 +55,8 @@ H5FDdsmMsg::H5FDdsmMsg() {
   this->Source = this->Dest = 0;
   this->Tag = H5FD_DSM_DEFAULT_TAG;
   this->Address = 0;
-  this->Length = this->Length64 = 0;
+  this->Length = 0;
+  this->Length64 = 0;
   this->Data = NULL;
 }
 

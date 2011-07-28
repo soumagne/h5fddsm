@@ -530,7 +530,7 @@ void H5FDdsmManager::ClearXMLStringReceive()
 //----------------------------------------------------------------------------
 H5FDdsmInt32 FileExists(H5FDdsmConstString fname)
 {
-  if(access(fname, 0) != -1) {
+  if (access(fname, 0) != -1) {
       return(H5FD_DSM_TRUE);
   } else {
       return(H5FD_DSM_FALSE);

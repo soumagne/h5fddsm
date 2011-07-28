@@ -394,7 +394,7 @@ H5FDdsmBuffer::ServiceLoop(H5FDdsmInt32 *ReturnOpcode)
 {
   H5FDdsmInt32   op, status = H5FD_DSM_SUCCESS;
 
-  while(status == H5FD_DSM_SUCCESS){
+  while(status == H5FD_DSM_SUCCESS) {
     status = this->Service(&op);
     if (status != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
     if (ReturnOpcode) *ReturnOpcode = op;
@@ -420,11 +420,11 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode)
     H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "Receiving command header from anyone");
     status = this->ReceiveCommandHeader(&Opcode, &who, &Address, &aLength);
   }
-  if (status == H5FD_DSM_FAIL){
+  if (status == H5FD_DSM_FAIL) {
     H5FDdsmError("Error Receiving Command Header");
     return(H5FD_DSM_FAIL);
   }
-  switch(Opcode){
+  switch(Opcode) {
   // H5FD_DSM_OPCODE_PUT
   case H5FD_DSM_OPCODE_PUT:
     H5FDdsmDebug("PUT request from " << who << " for " << aLength << " bytes @ " << Address);
@@ -636,12 +636,12 @@ H5FDdsmBuffer::RemoteService(H5FDdsmInt32 *ReturnOpcode)
     H5FDdsmInt32 useInterCommunicator = 1;
     status = this->ReceiveCommandHeader(&Opcode, &who, &Address, &aLength, useInterCommunicator, i);
 
-    if (status == H5FD_DSM_FAIL){
+    if (status == H5FD_DSM_FAIL) {
       H5FDdsmError("Error Receiving Command Header");
       return(H5FD_DSM_FAIL);
     }
 
-    switch(Opcode){
+    switch(Opcode) {
     case H5FD_DSM_LOCK_ACQUIRE:
       if (this->Comm->ChannelSynced(who, &syncId)) {
 #ifdef _WIN32
@@ -659,7 +659,7 @@ H5FDdsmBuffer::RemoteService(H5FDdsmInt32 *ReturnOpcode)
         status = H5FD_DSM_SUCCESS;
         H5FDdsmDebug("Send request communicator switch to " << who);
         status = this->SendCommandHeader(H5FD_DSM_COMM_SWITCH, who, 0, 0);
-        if (status == H5FD_DSM_FAIL){
+        if (status == H5FD_DSM_FAIL) {
           H5FDdsmError("Error Sending Command Header");
           return(H5FD_DSM_FAIL);
         }
@@ -850,7 +850,7 @@ H5FDdsmBuffer::RequestLockRelease()
     H5FDdsmLockDebug("released");
   }
 
-  if(this->IsServer) {
+  if (this->IsServer) {
 #ifdef _WIN32
     ReleaseMutex(this->Lock);
 #else

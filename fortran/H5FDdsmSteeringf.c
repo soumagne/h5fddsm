@@ -36,7 +36,7 @@
 int_f nh5fd_dsm_steering_init_c(int_f* comm)
 {
   int      ret_value = -1;
-  MPI_Comm c_comm    = *comm;
+  MPI_Comm c_comm    = MPI_Comm_f2c(*comm);
   herr_t ret;
 
   /*

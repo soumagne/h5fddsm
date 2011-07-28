@@ -36,7 +36,7 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     // Description:
     // Get the process rank and communicator size
     H5FDdsmGetValueMacro(UpdatePiece, H5FDdsmInt32);
-    H5FDdsmGetValueMacro(UpdateNumPieces, MPI_Comm);
+    H5FDdsmGetValueMacro(UpdateNumPieces, H5FDdsmInt32);
 
     // Description:
     // Set/Get the MPI Communicator used by this DSM manager

@@ -57,12 +57,14 @@
 //----------------------------------------------------------------------------
 H5FDdsmComm::H5FDdsmComm()
 {
-  this->IntraComm = MPI_COMM_NULL;
-
-  this->UseOneSidedComm = 0;
+  this->IntraComm          = MPI_COMM_NULL;
+  this->Id                 = -1;
+  this->IntraSize          = -1;
+  this->InterSize          = -1;
+  this->CommChannel        = H5FD_DSM_INTRA_COMM;
+  this->UseOneSidedComm    = 0;
   this->UseStaticInterComm = 0;
-
-  this->SyncChannels = 0;
+  this->SyncChannels       = 0;
 }
 
 //----------------------------------------------------------------------------
@@ -144,8 +146,8 @@ H5FDdsmComm::Init()
 {
   H5FDdsmInt32 size, rank;
 
-  if(MPI_Comm_size(this->IntraComm, &size) != MPI_SUCCESS) return(H5FD_DSM_FAIL);
-  if(MPI_Comm_rank(this->IntraComm, &rank) != MPI_SUCCESS) return(H5FD_DSM_FAIL);
+  if (MPI_Comm_size(this->IntraComm, &size) != MPI_SUCCESS) return(H5FD_DSM_FAIL);
+  if (MPI_Comm_rank(this->IntraComm, &rank) != MPI_SUCCESS) return(H5FD_DSM_FAIL);
 
   this->Id = rank;
   this->IntraSize = size;
@@ -156,12 +158,12 @@ H5FDdsmComm::Init()
 H5FDdsmInt32
 H5FDdsmComm::Send(H5FDdsmMsg *Msg)
 {
-  if(Msg->Tag <= 0) Msg->Tag = H5FD_DSM_DEFAULT_TAG;
-  if(Msg->Length <= 0 ){
+  if (Msg->Tag <= 0) Msg->Tag = H5FD_DSM_DEFAULT_TAG;
+  if (Msg->Length <= 0 ) {
     H5FDdsmError("Cannot Send Message of Length = " << Msg->Length);
     return(H5FD_DSM_FAIL);
   }
-  if(Msg->Data <= 0 ){
+  if (Msg->Data <= 0 ) {
     H5FDdsmError("Cannot Send Message from Data Buffer = " << Msg->Length);
     return(H5FD_DSM_FAIL);
   }
@@ -172,12 +174,12 @@ H5FDdsmComm::Send(H5FDdsmMsg *Msg)
 H5FDdsmInt32
 H5FDdsmComm::Receive(H5FDdsmMsg *Msg, H5FDdsmInt32 Channel)
 {
-  if(Msg->Tag <= 0) Msg->Tag = H5FD_DSM_DEFAULT_TAG;
-  if(Msg->Length <= 0 ){
+  if (Msg->Tag <= 0) Msg->Tag = H5FD_DSM_DEFAULT_TAG;
+  if (Msg->Length <= 0 ) {
     H5FDdsmError("Cannot Receive Message of Length = " << Msg->Length);
     return(H5FD_DSM_FAIL);
   }
-  if(Msg->Data <= 0 ){
+  if (Msg->Data <= 0 ) {
     H5FDdsmError("Cannot Receive Message into Data Buffer = " << Msg->Length);
     return(H5FD_DSM_FAIL);
   }
@@ -188,7 +190,7 @@ H5FDdsmComm::Receive(H5FDdsmMsg *Msg, H5FDdsmInt32 Channel)
 H5FDdsmInt32
 H5FDdsmComm::Probe(H5FDdsmMsg *Msg)
 {
-  if(Msg->Tag <= 0) Msg->Tag = H5FD_DSM_DEFAULT_TAG;
+  if (Msg->Tag <= 0) Msg->Tag = H5FD_DSM_DEFAULT_TAG;
   return(H5FD_DSM_SUCCESS);
 }
 
@@ -196,12 +198,12 @@ H5FDdsmComm::Probe(H5FDdsmMsg *Msg)
 H5FDdsmInt32
 H5FDdsmComm::Put(H5FDdsmMsg *DataMsg)
 {
-  if(DataMsg->Tag <= 0) DataMsg->Tag = H5FD_DSM_DEFAULT_TAG;
-  if(DataMsg->Length <= 0 ){
+  if (DataMsg->Tag <= 0) DataMsg->Tag = H5FD_DSM_DEFAULT_TAG;
+  if (DataMsg->Length <= 0 ) {
     H5FDdsmError("Cannot Put Message of Length = " << DataMsg->Length);
     return(H5FD_DSM_FAIL);
   }
-  if(DataMsg->Data <= 0 ){
+  if (DataMsg->Data <= 0 ) {
     H5FDdsmError("Cannot Put Message from Data Buffer = " << DataMsg->Length);
     return(H5FD_DSM_FAIL);
   }
@@ -212,12 +214,12 @@ H5FDdsmComm::Put(H5FDdsmMsg *DataMsg)
 H5FDdsmInt32
 H5FDdsmComm::Get(H5FDdsmMsg *DataMsg)
 {
-  if(DataMsg->Tag <= 0) DataMsg->Tag = H5FD_DSM_DEFAULT_TAG;
-  if(DataMsg->Length <= 0 ){
+  if (DataMsg->Tag <= 0) DataMsg->Tag = H5FD_DSM_DEFAULT_TAG;
+  if (DataMsg->Length <= 0 ) {
     H5FDdsmError("Cannot Get Message of Length = " << DataMsg->Length);
     return(H5FD_DSM_FAIL);
   }
-  if(DataMsg->Data <= 0 ){
+  if (DataMsg->Data <= 0 ) {
     H5FDdsmError("Cannot Get Message into Data Buffer = " << DataMsg->Length);
     return(H5FD_DSM_FAIL);
   }
