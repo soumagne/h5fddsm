@@ -176,7 +176,7 @@ INCLUDE_DIRECTORIES(${H5FDdsm_BINARY_DIR}/src)
 #-----------------------------------------------------------------------------
 # Linking against mpich2 libs on win32 causes trouble if we don't add some flags
 #-----------------------------------------------------------------------------
-MACRO (SET_LINK_OPTIONS target)
+MACRO (SET_LINK_OPTIONS exetarget)
   IF (WIN32 AND MSVC AND NOT BUILD_SHARED_LIBS)
       IF (HDF5_GREATER_1_8)
         SET_TARGET_PROPERTIES (${target}
