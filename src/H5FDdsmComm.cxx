@@ -62,8 +62,8 @@ H5FDdsmComm::H5FDdsmComm()
   this->IntraSize          = -1;
   this->InterSize          = -1;
   this->CommChannel        = H5FD_DSM_INTRA_COMM;
-  this->UseOneSidedComm    = 0;
-  this->UseStaticInterComm = 0;
+  this->UseOneSidedComm    = H5FD_DSM_FALSE;
+  this->UseStaticInterComm = H5FD_DSM_FALSE;
   this->SyncChannels       = 0;
 }
 

@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
   receiverInit(argc, argv, dsmManager, &comm);
 
   while (dsmManager->GetDSMHandle()->GetIsConnected()) {
-    if (dsmManager->WaitForUpdateReady() > 0) {
+    if (dsmManager->WaitForNotification() > 0) {
       int array[3] = { 1, 2, 3 };
       hsize_t arraySize = 3;
       // H5Dump

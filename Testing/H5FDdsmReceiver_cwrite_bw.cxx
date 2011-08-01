@@ -10,7 +10,7 @@ int main(int argc, char *argv[])
   receiverInit(argc, argv, dsmManager, &comm);
 
   while (dsmManager->GetDsmIsConnected()) {
-    if (dsmManager->WaitForUpdateReady() > 0) {
+    if (dsmManager->WaitForNotification() > 0) {
       // H5Dump
       // dsmManager->H5DumpLight();
       // Sync here

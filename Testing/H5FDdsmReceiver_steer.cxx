@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
   receiverInit(argc, argv, dsmManager, &comm);
 
   while (dsmManager->GetDsmIsConnected()) {
-    if (dsmManager->WaitForUpdateReady() > 0) {
+    if (dsmManager->WaitForNotification() > 0) {
       H5FDdsmInt32 intScalar = 1;
       H5FDdsmInt32 intVector[] = {1, 2, 3};
       H5FDdsmFloat64 doubleScalar = 3.14;

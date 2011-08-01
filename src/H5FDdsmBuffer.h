@@ -65,7 +65,7 @@
 class H5FDdsmSteerer;
 #endif
 
-#define H5FD_DSM_UPDATE_LEVEL_MAX 0x4
+#define H5FD_DSM_NOTIFICATION_MAX 0x4
 
 //! Base comm object for Distributed Shared Memory implementation
 /*!
@@ -76,30 +76,6 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     H5FDdsmBuffer();
     virtual ~H5FDdsmBuffer();
 
-    // Is the DSMBuffer connected
-    H5FDdsmGetValueMacro(IsConnected, H5FDdsmBoolean);
-    H5FDdsmSetValueMacro(IsConnected, H5FDdsmBoolean);
-    H5FDdsmInt32 SignalConnected();
-    H5FDdsmInt32 WaitForConnected();
-
-    // Is the DSMBuffer connected
-    H5FDdsmGetValueMacro(IsSyncRequired, H5FDdsmBoolean);
-    H5FDdsmSetValueMacro(IsSyncRequired, H5FDdsmBoolean);
-
-    // Is the DSMBuffer ready to update
-    H5FDdsmGetValueMacro(IsUpdateReady, H5FDdsmBoolean);
-    H5FDdsmSetValueMacro(IsUpdateReady, H5FDdsmBoolean);
-    H5FDdsmInt32 SignalUpdateReady();
-    H5FDdsmInt32 WaitForUpdateReady();
-
-    // Has the data been modified
-    H5FDdsmGetValueMacro(IsDataModified, H5FDdsmBoolean);
-    H5FDdsmSetValueMacro(IsDataModified, H5FDdsmBoolean);
-
-    // Set/Get Update level
-    H5FDdsmGetValueMacro(UpdateLevel, H5FDdsmInt32);
-    H5FDdsmSetValueMacro(UpdateLevel, H5FDdsmInt32);
-
     // Is the DSMBuffer auto allocated within the driver or not
     H5FDdsmGetValueMacro(IsAutoAllocated, H5FDdsmBoolean);
     H5FDdsmSetValueMacro(IsAutoAllocated, H5FDdsmBoolean);
@@ -108,9 +84,33 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     H5FDdsmGetValueMacro(IsServer, H5FDdsmBoolean);
     H5FDdsmSetValueMacro(IsServer, H5FDdsmBoolean);
 
-    // Does the server update automatically on H5Fclose or not
-    H5FDdsmGetValueMacro(UpdateServerOnClose, H5FDdsmBoolean);
-    H5FDdsmSetValueMacro(UpdateServerOnClose, H5FDdsmBoolean);
+    // Is the DSMBuffer connected
+    H5FDdsmGetValueMacro(IsConnected, H5FDdsmBoolean);
+    H5FDdsmSetValueMacro(IsConnected, H5FDdsmBoolean);
+    H5FDdsmInt32 SignalConnection();
+    H5FDdsmInt32 WaitForConnection();
+
+    // Is a DSM notification set
+    H5FDdsmGetValueMacro(IsNotified, H5FDdsmBoolean);
+    H5FDdsmSetValueMacro(IsNotified, H5FDdsmBoolean);
+    H5FDdsmInt32 SignalNotification();
+    H5FDdsmInt32 WaitForNotification();
+
+    // Set/Get Notification
+    H5FDdsmGetValueMacro(Notification, H5FDdsmInt32);
+    H5FDdsmSetValueMacro(Notification, H5FDdsmInt32);
+
+    // Is the server automatically notified on H5Fclose or not
+    H5FDdsmGetValueMacro(NotificationOnClose, H5FDdsmBoolean);
+    H5FDdsmSetValueMacro(NotificationOnClose, H5FDdsmBoolean);
+
+    // Has the data been modified
+    H5FDdsmGetValueMacro(IsDataModified, H5FDdsmBoolean);
+    H5FDdsmSetValueMacro(IsDataModified, H5FDdsmBoolean);
+
+    // Is the DSM locked
+    H5FDdsmGetValueMacro(IsLocked, H5FDdsmBoolean);
+    H5FDdsmSetValueMacro(IsLocked, H5FDdsmBoolean);
 
     // Releases the lock automatically on H5Fclose or not
     H5FDdsmGetValueMacro(ReleaseLockOnClose, H5FDdsmBoolean);
@@ -120,9 +120,11 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     H5FDdsmGetValueMacro(IsReadOnly, H5FDdsmBoolean);
     H5FDdsmSetValueMacro(IsReadOnly, H5FDdsmBoolean);
 
-    H5FDdsmGetValueMacro(IsLocked, H5FDdsmBoolean);
-    H5FDdsmSetValueMacro(IsLocked, H5FDdsmBoolean);
+    // Is synchronization required
+    H5FDdsmGetValueMacro(IsSyncRequired, H5FDdsmBoolean);
+    H5FDdsmSetValueMacro(IsSyncRequired, H5FDdsmBoolean);
 
+    // Debug: add ability to send xml string
     H5FDdsmGetStringMacro(XMLDescription);
     H5FDdsmSetStringMacro(XMLDescription);
 
@@ -147,7 +149,7 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     H5FDdsmInt32   RequestAccept();
     H5FDdsmInt32   RequestDisconnect();
 
-    H5FDdsmInt32   RequestServerUpdate();
+    H5FDdsmInt32   RequestNotification();
 
     H5FDdsmInt32   RequestClearStorage();
     H5FDdsmInt32   RequestXMLExchange();
@@ -157,9 +159,58 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
 #endif
 
   protected:
-    H5FDdsmInt32            ThreadDsmReady;
-    H5FDdsmInt32            ThreadRemoteDsmReady;
+    H5FDdsmBoolean          IsAutoAllocated;
+    H5FDdsmBoolean          IsServer;
 
+    H5FDdsmBoolean          IsConnecting;
+    H5FDdsmBoolean          IsConnected;
+#ifdef _WIN32
+#if (WINVER <= H5FD_DSM_CONDVAR_MINVER)
+    HANDLE                  ConnectionEvent;
+#else
+    CRITICAL_SECTION        ConnectionCritSection;
+    CONDITION_VARIABLE      ConnectionCond;
+#endif
+#else
+    pthread_mutex_t         ConnectionMutex;
+    pthread_cond_t          ConnectionCond;
+#endif
+
+    H5FDdsmBoolean          IsNotified;
+#ifdef _WIN32
+#if (WINVER <= H5FD_DSM_CONDVAR_MINVER)
+    HANDLE                  NotificationEvent;
+#else
+    CRITICAL_SECTION        NotificationCritSection;
+    CONDITION_VARIABLE      NotificationCond;
+#endif
+#else
+    pthread_mutex_t         NotificationMutex;
+    pthread_cond_t          NotificationCond;
+#endif
+
+    H5FDdsmInt32            Notification;
+    H5FDdsmBoolean          NotificationOnClose;
+    H5FDdsmBoolean          IsDataModified;
+
+    H5FDdsmBoolean          IsLocked;
+#ifdef _WIN32
+    HANDLE                  Lock;
+#else
+    pthread_mutex_t         Lock;
+#endif
+    H5FDdsmBoolean          ReleaseLockOnClose;
+    H5FDdsmBoolean          IsReadOnly;
+    H5FDdsmBoolean          IsSyncRequired;
+
+    H5FDdsmString           XMLDescription;
+
+#ifdef H5FD_DSM_HAVE_STEERING
+    H5FDdsmSteerer         *Steerer;
+#endif
+
+    H5FDdsmBoolean          ThreadDsmReady;
+    H5FDdsmBoolean          ThreadRemoteDsmReady;
 #ifdef _WIN32
     DWORD                   ServiceThreadPtr;
     HANDLE                  ServiceThreadHandle;
@@ -168,56 +219,6 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
 #else
     pthread_t               ServiceThreadPtr;
     pthread_t               RemoteServiceThreadPtr;
-#endif
-
-    H5FDdsmBoolean          IsServer;
-    H5FDdsmBoolean          IsConnecting;
-    H5FDdsmBoolean          IsConnected;
-#ifdef _WIN32
-#if (WINVER <= H5FD_DSM_CONDVAR_MINVER)
-    HANDLE                  ConnectedEvent;
-#else
-    CRITICAL_SECTION        ConnectedCritSection;
-    CONDITION_VARIABLE      ConnectedCond;
-#endif
-#else
-    pthread_mutex_t         ConnectedMutex;
-    pthread_cond_t          ConnectedCond;
-#endif
-
-    H5FDdsmBoolean          IsSyncRequired;
-
-    H5FDdsmBoolean          IsUpdateReady;
-#ifdef _WIN32
-#if (WINVER <= H5FD_DSM_CONDVAR_MINVER)
-    HANDLE                  UpdateReadyEvent;
-#else
-    CRITICAL_SECTION        UpdateReadyCritSection;
-    CONDITION_VARIABLE      UpdateReadyCond;
-#endif
-#else
-    pthread_mutex_t         UpdateReadyMutex;
-    pthread_cond_t          UpdateReadyCond;
-#endif
-
-    H5FDdsmBoolean          IsDataModified;
-    H5FDdsmInt32            UpdateLevel;
-    H5FDdsmBoolean          IsAutoAllocated;
-    H5FDdsmBoolean          UpdateServerOnClose;
-    H5FDdsmBoolean          ReleaseLockOnClose;
-    H5FDdsmBoolean          IsReadOnly;
-
-    H5FDdsmBoolean          IsLocked;
-#ifdef _WIN32
-    HANDLE                  Lock;
-#else
-    pthread_mutex_t         Lock;
-#endif
-
-    H5FDdsmString           XMLDescription;
-
-#ifdef H5FD_DSM_HAVE_STEERING
-    H5FDdsmSteerer         *Steerer;
 #endif
 };
 

@@ -31,7 +31,7 @@
 //----------------------------------------------------------------------------
 H5FDdsmCommMpiRma::H5FDdsmCommMpiRma()
 {
-  this->UseOneSidedComm = 1;
+  this->UseOneSidedComm = H5FD_DSM_TRUE;
   this->Win = MPI_WIN_NULL;
 }
 

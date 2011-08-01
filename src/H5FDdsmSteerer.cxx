@@ -37,7 +37,7 @@
 #include <map>
 
 struct H5FDdsmSteererInternals {
-  typedef std::map<std::string, bool> SteeringEntriesString;
+  typedef std::map<std::string, H5FDdsmBoolean> SteeringEntriesString;
   SteeringEntriesString               DisabledObjects;
   //
 };
@@ -136,7 +136,7 @@ H5FDdsmInt32 H5FDdsmSteerer::GetSteeringCommands()
 void H5FDdsmSteerer::SetDisabledObject(H5FDdsmConstString objectName)
 {
   this->SteererInternals->DisabledObjects[objectName] =
-      (this->SteererInternals->DisabledObjects[objectName]) ? false : true;
+      (this->SteererInternals->DisabledObjects[objectName]) ? H5FD_DSM_FALSE : H5FD_DSM_TRUE;
 }
 
 //----------------------------------------------------------------------------

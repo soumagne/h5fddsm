@@ -190,8 +190,8 @@ void particleWriteDsm(
   dsmBuffer->GetComm()->Barrier();
   MPI_Allreduce(&dirty, &isSomeoneDirty, sizeof(H5FDdsmBoolean),
       MPI_UNSIGNED_CHAR, MPI_MAX, dsmBuffer->GetComm()->GetIntraComm());
-  dsmBuffer->SetIsDataModified(1);
-  dsmBuffer->RequestServerUpdate();
+  dsmBuffer->SetIsDataModified(H5FD_DSM_TRUE);
+  dsmBuffer->RequestNotification();
 }
 
 //----------------------------------------------------------------------------
@@ -467,7 +467,7 @@ void receiverInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *
   // when the server is initialized
   MPI_Barrier(*comm);
   if (rank == 0) std::cout << "# Waiting for client..." << std::endl;
-  dsmManager->WaitForConnected();
+  dsmManager->WaitForConnection();
 }
 
 //----------------------------------------------------------------------------

@@ -3,16 +3,23 @@
   Project                 : H5FDdsm
   Module                  : H5FDdsmManager.h
 
+  Authors:
+     John Biddiscombe     Jerome Soumagne
+     biddisco@cscs.ch     soumagne@cscs.ch
+
   Copyright (C) CSCS - Swiss National Supercomputing Centre.
-  You may use modify and and distribute this code freely providing 
-  1) This copyright notice appears on all copies of source code 
+  You may use modify and and distribute this code freely providing
+  1) This copyright notice appears on all copies of source code
   2) An acknowledgment appears with any substantial usage of the code
-  3) If this code is contributed to any other open source project, it 
-  must not be reformatted such that the indentation, bracketing or 
-  overall style is modified significantly. 
+  3) If this code is contributed to any other open source project, it
+  must not be reformatted such that the indentation, bracketing or
+  overall style is modified significantly.
 
   This software is distributed WITHOUT ANY WARRANTY; without even the
   implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+  This work has received funding from the European Community's Seventh
+  Framework Programme (FP7/2007-2013) under grant agreement 225967 “NextMuSE”
 
 =========================================================================*/
 // .NAME H5FDdsmManager - Create/Expose a DSM buffer to an external application
@@ -100,25 +107,27 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     H5FDdsmGetStringMacro(DsmConfigFilePath);
 
     // Description:
-    // Only valid after a PublishDSM call has been made.
-    H5FDdsmInt32 GetDsmIsConnected();
-    H5FDdsmInt32 WaitForConnected();
+    // Wait for a connected - Only valid after a PublishDSM call has been made.
+    H5FDdsmBoolean GetDsmIsConnected();
+    H5FDdsmInt32 WaitForConnection();
 
     // Description:
-    // Get/Set the update ready flag which triggers the pipeline update.
-    H5FDdsmInt32  GetDsmUpdateReady();
-    void ClearDsmUpdateReady();
-    H5FDdsmInt32 WaitForUpdateReady();
+    // Wait for a notification - notifications are used to trigger user
+    // defined tasks and are usually sent once the file has been closed
+    // but can also be sent on demand.
+    H5FDdsmBoolean GetDsmIsNotified();
+    void ClearDsmIsNotified();
+    H5FDdsmInt32 WaitForNotification();
 
     // Description:
-    // Get/Set the data modified flag
-    H5FDdsmInt32  GetDsmIsDataModified();
+    // Get the notification flag - Only valid if GetDsmIsNotified is true.
+    H5FDdsmInt32  GetDsmNotification();
+    void ClearDsmNotification();
+
+    // Description:
+    // Has the DSM data been modified.
+    H5FDdsmBoolean GetDsmIsDataModified();
     void ClearDsmIsDataModified();
-
-    // Description:
-    // Get/Set the update level flag
-    H5FDdsmInt32  GetDsmUpdateLevel();
-    void ClearDsmUpdateLevel();
 
     // Description:
     // Release locks and clean up for next update
@@ -128,7 +137,7 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     H5FDdsmInt32 DestroyDSM();
     H5FDdsmBuffer *GetDSMHandle();
     void   ClearDSM();
-    void   ConnectDSM(H5FDdsmBoolean persist = false);
+    void   ConnectDSM(H5FDdsmBoolean persist = H5FD_DSM_FALSE);
     void   ConnectInterCommDSM();
     void   DisconnectDSM();
     void   PublishDSM();

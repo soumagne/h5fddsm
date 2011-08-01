@@ -87,16 +87,20 @@
 #define H5FD_DSM_INCREMENT 1000000
 
 /*
- * Specific DSM operating modes
+ * Specific DSM operating modes:
+ * - H5FD_DSM_DONT_RELEASE prevents the DSM to automatically release the file on a close
+ * - H5FD_DSM_DONT_NOTIFY prevents the DSM server to be automatically notified on a close
  */
-#define H5FD_DSM_AUTOMATIC_SERVER_UPDATE 0x10
-#define H5FD_DSM_MANUAL_SERVER_UPDATE    0x20
+#define H5FD_DSM_DONT_RELEASE     0x20
+#define H5FD_DSM_DONT_NOTIFY      0x21
 
+/************************************/
 #define H5FD_DSM_UPDATE_LEVEL_0   0x0
 #define H5FD_DSM_UPDATE_LEVEL_1   0x1
 #define H5FD_DSM_UPDATE_LEVEL_2   0x2
 #define H5FD_DSM_UPDATE_LEVEL_3   0x3
 #define H5FD_DSM_UPDATE_LEVEL_4   0x4
+/************************************/
 
 #ifdef __cplusplus
 extern "C" {

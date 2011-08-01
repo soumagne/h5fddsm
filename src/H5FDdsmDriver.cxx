@@ -141,7 +141,7 @@ H5FDdsmDriver::ClearStorage()
 //----------------------------------------------------------------------------
 H5FDdsmInt32
 H5FDdsmDriver::ConfigureUniform(H5FDdsmComm *aComm, H5FDdsmUInt64 aLength, H5FDdsmInt32 StartId, H5FDdsmInt32 EndId, 
-  H5FDdsmUInt64 aBlockLength, bool random)
+  H5FDdsmUInt64 aBlockLength, H5FDdsmBoolean random)
 {
     if (StartId < 0) StartId = 0;
     if (EndId < 0) EndId = aComm->GetIntraSize() - 1;

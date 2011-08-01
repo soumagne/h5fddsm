@@ -19,7 +19,7 @@ int main(int argc, char *argv[])
       (sizeof(H5FDdsmFloat64) * nRemoteProcs));
 
   while (dsmManager->GetDsmIsConnected()) {
-    if (dsmManager->WaitForUpdateReady() > 0) {
+    if (dsmManager->WaitForNotification() > 0) {
       // H5Dump
       // dsmManager->H5DumpLight();
 
