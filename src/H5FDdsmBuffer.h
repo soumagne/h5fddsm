@@ -65,8 +65,6 @@
 class H5FDdsmSteerer;
 #endif
 
-#define H5FD_DSM_NOTIFICATION_MAX 0x4
-
 //! Base comm object for Distributed Shared Memory implementation
 /*!
 */

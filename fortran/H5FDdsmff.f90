@@ -27,7 +27,7 @@
 ! This file contains Fortran90 interfaces for H5FDdsm functions.
 !
 MODULE H5FDDSM
-  USE H5FDDSM_GLOBAL
+  USE H5FD_DSM_GLOBAL
   USE H5GLOBAL
   CONTAINS
 
@@ -73,7 +73,7 @@ MODULE H5FDDSM
 !----------------------------------------------------------------------
 ! Name:        h5pget_fapl_dsm_f
 !
-! Purpose:     Returns MPI communicator information.
+! Purpose:     Returns MPI communicator information
 !
 ! Inputs:
 !        prp_id        - file access property list identifier
@@ -110,13 +110,14 @@ MODULE H5FDDSM
   END SUBROUTINE h5pget_fapl_dsm_f
 
 !----------------------------------------------------------------------
-! Name:     h5fd_dsm_set_mode_f
+! Name:     h5fd_dsm_set_options_f
 !
-! Purpose:  Set the DSM operating mode
+! Purpose:  Set a specific option to the DSM
 !
 ! Inputs:
-!       mode        - specific modes are:
-!                       - H5FD_DSM_MANUAL_SERVER_UPDATE_F
+!       options     - options are:
+!                       - H5FD_DSM_DONT_RELEASE_F
+!                       - H5FD_DSM_DONT_NOTIFY_F
 ! Outputs:
 !       hdferr:     - error code
 !                   Success:  0
@@ -125,44 +126,46 @@ MODULE H5FDDSM
 !               NONE
 !
 !----------------------------------------------------------------------
-  SUBROUTINE h5fd_dsm_set_mode_f(mode, hdferr)
+  SUBROUTINE h5fd_dsm_set_options_f(options, hdferr)
     !DEC$if defined(BUILD_H5FD_DSM_DLL)
-    !DEC$ ATTRIBUTES DLLEXPORT :: h5fd_dsm_set_mode_f
+    !DEC$ ATTRIBUTES DLLEXPORT :: h5fd_dsm_set_options_f
     !DEC$endif
     IMPLICIT NONE
-    INTEGER, INTENT(IN)  :: mode         ! DSM mode to use
+    INTEGER, INTENT(IN)  :: options      ! DSM options to set
     INTEGER, INTENT(OUT) :: hdferr       ! Error code
     INTEGER :: err_0, err_1
 
     INTERFACE
-       INTEGER FUNCTION h5fd_dsm_set_mode_c(mode)
+       INTEGER FUNCTION h5fd_dsm_set_options_c(options)
          USE H5GLOBAL
          !DEC$IF DEFINED(H5FD_DSM_F90_WIN32)
-         !DEC$ATTRIBUTES C,reference,decorate,alias:'H5FD_DSM_SET_MODE_C'::h5fd_dsm_set_mode_c
+         !DEC$ATTRIBUTES C,reference,decorate,alias:'H5FD_DSM_SET_OPTIONS_C'::h5fd_dsm_set_options_c
          !DEC$ENDIF
-       INTEGER, INTENT(IN)  :: mode
-       END FUNCTION h5fd_dsm_set_mode_c
+       INTEGER, INTENT(IN)  :: options
+       END FUNCTION h5fd_dsm_set_options_c
     END INTERFACE
 
     INTERFACE
       INTEGER FUNCTION h5fd_dsm_init_flags_c(i_H5FD_dsm_flags)
-        USE H5FDDSM_GLOBAL
+        USE H5FD_DSM_GLOBAL
         INTEGER i_H5FD_dsm_flags(H5FD_DSM_FLAGS_LEN)
       END FUNCTION h5fd_dsm_init_flags_c
     END INTERFACE
 
     err_0 = h5fd_dsm_init_flags_c(H5FD_dsm_flags)
-    err_1 = h5fd_dsm_set_mode_c(mode)
+    err_1 = h5fd_dsm_set_options_c(options)
     hdferr = err_0 + err_1
-  END SUBROUTINE h5fd_dsm_set_mode_f
+  END SUBROUTINE h5fd_dsm_set_options_f
 
 !----------------------------------------------------------------------
-! Name:     h5fd_dsm_server_update_f
+! Name:     h5fd_dsm_notify_f
 !
-! Purpose:  Force the DSM server to be updated
+! Purpose:  Send a notification to the DSM host
 !
 ! Inputs:
-!               NONE
+!       notifications   - notifications are:
+!                           - H5FD_DSM_NEW_DATA_F
+!                           - H5FD_DSM_NEW_INFORMATION_F
 ! Outputs:
 !       hdferr:     - error code
 !                   Success:  0
@@ -171,23 +174,35 @@ MODULE H5FDDSM
 !               NONE
 !
 !----------------------------------------------------------------------
-  SUBROUTINE h5fd_dsm_server_update_f(hdferr)
+  SUBROUTINE h5fd_dsm_notify_f(notifications, hdferr)
     !DEC$if defined(BUILD_H5FD_DSM_DLL)
-    !DEC$ ATTRIBUTES DLLEXPORT :: h5fd_dsm_server_update_f
+    !DEC$ ATTRIBUTES DLLEXPORT :: h5fd_dsm_notify_f
     !DEC$endif
     IMPLICIT NONE
-    INTEGER, INTENT(OUT) :: hdferr       ! Error code
+    INTEGER, INTENT(IN)  :: notifications ! DSM notifications to be sent
+    INTEGER, INTENT(OUT) :: hdferr        ! Error code
+    INTEGER :: err_0, err_1
 
     INTERFACE
-       INTEGER FUNCTION h5fd_dsm_server_update_c()
+       INTEGER FUNCTION h5fd_dsm_notify_c(notifications)
          USE H5GLOBAL
          !DEC$IF DEFINED(H5FD_DSM_F90_WIN32)
-         !DEC$ATTRIBUTES C,reference,decorate,alias:'H5FD_DSM_SERVER_UPDATE_C'::h5fd_dsm_server_update_c
+         !DEC$ATTRIBUTES C,reference,decorate,alias:'H5FD_DSM_NOTIFY_C'::h5fd_dsm_notify_c
          !DEC$ENDIF
-       END FUNCTION h5fd_dsm_server_update_c
+       INTEGER, INTENT(IN)  :: notifications
+       END FUNCTION h5fd_dsm_notify_c
     END INTERFACE
 
-    hdferr = h5fd_dsm_server_update_c()
-  END SUBROUTINE h5fd_dsm_server_update_f
+    INTERFACE
+      INTEGER FUNCTION h5fd_dsm_init_flags_c(i_H5FD_dsm_flags)
+        USE H5FD_DSM_GLOBAL
+        INTEGER i_H5FD_dsm_flags(H5FD_DSM_FLAGS_LEN)
+      END FUNCTION h5fd_dsm_init_flags_c
+    END INTERFACE
+
+    err_0 = h5fd_dsm_init_flags_c(H5FD_dsm_flags)
+    err_1 = h5fd_dsm_notify_c(notifications)
+    hdferr = err_0 + err_1
+  END SUBROUTINE h5fd_dsm_notify_f
 
 END MODULE H5FDDSM

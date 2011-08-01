@@ -170,7 +170,7 @@ H5FDdsmInt32 H5FDdsmManager::GetDsmNotification()
 void H5FDdsmManager::ClearDsmNotification()
 {
   if (this->DSMBuffer) {
-    this->DSMBuffer->SetNotification(H5FD_DSM_NOTIFICATION_MAX);
+    this->DSMBuffer->SetNotification(0);
   }
 }
 //----------------------------------------------------------------------------

@@ -27,7 +27,7 @@
 ! This file contains Fortran90 interfaces for H5FDdsmSteering functions.
 !
 MODULE H5FDDSM_STEERING
-  USE H5FDDSM_GLOBAL
+  USE H5FD_DSM_GLOBAL
   USE H5GLOBAL
 
   INTERFACE h5fd_dsm_steering_scalar_get_f

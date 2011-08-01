@@ -23,7 +23,7 @@ int main(int argc, char * argv[])
 
   // Use DSM driver
   H5Pset_fapl_dsm(fapl, MPI_COMM_WORLD, dsmBuffer);
-  H5FD_dsm_set_mode(H5FD_DSM_DONT_NOTIFY, dsmBuffer);
+  H5FD_dsm_set_options(H5FD_DSM_DONT_NOTIFY, dsmBuffer);
 
   // Create DSM
   hid_t hdf5Handle = H5Fcreate("dsm", H5F_ACC_TRUNC, H5P_DEFAULT, fapl);
@@ -76,7 +76,7 @@ int main(int argc, char * argv[])
   H5Sclose(dataspace);
   H5Dclose(dataset);
   H5Fclose(hdf5Handle);
-  H5FD_dsm_server_update(dsmBuffer);
+  H5FD_dsm_notify(H5FD_DSM_NEW_DATA, dsmBuffer);
 
   senderFinalize(dsmManager, &comm);
   delete dsmManager;

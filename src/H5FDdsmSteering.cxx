@@ -122,7 +122,7 @@ herr_t H5FD_dsm_steering_update()
   dsmBuffer->GetSteerer()->GetSteeringCommands();
   dsmBuffer->GetSteerer()->GetDisabledObjects();
   // Automatically triggers an update of steering objects during the begin loop function
-  H5FD_dsm_server_update(dsmBuffer);
+  H5FD_dsm_notify(H5FD_DSM_NEW_DATA, dsmBuffer);
 
 done:
   FUNC_LEAVE_NOAPI(ret_value);

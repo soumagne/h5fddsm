@@ -470,9 +470,9 @@ done:
 } // end H5FD_dsm_term()
 
 /*-------------------------------------------------------------------------
- * Function:  H5FD_dsm_set_mode
+ * Function:  H5FD_dsm_set_options
  *
- * Purpose:  Set a specific operating for the DSM
+ * Purpose:  Set a specific option to the DSM
  *
  * Return:  <none>
  *
@@ -481,12 +481,12 @@ done:
  *-------------------------------------------------------------------------
  */
 herr_t
-H5FD_dsm_set_mode(unsigned long flags, void *dsmBuffer)
+H5FD_dsm_set_options(unsigned long flags, void *dsmBuffer)
 {
   herr_t ret_value = SUCCEED;
   H5FDdsmBuffer *buffer = NULL;
 
-  FUNC_ENTER_NOAPI(H5FD_dsm_set_mode, FAIL)
+  FUNC_ENTER_NOAPI(H5FD_dsm_set_options, FAIL)
 
   if (dsmBuffer) {
     buffer = static_cast <H5FDdsmBuffer*> (dsmBuffer);
@@ -500,20 +500,13 @@ H5FD_dsm_set_mode(unsigned long flags, void *dsmBuffer)
 
   switch(flags) {
   case H5FD_DSM_DONT_RELEASE:
-    /* Nothing for now but we may need something */
-    break;
+    buffer->SetReleaseLockOnClose(H5FD_DSM_FALSE);
+    /* If we don't release the file, we don't send notifications as well */
   case H5FD_DSM_DONT_NOTIFY:
     buffer->SetNotificationOnClose(H5FD_DSM_FALSE);
     break;
-  case H5FD_DSM_UPDATE_LEVEL_0:
-  case H5FD_DSM_UPDATE_LEVEL_1:
-  case H5FD_DSM_UPDATE_LEVEL_2:
-  case H5FD_DSM_UPDATE_LEVEL_3:
-  case H5FD_DSM_UPDATE_LEVEL_4:
-    buffer->SetNotification(flags);
-    break;
   default:
-    PRINT_DSM_INFO(buffer->GetComm()->GetId(), "Not implemented mode");
+    PRINT_DSM_INFO(buffer->GetComm()->GetId(), "Not implemented option");
     break;
   }
 
@@ -522,9 +515,9 @@ done:
 }
 
 /*-------------------------------------------------------------------------
- * Function:  H5FD_dsm_server_update
+ * Function:  H5FD_dsm_notify
  *
- * Purpose:  Switch communicators and send an update ready to the DSM servers
+ * Purpose:  Send a notification to the DSM host
  *
  * Return:  <none>
  *
@@ -533,12 +526,12 @@ done:
  *-------------------------------------------------------------------------
  */
 herr_t
-H5FD_dsm_server_update(void *dsmBuffer)
+H5FD_dsm_notify(unsigned long flags, void *dsmBuffer)
 {
   herr_t ret_value = SUCCEED;
   H5FDdsmBuffer *buffer = NULL;
 
-  FUNC_ENTER_NOAPI(H5FD_dsm_server_update, FAIL)
+  FUNC_ENTER_NOAPI(H5FD_dsm_notify, FAIL)
 
   if (dsmBuffer) {
     buffer = static_cast <H5FDdsmBuffer*> (dsmBuffer);
@@ -548,6 +541,16 @@ H5FD_dsm_server_update(void *dsmBuffer)
     } else {
       HGOTO_ERROR(H5E_VFL, H5E_NOTFOUND, FAIL, "No DSM buffer found");
     }
+  }
+
+  switch(flags) {
+  case H5FD_DSM_NEW_INFORMATION:
+  case H5FD_DSM_NEW_DATA:
+    buffer->SetNotification(flags);
+    break;
+  default:
+    PRINT_DSM_INFO(buffer->GetComm()->GetId(), "Not implemented notification");
+    break;
   }
 
   if (!buffer->GetIsLocked()) buffer->RequestLockAcquire();
@@ -855,7 +858,7 @@ H5FD_dsm_close(H5FD_t *_file)
         file->DsmBuffer->SetIsDataModified(H5FD_DSM_TRUE);
         if (file->DsmBuffer->GetNotificationOnClose()) {
           if (!file->DsmBuffer->GetIsServer()) {
-            H5FD_dsm_server_update(file->DsmBuffer);
+            H5FD_dsm_notify(H5FD_DSM_NEW_DATA, file->DsmBuffer);
           } else {
             file->DsmBuffer->SignalNotification();
           }
@@ -867,7 +870,6 @@ H5FD_dsm_close(H5FD_t *_file)
     file->DsmBuffer->SetIsReadOnly(H5FD_DSM_TRUE);
   }
 
-  // TODO As we need a manual update for the client, we may need a manual lock release for the server
   if (file->DsmBuffer->GetReleaseLockOnClose() && file->DsmBuffer->GetIsConnected()
       && file->DsmBuffer->GetIsLocked()) {
     file->DsmBuffer->RequestLockRelease();

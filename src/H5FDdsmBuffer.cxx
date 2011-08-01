@@ -161,7 +161,7 @@ H5FDdsmBuffer::H5FDdsmBuffer()
   pthread_cond_init (&this->NotificationCond, NULL);
 #endif
 
-  this->Notification        = H5FD_DSM_NOTIFICATION_MAX;
+  this->Notification        = 0;
   this->NotificationOnClose = H5FD_DSM_TRUE;
   this->IsDataModified      = H5FD_DSM_FALSE;
 
@@ -945,7 +945,7 @@ H5FDdsmBuffer::RequestNotification()
     status = this->SendCommandHeader(H5FD_DSM_NOTIFICATION, who, localFlag, 0);
   }
   if (this->IsDataModified) this->IsDataModified = H5FD_DSM_FALSE;
-  if (this->Notification != H5FD_DSM_NOTIFICATION_MAX) this->Notification = H5FD_DSM_NOTIFICATION_MAX;
+  if (!this->Notification) this->Notification = 0;
 
   return(status);
 }
