@@ -37,7 +37,7 @@ int main(int argc, char **argv)
   if (dataSizeMB) {
     remoteMB = dataSizeMB;
   } else {
-    remoteMB = dsmManager->GetDSMHandle()->GetTotalLength() / (1024.0 * 1024.0);
+    remoteMB = dsmManager->GetDsmBuffer()->GetTotalLength() / (1024.0 * 1024.0);
   }
 
   // When writing multiple NUM_DATASETS the metadata size is increased so must keep more space
@@ -45,9 +45,9 @@ int main(int argc, char **argv)
   numParticles = (H5FDdsmUInt64) ((1024 * 1024 * remoteMB - H5FD_DSM_ALIGNMENT * NUM_DATASETS) /
       (sizeof(H5FDdsmFloat64) * DIM_DATASETS * dsmManager->GetUpdateNumPieces()));
   numParticles /= NUM_DATASETS;
-  if (dsmManager->GetDSMHandle()->GetDsmType() == H5FD_DSM_TYPE_DYNAMIC_MASK) {
-    dsmManager->GetDSMHandle()->SetMaskLength(numParticles * sizeof(H5FDdsmFloat64) * DIM_DATASETS * dsmManager->GetUpdateNumPieces());
-    dsmManager->GetDSMHandle()->SendMaskLength();
+  if (dsmManager->GetDsmBuffer()->GetDsmType() == H5FD_DSM_TYPE_DYNAMIC_MASK) {
+    dsmManager->GetDsmBuffer()->SetMaskLength(numParticles * sizeof(H5FDdsmFloat64) * DIM_DATASETS * dsmManager->GetUpdateNumPieces());
+    dsmManager->GetDsmBuffer()->SendMaskLength();
   }
   Bytes       = numParticles * sizeof(H5FDdsmFloat64) * DIM_DATASETS * NUM_DATASETS; // 3 = {x,y,z}
   SendBytes   = Bytes * dsmManager->GetUpdateNumPieces();
@@ -64,8 +64,8 @@ int main(int argc, char **argv)
       std::cout << numParticles << " particles/proc (" << NUM_DATASETS
         << " dataset(s) of dim " << DIM_DATASETS << ") -- " << MBytes << "MB" << std::endl;
       printf("%-*s%*s", 10, "# NumProcs", 20, "Bandwidth (MB/s)");
-      if (dsmManager->GetDSMHandle()->GetDsmType() == H5FD_DSM_TYPE_BLOCK_CYCLIC ||
-          dsmManager->GetDSMHandle()->GetDsmType() == H5FD_DSM_TYPE_BLOCK_RANDOM) {
+      if (dsmManager->GetDsmBuffer()->GetDsmType() == H5FD_DSM_TYPE_BLOCK_CYCLIC ||
+          dsmManager->GetDsmBuffer()->GetDsmType() == H5FD_DSM_TYPE_BLOCK_RANDOM) {
         printf("%*s", 20, "Block Size (Bytes)");
       }
       printf("\n");
@@ -75,7 +75,7 @@ int main(int argc, char **argv)
       // Warming up
       for (int skip = 0; skip < SKIP; skip++) {
         if (type == 0) {
-          TestParticleWrite(fullname, numParticles, DIM_DATASETS, NUM_DATASETS, dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(), comm, dsmManager->GetDSMHandle(), usingHDF);
+          TestParticleWrite(fullname, numParticles, DIM_DATASETS, NUM_DATASETS, dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(), comm, dsmManager->GetDsmBuffer(), usingHDF);
         }
         else if (type == 1) {
           TestParticleWrite(hdffile.c_str(), numParticles, DIM_DATASETS, NUM_DATASETS, dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(), comm, NULL, usingHDF);
@@ -88,7 +88,7 @@ int main(int argc, char **argv)
             // We have configured everything manually using the DSM manager, so pass the buffer
             // into the read/write code so that we can use the dsm that we have setup
             // otherwise it creates a new DSM server object
-            totaltime += TestParticleWrite(fullname, numParticles, DIM_DATASETS, NUM_DATASETS, dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(), comm, dsmManager->GetDSMHandle(), usingHDF);
+            totaltime += TestParticleWrite(fullname, numParticles, DIM_DATASETS, NUM_DATASETS, dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(), comm, dsmManager->GetDsmBuffer(), usingHDF);
           }
           else if (type == 1) {
             totaltime += TestParticleWrite(hdffile.c_str(), numParticles, DIM_DATASETS, NUM_DATASETS, dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(), comm, NULL, usingHDF);
@@ -98,9 +98,9 @@ int main(int argc, char **argv)
         bandwidth = (MBytes / totaltime);
         if (dsmManager->GetUpdatePiece() == 0) {
           printf("%-*d%*.*f", 10, dsmManager->GetUpdateNumPieces(), 20, 2, bandwidth);
-          if (dsmManager->GetDSMHandle()->GetDsmType() == H5FD_DSM_TYPE_BLOCK_CYCLIC
-              || dsmManager->GetDSMHandle()->GetDsmType() == H5FD_DSM_TYPE_BLOCK_RANDOM) {
-            printf("%*ld", 20, dsmManager->GetDSMHandle()->GetBlockLength());
+          if (dsmManager->GetDsmBuffer()->GetDsmType() == H5FD_DSM_TYPE_BLOCK_CYCLIC
+              || dsmManager->GetDsmBuffer()->GetDsmType() == H5FD_DSM_TYPE_BLOCK_RANDOM) {
+            printf("%*ld", 20, dsmManager->GetDsmBuffer()->GetBlockLength());
           }
           printf("\n");
           fflush(stdout);

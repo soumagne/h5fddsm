@@ -11,7 +11,7 @@ int main(int argc, char * argv[])
   H5FDdsmManager *dsmManager = new H5FDdsmManager();
   senderInit(argc, argv, dsmManager, &comm);
 
-  H5FDdsmBuffer *dsmBuffer = dsmManager->GetDSMHandle();
+  H5FDdsmBuffer *dsmBuffer = dsmManager->GetDsmBuffer();
 
   // Create Array
   int array1[3] = { 1, 2, 3 };

@@ -20,9 +20,9 @@ int main(int argc, char **argv)
   H5FDdsmManager *dsmManager = new H5FDdsmManager();
 
   senderInit(argc, argv, dsmManager, &comm);
-  H5FD_dsm_steering_init(comm, dsmManager->GetDSMHandle());
+  H5FD_dsm_steering_init(comm, dsmManager->GetDsmBuffer());
 
-  remoteMB = dsmManager->GetDSMHandle()->GetTotalLength() / (1024.0 * 1024.0);
+  remoteMB = dsmManager->GetDsmBuffer()->GetTotalLength() / (1024.0 * 1024.0);
   numParticles = (H5FDdsmUInt64) ((1024 * 1024 * remoteMB / 2) /
       (sizeof(H5FDdsmFloat64) * DIM_DATASETS * dsmManager->GetUpdateNumPieces()));
 
@@ -30,7 +30,7 @@ int main(int argc, char **argv)
   assert(H5FD_dsm_steering_is_enabled("Position") == 0);
   if (H5FD_dsm_steering_is_enabled("Position") == 0) {
     TestParticleWrite(fullname, numParticles, DIM_DATASETS, NUM_DATASETS, dsmManager->GetUpdatePiece(),
-        dsmManager->GetUpdateNumPieces(), comm, dsmManager->GetDSMHandle(), usingHDF);
+        dsmManager->GetUpdateNumPieces(), comm, dsmManager->GetDsmBuffer(), usingHDF);
   }
 
   H5FD_dsm_steering_update();
@@ -38,7 +38,7 @@ int main(int argc, char **argv)
   assert(H5FD_dsm_steering_is_enabled("Position") < 0);
   if (H5FD_dsm_steering_is_enabled("Position") == 0) {
     TestParticleWrite(fullname, numParticles, DIM_DATASETS, NUM_DATASETS, dsmManager->GetUpdatePiece(),
-        dsmManager->GetUpdateNumPieces(), comm, dsmManager->GetDSMHandle(), usingHDF);
+        dsmManager->GetUpdateNumPieces(), comm, dsmManager->GetDsmBuffer(), usingHDF);
   }
 
   H5FD_dsm_steering_update();

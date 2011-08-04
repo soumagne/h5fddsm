@@ -29,7 +29,7 @@ int main(int argc, char **argv)
     }
   }
 
-  remoteMB = dsmManager->GetDSMHandle()->GetTotalLength() / (1024.0 * 1024.0);
+  remoteMB = dsmManager->GetDsmBuffer()->GetTotalLength() / (1024.0 * 1024.0);
 
   for (int type = 0; type < TYPES; type++) {
     if (type == 0 && dsmManager->GetUpdatePiece() == 0) {
@@ -51,11 +51,13 @@ int main(int argc, char **argv)
             // We have configured everything manually using the DSM manager, so pass the buffer
             // into the read/write code so that we can use the dsm that we have setup
             // otherwise it creates a new DSM server object
-            totaltime += TestParticleWrite(fullname, numParticles, 1, 1, dsmManager->GetUpdatePiece(),
-                dsmManager->GetUpdateNumPieces(), comm, dsmManager->GetDSMHandle(), usingHDF);
+            totaltime += TestParticleWrite(fullname, numParticles, 1, 1,
+                dsmManager->GetUpdatePiece(),
+                dsmManager->GetUpdateNumPieces(), comm, dsmManager->GetDsmBuffer(), usingHDF);
           }
           else if (type==1) {
-            totaltime += TestParticleWrite(hdffile.c_str(), numParticles, 1, 1, dsmManager->GetUpdatePiece(),
+            totaltime += TestParticleWrite(hdffile.c_str(), numParticles, 1, 1,
+                dsmManager->GetUpdatePiece(),
                 dsmManager->GetUpdateNumPieces(), comm, NULL, usingHDF);
           }
         }

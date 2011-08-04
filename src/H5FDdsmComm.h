@@ -58,7 +58,7 @@
 
 //! Base comm object for Distributed Shared Memory implementation
 
-// Macros to choose communication system to use
+// Macros to choose inter communication system to use
 #define H5FD_DSM_COMM_MPI        0x10
 #define H5FD_DSM_COMM_SOCKET     0x11
 #define H5FD_DSM_COMM_MPI_RMA    0x12

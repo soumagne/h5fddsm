@@ -81,8 +81,8 @@ herr_t H5FD_dsm_steering_init(MPI_Comm comm, void *buffer)
   dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
   if (dsmBuffer->GetIsAutoAllocated() && !dsmBuffer->GetIsConnected()) {
     H5FDdsmManager *dsmManager = (H5FDdsmManager *)DsmGetAutoAllocatedManager();
-    dsmManager->ReadDSMConfigFile();
-    dsmManager->ConnectDSM();
+    dsmManager->ReadConfigFile();
+    dsmManager->Connect();
   }
 
 done:

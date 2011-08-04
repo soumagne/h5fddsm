@@ -310,17 +310,17 @@ DsmAutoAlloc(MPI_Comm comm)
 {
   if (!dsmManagerSingleton) {
     dsmManagerSingleton = new H5FDdsmManager();
-    dsmManagerSingleton->ReadDSMConfigFile();
-    dsmManagerSingleton->SetCommunicator(comm);
-    dsmManagerSingleton->CreateDSM();
-    if (dsmManagerSingleton->GetDsmIsServer()) {
+    dsmManagerSingleton->ReadConfigFile();
+    dsmManagerSingleton->SetMpiComm(comm);
+    dsmManagerSingleton->Create();
+    if (dsmManagerSingleton->GetIsServer()) {
       // TODO Leave the auto publish here for now
-      dsmManagerSingleton->PublishDSM();
-      while (!dsmManagerSingleton->GetDSMHandle()->GetIsConnected()) {
+      dsmManagerSingleton->Publish();
+      while (!dsmManagerSingleton->GetDsmBuffer()->GetIsConnected()) {
         // Spin
       }
     }
-    dsmManagerSingleton->GetDSMHandle()->SetIsAutoAllocated(H5FD_DSM_TRUE);
+    dsmManagerSingleton->GetDsmBuffer()->SetIsAutoAllocated(H5FD_DSM_TRUE);
   }
   return(H5FD_DSM_SUCCESS);
 }
@@ -329,11 +329,11 @@ H5FDdsmInt32
 DsmAutoDealloc()
 {
   if (dsmManagerSingleton) {
-    if (!dsmManagerSingleton->GetDsmIsServer() && dsmManagerSingleton->GetDSMHandle()->GetIsConnected()) {
-      dsmManagerSingleton->DisconnectDSM();
+    if (!dsmManagerSingleton->GetIsServer() && dsmManagerSingleton->GetDsmBuffer()->GetIsConnected()) {
+      dsmManagerSingleton->Disconnect();
     }
-    if (dsmManagerSingleton->GetDsmIsServer()) {
-      dsmManagerSingleton->UnpublishDSM();
+    if (dsmManagerSingleton->GetIsServer()) {
+      dsmManagerSingleton->Unpublish();
     }
     delete dsmManagerSingleton;
     dsmManagerSingleton = NULL;
@@ -347,7 +347,7 @@ DsmGetAutoAllocatedBuffer()
   void *buffer = NULL;
 
   if (dsmManagerSingleton) {
-    buffer = (void*)dsmManagerSingleton->GetDSMHandle();
+    buffer = (void*)dsmManagerSingleton->GetDsmBuffer();
   }
   return(buffer);
 }
@@ -492,7 +492,7 @@ H5FD_dsm_set_options(unsigned long flags, void *dsmBuffer)
     buffer = static_cast <H5FDdsmBuffer*> (dsmBuffer);
   } else {
     if (dsmManagerSingleton) {
-      buffer = dsmManagerSingleton->GetDSMHandle();
+      buffer = dsmManagerSingleton->GetDsmBuffer();
     } else {
       HGOTO_ERROR(H5E_VFL, H5E_NOTFOUND, FAIL, "No DSM buffer found");
     }
@@ -537,7 +537,7 @@ H5FD_dsm_notify(unsigned long flags, void *dsmBuffer)
     buffer = static_cast <H5FDdsmBuffer*> (dsmBuffer);
   } else {
     if (dsmManagerSingleton) {
-      buffer = dsmManagerSingleton->GetDSMHandle();
+      buffer = dsmManagerSingleton->GetDsmBuffer();
     } else {
       HGOTO_ERROR(H5E_VFL, H5E_NOTFOUND, FAIL, "No DSM buffer found");
     }
@@ -594,9 +594,9 @@ H5Pset_fapl_dsm(hid_t fapl_id, MPI_Comm dsmComm, void *dsmBuffer)
   }
   else {
     if (dsmManagerSingleton == NULL) DsmAutoAlloc(dsmComm);
-    fa.buffer = dsmManagerSingleton->GetDSMHandle();
-    if (!dsmManagerSingleton->GetDsmIsConnected()) {
-      dsmManagerSingleton->ConnectDSM();
+    fa.buffer = dsmManagerSingleton->GetDsmBuffer();
+    if (!dsmManagerSingleton->GetIsConnected()) {
+      dsmManagerSingleton->Connect();
     }
   }
 

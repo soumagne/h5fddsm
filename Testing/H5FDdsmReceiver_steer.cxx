@@ -11,7 +11,7 @@ int main(int argc, char *argv[])
   H5FDdsmInt32 step = 0;
   receiverInit(argc, argv, dsmManager, &comm);
 
-  while (dsmManager->GetDsmIsConnected()) {
+  while (dsmManager->GetIsConnected()) {
     if (dsmManager->WaitForNotification() > 0) {
       H5FDdsmInt32 intScalar = 1;
       H5FDdsmInt32 intVector[] = {1, 2, 3};
@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
       }
       // Clean up for next step
       dsmManager->UpdateSteeredObjects();
-      dsmManager->UpdateFinalize();
+      dsmManager->NotificationFinalize();
       step++;
     }
   }
