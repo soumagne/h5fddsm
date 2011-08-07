@@ -137,7 +137,7 @@ H5FDdsmBuffer::H5FDdsmBuffer()
   this->IsConnecting    = H5FD_DSM_FALSE;
   this->IsConnected     = H5FD_DSM_FALSE;
 #ifdef _WIN32
-#if (WINVER <= H5FD_DSM_CONDVAR_MINVER)
+#if (WINVER < H5FD_DSM_CONDVAR_MINVER)
   this->ConnectionEvent = CreateEvent(NULL, TRUE, FALSE, TEXT("ConnectionEvent"));
 #else
   InitializeCriticalSection  (&this->ConnectionCritSection);
@@ -150,7 +150,7 @@ H5FDdsmBuffer::H5FDdsmBuffer()
 
   this->IsNotified      = H5FD_DSM_FALSE;
 #ifdef _WIN32
-#if (WINVER <= H5FD_DSM_CONDVAR_MINVER)
+#if (WINVER < H5FD_DSM_CONDVAR_MINVER)
   this->NotificationEvent = CreateEvent(NULL, TRUE, FALSE, TEXT("NotificationEvent"));
 #else
   InitializeCriticalSection  (&this->NotificationCritSection);
@@ -199,7 +199,7 @@ H5FDdsmBuffer::~H5FDdsmBuffer()
   if (this->IsServer) this->EndService();
 
 #ifdef _WIN32
-#if (WINVER <= H5FD_DSM_CONDVAR_MINVER)
+#if (WINVER < H5FD_DSM_CONDVAR_MINVER)
   CloseHandle(this->ConnectionEvent);
   CloseHandle(this->NotificationEvent);
 #else
@@ -230,7 +230,7 @@ H5FDdsmInt32
 H5FDdsmBuffer::SignalConnection()
 {
 #ifdef _WIN32
-#if (WINVER > H5FD_DSM_CONDVAR_MINVER)
+#if (WINVER >= H5FD_DSM_CONDVAR_MINVER)
   EnterCriticalSection(&this->ConnectionCritSection);
 #endif
 #else
@@ -238,7 +238,7 @@ H5FDdsmBuffer::SignalConnection()
 #endif
   this->IsConnected = H5FD_DSM_TRUE;
 #ifdef _WIN32
-#if (WINVER <= H5FD_DSM_CONDVAR_MINVER)
+#if (WINVER < H5FD_DSM_CONDVAR_MINVER)
   SetEvent(this->ConnectionEvent);
 #else
   WakeConditionVariable(&this->ConnectionCond);
@@ -259,7 +259,7 @@ H5FDdsmBuffer::WaitForConnection()
   H5FDdsmInt32 ret = H5FD_DSM_FAIL;
 
 #ifdef _WIN32
-#if (WINVER > H5FD_DSM_CONDVAR_MINVER)
+#if (WINVER >= H5FD_DSM_CONDVAR_MINVER)
   EnterCriticalSection(&this->ConnectionCritSection);
 #endif
 #else
@@ -268,7 +268,7 @@ H5FDdsmBuffer::WaitForConnection()
   while (!this->IsConnected) {
     H5FDdsmDebug("Thread going into wait for connection...");
 #ifdef _WIN32
-#if (WINVER <= H5FD_DSM_CONDVAR_MINVER)
+#if (WINVER < H5FD_DSM_CONDVAR_MINVER)
     WaitForSingleObject(this->ConnectionEvent, INFINITE);
     ResetEvent(this->ConnectionEvent);
 #else
@@ -283,7 +283,7 @@ H5FDdsmBuffer::WaitForConnection()
     ret = H5FD_DSM_SUCCESS;
   }
 #ifdef _WIN32
-#if (WINVER > H5FD_DSM_CONDVAR_MINVER)
+#if (WINVER >= H5FD_DSM_CONDVAR_MINVER)
   LeaveCriticalSection(&this->ConnectionCritSection);
 #endif
 #else
@@ -297,7 +297,7 @@ H5FDdsmInt32
 H5FDdsmBuffer::SignalNotification()
 {
 #ifdef _WIN32
-#if (WINVER > H5FD_DSM_CONDVAR_MINVER)
+#if (WINVER >= H5FD_DSM_CONDVAR_MINVER)
   EnterCriticalSection(&this->NotificationCritSection);
 #endif
 #else
@@ -305,7 +305,7 @@ H5FDdsmBuffer::SignalNotification()
 #endif
   this->IsNotified = H5FD_DSM_TRUE;
 #ifdef _WIN32
-#if (WINVER <= H5FD_DSM_CONDVAR_MINVER)
+#if (WINVER < H5FD_DSM_CONDVAR_MINVER)
   SetEvent(this->NotificationEvent);
 #else
   WakeConditionVariable(&this->NotificationCond);
@@ -326,7 +326,7 @@ H5FDdsmBuffer::WaitForNotification()
   H5FDdsmInt32 ret = H5FD_DSM_FAIL;
 
 #ifdef _WIN32
-#if (WINVER > H5FD_DSM_CONDVAR_MINVER)
+#if (WINVER >= H5FD_DSM_CONDVAR_MINVER)
   EnterCriticalSection(&this->NotificationCritSection);
 #endif
 #else
@@ -335,7 +335,7 @@ H5FDdsmBuffer::WaitForNotification()
   while (!this->IsNotified && this->IsConnected) {
     H5FDdsmDebug("Thread going into wait for notification...");
 #ifdef _WIN32
-#if (WINVER <= H5FD_DSM_CONDVAR_MINVER)
+#if (WINVER < H5FD_DSM_CONDVAR_MINVER)
     WaitForSingleObject(this->NotificationEvent, INFINITE);
     ResetEvent(this->NotificationEvent);
 #else
@@ -351,7 +351,7 @@ H5FDdsmBuffer::WaitForNotification()
     ret = H5FD_DSM_SUCCESS;
   }
 #ifdef _WIN32
-#if (WINVER > H5FD_DSM_CONDVAR_MINVER)
+#if (WINVER >= H5FD_DSM_CONDVAR_MINVER)
   LeaveCriticalSection(&this->NotificationCritSection);
 #endif
 #else

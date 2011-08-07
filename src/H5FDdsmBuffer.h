@@ -163,7 +163,7 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
     H5FDdsmBoolean          IsConnecting;
     H5FDdsmBoolean          IsConnected;
 #ifdef _WIN32
-#if (WINVER <= H5FD_DSM_CONDVAR_MINVER)
+#if (WINVER < H5FD_DSM_CONDVAR_MINVER)
     HANDLE                  ConnectionEvent;
 #else
     CRITICAL_SECTION        ConnectionCritSection;
@@ -176,7 +176,7 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
 
     H5FDdsmBoolean          IsNotified;
 #ifdef _WIN32
-#if (WINVER <= H5FD_DSM_CONDVAR_MINVER)
+#if (WINVER < H5FD_DSM_CONDVAR_MINVER)
     HANDLE                  NotificationEvent;
 #else
     CRITICAL_SECTION        NotificationCritSection;
