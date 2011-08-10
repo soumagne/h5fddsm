@@ -137,6 +137,22 @@ H5FDdsmSocket::WinSockCleanup()
 }
 
 //-----------------------------------------------------------------------------
+const char*
+H5FDdsmSocket::WinSockPrintError(int error)
+{
+#ifdef _WIN32
+    static char message[1024];
+    // Be careful not to use this in different threads
+    FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS |
+                  FORMAT_MESSAGE_MAX_WIDTH_MASK, NULL, error,
+                  MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+                  (LPSTR) message, 1024, NULL);
+    return (const char*)message;
+#else
+    return "WinSockPrintError Not Supported";
+#endif
+}
+//-----------------------------------------------------------------------------
 int
 H5FDdsmSocket::Close()
 {
@@ -186,6 +202,25 @@ H5FDdsmSocket::Close()
         return -1;
       }
     } while (s > 0);
+  } else {
+    // shutdown the connection
+#ifdef _WIN32
+    s = shutdown(this->SocketDescriptor, SD_BOTH);
+    if (s == SOCKET_ERROR) {
+      H5FDdsmError("shutdown failed with error: " << WSAGetLastError());
+      H5FDdsmCloseSocketMacro(this->SocketDescriptor);
+      this->SocketDescriptor = -1;
+      return -1;
+    }
+#else
+    s = shutdown(this->SocketDescriptor, SHUT_RDWR);
+    if (s < 0) {
+      H5FDdsmError("shutdown failed");
+      H5FDdsmCloseSocketMacro(this->SocketDescriptor);
+      this->SocketDescriptor = -1;
+      return -1;
+    }
+#endif
   }
 
   if (H5FDdsmCloseSocketMacro(this->SocketDescriptor) < 0) return -1;
@@ -391,6 +426,12 @@ H5FDdsmSocket::Accept()
   this->ClientSocketDescriptor = (int) accept(this->SocketDescriptor,
       reinterpret_cast<sockaddr*> (&client), &client_len);
   if (this->ClientSocketDescriptor < 0) {
+#ifdef _WIN32
+    printf("accept failed with error code %d: \"%s\"\n", WSAGetLastError(),
+        PrintError(WSAGetLastError()));
+#else
+    printf("accept failed with error code %d: \"%s\"\n", errno, strerror(errno));
+#endif
     return -1;
   }
   return 0;

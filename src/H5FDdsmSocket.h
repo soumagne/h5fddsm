@@ -67,6 +67,7 @@ public:
   // Initialize/Clean Windows Socket Library
   int WinSockInit();
   int WinSockCleanup();
+  const char* WinSockPrintError();
 
   // Description:
   // Close the socket.

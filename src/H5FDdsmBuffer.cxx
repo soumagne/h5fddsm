@@ -500,13 +500,12 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode)
   // H5FD_DSM_ACCEPT
   case H5FD_DSM_ACCEPT:
     if (!this->IsConnected) {
-      this->IsConnecting = H5FD_DSM_TRUE;
       status = this->Comm->Accept(this->DataPointer, this->Length);
-      this->IsConnecting = H5FD_DSM_FALSE;
       if (status == H5FD_DSM_FAIL) {
-        H5FDdsmError("RemoteCommAccept Failed");
+        H5FDdsmDebug("RemoteCommAccept Failed");
         return(H5FD_DSM_FAIL);
       }
+      this->IsConnecting = H5FD_DSM_FALSE;
       // send DSM information
       this->SendInfo();
       if (this->AddressMapper->GetDsmType() == H5FD_DSM_TYPE_DYNAMIC_MASK) this->ReceiveMaskLength();
@@ -580,7 +579,8 @@ H5FDdsmBuffer::Service(H5FDdsmInt32 *ReturnOpcode)
 }
 
 //----------------------------------------------------------------------------
-H5FDdsmInt32 H5FDdsmBuffer::StartService()
+H5FDdsmInt32
+H5FDdsmBuffer::StartService()
 {
   H5FDdsmDebug("Creating service thread...");
 #ifdef _WIN32
@@ -597,15 +597,25 @@ H5FDdsmInt32 H5FDdsmBuffer::StartService()
 }
 
 //----------------------------------------------------------------------------
-H5FDdsmInt32 H5FDdsmBuffer::EndService()
+H5FDdsmInt32
+H5FDdsmBuffer::EndService()
 {
   if (this->ServiceThreadPtr) {
     if (this->IsConnecting && !this->IsConnected) {
+      if (this->Comm->GetInterCommType() == H5FD_DSM_COMM_SOCKET) {
+        this->Comm->ClosePort();
 #ifdef _WIN32
-      WaitForSingleObject(this->ServiceThreadHandle, 0);
+        WaitForSingleObject(this->ServiceThreadHandle, INFINITE);
 #else
-      pthread_cancel(this->ServiceThreadPtr);
+        pthread_join(this->ServiceThreadPtr, NULL);
 #endif
+      } else {
+#ifdef _WIN32
+        WaitForSingleObject(this->ServiceThreadHandle, 0);
+#else
+        pthread_cancel(this->ServiceThreadPtr);
+#endif
+      }
     } else {
       if (this->Comm->GetId() == 0) this->SendDone();
 #ifdef _WIN32
@@ -724,7 +734,7 @@ H5FDdsmBuffer::Put(H5FDdsmAddr address, H5FDdsmUInt64 length, H5FDdsmPointer dat
 
   while (!putRequests.empty()) {
     H5FDdsmMsg &putRequest = putRequests.back();
-    if ((putRequest.Dest == myId) && !this->IsConnected) { // check if a remote DSM is Connection
+    if ((putRequest.Dest == myId) && !this->IsConnected) { // check if a remote DSM is connected
       H5FDdsmByte *dp;
       dp = this->DataPointer;
       dp += putRequest.Address;
@@ -892,6 +902,7 @@ H5FDdsmBuffer::RequestAccept()
 
   who = this->Comm->GetId();
   H5FDdsmDebug("Send request accept to " << who);
+  if (!this->IsConnected) this->IsConnecting = H5FD_DSM_TRUE;
   status = this->SendCommandHeader(H5FD_DSM_ACCEPT, who, 0, 0);
 
   return(status);

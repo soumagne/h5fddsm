@@ -753,7 +753,7 @@ H5FD_dsm_open(const char *name, unsigned UNUSED flags, hid_t fapl_id, haddr_t ma
   } else {
     file->DsmBuffer = fa->buffer;
 
-    if (!file->DsmBuffer->GetIsLocked() && file->DsmBuffer->GetIsConnected()) {
+    if (!file->DsmBuffer->GetIsLocked()) {
       file->DsmBuffer->RequestLockAcquire();
     }
 
@@ -870,8 +870,7 @@ H5FD_dsm_close(H5FD_t *_file)
     file->DsmBuffer->SetIsReadOnly(H5FD_DSM_TRUE);
   }
 
-  if (file->DsmBuffer->GetReleaseLockOnClose() && file->DsmBuffer->GetIsConnected()
-      && file->DsmBuffer->GetIsLocked()) {
+  if (file->DsmBuffer->GetReleaseLockOnClose() && file->DsmBuffer->GetIsLocked()) {
     file->DsmBuffer->RequestLockRelease();
   }
 

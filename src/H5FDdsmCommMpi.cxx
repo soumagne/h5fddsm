@@ -57,6 +57,7 @@
 //----------------------------------------------------------------------------
 H5FDdsmCommMpi::H5FDdsmCommMpi()
 {
+  this->InterCommType = H5FD_DSM_COMM_MPI;
   this->InterComm = MPI_COMM_NULL;
 }
 

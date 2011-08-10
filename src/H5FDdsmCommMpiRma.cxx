@@ -31,6 +31,7 @@
 //----------------------------------------------------------------------------
 H5FDdsmCommMpiRma::H5FDdsmCommMpiRma()
 {
+  this->InterCommType = H5FD_DSM_COMM_MPI_RMA;
   this->UseOneSidedComm = H5FD_DSM_TRUE;
   this->Win = MPI_WIN_NULL;
 }
