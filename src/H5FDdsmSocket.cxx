@@ -203,16 +203,8 @@ H5FDdsmSocket::Close()
       }
     } while (s > 0);
   } else {
-    // shutdown the connection
-#ifdef _WIN32
-    s = shutdown(this->SocketDescriptor, SD_BOTH);
-    if (s == SOCKET_ERROR) {
-      H5FDdsmError("shutdown failed with error: " << WSAGetLastError());
-      H5FDdsmCloseSocketMacro(this->SocketDescriptor);
-      this->SocketDescriptor = -1;
-      return -1;
-    }
-#else
+    // shutdown the connection (not necessary on win32 apparently)
+#ifndef _WIN32
     s = shutdown(this->SocketDescriptor, SHUT_RDWR);
     if (s < 0) {
       H5FDdsmError("shutdown failed");
@@ -428,7 +420,7 @@ H5FDdsmSocket::Accept()
   if (this->ClientSocketDescriptor < 0) {
 #ifdef _WIN32
     printf("accept failed with error code %d: \"%s\"\n", WSAGetLastError(),
-        PrintError(WSAGetLastError()));
+        WinSockPrintError(WSAGetLastError()));
 #else
     printf("accept failed with error code %d: \"%s\"\n", errno, strerror(errno));
 #endif
