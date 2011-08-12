@@ -444,13 +444,10 @@ void receiverInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *
   dsmManager->SetServerPort(22000);
   dsmManager->Create();
 
-  if (staticInterComm) {
-    dsmManager->ConnectInterComm();
-  } else {
-    // Publish writes .dsm_config file with server name/port/mode in
-    // then spawns thread which waits for incoming connections
-    dsmManager->Publish();
-  }
+  // Publish writes .dsm_config file with server name/port/mode in
+  // then spawns thread which waits for incoming connections
+  dsmManager->Publish();
+
   //
 //  H5FDdsmFloat64 totalMB = (H5FDdsmFloat64) (dsmManager->GetDSMHandle()->GetTotalLength()/(1024*1024));
 //  H5FDdsmUInt32 serversize = (dsmManager->GetDSMHandle()->GetEndServerId() -
@@ -554,7 +551,7 @@ void senderInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *co
   dsmManager->Create();
 
   if (staticInterComm) {
-    dsmManager->ConnectInterComm();
+    dsmManager->Connect();
   } else {
     // Connect to receiver
     dsmManager->Connect(H5FD_DSM_TRUE);

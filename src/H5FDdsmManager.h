@@ -154,11 +154,6 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     H5FDdsmInt32 Connect(H5FDdsmBoolean persist = H5FD_DSM_FALSE);
 
     // Description:
-    // When using static inter-communicators, create a new inter-communicator
-    // linking both managers together (called by client and server).
-    H5FDdsmInt32 ConnectInterComm();
-
-    // Description:
     // Disconnect the manager from the remote end (called by client and server).
     H5FDdsmInt32 Disconnect();
 

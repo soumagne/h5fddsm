@@ -73,6 +73,7 @@ struct H5FDdsmManagerInternals
   SteeringEntriesString RequestedDisabledObjects;
 #endif
 };
+
 //----------------------------------------------------------------------------
 H5FDdsmManager::H5FDdsmManager() 
 {
@@ -94,6 +95,7 @@ H5FDdsmManager::H5FDdsmManager()
   this->XMLStringSend           = NULL;
   this->ManagerInternals        = new H5FDdsmManagerInternals;
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmManager::~H5FDdsmManager()
 { 
@@ -103,6 +105,7 @@ H5FDdsmManager::~H5FDdsmManager()
   this->SetXMLStringSend(NULL);
   delete this->ManagerInternals;
 }
+
 //----------------------------------------------------------------------------
 void H5FDdsmManager::SetMpiComm(MPI_Comm comm)
 {
@@ -114,6 +117,7 @@ void H5FDdsmManager::SetMpiComm(MPI_Comm comm)
     }
   }
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmBoolean H5FDdsmManager::GetIsConnected()
 {
@@ -123,6 +127,7 @@ H5FDdsmBoolean H5FDdsmManager::GetIsConnected()
   }
   return(ret);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmManager::WaitForConnection()
 {
@@ -132,6 +137,7 @@ H5FDdsmInt32 H5FDdsmManager::WaitForConnection()
   }
   return(ret);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmBoolean H5FDdsmManager::GetIsNotified()
 {
@@ -141,6 +147,7 @@ H5FDdsmBoolean H5FDdsmManager::GetIsNotified()
   }
   return(ret);
 }
+
 //----------------------------------------------------------------------------
 void H5FDdsmManager::ClearIsNotified()
 {
@@ -148,6 +155,7 @@ void H5FDdsmManager::ClearIsNotified()
     this->DsmBuffer->SetIsNotified(H5FD_DSM_FALSE);
   }
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmManager::WaitForNotification()
 {
@@ -157,6 +165,7 @@ H5FDdsmInt32 H5FDdsmManager::WaitForNotification()
   }
   return(ret);
 }
+
 //----------------------------------------------------------------------------
 void H5FDdsmManager::NotificationFinalize()
 {
@@ -166,6 +175,7 @@ void H5FDdsmManager::NotificationFinalize()
     this->DsmBuffer->RequestLockRelease();
   }
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmManager::GetNotification()
 {
@@ -175,6 +185,7 @@ H5FDdsmInt32 H5FDdsmManager::GetNotification()
   }
   return(ret);
 }
+
 //----------------------------------------------------------------------------
 void H5FDdsmManager::ClearNotification()
 {
@@ -182,6 +193,7 @@ void H5FDdsmManager::ClearNotification()
     this->DsmBuffer->SetNotification(0);
   }
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmBoolean H5FDdsmManager::GetIsDataModified()
 {
@@ -191,6 +203,7 @@ H5FDdsmBoolean H5FDdsmManager::GetIsDataModified()
   }
   return(ret);
 }
+
 //----------------------------------------------------------------------------
 void H5FDdsmManager::ClearIsDataModified()
 {
@@ -198,6 +211,7 @@ void H5FDdsmManager::ClearIsDataModified()
     this->DsmBuffer->SetIsDataModified(H5FD_DSM_FALSE);
   }
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmManager::Create()
 {
@@ -282,6 +296,7 @@ H5FDdsmInt32 H5FDdsmManager::Create()
   this->DsmBuffer->SetIsServer(this->IsServer);
   return(H5FD_DSM_SUCCESS);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmManager::Destroy()
 {
@@ -299,6 +314,7 @@ H5FDdsmInt32 H5FDdsmManager::Destroy()
   this->SetServerHostName(NULL);
   return(H5FD_DSM_SUCCESS);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmManager::ClearStorage()
 {
@@ -306,6 +322,7 @@ H5FDdsmInt32 H5FDdsmManager::ClearStorage()
   if (this->UpdatePiece == 0) H5FDdsmDebug("DSM cleared");
   return(ret);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmManager::Connect(H5FDdsmBoolean persist)
 {
@@ -315,46 +332,47 @@ H5FDdsmInt32 H5FDdsmManager::Connect(H5FDdsmBoolean persist)
 
   if (!this->DsmBuffer->GetIsConnected()) {
 
-    if ((this->GetInterCommType() == H5FD_DSM_COMM_MPI) ||
-        (this->GetInterCommType() == H5FD_DSM_COMM_MPI_RMA)) {
-      if (this->GetServerHostName() != NULL) {
-        dynamic_cast<H5FDdsmCommMpi*> (this->DsmBuffer->GetComm())->SetDsmMasterHostName(this->GetServerHostName());
-        if (this->UpdatePiece == 0) {
-          H5FDdsmDebug("Initializing connection to "
-              << dynamic_cast<H5FDdsmCommMpi*> (this->DsmBuffer->GetComm())->GetDsmMasterHostName());
+    if (!this->UseStaticInterComm) {
+      if ((this->GetInterCommType() == H5FD_DSM_COMM_MPI) ||
+          (this->GetInterCommType() == H5FD_DSM_COMM_MPI_RMA)) {
+        if (this->GetServerHostName() != NULL) {
+          dynamic_cast<H5FDdsmCommMpi*> (this->DsmBuffer->GetComm())->SetDsmMasterHostName(this->GetServerHostName());
+          if (this->UpdatePiece == 0) {
+            H5FDdsmDebug("Initializing connection to "
+                << dynamic_cast<H5FDdsmCommMpi*> (this->DsmBuffer->GetComm())->GetDsmMasterHostName());
+          }
         }
       }
-    }
-    else if (this->GetInterCommType() == H5FD_DSM_COMM_SOCKET) {
-      if ((this->GetServerHostName() != NULL) && (this->GetServerPort() != 0)) {
-        dynamic_cast<H5FDdsmCommSocket*> (this->DsmBuffer->GetComm())->SetDsmMasterHostName(this->GetServerHostName());
-        dynamic_cast<H5FDdsmCommSocket*> (this->DsmBuffer->GetComm())->SetDsmMasterPort(this->GetServerPort());
-        if (this->UpdatePiece == 0) {
-          H5FDdsmDebug("Initializing connection to "
-              << dynamic_cast<H5FDdsmCommSocket*> (this->DsmBuffer->GetComm())->GetDsmMasterHostName()
-              << ":"
-              << dynamic_cast<H5FDdsmCommSocket*> (this->DsmBuffer->GetComm())->GetDsmMasterPort());
+      else if (this->GetInterCommType() == H5FD_DSM_COMM_SOCKET) {
+        if ((this->GetServerHostName() != NULL) && (this->GetServerPort() != 0)) {
+          dynamic_cast<H5FDdsmCommSocket*> (this->DsmBuffer->GetComm())->SetDsmMasterHostName(this->GetServerHostName());
+          dynamic_cast<H5FDdsmCommSocket*> (this->DsmBuffer->GetComm())->SetDsmMasterPort(this->GetServerPort());
+          if (this->UpdatePiece == 0) {
+            H5FDdsmDebug("Initializing connection to "
+                << dynamic_cast<H5FDdsmCommSocket*> (this->DsmBuffer->GetComm())->GetDsmMasterHostName()
+                << ":"
+                << dynamic_cast<H5FDdsmCommSocket*> (this->DsmBuffer->GetComm())->GetDsmMasterPort());
+          }
         }
       }
-    }
-    else {
-      if (this->UpdatePiece == 0) H5FDdsmError("NULL port");
-    }
+      else {
+        if (this->UpdatePiece == 0) H5FDdsmError("NULL port");
+      }
 #ifdef H5FD_DSM_DEBUG
-    this->DsmBuffer->DebugOn();
-    this->DsmBuffer->GetComm()->DebugOn();
-    if (this->GetInterCommType() == H5FD_DSM_COMM_SOCKET) {
-      H5FDdsmConstString hostName = dynamic_cast<H5FDdsmCommSocket*> (this->DsmBuffer->GetComm())->GetDsmMasterHostName();
-      H5FDdsmInt32 port = dynamic_cast<H5FDdsmCommSocket*> (this->DsmBuffer->GetComm())->GetDsmMasterPort();
-      H5FDdsmDebug(<<"DSM driver connecting on: " << hostName << ":" << port);
-    }
-    else   if ((this->GetInterCommType() == H5FD_DSM_COMM_MPI) ||
-        (this->GetInterCommType() == H5FD_DSM_COMM_MPI_RMA)) {
-      H5FDdsmConstString hostName = dynamic_cast<H5FDdsmCommMpi*> (this->DsmBuffer->GetComm())->GetDsmMasterHostName();
-      H5FDdsmDebug(<<"DSM driver connecting on: " << hostName);
-    }
+      this->DsmBuffer->DebugOn();
+      this->DsmBuffer->GetComm()->DebugOn();
+      if (this->GetInterCommType() == H5FD_DSM_COMM_SOCKET) {
+        H5FDdsmConstString hostName = dynamic_cast<H5FDdsmCommSocket*> (this->DsmBuffer->GetComm())->GetDsmMasterHostName();
+        H5FDdsmInt32 port = dynamic_cast<H5FDdsmCommSocket*> (this->DsmBuffer->GetComm())->GetDsmMasterPort();
+        H5FDdsmDebug(<<"DSM driver connecting on: " << hostName << ":" << port);
+      }
+      else   if ((this->GetInterCommType() == H5FD_DSM_COMM_MPI) ||
+          (this->GetInterCommType() == H5FD_DSM_COMM_MPI_RMA)) {
+        H5FDdsmConstString hostName = dynamic_cast<H5FDdsmCommMpi*> (this->DsmBuffer->GetComm())->GetDsmMasterHostName();
+        H5FDdsmDebug(<<"DSM driver connecting on: " << hostName);
+      }
 #endif
-
+    }
     do {
       status = this->DsmBuffer->GetComm()->Connect();
       if (status == H5FD_DSM_SUCCESS) {
@@ -374,22 +392,7 @@ H5FDdsmInt32 H5FDdsmManager::Connect(H5FDdsmBoolean persist)
   }
   return(status);
 }
-//----------------------------------------------------------------------------
-H5FDdsmInt32 H5FDdsmManager::ConnectInterComm()
-{
-  H5FDdsmInt32 status = H5FD_DSM_FAIL;
-  if (this->IsServer) {
-    this->DsmBuffer->RequestAccept();
-  } else {
-    status = this->DsmBuffer->GetComm()->Connect();
-    if (status == H5FD_DSM_SUCCESS) {
-      H5FDdsmDebug("Connected!");
-      this->DsmBuffer->SetIsConnected(H5FD_DSM_TRUE);
-      this->DsmBuffer->ReceiveInfo();
-    }
-  }
-  return(status);
-}
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmManager::Disconnect()
 {
@@ -397,68 +400,72 @@ H5FDdsmInt32 H5FDdsmManager::Disconnect()
   this->DsmBuffer->RequestDisconnect();
   return(H5FD_DSM_SUCCESS);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmManager::Publish()
 {
-  if (this->UpdatePiece == 0) H5FDdsmDebug("Opening port...");
-  if (this->GetInterCommType() == H5FD_DSM_COMM_SOCKET) {
-    dynamic_cast<H5FDdsmCommSocket*>
-    (this->DsmBuffer->GetComm())->SetDsmMasterHostName(this->GetServerHostName());
-    dynamic_cast<H5FDdsmCommSocket*>
-    (this->DsmBuffer->GetComm())->SetDsmMasterPort(this->GetServerPort());
-  }
-  this->DsmBuffer->GetComm()->OpenPort();
-
-  //
-  // Only write config file if process 0
-  //
-  if (this->UpdatePiece == 0) {
-    H5FDdsmIniFile configFile;
-    std::string fullConfigFilePath;
-    H5FDdsmConstString dsmEnvPath = getenv("H5FD_DSM_CONFIG_PATH");
-    if (!dsmEnvPath) dsmEnvPath = getenv("HOME");
-    if (dsmEnvPath) {
-      this->SetConfigFilePath(dsmEnvPath);
+  if (!this->UseStaticInterComm) {
+    if (this->UpdatePiece == 0) H5FDdsmDebug("Opening port...");
+    if (this->GetInterCommType() == H5FD_DSM_COMM_SOCKET) {
+      dynamic_cast<H5FDdsmCommSocket*>
+      (this->DsmBuffer->GetComm())->SetDsmMasterHostName(this->GetServerHostName());
+      dynamic_cast<H5FDdsmCommSocket*>
+      (this->DsmBuffer->GetComm())->SetDsmMasterPort(this->GetServerPort());
     }
-    if (this->GetConfigFilePath()) {
-      fullConfigFilePath = std::string(this->GetConfigFilePath()) +
-          std::string("/.dsm_client_config");
-      configFile.Create(fullConfigFilePath);
-      configFile.AddSection("Comm", fullConfigFilePath);
+    this->DsmBuffer->GetComm()->OpenPort();
 
-      H5FDdsmDebug("Written " << fullConfigFilePath.c_str());
-
-    }
-    if ((this->GetInterCommType() == H5FD_DSM_COMM_MPI) || (this->GetInterCommType() == H5FD_DSM_COMM_MPI_RMA)) {
-      this->SetServerHostName(dynamic_cast<H5FDdsmCommMpi*> (this->DsmBuffer->GetComm())->GetDsmMasterHostName());
-      H5FDdsmDebug("Server PortName: " << this->GetServerHostName());
-      if (this->GetConfigFilePath()) {
-        if (this->GetInterCommType() == H5FD_DSM_COMM_MPI) {
-          configFile.SetValue("DSM_COMM_SYSTEM", "mpi", "Comm", fullConfigFilePath);
-        }
-        if (this->GetInterCommType() == H5FD_DSM_COMM_MPI_RMA) {
-          configFile.SetValue("DSM_COMM_SYSTEM", "mpi_rma", "Comm", fullConfigFilePath);
-        }
-        configFile.SetValue("DSM_BASE_HOST", this->GetServerHostName(), "Comm", fullConfigFilePath);
+    //
+    // Only write config file if process 0
+    //
+    if (this->UpdatePiece == 0) {
+      H5FDdsmIniFile configFile;
+      std::string fullConfigFilePath;
+      H5FDdsmConstString dsmEnvPath = getenv("H5FD_DSM_CONFIG_PATH");
+      if (!dsmEnvPath) dsmEnvPath = getenv("HOME");
+      if (dsmEnvPath) {
+        this->SetConfigFilePath(dsmEnvPath);
       }
-    } else if (this->GetInterCommType() == H5FD_DSM_COMM_SOCKET) {
-      this->SetServerHostName(dynamic_cast<H5FDdsmCommSocket*> (this->DsmBuffer->GetComm())->GetDsmMasterHostName());
-      this->SetServerPort(dynamic_cast<H5FDdsmCommSocket*> (this->DsmBuffer->GetComm())->GetDsmMasterPort());
-      H5FDdsmDebug("Server HostName: " << this->GetServerHostName() << ", Server port: " << this->GetServerPort());
       if (this->GetConfigFilePath()) {
-        char serverPort[32];
-        sprintf(serverPort, "%d", this->GetServerPort());
-        configFile.SetValue("DSM_COMM_SYSTEM", "socket", "Comm", fullConfigFilePath);
-        configFile.SetValue("DSM_BASE_HOST", this->GetServerHostName(), "Comm", fullConfigFilePath);
-        configFile.SetValue("DSM_BASE_PORT", serverPort, "Comm", fullConfigFilePath);
+        fullConfigFilePath = std::string(this->GetConfigFilePath()) +
+            std::string("/.dsm_client_config");
+        configFile.Create(fullConfigFilePath);
+        configFile.AddSection("Comm", fullConfigFilePath);
+
+        H5FDdsmDebug("Written " << fullConfigFilePath.c_str());
+
       }
+      if ((this->GetInterCommType() == H5FD_DSM_COMM_MPI) || (this->GetInterCommType() == H5FD_DSM_COMM_MPI_RMA)) {
+        this->SetServerHostName(dynamic_cast<H5FDdsmCommMpi*> (this->DsmBuffer->GetComm())->GetDsmMasterHostName());
+        H5FDdsmDebug("Server PortName: " << this->GetServerHostName());
+        if (this->GetConfigFilePath()) {
+          if (this->GetInterCommType() == H5FD_DSM_COMM_MPI) {
+            configFile.SetValue("DSM_COMM_SYSTEM", "mpi", "Comm", fullConfigFilePath);
+          }
+          if (this->GetInterCommType() == H5FD_DSM_COMM_MPI_RMA) {
+            configFile.SetValue("DSM_COMM_SYSTEM", "mpi_rma", "Comm", fullConfigFilePath);
+          }
+          configFile.SetValue("DSM_BASE_HOST", this->GetServerHostName(), "Comm", fullConfigFilePath);
+        }
+      } else if (this->GetInterCommType() == H5FD_DSM_COMM_SOCKET) {
+        this->SetServerHostName(dynamic_cast<H5FDdsmCommSocket*> (this->DsmBuffer->GetComm())->GetDsmMasterHostName());
+        this->SetServerPort(dynamic_cast<H5FDdsmCommSocket*> (this->DsmBuffer->GetComm())->GetDsmMasterPort());
+        H5FDdsmDebug("Server HostName: " << this->GetServerHostName() << ", Server port: " << this->GetServerPort());
+        if (this->GetConfigFilePath()) {
+          char serverPort[32];
+          sprintf(serverPort, "%d", this->GetServerPort());
+          configFile.SetValue("DSM_COMM_SYSTEM", "socket", "Comm", fullConfigFilePath);
+          configFile.SetValue("DSM_BASE_HOST", this->GetServerHostName(), "Comm", fullConfigFilePath);
+          configFile.SetValue("DSM_BASE_PORT", serverPort, "Comm", fullConfigFilePath);
+        }
+      }
+      configFile.SetValue("DSM_STATIC_INTERCOMM", "false", "Comm", fullConfigFilePath);
     }
-    configFile.SetValue("DSM_STATIC_INTERCOMM", "false", "Comm", fullConfigFilePath);
   }
   //
   this->DsmBuffer->RequestAccept();
   return(H5FD_DSM_SUCCESS);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmManager::Unpublish()
 {
@@ -474,6 +481,7 @@ H5FDdsmInt32 H5FDdsmManager::Unpublish()
   if (this->UpdatePiece == 0) H5FDdsmDebug("Port closed");
   return(H5FD_DSM_SUCCESS);
 }
+
 //----------------------------------------------------------------------------
 void H5FDdsmManager::H5Dump()
 {  
@@ -486,6 +494,7 @@ void H5FDdsmManager::H5Dump()
     delete myDsmDump;
   }
 }
+
 //----------------------------------------------------------------------------
 void H5FDdsmManager::H5DumpLight()
 {  
@@ -498,6 +507,7 @@ void H5FDdsmManager::H5DumpLight()
     delete myDsmDump;
   }
 }
+
 //----------------------------------------------------------------------------
 void H5FDdsmManager::H5DumpXML()
 {
@@ -512,6 +522,7 @@ void H5FDdsmManager::H5DumpXML()
     delete myDsmDump;
   }
 }
+
 //----------------------------------------------------------------------------
 void H5FDdsmManager::SendDSMXML()
 {
@@ -524,17 +535,20 @@ void H5FDdsmManager::SendDSMXML()
   }
   this->DsmBuffer->GetComm()->Barrier();
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmConstString H5FDdsmManager::GetXMLStringReceive()
 {
   if (this->DsmBuffer) return this->DsmBuffer->GetXMLDescription();
   return(NULL);
 }
+
 //----------------------------------------------------------------------------
 void H5FDdsmManager::ClearXMLStringReceive()
 {
   this->DsmBuffer->SetXMLDescription(NULL);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32 FileExists(H5FDdsmConstString fname)
 {
@@ -544,6 +558,7 @@ H5FDdsmInt32 FileExists(H5FDdsmConstString fname)
       return(H5FD_DSM_FALSE);
   }
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmManager::ReadConfigFile()
 {
@@ -596,6 +611,7 @@ H5FDdsmInt32 H5FDdsmManager::ReadConfigFile()
   }
   return(H5FD_DSM_FAIL);
 }
+
 //----------------------------------------------------------------------------
 #ifdef H5FD_DSM_HAVE_STEERING
 H5FDdsmInt32 H5FDdsmManager::WriteSteeredData()
@@ -623,6 +639,7 @@ H5FDdsmInt32 H5FDdsmManager::WriteSteeredData()
   }
   return(H5FD_DSM_SUCCESS);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmManager::UpdateSteeredObjects()
 {
@@ -638,6 +655,7 @@ H5FDdsmInt32 H5FDdsmManager::UpdateSteeredObjects()
   this->DsmBuffer->GetSteerer()->UpdateDisabledObjects();
   return(H5FD_DSM_SUCCESS);
 }
+
 //----------------------------------------------------------------------------
 void H5FDdsmManager::SetSteeringCommand(H5FDdsmConstString cmd)
 {
@@ -648,6 +666,7 @@ void H5FDdsmManager::SetSteeringCommand(H5FDdsmConstString cmd)
     this->DsmBuffer->GetSteerer()->SetCurrentCommand(cmd);
   }
 }
+
 //----------------------------------------------------------------------------
 void H5FDdsmManager::SetSteeringValues(const char *name, int numberOfElements, int *values)
 {
@@ -676,6 +695,7 @@ void H5FDdsmManager::SetSteeringValues(const char *name, int numberOfElements, i
     }
   }
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmManager::GetSteeringValues(const char *name, int numberOfElements, int *values)
 {
@@ -687,6 +707,7 @@ H5FDdsmInt32 H5FDdsmManager::GetSteeringValues(const char *name, int numberOfEle
   }
   return(ret);
 }
+
 //----------------------------------------------------------------------------
 void H5FDdsmManager::SetSteeringValues(const char *name, int numberOfElements, double *values)
 {
@@ -715,6 +736,7 @@ void H5FDdsmManager::SetSteeringValues(const char *name, int numberOfElements, d
     }
   }
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmManager::GetSteeringValues(const char *name, int numberOfElements, double *values)
 {
@@ -726,6 +748,7 @@ H5FDdsmInt32 H5FDdsmManager::GetSteeringValues(const char *name, int numberOfEle
   }
   return(ret);
 }
+
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmManager::GetInteractionsGroupPresent()
 {
@@ -736,6 +759,7 @@ H5FDdsmInt32 H5FDdsmManager::GetInteractionsGroupPresent()
   }
   return(ret);
 }
+
 //----------------------------------------------------------------------------
 void H5FDdsmManager::SetDisabledObject(H5FDdsmConstString objectName)
 {
