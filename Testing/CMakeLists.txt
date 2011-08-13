@@ -121,7 +121,6 @@ ADD_EXECUTABLE(H5FDdsmStandAlone
 TARGET_LINK_LIBRARIES(H5FDdsmStandAlone
   H5FDdsmTesting
 )
-SET_LINK_OPTIONS(H5FDdsmStandAlone)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmSender_cwrite_nohdf_bw : Bandwidth test of DSM write operations
@@ -132,7 +131,6 @@ ADD_EXECUTABLE(H5FDdsmSender_cwrite_nohdf_bw
 TARGET_LINK_LIBRARIES(H5FDdsmSender_cwrite_nohdf_bw
   H5FDdsmTesting
 )
-SET_LINK_OPTIONS(H5FDdsmSender_cwrite_nohdf_bw)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmSender_cwrite_bw : Bandwidth test of DSM write operations
@@ -143,7 +141,6 @@ ADD_EXECUTABLE(H5FDdsmSender_cwrite_bw
 TARGET_LINK_LIBRARIES(H5FDdsmSender_cwrite_bw
   H5FDdsmTesting
 )
-SET_LINK_OPTIONS(H5FDdsmSender_cwrite_bw)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmReceiver_cwrite_bw : Bandwidth test receiver (does not do anything except hosting data)
@@ -154,7 +151,6 @@ ADD_EXECUTABLE(H5FDdsmReceiver_cwrite_bw
 TARGET_LINK_LIBRARIES(H5FDdsmReceiver_cwrite_bw
   H5FDdsmTesting
 )
-SET_LINK_OPTIONS(H5FDdsmReceiver_cwrite_bw)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmSender_cwrite_sread_bw : Data validity test of DSM write operations
@@ -165,7 +161,6 @@ ADD_EXECUTABLE(H5FDdsmSender_cwrite_sread_bw
 TARGET_LINK_LIBRARIES(H5FDdsmSender_cwrite_sread_bw
   H5FDdsmTesting
 )
-SET_LINK_OPTIONS(H5FDdsmSender_cwrite_sread_bw)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmReceiver_cwrite_sread_bw : Data validity test receiver - Checks received data
@@ -176,7 +171,6 @@ ADD_EXECUTABLE(H5FDdsmReceiver_cwrite_sread_bw
 TARGET_LINK_LIBRARIES(H5FDdsmReceiver_cwrite_sread_bw
   H5FDdsmTesting
 )
-SET_LINK_OPTIONS(H5FDdsmReceiver_cwrite_sread_bw)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmSender_cwrite_cread : Send data as a client and test RDONLY mode
@@ -187,7 +181,6 @@ ADD_EXECUTABLE(H5FDdsmSender_cwrite_cread
 TARGET_LINK_LIBRARIES(H5FDdsmSender_cwrite_cread
   H5FDdsmTesting
 )
-SET_LINK_OPTIONS(H5FDdsmSender_cwrite_cread)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmReceiver_cwrite_cread : Receive data as a server and dump the data
@@ -198,7 +191,6 @@ ADD_EXECUTABLE(H5FDdsmReceiver_cwrite_cread
 TARGET_LINK_LIBRARIES(H5FDdsmReceiver_cwrite_cread
   H5FDdsmTesting
 )
-SET_LINK_OPTIONS(H5FDdsmReceiver_cwrite_cread)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmSender_cwrite_sread_cwrite : Send data as a client and test RDWR mode
@@ -209,7 +201,6 @@ ADD_EXECUTABLE(H5FDdsmSender_cwrite_sread_cwrite
 TARGET_LINK_LIBRARIES(H5FDdsmSender_cwrite_sread_cwrite
   H5FDdsmTesting
 )
-SET_LINK_OPTIONS(H5FDdsmSender_cwrite_sread_cwrite)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmReceiver_cwrite_sread_cwrite : Receive data as a server and dump the data
@@ -220,7 +211,6 @@ ADD_EXECUTABLE(H5FDdsmReceiver_cwrite_sread_cwrite
 TARGET_LINK_LIBRARIES(H5FDdsmReceiver_cwrite_sread_cwrite
   H5FDdsmTesting
 )
-SET_LINK_OPTIONS(H5FDdsmReceiver_cwrite_sread_cwrite)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmSender_cwrite_swrite_cread : Send data as a client, wait for the server to give
@@ -232,7 +222,6 @@ ADD_EXECUTABLE(H5FDdsmSender_cwrite_swrite_cread
 TARGET_LINK_LIBRARIES(H5FDdsmSender_cwrite_swrite_cread
   H5FDdsmTesting
 )
-SET_LINK_OPTIONS(H5FDdsmSender_cwrite_swrite_cread)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmReceiver_cwrite_swrite_cread : Receive data as a server, dump the data, write back
@@ -244,7 +233,6 @@ ADD_EXECUTABLE(H5FDdsmReceiver_cwrite_swrite_cread
 TARGET_LINK_LIBRARIES(H5FDdsmReceiver_cwrite_swrite_cread
   H5FDdsmTesting
 )
-SET_LINK_OPTIONS(H5FDdsmReceiver_cwrite_swrite_cread)
 
 IF(H5FD_DSM_BUILD_STEERING)
   #-----------------------------------------------------------------------------
@@ -257,7 +245,6 @@ IF(H5FD_DSM_BUILD_STEERING)
   TARGET_LINK_LIBRARIES(H5FDdsmSender_steer
     H5FDdsmTesting
   )
-  SET_LINK_OPTIONS(H5FDdsmSender_steer)
 
   #-----------------------------------------------------------------------------
   # H5FDdsmReceiver_steer : Receive data as a server, dump the data, 
@@ -269,7 +256,6 @@ IF(H5FD_DSM_BUILD_STEERING)
   TARGET_LINK_LIBRARIES(H5FDdsmReceiver_steer
     H5FDdsmTesting
   )
-  SET_LINK_OPTIONS(H5FDdsmReceiver_steer)
 
   #-----------------------------------------------------------------------------
 ENDIF(H5FD_DSM_BUILD_STEERING)

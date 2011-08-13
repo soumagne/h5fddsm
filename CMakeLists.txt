@@ -132,16 +132,26 @@ ENDIF (NOT BUILD_SHARED_LIBS)
 # Find HDF5
 #-----------------------------------------------------------------------------
 IF (NOT H5FD_DSM_EXTERNALLY_CONFIGURED)
-  FIND_PACKAGE(HDF5 REQUIRED NO_MODULE PATHS "$ENV{ProgramFiles}/HDF5")
+  set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${H5FDdsm_SOURCE_DIR}/CMake/")
+  FIND_PACKAGE(HDF5 REQUIRED)
 ELSE (NOT H5FD_DSM_EXTERNALLY_CONFIGURED)
   IF(NOT VTK_USE_SYSTEM_HDF5)
     IF(HDF5_CONFIG)
       INCLUDE("${HDF5_CONFIG}")
     ELSE(HDF5_CONFIG)
-      FIND_PACKAGE(HDF5 REQUIRED NO_MODULE PATHS "${HDF5_DIR}")
+      set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${H5FDdsm_SOURCE_DIR}/CMake/")
+      FIND_PACKAGE(HDF5 REQUIRED PATHS "${HDF5_DIR}")
     ENDIF(HDF5_CONFIG)
   ENDIF(NOT VTK_USE_SYSTEM_HDF5)
 ENDIF (NOT H5FD_DSM_EXTERNALLY_CONFIGURED)
+
+IF (NOT TARGET "hdf5")
+#  MESSAGE(FATAL_ERROR "The Project requires HDF5")
+ENDIF (NOT TARGET "hdf5")
+IF (NOT HDF5_ENABLE_PARALLEL)
+#  MESSAGE(FATAL_ERROR "The Project requires HDF5 to be compiled with HDF5_ENABLE_PARALLEL ON")
+ENDIF (NOT HDF5_ENABLE_PARALLEL)
+  
 INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
 IF(HDF5_VERSION_MAJOR)
 #  MESSAGE("HDF5 version number reports as ${HDF5_VERSION_MAJOR}.${HDF5_VERSION_MINOR}")
@@ -150,6 +160,7 @@ IF(HDF5_VERSION_MAJOR)
     ADD_DEFINITIONS(-DHDF_NEW_VFD)
   ENDIF(HDF5_VERSION_MAJOR GREATER 1.8)
 ENDIF(HDF5_VERSION_MAJOR)
+
 
 #-----------------------------------------------------------------------------
 # Find MPI
@@ -173,34 +184,10 @@ INCLUDE_DIRECTORIES(${H5FDdsm_SOURCE_DIR}/src)
 INCLUDE_DIRECTORIES(${H5FDdsm_SOURCE_DIR}/h5dump)
 INCLUDE_DIRECTORIES(${H5FDdsm_BINARY_DIR}/src)
 
-#-----------------------------------------------------------------------------
-# Linking against mpich2 libs on win32 causes trouble if we don't add some flags
-#-----------------------------------------------------------------------------
-MACRO (SET_LINK_OPTIONS exetarget)
-  IF (WIN32 AND MSVC AND NOT BUILD_SHARED_LIBS)
-      IF (HDF5_GREATER_1_8)
-        SET_TARGET_PROPERTIES (${target}
-          PROPERTIES
-              COMPILE_FLAGS "/libs:dll /threads "
-              LINK_FLAGS "/NODEFAULTLIB:libcmt.lib /NODEFAULTLIB:libcmtd.lib"
-        )       
-      ELSE (HDF5_GREATER_1_8)
-        SET_TARGET_PROPERTIES (${target}
-            PROPERTIES
-# RELWITHDEBINFO
-#             LINK_FLAGS "/NODEFAULTLIB:LIBCMT /NODEFAULTLIB:LIBCMTD /NODEFAULTLIB:MSVCRTD"
-# DEBUG for JB
-             LINK_FLAGS "/NODEFAULTLIB:LIBCMT  /NODEFAULTLIB:MSVCRTD"
-        )
-      ENDIF (HDF5_GREATER_1_8)
-  ENDIF (WIN32 AND MSVC AND NOT BUILD_SHARED_LIBS)
-ENDMACRO (SET_LINK_OPTIONS)
-
 #----------------------------
 # Fortran
 #----------------------------
 MACRO (SET_FORTRAN_LINK_OPTIONS target)
-  SET_LINK_OPTIONS(${target})
   IF (WIN32 AND MSVC)
     IF (BUILD_SHARED_LIBS)
       SET_TARGET_PROPERTIES (${target}
@@ -211,41 +198,13 @@ MACRO (SET_FORTRAN_LINK_OPTIONS target)
     ELSE (BUILD_SHARED_LIBS)
       SET_TARGET_PROPERTIES (${target}
           PROPERTIES
-              COMPILE_FLAGS "/libs:dll /threads "
+              COMPILE_FLAGS "/libs:static /threads "
+              LINK_FLAGS "/SUBSYSTEM:CONSOLE /NODEFAULTLIB:LIBCMT /NODEFAULTLIB:LIBCMTD ${addlinkflags}"
       )
     ENDIF (BUILD_SHARED_LIBS)
   ENDIF (WIN32 AND MSVC)
   SET_TARGET_PROPERTIES (${target} PROPERTIES LINKER_LANGUAGE Fortran)
 ENDMACRO (SET_FORTRAN_LINK_OPTIONS)
-
-#-----------------------------------------------------------------------------
-# Force /MD instead of /MT and vice versa for win32/mpich2 compatibility
-#-----------------------------------------------------------------------------
-IF (BUILD_SHARED_LIBS)
-  IF (MSVC)
-    FOREACH (flag_var
-        CMAKE_C_FLAGS CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELEASE
-        CMAKE_C_FLAGS_MINSIZEREL CMAKE_C_FLAGS_RELWITHDEBINFO
-        CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
-        CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
-      IF (NOT HDF5_GREATER_1_8 AND ${flag_var} MATCHES "/MT")
-        STRING (REGEX REPLACE "/MT" "/MD" ${flag_var} "${${flag_var}}")
-      ENDIF (NOT HDF5_GREATER_1_8 AND ${flag_var} MATCHES "/MT")
-    ENDFOREACH (flag_var)
-  ENDIF (MSVC)
-ELSE (BUILD_SHARED_LIBS)
-  IF (MSVC)
-    FOREACH (flag_var
-        CMAKE_C_FLAGS CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELEASE
-        CMAKE_C_FLAGS_MINSIZEREL CMAKE_C_FLAGS_RELWITHDEBINFO
-        CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
-        CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
-      IF (NOT HDF5_GREATER_1_8 AND ${flag_var} MATCHES "/MD")
-        STRING (REGEX REPLACE "/MD" "/MT" ${flag_var} "${${flag_var}}")
-      ENDIF (NOT HDF5_GREATER_1_8 AND ${flag_var} MATCHES "/MD")
-    ENDFOREACH (flag_var)
-  ENDIF (MSVC)
-ENDIF (BUILD_SHARED_LIBS)
 
 #-----------------------------------------------------------------------------
 # Specify project source files
@@ -304,7 +263,6 @@ IF(WIN32)
   TARGET_LINK_LIBRARIES(H5FDdsm
     wsock32 ws2_32
   )
-  ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS -Dhdf5_tools_EXPORTS)
 ENDIF(WIN32)
 
 SET_LIB_OPTIONS(H5FDdsm)
