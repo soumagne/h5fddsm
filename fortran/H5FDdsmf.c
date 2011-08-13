@@ -37,12 +37,10 @@ int_f nh5fd_dsm_init_flags_c(int_f* h5fd_dsm_flags)
 {
   int ret_value = -1;
 
-  h5fd_dsm_flags[0] = (int_f)H5FD_DSM_MANUAL_SERVER_UPDATE;
-  h5fd_dsm_flags[1] = (int_f)H5FD_DSM_UPDATE_LEVEL_0;
-  h5fd_dsm_flags[2] = (int_f)H5FD_DSM_UPDATE_LEVEL_1;
-  h5fd_dsm_flags[3] = (int_f)H5FD_DSM_UPDATE_LEVEL_2;
-  h5fd_dsm_flags[4] = (int_f)H5FD_DSM_UPDATE_LEVEL_3;
-  h5fd_dsm_flags[5] = (int_f)H5FD_DSM_UPDATE_LEVEL_4;
+  h5fd_dsm_flags[0] = (int_f)H5FD_DSM_DONT_RELEASE;
+  h5fd_dsm_flags[1] = (int_f)H5FD_DSM_DONT_NOTIFY;
+  h5fd_dsm_flags[2] = (int_f)H5FD_DSM_NEW_DATA;
+  h5fd_dsm_flags[3] = (int_f)H5FD_DSM_NEW_INFORMATION;
 
   ret_value = 0;
   return ret_value;
@@ -97,42 +95,47 @@ int_f nh5pget_fapl_dsm_c(hid_t_f *prp_id, int_f* comm)
 }
 
 /*----------------------------------------------------------------------------
- * Name:        h5fd_dsm_set_mode_c
- * Purpose:     Call H5FD_dsm_set_mode to set specific operating mode for DSM
- * Inputs:      mode      - specific modes are:
- *                            - H5FD_DSM_MANUAL_SERVER_UPDATE
+ * Name:        h5fd_dsm_set_options_c
+ * Purpose:     Call H5FD_dsm_set_options to set specific option to the DSM
+ * Inputs:      options      - specific options are:
+ *                             - H5FD_DSM_DONT_RELEASE
+ *                             - H5FD_DSM_DONT_NOTIFY
  * Returns:     0 on success, -1 on failure
  *---------------------------------------------------------------------------*/
-int_f nh5fd_dsm_set_mode_c(int_f* mode)
+int_f nh5fd_dsm_set_options_c(int_f* options)
 {
      int        ret_value = -1;
-     unsigned long c_mode = *mode;
+     unsigned long c_options = *options;
      herr_t ret;
 
      /*
-      * Call H5FD_dsm_set_mode function.
+      * Call H5FD_dsm_set_options function.
       */
-     ret = H5FD_dsm_set_mode(c_mode, NULL);
+     ret = H5FD_dsm_set_options(c_options, NULL);
      if (ret < 0) return ret_value;
      ret_value = 0;
      return ret_value;
 }
 
 /*----------------------------------------------------------------------------
- * Name:        h5fd_dsm_server_update_c
- * Purpose:     Call H5FD_dsm_server_update to force DSM server to be updated
- * Inputs:      none
+ * Name:        h5fd_dsm_notify_c
+ * Purpose:     Call H5FD_dsm_notify to manually send a notification to the
+ *              DSM host
+ * Inputs:      options      - notifications are:
+   *                           - H5FD_DSM_NEW_DATA
+   *                           - H5FD_DSM_NEW_INFORMATION
  * Returns:     0 on success, -1 on failure
  *---------------------------------------------------------------------------*/
-int_f nh5fd_dsm_server_update_c()
+int_f nh5fd_dsm_notify_c(int_f* notifications)
 {
      int    ret_value = -1;
+     unsigned long c_notifications = *notifications;
      herr_t ret;
 
      /*
-      * Call H5FD_dsm_server_update function.
+      * Call H5FD_dsm_notify function.
       */
-     ret = H5FD_dsm_server_update(NULL);
+     ret = H5FD_dsm_notify(c_notifications, NULL);
      if (ret < 0) return ret_value;
      ret_value = 0;
      return ret_value;

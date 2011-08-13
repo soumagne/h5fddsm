@@ -31,7 +31,7 @@ int main(int argc, char **argv)
   if (dataSizeMB) {
     remoteMB = dataSizeMB;
   } else {
-    remoteMB = dsmManager->GetDSMHandle()->GetTotalLength() / (1024.0 * 1024.0);
+    remoteMB = dsmManager->GetDsmBuffer()->GetTotalLength() / (1024.0 * 1024.0);
   }
 
   for (int type = 0; type < TYPES; type++) {
@@ -44,9 +44,10 @@ int main(int argc, char **argv)
     for (int loop = 0; loop < LOOPS; loop++) {
       H5FDdsmUInt64 numParticles = (H5FDdsmUInt64) ((1024 * 1024 * remoteMB - H5FD_DSM_ALIGNMENT) /
           (sizeof(H5FDdsmFloat64) * 1.0 * dsmManager->GetUpdateNumPieces())); // 3 = {x,y,z}
-      if (dsmManager->GetDSMHandle()->GetDsmType() == H5FD_DSM_TYPE_DYNAMIC_MASK) {
-        dsmManager->GetDSMHandle()->SetMaskLength(numParticles * sizeof(H5FDdsmFloat64) * dsmManager->GetUpdateNumPieces());
-        dsmManager->GetDSMHandle()->SendMaskLength();
+      if (dsmManager->GetDsmBuffer()->GetDsmType() == H5FD_DSM_TYPE_DYNAMIC_MASK) {
+        dsmManager->GetDsmBuffer()->SetMaskLength(numParticles *
+            sizeof(H5FDdsmFloat64) * dsmManager->GetUpdateNumPieces());
+        dsmManager->GetDsmBuffer()->SendMaskLength();
       }
       Bytes       = numParticles * sizeof(H5FDdsmFloat64) * 1.0;
       SendBytes   = Bytes * dsmManager->GetUpdateNumPieces();
@@ -58,10 +59,14 @@ int main(int argc, char **argv)
             // We have configured everything manually using the DSM manager, so pass the buffer
             // into the read/write code so that we can use the dsm that we have setup
             // otherwise it creates a new DSM server object
-            totaltime += TestParticleWrite(fullname, numParticles, 1, 1, dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(), comm, dsmManager->GetDSMHandle(), usingDSM);
+            totaltime += TestParticleWrite(fullname, numParticles, 1, 1,
+                dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(),
+                comm, dsmManager->GetDsmBuffer(), usingDSM);
           }
           else if (type == 1) {
-            totaltime += TestParticleWrite(hdffile.c_str(), numParticles, 1, 1,dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(), comm, NULL, usingDSM);
+            totaltime += TestParticleWrite(hdffile.c_str(), numParticles, 1, 1,
+                dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(),
+                comm, NULL, usingDSM);
           }
         }
         totaltime = totaltime / AVERAGE;

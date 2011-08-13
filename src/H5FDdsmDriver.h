@@ -144,7 +144,7 @@ class H5FDdsm_EXPORT H5FDdsmDriver : public H5FDdsmObject {
 
     // Configure the system. Set the Comm and ServerIds
     H5FDdsmInt32   ConfigureUniform(H5FDdsmComm *Comm, H5FDdsmUInt64 Length, H5FDdsmInt32 StartId=-1, H5FDdsmInt32 EndId=-1, 
-      H5FDdsmUInt64 aBlockLength=0, bool random=false);
+      H5FDdsmUInt64 aBlockLength=0, H5FDdsmBoolean random=H5FD_DSM_FALSE);
 
     H5FDdsmInt32   ProbeCommandHeader(H5FDdsmInt32 *Source);
     H5FDdsmInt32   SendCommandHeader(H5FDdsmInt32 Opcode, H5FDdsmInt32 Dest, H5FDdsmAddr Address, H5FDdsmInt32 Length);

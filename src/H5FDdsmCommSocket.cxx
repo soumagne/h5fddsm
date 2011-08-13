@@ -35,6 +35,7 @@
 //----------------------------------------------------------------------------
 H5FDdsmCommSocket::H5FDdsmCommSocket()
 {
+  this->InterCommType = H5FD_DSM_COMM_SOCKET;
   for (int i=0; i<H5FD_DSM_MAX_SOCKET; i++) this->InterComm[i] = NULL;
   this->DsmMasterSocket = NULL;
   this->DsmMasterPort = 0;
@@ -212,6 +213,7 @@ H5FDdsmCommSocket::ClosePort()
 H5FDdsmInt32
 H5FDdsmCommSocket::Accept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize)
 {
+  H5FDdsmInt32 errorOnAccept = H5FD_DSM_FALSE;
   if (H5FDdsmComm::Accept(storagePointer, storageSize) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
   // TODO Needed if we want to insert a timeout
@@ -219,9 +221,19 @@ H5FDdsmCommSocket::Accept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSi
 
   if (this->Id == 0) {
     if (this->DsmMasterSocket->Accept() == H5FD_DSM_FAIL) {
-      H5FDdsmError("Accept socket failed");
-      return(H5FD_DSM_FAIL);
+      H5FDdsmDebug("Accept socket failed");
+      errorOnAccept = H5FD_DSM_TRUE;
     }
+  }
+  if (MPI_Bcast(&errorOnAccept, sizeof(H5FDdsmInt32), MPI_UNSIGNED_CHAR, 0, this->IntraComm) != MPI_SUCCESS) {
+    H5FDdsmError("Id = " << this->Id << " MPI_Bcast of errorOnAccept failed");
+    return(H5FD_DSM_FAIL);
+  }
+
+  if (errorOnAccept) return(H5FD_DSM_FAIL);
+
+  if (this->Id == 0) {
+    // Exchange InterSize and IntraSize with remote
     if (this->DsmMasterSocket->Receive(&this->InterSize, sizeof(H5FDdsmInt32)) < 0) {
       H5FDdsmError("Id = " << this->Id << " failed to receive InterSize");
       return(H5FD_DSM_FAIL);
@@ -263,6 +275,7 @@ H5FDdsmCommSocket::Connect()
     if (isMasterConnected == H5FD_DSM_FAIL) {
       H5FDdsmDebug("Socket connection failed");
     } else {
+      // Exchange InterSize and IntraSize with remote
       if (this->DsmMasterSocket->Send(&this->IntraSize, sizeof(H5FDdsmInt32)) < 0) {
         H5FDdsmError("Id = " << this->Id << " failed to send IntraSize");
         return(H5FD_DSM_FAIL);

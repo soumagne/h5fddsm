@@ -29,16 +29,16 @@ main(int argc, char * argv[])
 
   // Create DSM Server
   H5FDdsmManager *dsmManager = new H5FDdsmManager();
-  dsmManager->SetCommunicator(comm);
+  dsmManager->SetMpiComm(comm);
   dsmManager->SetLocalBufferSizeMBytes(dsmSize / size);
-  dsmManager->CreateDSM();
+  dsmManager->Create();
 
-  dataMB = dsmManager->GetDSMHandle()->GetTotalLength() / (1024.0 * 1024.0);
-  numServers = dsmManager->GetDSMHandle()->GetEndServerId() -
-      dsmManager->GetDSMHandle()->GetStartServerId() + 1;
+  dataMB = dsmManager->GetDsmBuffer()->GetTotalLength() / (1024.0 * 1024.0);
+  numServers = dsmManager->GetDsmBuffer()->GetEndServerId() -
+      dsmManager->GetDsmBuffer()->GetStartServerId() + 1;
   if (rank == 0) {
     std::cout << "# DSM server memory size is: " << dataMB << " MBytes"
-        << " (" << dsmManager->GetDSMHandle()->GetTotalLength() << " Bytes)" << std::endl;
+        << " (" << dsmManager->GetDsmBuffer()->GetTotalLength() << " Bytes)" << std::endl;
     std::cout << "# DSM server process count: " <<  numServers << std::endl;
   }
 
@@ -47,12 +47,12 @@ main(int argc, char * argv[])
 
   // Write Data
   TestParticleWrite(fullname, numParticles, 1, 1, dsmManager->GetUpdatePiece(),
-      dsmManager->GetUpdateNumPieces(), comm, dsmManager->GetDSMHandle(), usingHDF);
+      dsmManager->GetUpdateNumPieces(), comm, dsmManager->GetDsmBuffer(), usingHDF);
 
   // Read and Check Data
   TestParticleRead(fullname, dsmManager->GetUpdatePiece(),
       dsmManager->GetUpdateNumPieces() * numParticles, comm,
-      dsmManager->GetDSMHandle());
+      dsmManager->GetDsmBuffer());
 
   delete dsmManager;
 

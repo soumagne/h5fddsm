@@ -13,13 +13,13 @@ int main(int argc, char *argv[])
   H5FDdsmManager *dsmManager = new H5FDdsmManager();
   receiverInit(argc, argv, dsmManager, &comm);
 
-  nRemoteProcs = dsmManager->GetDSMHandle()->GetComm()->GetInterSize();
-  remoteMB = dsmManager->GetDSMHandle()->GetTotalLength() / (1024.0 * 1024.0);
+  nRemoteProcs = dsmManager->GetDsmBuffer()->GetComm()->GetInterSize();
+  remoteMB = dsmManager->GetDsmBuffer()->GetTotalLength() / (1024.0 * 1024.0);
   numParticles = (H5FDdsmUInt64) (1024 * 1024 * (remoteMB - 1) /
       (sizeof(H5FDdsmFloat64) * nRemoteProcs));
 
-  while (dsmManager->GetDsmIsConnected()) {
-    if (dsmManager->WaitForUpdateReady() > 0) {
+  while (dsmManager->GetIsConnected()) {
+    if (dsmManager->WaitForNotification() > 0) {
       // H5Dump
       // dsmManager->H5DumpLight();
 
@@ -27,11 +27,12 @@ int main(int argc, char *argv[])
       if (dsmManager->GetUpdatePiece() == 0) {
         // printf("Trying to read %d * %llu particles\n", nRemoteProcs, numParticles);
       }
-      TestParticleRead(fullname, dsmManager->GetUpdatePiece(), nRemoteProcs * numParticles, comm, dsmManager->GetDSMHandle());
+      TestParticleRead(fullname, dsmManager->GetUpdatePiece(),
+          nRemoteProcs * numParticles, comm, dsmManager->GetDsmBuffer());
       // Sync here
       MPI_Barrier(comm);
       // Clean up for next step
-      dsmManager->UpdateFinalize();
+      dsmManager->NotificationFinalize();
     }
   }
 

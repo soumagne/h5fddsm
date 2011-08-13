@@ -58,7 +58,7 @@
 
 //! Base comm object for Distributed Shared Memory implementation
 
-// Macros to choose communication system to use
+// Macros to choose inter communication system to use
 #define H5FD_DSM_COMM_MPI        0x10
 #define H5FD_DSM_COMM_SOCKET     0x11
 #define H5FD_DSM_COMM_MPI_RMA    0x12
@@ -96,6 +96,9 @@ public:
   // IntraSize
   H5FDdsmGetValueMacro(IntraSize, H5FDdsmInt32);
   H5FDdsmSetValueMacro(IntraSize, H5FDdsmInt32);
+
+  // InterCommType
+  H5FDdsmGetValueMacro(InterCommType, H5FDdsmInt32);
 
   // InterSize
   H5FDdsmGetValueMacro(InterSize, H5FDdsmInt32);
@@ -147,6 +150,7 @@ protected:
   MPI_Comm           IntraComm;
   H5FDdsmInt32       Id;
   H5FDdsmInt32       IntraSize;
+  H5FDdsmInt32       InterCommType;
   H5FDdsmInt32       InterSize;
   H5FDdsmInt32       CommChannel;
 

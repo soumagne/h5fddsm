@@ -38,10 +38,10 @@ H5_FCDLL int_f nh5pset_fapl_dsm_c(hid_t_f *prp_id, int_f* comm);
 #define nh5pget_fapl_dsm_c H5_FC_FUNC_(h5pget_fapl_dsm_c, H5PGET_FAPL_DSM_C)
 H5_FCDLL int_f nh5pget_fapl_dsm_c(hid_t_f *prp_id, int_f* comm);
 
-#define nh5fd_dsm_set_mode_c H5_FC_FUNC_(h5fd_dsm_set_mode_c, H5FD_DSM_SET_MODE_C)
-H5_FCDLL int_f nh5fd_dsm_set_mode_c(int_f* mode);
+#define nh5fd_dsm_set_options_c H5_FC_FUNC_(h5fd_dsm_set_options_c, H5FD_DSM_SET_OPTIONS_C)
+H5_FCDLL int_f nh5fd_dsm_set_options_c(int_f* options);
 
-#define nh5fd_dsm_server_update_c H5_FC_FUNC_(h5fd_dsm_server_update_c, H5FD_DSM_SERVER_UPDATE_C)
-H5_FCDLL int_f nh5fd_dsm_server_update_c();
+#define nh5fd_dsm_notify_c H5_FC_FUNC_(h5fd_dsm_notify_c, H5FD_DSM_NOTIFY_C)
+H5_FCDLL int_f nh5fd_dsm_notify_c(int_f* notifications);
 
 #endif /* _H5f90dsmproto_H */

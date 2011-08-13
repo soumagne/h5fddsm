@@ -81,8 +81,8 @@ herr_t H5FD_dsm_steering_init(MPI_Comm comm, void *buffer)
   dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
   if (dsmBuffer->GetIsAutoAllocated() && !dsmBuffer->GetIsConnected()) {
     H5FDdsmManager *dsmManager = (H5FDdsmManager *)DsmGetAutoAllocatedManager();
-    dsmManager->ReadDSMConfigFile();
-    dsmManager->ConnectDSM();
+    dsmManager->ReadConfigFile();
+    dsmManager->Connect();
   }
 
 done:
@@ -116,13 +116,13 @@ herr_t H5FD_dsm_steering_update()
     // After possible RMA put / get from the server, need to sync windows before
     // further operations
     dsmBuffer->GetComm()->WindowSync();
-    dsmBuffer->SetIsSyncRequired(false);
+    dsmBuffer->SetIsSyncRequired(H5FD_DSM_FALSE);
   }
 
   dsmBuffer->GetSteerer()->GetSteeringCommands();
   dsmBuffer->GetSteerer()->GetDisabledObjects();
   // Automatically triggers an update of steering objects during the begin loop function
-  H5FD_dsm_server_update(dsmBuffer);
+  H5FD_dsm_notify(H5FD_DSM_NEW_DATA, dsmBuffer);
 
 done:
   FUNC_LEAVE_NOAPI(ret_value);
@@ -182,7 +182,7 @@ herr_t H5FD_dsm_steering_wait()
   if (dsmBuffer->GetComm()->GetUseOneSidedComm() &&
       dsmBuffer->GetIsSyncRequired() && !dsmBuffer->GetIsServer()) {
     dsmBuffer->GetComm()->WindowSync();
-    dsmBuffer->SetIsSyncRequired(false);
+    dsmBuffer->SetIsSyncRequired(H5FD_DSM_FALSE);
   }
 
   if (dsmBuffer->GetSteerer()->SetCurrentCommand("pause")<0 ||

@@ -60,10 +60,11 @@ H5FDdsmComm::H5FDdsmComm()
   this->IntraComm          = MPI_COMM_NULL;
   this->Id                 = -1;
   this->IntraSize          = -1;
+  this->InterCommType      = -1;
   this->InterSize          = -1;
   this->CommChannel        = H5FD_DSM_INTRA_COMM;
-  this->UseOneSidedComm    = 0;
-  this->UseStaticInterComm = 0;
+  this->UseOneSidedComm    = H5FD_DSM_FALSE;
+  this->UseStaticInterComm = H5FD_DSM_FALSE;
   this->SyncChannels       = 0;
 }
 

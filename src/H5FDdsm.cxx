@@ -310,17 +310,17 @@ DsmAutoAlloc(MPI_Comm comm)
 {
   if (!dsmManagerSingleton) {
     dsmManagerSingleton = new H5FDdsmManager();
-    dsmManagerSingleton->ReadDSMConfigFile();
-    dsmManagerSingleton->SetCommunicator(comm);
-    dsmManagerSingleton->CreateDSM();
-    if (dsmManagerSingleton->GetDsmIsServer()) {
+    dsmManagerSingleton->ReadConfigFile();
+    dsmManagerSingleton->SetMpiComm(comm);
+    dsmManagerSingleton->Create();
+    if (dsmManagerSingleton->GetIsServer()) {
       // TODO Leave the auto publish here for now
-      dsmManagerSingleton->PublishDSM();
-      while (!dsmManagerSingleton->GetDSMHandle()->GetIsConnected()) {
+      dsmManagerSingleton->Publish();
+      while (!dsmManagerSingleton->GetDsmBuffer()->GetIsConnected()) {
         // Spin
       }
     }
-    dsmManagerSingleton->GetDSMHandle()->SetIsAutoAllocated(true);
+    dsmManagerSingleton->GetDsmBuffer()->SetIsAutoAllocated(H5FD_DSM_TRUE);
   }
   return(H5FD_DSM_SUCCESS);
 }
@@ -329,11 +329,11 @@ H5FDdsmInt32
 DsmAutoDealloc()
 {
   if (dsmManagerSingleton) {
-    if (!dsmManagerSingleton->GetDsmIsServer() && dsmManagerSingleton->GetDSMHandle()->GetIsConnected()) {
-      dsmManagerSingleton->DisconnectDSM();
+    if (!dsmManagerSingleton->GetIsServer() && dsmManagerSingleton->GetDsmBuffer()->GetIsConnected()) {
+      dsmManagerSingleton->Disconnect();
     }
-    if (dsmManagerSingleton->GetDsmIsServer()) {
-      dsmManagerSingleton->UnpublishDSM();
+    if (dsmManagerSingleton->GetIsServer()) {
+      dsmManagerSingleton->Unpublish();
     }
     delete dsmManagerSingleton;
     dsmManagerSingleton = NULL;
@@ -347,7 +347,7 @@ DsmGetAutoAllocatedBuffer()
   void *buffer = NULL;
 
   if (dsmManagerSingleton) {
-    buffer = (void*)dsmManagerSingleton->GetDSMHandle();
+    buffer = (void*)dsmManagerSingleton->GetDsmBuffer();
   }
   return(buffer);
 }
@@ -370,7 +370,7 @@ DsmBufferConnect(H5FDdsmBuffer *dsmBuffer)
   if (!dsmBuffer->GetIsConnected()) {
     if (dsmBuffer->GetComm()->Connect() == H5FD_DSM_SUCCESS) {
       PRINT_DSM_INFO(dsmBuffer->GetComm()->GetId(), "Connected!");
-      dsmBuffer->SetIsConnected(true);
+      dsmBuffer->SetIsConnected(H5FD_DSM_TRUE);
       dsmBuffer->ReceiveInfo();
     }
     else {
@@ -470,9 +470,9 @@ done:
 } // end H5FD_dsm_term()
 
 /*-------------------------------------------------------------------------
- * Function:  H5FD_dsm_set_mode
+ * Function:  H5FD_dsm_set_options
  *
- * Purpose:  Set a specific operating for the DSM
+ * Purpose:  Set a specific option to the DSM
  *
  * Return:  <none>
  *
@@ -481,36 +481,32 @@ done:
  *-------------------------------------------------------------------------
  */
 herr_t
-H5FD_dsm_set_mode(unsigned long flags, void *dsmBuffer)
+H5FD_dsm_set_options(unsigned long flags, void *dsmBuffer)
 {
   herr_t ret_value = SUCCEED;
   H5FDdsmBuffer *buffer = NULL;
 
-  FUNC_ENTER_NOAPI(H5FD_dsm_set_mode, FAIL)
+  FUNC_ENTER_NOAPI(H5FD_dsm_set_options, FAIL)
 
   if (dsmBuffer) {
     buffer = static_cast <H5FDdsmBuffer*> (dsmBuffer);
   } else {
     if (dsmManagerSingleton) {
-      buffer = dsmManagerSingleton->GetDSMHandle();
+      buffer = dsmManagerSingleton->GetDsmBuffer();
     } else {
       HGOTO_ERROR(H5E_VFL, H5E_NOTFOUND, FAIL, "No DSM buffer found");
     }
   }
 
   switch(flags) {
-  case H5FD_DSM_MANUAL_SERVER_UPDATE:
-    buffer->SetUpdateServerOnClose(false);
-    break;
-  case H5FD_DSM_UPDATE_LEVEL_0:
-  case H5FD_DSM_UPDATE_LEVEL_1:
-  case H5FD_DSM_UPDATE_LEVEL_2:
-  case H5FD_DSM_UPDATE_LEVEL_3:
-  case H5FD_DSM_UPDATE_LEVEL_4:
-    buffer->SetUpdateLevel(flags);
+  case H5FD_DSM_DONT_RELEASE:
+    buffer->SetReleaseLockOnClose(H5FD_DSM_FALSE);
+    /* If we don't release the file, we don't send notifications as well */
+  case H5FD_DSM_DONT_NOTIFY:
+    buffer->SetNotificationOnClose(H5FD_DSM_FALSE);
     break;
   default:
-    PRINT_DSM_INFO(buffer->GetComm()->GetId(), "Not implemented mode");
+    PRINT_DSM_INFO(buffer->GetComm()->GetId(), "Not implemented option");
     break;
   }
 
@@ -519,9 +515,9 @@ done:
 }
 
 /*-------------------------------------------------------------------------
- * Function:  H5FD_dsm_server_update
+ * Function:  H5FD_dsm_notify
  *
- * Purpose:  Switch communicators and send an update ready to the DSM servers
+ * Purpose:  Send a notification to the DSM host
  *
  * Return:  <none>
  *
@@ -530,25 +526,35 @@ done:
  *-------------------------------------------------------------------------
  */
 herr_t
-H5FD_dsm_server_update(void *dsmBuffer)
+H5FD_dsm_notify(unsigned long flags, void *dsmBuffer)
 {
   herr_t ret_value = SUCCEED;
   H5FDdsmBuffer *buffer = NULL;
 
-  FUNC_ENTER_NOAPI(H5FD_dsm_server_update, FAIL)
+  FUNC_ENTER_NOAPI(H5FD_dsm_notify, FAIL)
 
   if (dsmBuffer) {
     buffer = static_cast <H5FDdsmBuffer*> (dsmBuffer);
   } else {
     if (dsmManagerSingleton) {
-      buffer = dsmManagerSingleton->GetDSMHandle();
+      buffer = dsmManagerSingleton->GetDsmBuffer();
     } else {
       HGOTO_ERROR(H5E_VFL, H5E_NOTFOUND, FAIL, "No DSM buffer found");
     }
   }
 
+  switch(flags) {
+  case H5FD_DSM_NEW_INFORMATION:
+  case H5FD_DSM_NEW_DATA:
+    buffer->SetNotification(flags);
+    break;
+  default:
+    PRINT_DSM_INFO(buffer->GetComm()->GetId(), "Not implemented notification");
+    break;
+  }
+
   if (!buffer->GetIsLocked()) buffer->RequestLockAcquire();
-  buffer->RequestServerUpdate();
+  buffer->RequestNotification();
 
 done:
   FUNC_LEAVE_NOAPI(ret_value);
@@ -588,9 +594,9 @@ H5Pset_fapl_dsm(hid_t fapl_id, MPI_Comm dsmComm, void *dsmBuffer)
   }
   else {
     if (dsmManagerSingleton == NULL) DsmAutoAlloc(dsmComm);
-    fa.buffer = dsmManagerSingleton->GetDSMHandle();
-    if (!dsmManagerSingleton->GetDsmIsConnected()) {
-      dsmManagerSingleton->ConnectDSM();
+    fa.buffer = dsmManagerSingleton->GetDsmBuffer();
+    if (!dsmManagerSingleton->GetIsConnected()) {
+      dsmManagerSingleton->Connect();
     }
   }
 
@@ -747,7 +753,7 @@ H5FD_dsm_open(const char *name, unsigned UNUSED flags, hid_t fapl_id, haddr_t ma
   } else {
     file->DsmBuffer = fa->buffer;
 
-    if (!file->DsmBuffer->GetIsLocked() && file->DsmBuffer->GetIsConnected()) {
+    if (!file->DsmBuffer->GetIsLocked()) {
       file->DsmBuffer->RequestLockAcquire();
     }
 
@@ -766,8 +772,8 @@ H5FD_dsm_open(const char *name, unsigned UNUSED flags, hid_t fapl_id, haddr_t ma
       HGOTO_ERROR(H5E_VFL, H5E_NOTFOUND, NULL, "Cannot get existing DSM buffer entries");
     } else {
       if (H5F_ACC_RDWR & flags) {
-        PRINT_INFO("SetIsReadOnly(false)");
-        file->DsmBuffer->SetIsReadOnly(false);
+        PRINT_INFO("SetIsReadOnly(H5FD_DSM_FALSE)");
+        file->DsmBuffer->SetIsReadOnly(H5FD_DSM_FALSE);
       }
       if (H5F_ACC_CREAT & flags) {
         file->start = file->end = 0;
@@ -849,24 +855,22 @@ H5FD_dsm_close(H5FD_t *_file)
       MPI_Allreduce(&file->dirty, &isSomeoneDirty, sizeof(hbool_t),
           MPI_UNSIGNED_CHAR, MPI_MAX, file->DsmBuffer->GetComm()->GetIntraComm());
       if (isSomeoneDirty) {
-        file->DsmBuffer->SetIsDataModified(true);
-        if (file->DsmBuffer->GetUpdateServerOnClose()) {
+        file->DsmBuffer->SetIsDataModified(H5FD_DSM_TRUE);
+        if (file->DsmBuffer->GetNotificationOnClose()) {
           if (!file->DsmBuffer->GetIsServer()) {
-            H5FD_dsm_server_update(file->DsmBuffer);
+            H5FD_dsm_notify(H5FD_DSM_NEW_DATA, file->DsmBuffer);
           } else {
-            file->DsmBuffer->SignalUpdateReady();
+            file->DsmBuffer->SignalNotification();
           }
         }
         file->dirty = FALSE;
       }
     }
-    PRINT_INFO("SetIsReadOnly(true)");
-    file->DsmBuffer->SetIsReadOnly(true);
+    PRINT_INFO("SetIsReadOnly(H5FD_DSM_TRUE)");
+    file->DsmBuffer->SetIsReadOnly(H5FD_DSM_TRUE);
   }
 
-  // TODO As we need a manual update for the client, we may need a manual lock release for the server
-  if (file->DsmBuffer->GetReleaseLockOnClose() && file->DsmBuffer->GetIsConnected()
-      && file->DsmBuffer->GetIsLocked()) {
+  if (file->DsmBuffer->GetReleaseLockOnClose() && file->DsmBuffer->GetIsLocked()) {
     file->DsmBuffer->RequestLockRelease();
   }
 

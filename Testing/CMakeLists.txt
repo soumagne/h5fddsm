@@ -123,6 +123,18 @@ TARGET_LINK_LIBRARIES(H5FDdsmStandAlone
 )
 
 #-----------------------------------------------------------------------------
+# H5FDdsmAbortPublish : Simple parallel write/read test to abort DSM publish
+# state when no connection has been established yet
+#-----------------------------------------------------------------------------
+ADD_EXECUTABLE(H5FDdsmAbortPublish
+  H5FDdsmAbortPublish.cxx
+)
+TARGET_LINK_LIBRARIES(H5FDdsmAbortPublish
+  H5FDdsmTesting
+)
+SET_LINK_OPTIONS(H5FDdsmAbortPublish)
+
+#-----------------------------------------------------------------------------
 # H5FDdsmSender_cwrite_nohdf_bw : Bandwidth test of DSM write operations
 #-----------------------------------------------------------------------------
 ADD_EXECUTABLE(H5FDdsmSender_cwrite_nohdf_bw
@@ -272,6 +284,7 @@ IF (MPIEXEC)
     SET(H5FDdsm_tests ${H5FDdsm_tests} steer)
   ENDIF(H5FD_DSM_BUILD_STEERING)
   ADD_H5FD_DSM_PARALLEL_TEST(H5FDdsm_StandAlone H5FDdsmStandAlone)
+  ADD_H5FD_DSM_PARALLEL_TEST(H5FDdsm_AbortPublish H5FDdsmAbortPublish)
   FOREACH(H5FDdsm_test ${H5FDdsm_tests})
     IF (H5FD_DSM_TESTING_DYNAMIC)
       ADD_H5FD_DSM_DYNAMIC_TEST(H5FDdsm_${H5FDdsm_test}

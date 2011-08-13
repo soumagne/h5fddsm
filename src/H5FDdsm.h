@@ -87,16 +87,21 @@
 #define H5FD_DSM_INCREMENT 1000000
 
 /*
- * Specific DSM operating modes
+ * Specific DSM operating modes:
+ * - H5FD_DSM_DONT_RELEASE prevents the DSM to automatically release the file on a close
+ * - H5FD_DSM_DONT_NOTIFY prevents the DSM server to be automatically notified on a close
  */
-#define H5FD_DSM_AUTOMATIC_SERVER_UPDATE 0x10
-#define H5FD_DSM_MANUAL_SERVER_UPDATE    0x20
+#define H5FD_DSM_DONT_RELEASE     0x20
+#define H5FD_DSM_DONT_NOTIFY      0x21
 
-#define H5FD_DSM_UPDATE_LEVEL_0   0x0
-#define H5FD_DSM_UPDATE_LEVEL_1   0x1
-#define H5FD_DSM_UPDATE_LEVEL_2   0x2
-#define H5FD_DSM_UPDATE_LEVEL_3   0x3
-#define H5FD_DSM_UPDATE_LEVEL_4   0x4
+/*
+ * Notification information:
+ * - H5FD_DSM_NEW_DATA (default notification sent) can be used to signal the presence
+ *   of new data
+ * - H5FD_DSM_NEW_INFORMATION can be used to signal the presence of new information
+ */
+#define H5FD_DSM_NEW_DATA         0x0 /* Keep this value to 0 (default initialization) */
+#define H5FD_DSM_NEW_INFORMATION  0x1
 
 #ifdef __cplusplus
 extern "C" {
@@ -125,16 +130,20 @@ extern "C" {
   H5FDdsm_EXPORT herr_t H5FD_dsm_query(const H5FD_t *_file, unsigned long *flags);
 
   /* Description:
-   * Set a specific operating for the DSM.
-   * Modes available are:
-   *   - H5FD_DSM_MANUAL_SERVER_UPDATE
+   * Set a specific option to the DSM.
+   * Options available are:
+   *   - H5FD_DSM_DONT_RELEASE
+   *   - H5FD_DSM_DONT_NOTIFY
    */
-  H5FDdsm_EXPORT herr_t H5FD_dsm_set_mode(unsigned long flags, void *dsmBuffer);
+  H5FDdsm_EXPORT herr_t H5FD_dsm_set_options(unsigned long flags, void *dsmBuffer);
 
   /* Description:
-   * Switch communicators and send an update ready to the DSM servers.
+   * Send a notification to the DSM host.
+   * Notifications available are:
+   *   - H5FD_DSM_NEW_DATA
+   *   - H5FD_DSM_NEW_INFORMATION
    */
-  H5FDdsm_EXPORT herr_t H5FD_dsm_server_update(void *dsmBuffer);
+  H5FDdsm_EXPORT herr_t H5FD_dsm_notify(unsigned long flags, void *dsmBuffer);
 
   /* Description:
    * Modify the file access property list to use the H5FDdsm driver defined
