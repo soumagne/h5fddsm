@@ -60,7 +60,7 @@ SET (_HDF5_PATHS
     /usr/local/hdf5/share
 )
 
-FIND_PATH (HDF5_ROOT_DIR "hdf5-config.cmake"
+FIND_PATH (HDF5_DIR "hdf5-config.cmake"
     HINTS ${_HDF5_HINTS}
     PATHS ${_HDF5_PATHS}
     PATH_SUFFIXES
@@ -68,19 +68,19 @@ FIND_PATH (HDF5_ROOT_DIR "hdf5-config.cmake"
         share/cmake/hdf5
 )
 
-FIND_PATH (HDF5_INCLUDE_DIRS "H5public.h"
+FIND_PATH (HDF5_INCLUDE_DIR "H5public.h"
     HINTS ${_HDF5_HINTS}
-    PATHS ${_HDF5_PATHS}
+    PATHS ${_HDF5_PATHS} ${HDF5_DIR}/../../../
     PATH_SUFFIXES
         include
         Include
 )
 
 # For backwards compatibility we set HDF5_INCLUDE_DIR to the value of
-# HDF5_INCLUDE_DIRS
-SET ( HDF5_INCLUDE_DIR "${HDF5_INCLUDE_DIRS}" )
+# HDF5_INCLUDE_DIR
+SET ( HDF5_INCLUDE_DIR "${HDF5_INCLUDE_DIR}" )
 
 IF (HDF5_INCLUDE_DIR)
   SET (HDF5_FOUND "YES")
-  INCLUDE (${HDF5_ROOT_DIR}/hdf5-config.cmake)
+  INCLUDE (${HDF5_DIR}/hdf5-config.cmake)
 ENDIF (HDF5_INCLUDE_DIR)
