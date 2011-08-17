@@ -111,6 +111,7 @@ ADD_LIBRARY(H5FDdsmTesting STATIC
 TARGET_LINK_LIBRARIES(H5FDdsmTesting
   H5FDdsm
 )
+SET_LIB_OPTIONS(H5FDdsmTesting "H5FDdsmTesting" STATIC)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmStandAlone : Simple parallel write/read test to a DSM (not connected)
@@ -132,7 +133,6 @@ ADD_EXECUTABLE(H5FDdsmAbortPublish
 TARGET_LINK_LIBRARIES(H5FDdsmAbortPublish
   H5FDdsmTesting
 )
-SET_LINK_OPTIONS(H5FDdsmAbortPublish)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmSender_cwrite_nohdf_bw : Bandwidth test of DSM write operations
