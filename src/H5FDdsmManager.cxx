@@ -413,53 +413,63 @@ H5FDdsmInt32 H5FDdsmManager::Publish()
       (this->DsmBuffer->GetComm())->SetDsmMasterPort(this->GetServerPort());
     }
     this->DsmBuffer->GetComm()->OpenPort();
+  }
+  //
+  // Only write config file if process 0
+  //
+  if (this->UpdatePiece == 0) {
+    H5FDdsmIniFile configFile;
+    std::string fullConfigFilePath;
+    H5FDdsmConstString dsmEnvPath = getenv("H5FD_DSM_CONFIG_PATH");
+    if (!dsmEnvPath) dsmEnvPath = getenv("HOME");
+    if (dsmEnvPath) {
+      this->SetConfigFilePath(dsmEnvPath);
+    }
+    if (this->GetConfigFilePath()) {
+      fullConfigFilePath = std::string(this->GetConfigFilePath()) +
+          std::string("/.dsm_client_config");
+      configFile.Create(fullConfigFilePath);
+      configFile.AddSection("Comm", fullConfigFilePath);
 
-    //
-    // Only write config file if process 0
-    //
-    if (this->UpdatePiece == 0) {
-      H5FDdsmIniFile configFile;
-      std::string fullConfigFilePath;
-      H5FDdsmConstString dsmEnvPath = getenv("H5FD_DSM_CONFIG_PATH");
-      if (!dsmEnvPath) dsmEnvPath = getenv("HOME");
-      if (dsmEnvPath) {
-        this->SetConfigFilePath(dsmEnvPath);
-      }
+      H5FDdsmDebug("Written " << fullConfigFilePath.c_str());
+
+    }
+    if ((this->GetInterCommType() == H5FD_DSM_COMM_MPI) || (this->GetInterCommType() == H5FD_DSM_COMM_MPI_RMA)) {
+      this->SetServerHostName(dynamic_cast<H5FDdsmCommMpi*> (this->DsmBuffer->GetComm())->GetDsmMasterHostName());
+      H5FDdsmDebug("Server PortName: " << this->GetServerHostName());
       if (this->GetConfigFilePath()) {
-        fullConfigFilePath = std::string(this->GetConfigFilePath()) +
-            std::string("/.dsm_client_config");
-        configFile.Create(fullConfigFilePath);
-        configFile.AddSection("Comm", fullConfigFilePath);
-
-        H5FDdsmDebug("Written " << fullConfigFilePath.c_str());
-
-      }
-      if ((this->GetInterCommType() == H5FD_DSM_COMM_MPI) || (this->GetInterCommType() == H5FD_DSM_COMM_MPI_RMA)) {
-        this->SetServerHostName(dynamic_cast<H5FDdsmCommMpi*> (this->DsmBuffer->GetComm())->GetDsmMasterHostName());
-        H5FDdsmDebug("Server PortName: " << this->GetServerHostName());
-        if (this->GetConfigFilePath()) {
-          if (this->GetInterCommType() == H5FD_DSM_COMM_MPI) {
-            configFile.SetValue("DSM_COMM_SYSTEM", "mpi", "Comm", fullConfigFilePath);
-          }
-          if (this->GetInterCommType() == H5FD_DSM_COMM_MPI_RMA) {
-            configFile.SetValue("DSM_COMM_SYSTEM", "mpi_rma", "Comm", fullConfigFilePath);
-          }
-          configFile.SetValue("DSM_BASE_HOST", this->GetServerHostName(), "Comm", fullConfigFilePath);
+        if (this->GetInterCommType() == H5FD_DSM_COMM_MPI) {
+          configFile.SetValue("DSM_COMM_SYSTEM", "mpi", "Comm", fullConfigFilePath);
         }
-      } else if (this->GetInterCommType() == H5FD_DSM_COMM_SOCKET) {
-        this->SetServerHostName(dynamic_cast<H5FDdsmCommSocket*> (this->DsmBuffer->GetComm())->GetDsmMasterHostName());
-        this->SetServerPort(dynamic_cast<H5FDdsmCommSocket*> (this->DsmBuffer->GetComm())->GetDsmMasterPort());
-        H5FDdsmDebug("Server HostName: " << this->GetServerHostName() << ", Server port: " << this->GetServerPort());
-        if (this->GetConfigFilePath()) {
-          char serverPort[32];
-          sprintf(serverPort, "%d", this->GetServerPort());
-          configFile.SetValue("DSM_COMM_SYSTEM", "socket", "Comm", fullConfigFilePath);
-          configFile.SetValue("DSM_BASE_HOST", this->GetServerHostName(), "Comm", fullConfigFilePath);
-          configFile.SetValue("DSM_BASE_PORT", serverPort, "Comm", fullConfigFilePath);
+        if (this->GetInterCommType() == H5FD_DSM_COMM_MPI_RMA) {
+          configFile.SetValue("DSM_COMM_SYSTEM", "mpi_rma", "Comm", fullConfigFilePath);
         }
+        configFile.SetValue("DSM_BASE_HOST", this->GetServerHostName(), "Comm", fullConfigFilePath);
       }
+    } 
+    else if (this->GetInterCommType() == H5FD_DSM_COMM_SOCKET) {
+      this->SetServerHostName(dynamic_cast<H5FDdsmCommSocket*> (this->DsmBuffer->GetComm())->GetDsmMasterHostName());
+      this->SetServerPort(dynamic_cast<H5FDdsmCommSocket*> (this->DsmBuffer->GetComm())->GetDsmMasterPort());
+      H5FDdsmDebug("Server HostName: " << this->GetServerHostName() << ", Server port: " << this->GetServerPort());
+      if (this->GetConfigFilePath()) {
+        char serverPort[32];
+        sprintf(serverPort, "%d", this->GetServerPort());
+        configFile.SetValue("DSM_COMM_SYSTEM", "socket", "Comm", fullConfigFilePath);
+        configFile.SetValue("DSM_BASE_HOST", this->GetServerHostName(), "Comm", fullConfigFilePath);
+        configFile.SetValue("DSM_BASE_PORT", serverPort, "Comm", fullConfigFilePath);
+      }
+    }
+    if (!this->UseStaticInterComm) {
       configFile.SetValue("DSM_STATIC_INTERCOMM", "false", "Comm", fullConfigFilePath);
     }
+    else {
+      configFile.SetValue("DSM_STATIC_INTERCOMM", "true", "Comm", fullConfigFilePath);
+    }
+  }
+  if (this->UseStaticInterComm) {
+    // when using a staic communicator, we will call Barrier to allow
+    // the simulation to get going.
+    MPI_Barrier(MPI_COMM_WORLD);
   }
   //
   this->DsmBuffer->RequestAccept();

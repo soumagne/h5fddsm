@@ -44,6 +44,7 @@
 }
 
 extern H5FDdsmInt32 DsmAutoAlloc(MPI_Comm comm);
+extern H5FDdsmInt32 DsmAutoDealloc();
 extern void* DsmGetAutoAllocatedBuffer();
 extern void* DsmGetAutoAllocatedManager();
 //----------------------------------------------------------------------------
@@ -82,7 +83,11 @@ herr_t H5FD_dsm_steering_init(MPI_Comm comm, void *buffer)
   if (dsmBuffer->GetIsAutoAllocated() && !dsmBuffer->GetIsConnected()) {
     H5FDdsmManager *dsmManager = (H5FDdsmManager *)DsmGetAutoAllocatedManager();
     dsmManager->ReadConfigFile();
-    dsmManager->Connect();
+    if (dsmManager->Connect()==H5FD_DSM_FAIL) {
+      DsmAutoDealloc();
+      dsm_buffer = NULL;
+      DSM_STEERING_GOTO_ERROR("DSM Connection failed, destroying dsmManager Singleton", FAIL)
+    }
   }
 
 done:
