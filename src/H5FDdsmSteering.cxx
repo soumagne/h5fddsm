@@ -109,7 +109,7 @@ herr_t H5FD_dsm_steering_update()
   H5FDdsmBuffer *dsmBuffer;
   FUNC_ENTER_NOAPI(H5FD_dsm_steering_update, FAIL)
   if (!dsm_buffer) {
-    DSM_STEERING_GOTO_ERROR("Attempting to use the DSM Steering library before calling H5FD_dsm_steering_init", FAIL)
+    DSM_STEERING_GOTO_ERROR("DSM Steering library not connected (H5FD_dsm_steering_init)", FAIL)
   }
 
   dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
@@ -150,7 +150,7 @@ herr_t H5FD_dsm_steering_is_enabled(const char *name)
   H5FDdsmBuffer *dsmBuffer;
   FUNC_ENTER_NOAPI(H5FD_dsm_steering_is_enabled, FAIL)
   if (!dsm_buffer) {
-    DSM_STEERING_GOTO_ERROR("Attempting to use the DSM Steering library before calling H5FD_dsm_steering_init", FAIL)
+    DSM_STEERING_GOTO_ERROR("DSM Steering library not connected (H5FD_dsm_steering_init)", FAIL)
   }
 
   dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
@@ -177,7 +177,7 @@ herr_t H5FD_dsm_steering_wait()
   H5FDdsmBuffer *dsmBuffer;
   FUNC_ENTER_NOAPI(H5FD_dsm_steering_wait, FAIL)
   if (!dsm_buffer) {
-    DSM_STEERING_GOTO_ERROR("Attempting to use the DSM Steering library before calling H5FD_dsm_steering_init", FAIL)
+    DSM_STEERING_GOTO_ERROR("DSM Steering library not connected (H5FD_dsm_steering_init)", FAIL)
   }
 
   dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
@@ -219,7 +219,7 @@ herr_t H5FD_dsm_steering_begin_query()
   H5FDdsmBuffer *dsmBuffer;
   FUNC_ENTER_NOAPI(H5FD_dsm_steering_begin_query, FAIL)
   if (!dsm_buffer) {
-    DSM_STEERING_GOTO_ERROR("Attempting to use the DSM Steering library before calling H5FD_dsm_steering_init", FAIL)
+    DSM_STEERING_GOTO_ERROR("DSM Steering library not connected (H5FD_dsm_steering_init)", FAIL)
   }
 
   dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
@@ -246,7 +246,7 @@ herr_t H5FD_dsm_steering_end_query()
   H5FDdsmBuffer *dsmBuffer;
   FUNC_ENTER_NOAPI(H5FD_dsm_steering_end_query, FAIL)
   if (!dsm_buffer) {
-    DSM_STEERING_GOTO_ERROR("Attempting to use the DSM Steering library before calling H5FD_dsm_steering_init", FAIL)
+    DSM_STEERING_GOTO_ERROR("DSM Steering library not connected (H5FD_dsm_steering_init)", FAIL)
   }
 
   dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
@@ -274,7 +274,7 @@ herr_t H5FD_dsm_steering_get_handle(const char *name, hid_t *handle)
   H5FDdsmBuffer *dsmBuffer;
   FUNC_ENTER_NOAPI(H5FD_dsm_steering_get_handle, FAIL)
   if (!dsm_buffer) {
-    DSM_STEERING_GOTO_ERROR("Attempting to use the DSM Steering library before calling H5FD_dsm_steering_init", FAIL)
+    DSM_STEERING_GOTO_ERROR("DSM Steering library not connected (H5FD_dsm_steering_init)", FAIL)
   }
 
   dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
@@ -301,7 +301,7 @@ herr_t H5FD_dsm_steering_free_handle(hid_t handle)
   H5FDdsmBuffer *dsmBuffer;
   FUNC_ENTER_NOAPI(H5FD_dsm_steering_free_handle, FAIL)
   if (!dsm_buffer) {
-    DSM_STEERING_GOTO_ERROR("Attempting to use the DSM Steering library before calling H5FD_dsm_steering_init", FAIL)
+    DSM_STEERING_GOTO_ERROR("DSM Steering library not connected (H5FD_dsm_steering_init)", FAIL)
   }
 
   dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
@@ -328,7 +328,7 @@ herr_t H5FD_dsm_steering_is_set(const char *name, int *set)
   H5FDdsmBuffer *dsmBuffer;
   FUNC_ENTER_NOAPI(H5FD_dsm_steering_is_set, FAIL)
   if (!dsm_buffer) {
-    DSM_STEERING_GOTO_ERROR("Attempting to use the DSM Steering library before calling H5FD_dsm_steering_init", FAIL)
+    DSM_STEERING_GOTO_ERROR("DSM Steering library not connected (H5FD_dsm_steering_init)", FAIL)
   }
 
   dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
@@ -355,7 +355,7 @@ herr_t H5FD_dsm_steering_scalar_get(const char *name, hid_t mem_type, void *data
   H5FDdsmBuffer *dsmBuffer;
   FUNC_ENTER_NOAPI(H5FD_dsm_steering_scalar_get, FAIL)
   if (!dsm_buffer) {
-    DSM_STEERING_GOTO_ERROR("Attempting to use the DSM Steering library before calling H5FD_dsm_steering_init", FAIL)
+    DSM_STEERING_GOTO_ERROR("DSM Steering library not connected (H5FD_dsm_steering_init)", FAIL)
   }
 
   dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
@@ -386,7 +386,7 @@ herr_t H5FD_dsm_steering_scalar_set(const char *name, hid_t mem_type, void *data
   H5FDdsmBuffer *dsmBuffer;
   FUNC_ENTER_NOAPI(H5FD_dsm_steering_scalar_set, FAIL)
   if (!dsm_buffer) {
-    DSM_STEERING_GOTO_ERROR("Attempting to use the DSM Steering library before calling H5FD_dsm_steering_init", FAIL)
+    DSM_STEERING_GOTO_ERROR("DSM Steering library not connected (H5FD_dsm_steering_init)", FAIL)
   }
 
   dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
@@ -417,7 +417,7 @@ herr_t H5FD_dsm_steering_vector_get(const char *name, hid_t mem_type, hsize_t nu
   H5FDdsmBuffer *dsmBuffer;
   FUNC_ENTER_NOAPI(H5FD_dsm_steering_vector_get, FAIL)
   if (!dsm_buffer) {
-    DSM_STEERING_GOTO_ERROR("Attempting to use the DSM Steering library before calling H5FD_dsm_steering_init", FAIL)
+    DSM_STEERING_GOTO_ERROR("DSM Steering library not connected (H5FD_dsm_steering_init)", FAIL)
   }
 
   dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
@@ -448,7 +448,7 @@ herr_t H5FD_dsm_steering_vector_set(const char *name, hid_t mem_type, hsize_t nu
   H5FDdsmBuffer *dsmBuffer;
   FUNC_ENTER_NOAPI(H5FD_dsm_steering_vector_set, FAIL)
   if (!dsm_buffer) {
-    DSM_STEERING_GOTO_ERROR("Attempting to use the DSM Steering library before calling H5FD_dsm_steering_init", FAIL)
+    DSM_STEERING_GOTO_ERROR("DSM Steering library not connected (H5FD_dsm_steering_init)", FAIL)
   }
 
   dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
@@ -479,7 +479,7 @@ herr_t H5FD_dsm_dump()
   H5FDdsmBuffer *dsmBuffer;
   FUNC_ENTER_NOAPI(H5FD_dsm_dump, FAIL)
   if (!dsm_buffer) {
-    DSM_STEERING_GOTO_ERROR("Attempting to use the DSM Steering library before calling H5FD_dsm_steering_init", FAIL)
+    DSM_STEERING_GOTO_ERROR("DSM Steering library not connected (H5FD_dsm_steering_init)", FAIL)
   }
 
   dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;

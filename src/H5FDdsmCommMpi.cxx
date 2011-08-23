@@ -254,15 +254,25 @@ H5FDdsmCommMpi::Connect()
 {
   H5FDdsmInt32 isConnected = H5FD_DSM_FAIL;
   H5FDdsmInt32 status;
+  char error_string[1024];
+  int length_of_error_string;
 
   if (H5FDdsmComm::Connect() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
   if (this->UseStaticInterComm) {
+    // Set Error handler to return so that a connection failure doesn't terminate the app
+    MPI_Errhandler_set(this->IntraComm, MPI_ERRORS_RETURN);
     status = MPI_Intercomm_create(this->IntraComm, 0, MPI_COMM_WORLD, 0,
         H5FD_DSM_DEFAULT_TAG, &this->InterComm);
+    // reset to MPI_ERRORS_ARE_FATAL for normal debug purposes
+    MPI_Errhandler_set(this->IntraComm, MPI_ERRORS_ARE_FATAL);
     if (status == MPI_SUCCESS) {
       H5FDdsmDebug("Id = " << this->Id << " MPI_Intercomm_create returned SUCCESS");
       isConnected = H5FD_DSM_SUCCESS;
+    }
+    else {
+      MPI_Error_string(status, error_string, &length_of_error_string);
+      H5FDdsmDebug("\nMPI_Intercomm_create failed with error : \n" << error_string << "\n\n");
     }
   } else {
     //
@@ -274,8 +284,6 @@ H5FDdsmCommMpi::Connect()
       H5FDdsmDebug("Id = " << this->Id << " MPI_Comm_connect returned SUCCESS");
       isConnected = H5FD_DSM_SUCCESS;
     } else {
-      char error_string[1024];
-      int length_of_error_string;
       MPI_Error_string(status, error_string, &length_of_error_string);
       H5FDdsmDebug("\nMPI_Comm_connect failed with error : \n" << error_string << "\n\n");
     }
