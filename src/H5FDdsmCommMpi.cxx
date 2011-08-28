@@ -234,6 +234,8 @@ H5FDdsmCommMpi::Accept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize)
 
   if (this->UseStaticInterComm) {
     H5FDdsmInt32 global_size;
+    // Sync server and client here
+    MPI_Barrier(MPI_COMM_WORLD);
     MPI_Comm_size(MPI_COMM_WORLD, &global_size);
     MPI_Intercomm_create(this->IntraComm, 0, MPI_COMM_WORLD, global_size -
         (global_size - this->IntraSize), H5FD_DSM_DEFAULT_TAG, &this->InterComm);
@@ -260,6 +262,8 @@ H5FDdsmCommMpi::Connect()
   if (H5FDdsmComm::Connect() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
   if (this->UseStaticInterComm) {
+    // Sync server and client here
+    MPI_Barrier(MPI_COMM_WORLD);
     // Set Error handler to return so that a connection failure doesn't terminate the app
     MPI_Errhandler_set(this->IntraComm, MPI_ERRORS_RETURN);
     status = MPI_Intercomm_create(this->IntraComm, 0, MPI_COMM_WORLD, 0,
@@ -269,8 +273,7 @@ H5FDdsmCommMpi::Connect()
     if (status == MPI_SUCCESS) {
       H5FDdsmDebug("Id = " << this->Id << " MPI_Intercomm_create returned SUCCESS");
       isConnected = H5FD_DSM_SUCCESS;
-    }
-    else {
+    } else {
       MPI_Error_string(status, error_string, &length_of_error_string);
       H5FDdsmDebug("\nMPI_Intercomm_create failed with error : \n" << error_string << "\n\n");
     }

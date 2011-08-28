@@ -373,6 +373,7 @@ H5FDdsmInt32 H5FDdsmManager::Connect(H5FDdsmBoolean persist)
       }
 #endif
     }
+
     do {
       status = this->DsmBuffer->GetComm()->Connect();
       if (status == H5FD_DSM_SUCCESS) {
@@ -465,11 +466,6 @@ H5FDdsmInt32 H5FDdsmManager::Publish()
     else {
       configFile.SetValue("DSM_STATIC_INTERCOMM", "true", "Comm", fullConfigFilePath);
     }
-  }
-  if (this->UseStaticInterComm) {
-    // when using a staic communicator, we will call Barrier to allow
-    // the simulation to get going.
-    MPI_Barrier(MPI_COMM_WORLD);
   }
   //
   this->DsmBuffer->RequestAccept();
