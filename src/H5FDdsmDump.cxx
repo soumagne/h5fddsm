@@ -19,6 +19,7 @@
 
 #include "H5FDdsmBuffer.h"
 #include "H5FDdsmDump.h"
+#include "H5FDdsmComm.h"
 
 //----------------------------------------------------------------------------
 H5FDdsmDump::H5FDdsmDump()
@@ -45,7 +46,7 @@ H5FDdsmDump::Dump()
   int print_rank;
   std::ostringstream stream;
   H5dump(4, (const char**) argv, stream, this->DsmBuffer);
-  MPI_Comm_rank(MPI_COMM_WORLD, &print_rank);
+  MPI_Comm_rank(this->DsmBuffer->GetComm()->GetIntraComm(), &print_rank);
   if (print_rank == 0) std::cout << stream.str() << std::endl;
 }
 //----------------------------------------------------------------------------
@@ -56,7 +57,7 @@ H5FDdsmDump::DumpLight()
   int print_rank;
   std::ostringstream stream;
   H5dump(5, (const char**) argv, stream, this->DsmBuffer);
-  MPI_Comm_rank(MPI_COMM_WORLD, &print_rank);
+  MPI_Comm_rank(this->DsmBuffer->GetComm()->GetIntraComm(), &print_rank);
   if (print_rank == 0) std::cout << stream.str() << std::endl;
 }
 //----------------------------------------------------------------------------
