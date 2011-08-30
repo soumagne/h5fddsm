@@ -116,14 +116,6 @@ herr_t H5FD_dsm_steering_update()
 
   if (!dsmBuffer->GetIsLocked()) dsmBuffer->RequestLockAcquire();
 
-  if (dsmBuffer->GetComm()->GetUseOneSidedComm() &&
-      dsmBuffer->GetIsSyncRequired() && !dsmBuffer->GetIsServer()) {
-    // After possible RMA put / get from the server, need to sync windows before
-    // further operations
-    dsmBuffer->GetComm()->WindowSync();
-    dsmBuffer->SetIsSyncRequired(H5FD_DSM_FALSE);
-  }
-
   dsmBuffer->GetSteerer()->GetSteeringCommands();
   dsmBuffer->GetSteerer()->GetDisabledObjects();
   // Automatically triggers an update of steering objects during the begin loop function
@@ -182,16 +174,7 @@ herr_t H5FD_dsm_steering_wait()
 
   dsmBuffer = (H5FDdsmBuffer *)dsm_buffer;
 
-  if (!dsmBuffer->GetIsLocked()) dsmBuffer->RequestLockAcquire();
-
-  if (dsmBuffer->GetComm()->GetUseOneSidedComm() &&
-      dsmBuffer->GetIsSyncRequired() && !dsmBuffer->GetIsServer()) {
-    dsmBuffer->GetComm()->WindowSync();
-    dsmBuffer->SetIsSyncRequired(H5FD_DSM_FALSE);
-  }
-
   dsmBuffer->GetSteerer()->CheckCommand("pause");
-  if (dsmBuffer->GetIsLocked()) dsmBuffer->RequestLockRelease();
 
 done:
   FUNC_LEAVE_NOAPI(ret_value);

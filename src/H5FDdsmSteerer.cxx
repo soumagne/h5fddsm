@@ -576,45 +576,37 @@ H5FDdsmInt32 H5FDdsmSteerer::ReadInteractions(H5FDdsmConstString name, hsize_t n
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmSteerer::CheckCommand(H5FDdsmConstString command)
 {
+  H5FDdsmInt32 ret = H5FD_DSM_FAIL;
   std::string stringCommand = command;
 
   if (stringCommand == "pause") {
-    H5FDdsmBoolean lockStatus;
+    H5FDdsmBoolean lockStatus = this->DsmBuffer->GetIsLocked();
+
+    if (!lockStatus) this->DsmBuffer->RequestLockAcquire();
     this->DsmBuffer->SetNotification(H5FD_DSM_WAIT);
     this->DsmBuffer->RequestNotification();
-    lockStatus = this->DsmBuffer->GetIsLocked();
-    if (lockStatus) {
-      // During the pause we don't do anything so we don't need to keep the lock
-      this->DsmBuffer->RequestLockRelease();
-    }
+
     H5FDdsmDebug("Receiving ready...");
     this->DsmBuffer->GetComm()->RecvReady();
     H5FDdsmDebug("Ready received");
-    if (lockStatus) {
-      // If the client had acquired the lock before, take it back
-      this->DsmBuffer->RequestLockAcquire();
-    }
-    return(H5FD_DSM_SUCCESS);
+
+    // If the client had acquired the lock before, take it back
+    if (lockStatus) this->DsmBuffer->RequestLockAcquire();
+    ret = H5FD_DSM_SUCCESS;
   }
   else if (stringCommand == "play") {
     // nothing special
-    return(H5FD_DSM_SUCCESS);
-  }
-  else if (stringCommand == "restart") {
-    return(H5FD_DSM_SUCCESS);
-  }
-  else if (stringCommand == "notSend") {
-    return(H5FD_DSM_SUCCESS);
+    ret = H5FD_DSM_SUCCESS;
   }
   else if (stringCommand == "disk") {
     H5FDdsmDebug("Setting WriteToDSM to 0");
     this->WriteToDSM = 0;
-    return(H5FD_DSM_SUCCESS);
+    ret = H5FD_DSM_SUCCESS;
   }
   else if (stringCommand == "dsm") {
     H5FDdsmDebug("Setting WriteToDSM to 1");
     this->WriteToDSM = 1;
-    return(H5FD_DSM_SUCCESS);
+    ret = H5FD_DSM_SUCCESS;
   }
-  return(H5FD_DSM_FAIL);
+  return(ret);
 }
