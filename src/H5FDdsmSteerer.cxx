@@ -579,7 +579,10 @@ H5FDdsmInt32 H5FDdsmSteerer::CheckCommand(H5FDdsmConstString command)
   std::string stringCommand = command;
 
   if (stringCommand == "pause") {
-    H5FDdsmBoolean lockStatus = this->DsmBuffer->GetIsLocked();
+    H5FDdsmBoolean lockStatus;
+    this->DsmBuffer->SetNotification(H5FD_DSM_WAIT);
+    this->DsmBuffer->RequestNotification();
+    lockStatus = this->DsmBuffer->GetIsLocked();
     if (lockStatus) {
       // During the pause we don't do anything so we don't need to keep the lock
       this->DsmBuffer->RequestLockRelease();

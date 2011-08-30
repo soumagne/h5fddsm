@@ -56,6 +56,7 @@ public:
 
   H5FDdsmInt32 UpdateDisabledObjects();
   H5FDdsmInt32 GetDisabledObjects();
+  H5FDdsmInt32 CheckCommand(H5FDdsmConstString command);
 
   // Use H5F_ACC_RDONLY    for queries
   // Use H5F_ACC_RDWR    for read/write
@@ -86,8 +87,6 @@ protected:
   H5FDdsmInt32 ReadInteractions(H5FDdsmConstString name, hsize_t numberOfElements, double *data);
 
   void SetDisabledObject(H5FDdsmConstString objectName);
-
-  H5FDdsmInt32 CheckCommand(H5FDdsmConstString command);
 
   H5FDdsmBuffer           *DsmBuffer;
   H5FDdsmString            CurrentCommand;

@@ -103,6 +103,9 @@
 #define H5FD_DSM_NEW_DATA         0x0 /* Keep this value to 0 (default initialization) */
 #define H5FD_DSM_NEW_INFORMATION  0x1
 
+/* Internal Use */
+#define H5FD_DSM_WAIT             0x10
+
 #ifdef __cplusplus
 extern "C" {
 #endif

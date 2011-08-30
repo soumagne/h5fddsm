@@ -190,15 +190,8 @@ herr_t H5FD_dsm_steering_wait()
     dsmBuffer->SetIsSyncRequired(H5FD_DSM_FALSE);
   }
 
-  if (dsmBuffer->GetSteerer()->SetCurrentCommand("pause")<0 ||
-      dsmBuffer->GetSteerer()->UpdateSteeringCommands()<0) 
-  {
-    ret_value = FAIL;
-  }
-  else {
-    dsmBuffer->GetSteerer()->GetSteeringCommands();
-    if (dsmBuffer->GetIsLocked()) dsmBuffer->RequestLockRelease();
-  }
+  dsmBuffer->GetSteerer()->CheckCommand("pause");
+  if (dsmBuffer->GetIsLocked()) dsmBuffer->RequestLockRelease();
 
 done:
   FUNC_LEAVE_NOAPI(ret_value);
