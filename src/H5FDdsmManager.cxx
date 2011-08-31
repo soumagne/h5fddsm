@@ -74,6 +74,7 @@ struct H5FDdsmManagerInternals
 #endif
 };
 
+MPI_Comm H5FDdsmManager::MpiComm = MPI_COMM_NULL;
 //----------------------------------------------------------------------------
 H5FDdsmManager::H5FDdsmManager() 
 {
@@ -118,6 +119,11 @@ void H5FDdsmManager::SetMpiComm(MPI_Comm comm)
   }
 }
 
+//----------------------------------------------------------------------------
+MPI_Comm H5FDdsmManager::GetGlobalMPICommunicator()
+{
+    return H5FDdsmManager::MpiComm;
+}
 //----------------------------------------------------------------------------
 H5FDdsmBoolean H5FDdsmManager::GetIsConnected()
 {

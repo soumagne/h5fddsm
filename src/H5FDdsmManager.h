@@ -197,6 +197,8 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     // Returns false if the .dsm_config file is not read.
     H5FDdsmInt32 ReadConfigFile();
 
+    static MPI_Comm GetGlobalMPICommunicator();
+
 #ifdef H5FD_DSM_HAVE_STEERING
     H5FDdsmInt32 WriteSteeredData();
     H5FDdsmInt32 UpdateSteeredObjects();
@@ -233,7 +235,7 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     H5FDdsmInt32    UpdateNumPieces;
     H5FDdsmUInt32   LocalBufferSizeMBytes;
 
-    MPI_Comm        MpiComm;
+    static MPI_Comm MpiComm;
     H5FDdsmBuffer  *DsmBuffer;
     H5FDdsmComm    *DsmComm;
     //
