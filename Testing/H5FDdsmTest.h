@@ -46,15 +46,15 @@ void freeBuffer(ParticleBuffer_t *buffer);
 
 // pointer to a function, either HDF5 or DSM write function
 typedef void (*FuncPointer)(ParticleBuffer*, H5FDdsmConstString, H5FDdsmUInt64,
-    H5FDdsmUInt64, H5FDdsmUInt32, H5FDdsmUInt64, H5FDdsmUInt64, H5FDdsmBuffer*);
+    H5FDdsmUInt64, H5FDdsmUInt32, H5FDdsmUInt64, H5FDdsmUInt64, MPI_Comm, H5FDdsmBuffer*);
 
 void particleWriteHdf(ParticleBuffer *buf, H5FDdsmConstString filename,
     H5FDdsmUInt64 N, H5FDdsmUInt64 C, H5FDdsmUInt32 numberOfDataSets,
-    H5FDdsmUInt64 start, H5FDdsmUInt64 total, H5FDdsmBuffer *dsmBuffer);
+    H5FDdsmUInt64 start, H5FDdsmUInt64 total, MPI_Comm comm, H5FDdsmBuffer *dsmBuffer);
 
 void particleWriteDsm(ParticleBuffer *buf, H5FDdsmConstString filename,
     H5FDdsmUInt64 N, H5FDdsmUInt64 C, H5FDdsmUInt32 numberOfDataSets,
-    H5FDdsmUInt64 start, H5FDdsmUInt64 total, H5FDdsmBuffer *dsmBuffer);
+    H5FDdsmUInt64 start, H5FDdsmUInt64 total, MPI_Comm comm, H5FDdsmBuffer *dsmBuffer);
 
 const FuncPointer usingHDF = particleWriteHdf;
 const FuncPointer usingDSM = particleWriteDsm;

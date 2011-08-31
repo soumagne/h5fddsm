@@ -52,7 +52,7 @@ void freeBuffer(ParticleBuffer_t *buffer) {
 /*******************************************************************/
 void particleWriteHdf(
     ParticleBuffer *buf, H5FDdsmConstString filename,
-    H5FDdsmUInt64 N, H5FDdsmUInt64 C, H5FDdsmUInt32 numberOfDataSets, H5FDdsmUInt64 start, H5FDdsmUInt64 total, H5FDdsmBuffer *dsmBuffer)
+    H5FDdsmUInt64 N, H5FDdsmUInt64 C, H5FDdsmUInt32 numberOfDataSets, H5FDdsmUInt64 start, H5FDdsmUInt64 total, MPI_Comm comm, H5FDdsmBuffer *dsmBuffer)
 {
   hid_t      file_id, group_id, dataset_id, xfer_plist_id;
   hid_t      file_space_id, mem_space_id;
@@ -68,7 +68,7 @@ void particleWriteHdf(
   H5CHECK_ERROR(acc_plist_id, "H5Pcreate(H5P_FILE_ACCESS)");
   if (dsmBuffer) {
     H5FD_dsm_init();
-    H5Pset_fapl_dsm(acc_plist_id, MPI_COMM_WORLD, dsmBuffer);
+    H5Pset_fapl_dsm(acc_plist_id, comm, dsmBuffer);
     H5CHECK_ERROR(status, "H5Pset_fapl_dsm");
     if (dsmBuffer->GetBlockLength() > 0) {
 //      status = H5Pset_alignment(acc_plist_id, dsmBuffer->GetBlockLength()/2, dsmBuffer->GetBlockLength());
@@ -76,7 +76,7 @@ void particleWriteHdf(
 //      H5CHECK_ERROR(acc_plist_id, "h5pset_alignment");
     }
   } else {
-    H5Pset_fapl_mpio(acc_plist_id, MPI_COMM_WORLD, MPI_INFO_NULL);
+    H5Pset_fapl_mpio(acc_plist_id, comm, MPI_INFO_NULL);
     H5CHECK_ERROR(status, "H5Pset_fapl_mpio");
   }
 
@@ -156,7 +156,7 @@ void particleWriteHdf(
 /*******************************************************************/
 void particleWriteDsm(
     ParticleBuffer *buf, H5FDdsmConstString filename,
-    H5FDdsmUInt64 N, H5FDdsmUInt64 C, H5FDdsmUInt32 numberOfDataSets, H5FDdsmUInt64 start, H5FDdsmUInt64 total, H5FDdsmBuffer *dsmBuffer)
+    H5FDdsmUInt64 N, H5FDdsmUInt64 C, H5FDdsmUInt32 numberOfDataSets, H5FDdsmUInt64 start, H5FDdsmUInt64 total, MPI_Comm comm, H5FDdsmBuffer *dsmBuffer)
 {
   H5FDdsmAddr metadataAddr = (H5FDdsmAddr) (dsmBuffer->GetTotalLength() - sizeof(H5FDdsmMetaData));
   H5FDdsmEntry entry;
@@ -274,7 +274,7 @@ H5FDdsmFloat64 TestParticleWrite(
   // call the write routine with our dummy buffer
   MPI_Barrier(dcomm);
   H5FDdsmFloat64 t1 = MPI_Wtime();
-  pointer(&WriteBuffer, filename, N, C, numberOfDataSets, start, total, dsmBuffer);
+  pointer(&WriteBuffer, filename, N, C, numberOfDataSets, start, total, dcomm, dsmBuffer);
   MPI_Barrier(dcomm);
   H5FDdsmFloat64 t2 = MPI_Wtime();
 
