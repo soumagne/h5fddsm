@@ -104,13 +104,6 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     H5FDdsmGetValueMacro(ServerPort, H5FDdsmInt32);
 
     // Description:
-    // Set/Get the DSM configuration file path.
-    // If set correctly before calling Publish, communicator parameters will be
-    // saved into the given configuration file.
-    H5FDdsmSetStringMacro(ConfigFilePath);
-    H5FDdsmGetStringMacro(ConfigFilePath);
-
-    // Description:
     // Wait for a connection - Only valid after a Publish call has been made.
     H5FDdsmBoolean GetIsConnected();
     H5FDdsmInt32 WaitForConnection();
@@ -246,7 +239,6 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     H5FDdsmBoolean  UseStaticInterComm;
     H5FDdsmString   ServerHostName;
     H5FDdsmInt32    ServerPort;
-    H5FDdsmString   ConfigFilePath;
     //
     H5FDdsmString   XMLStringSend;
     //

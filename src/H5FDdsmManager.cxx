@@ -92,7 +92,6 @@ H5FDdsmManager::H5FDdsmManager()
   this->IsServer                = H5FD_DSM_TRUE;
   this->ServerHostName          = NULL;
   this->ServerPort              = 0;
-  this->ConfigFilePath          = NULL;
   this->XMLStringSend           = NULL;
   this->ManagerInternals        = new H5FDdsmManagerInternals;
 }
@@ -102,7 +101,6 @@ H5FDdsmManager::~H5FDdsmManager()
 { 
   this->Destroy();
 
-  this->SetConfigFilePath(NULL);
   this->SetXMLStringSend(NULL);
   delete this->ManagerInternals;
 }
@@ -411,70 +409,68 @@ H5FDdsmInt32 H5FDdsmManager::Disconnect()
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmManager::Publish()
 {
-  if (!this->UseStaticInterComm) {
-    if (this->UpdatePiece == 0) H5FDdsmDebug("Opening port...");
-    if (this->GetInterCommType() == H5FD_DSM_COMM_SOCKET) {
-      dynamic_cast<H5FDdsmCommSocket*>
-      (this->DsmBuffer->GetComm())->SetDsmMasterHostName(this->GetServerHostName());
-      dynamic_cast<H5FDdsmCommSocket*>
-      (this->DsmBuffer->GetComm())->SetDsmMasterPort(this->GetServerPort());
-    }
-    this->DsmBuffer->GetComm()->OpenPort();
-  }
+  H5FDdsmConstString dsmEnvPath = getenv("H5FD_DSM_CONFIG_PATH");
+#ifdef _WIN32
+  if (!dsmEnvPath) dsmEnvPath = getenv("USERPROFILE");
+#else
+  if (!dsmEnvPath) dsmEnvPath = getenv("HOME");
+#endif
   //
-  // Only write config file if process 0
-  //
-  if (this->UpdatePiece == 0) {
-    H5FDdsmIniFile configFile;
-    std::string fullConfigFilePath;
-    H5FDdsmConstString dsmEnvPath = getenv("H5FD_DSM_CONFIG_PATH");
-    if (!dsmEnvPath) dsmEnvPath = getenv("HOME");
-    if (dsmEnvPath) {
-      this->SetConfigFilePath(dsmEnvPath);
+  if (!dsmEnvPath) {
+    H5FDdsmError("Could not find DSM config path");
+    return(H5FD_DSM_FAIL);
+  } else {
+    if (!this->UseStaticInterComm) {
+      if (this->UpdatePiece == 0) H5FDdsmDebug("Opening port...");
+      if (this->GetInterCommType() == H5FD_DSM_COMM_SOCKET) {
+        dynamic_cast<H5FDdsmCommSocket*> (this->DsmBuffer->GetComm())->SetDsmMasterHostName(this->GetServerHostName());
+        dynamic_cast<H5FDdsmCommSocket*> (this->DsmBuffer->GetComm())->SetDsmMasterPort(this->GetServerPort());
+      }
+      this->DsmBuffer->GetComm()->OpenPort();
     }
-    if (this->GetConfigFilePath()) {
-      fullConfigFilePath = std::string(this->GetConfigFilePath()) +
-          std::string("/.dsm_client_config");
-      configFile.Create(fullConfigFilePath);
-      configFile.AddSection("Comm", fullConfigFilePath);
+    // Only write config file if process 0
+    if (this->UpdatePiece == 0) {
+      H5FDdsmIniFile configFile;
+      std::string configFilePath = std::string(dsmEnvPath);
+#ifdef _WIN32
+      configFilePath += std::string("\\.dsm_client_config");
+#else
+      configFilePath += std::string("/.dsm_client_config");
+#endif
+      configFile.Create(configFilePath);
+      configFile.AddSection("Comm", configFilePath);
+      H5FDdsmDebug("Written " << configFilePath.c_str());
 
-      H5FDdsmDebug("Written " << fullConfigFilePath.c_str());
-
-    }
-    if ((this->GetInterCommType() == H5FD_DSM_COMM_MPI) || (this->GetInterCommType() == H5FD_DSM_COMM_MPI_RMA)) {
-      this->SetServerHostName(dynamic_cast<H5FDdsmCommMpi*> (this->DsmBuffer->GetComm())->GetDsmMasterHostName());
-      H5FDdsmDebug("Server PortName: " << this->GetServerHostName());
-      if (this->GetConfigFilePath()) {
+      if ((this->GetInterCommType() == H5FD_DSM_COMM_MPI) || (this->GetInterCommType() == H5FD_DSM_COMM_MPI_RMA)) {
+        this->SetServerHostName(dynamic_cast<H5FDdsmCommMpi*> (this->DsmBuffer->GetComm())->GetDsmMasterHostName());
+        H5FDdsmDebug("Server PortName: " << this->GetServerHostName());
         if (this->GetInterCommType() == H5FD_DSM_COMM_MPI) {
-          configFile.SetValue("DSM_COMM_SYSTEM", "mpi", "Comm", fullConfigFilePath);
+          configFile.SetValue("DSM_COMM_SYSTEM", "mpi", "Comm", configFilePath);
         }
         if (this->GetInterCommType() == H5FD_DSM_COMM_MPI_RMA) {
-          configFile.SetValue("DSM_COMM_SYSTEM", "mpi_rma", "Comm", fullConfigFilePath);
+          configFile.SetValue("DSM_COMM_SYSTEM", "mpi_rma", "Comm", configFilePath);
         }
-        configFile.SetValue("DSM_BASE_HOST", this->GetServerHostName(), "Comm", fullConfigFilePath);
+        configFile.SetValue("DSM_BASE_HOST", this->GetServerHostName(), "Comm", configFilePath);
       }
-    } 
-    else if (this->GetInterCommType() == H5FD_DSM_COMM_SOCKET) {
-      this->SetServerHostName(dynamic_cast<H5FDdsmCommSocket*> (this->DsmBuffer->GetComm())->GetDsmMasterHostName());
-      this->SetServerPort(dynamic_cast<H5FDdsmCommSocket*> (this->DsmBuffer->GetComm())->GetDsmMasterPort());
-      H5FDdsmDebug("Server HostName: " << this->GetServerHostName() << ", Server port: " << this->GetServerPort());
-      if (this->GetConfigFilePath()) {
+      else if (this->GetInterCommType() == H5FD_DSM_COMM_SOCKET) {
+        this->SetServerHostName(dynamic_cast<H5FDdsmCommSocket*> (this->DsmBuffer->GetComm())->GetDsmMasterHostName());
+        this->SetServerPort(dynamic_cast<H5FDdsmCommSocket*> (this->DsmBuffer->GetComm())->GetDsmMasterPort());
+        H5FDdsmDebug("Server HostName: " << this->GetServerHostName() << ", Server port: " << this->GetServerPort());
         char serverPort[32];
         sprintf(serverPort, "%d", this->GetServerPort());
-        configFile.SetValue("DSM_COMM_SYSTEM", "socket", "Comm", fullConfigFilePath);
-        configFile.SetValue("DSM_BASE_HOST", this->GetServerHostName(), "Comm", fullConfigFilePath);
-        configFile.SetValue("DSM_BASE_PORT", serverPort, "Comm", fullConfigFilePath);
+        configFile.SetValue("DSM_COMM_SYSTEM", "socket", "Comm", configFilePath);
+        configFile.SetValue("DSM_BASE_HOST", this->GetServerHostName(), "Comm", configFilePath);
+        configFile.SetValue("DSM_BASE_PORT", serverPort, "Comm", configFilePath);
+      }
+      if (!this->UseStaticInterComm) {
+        configFile.SetValue("DSM_STATIC_INTERCOMM", "false", "Comm", configFilePath);
+      } else {
+        configFile.SetValue("DSM_STATIC_INTERCOMM", "true", "Comm", configFilePath);
       }
     }
-    if (!this->UseStaticInterComm) {
-      configFile.SetValue("DSM_STATIC_INTERCOMM", "false", "Comm", fullConfigFilePath);
-    }
-    else {
-      configFile.SetValue("DSM_STATIC_INTERCOMM", "true", "Comm", fullConfigFilePath);
-    }
+    this->DsmBuffer->RequestAccept();
   }
   //
-  this->DsmBuffer->RequestAccept();
   return(H5FD_DSM_SUCCESS);
 }
 
@@ -574,29 +570,36 @@ H5FDdsmInt32 FileExists(H5FDdsmConstString fname)
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmManager::ReadConfigFile()
 {
-  H5FDdsmIniFile config;
-  std::string configPath;
+  H5FDdsmIniFile configFile;
+  std::string configFilePath;
   std::string mode = "client";
   H5FDdsmConstString dsmEnvPath = getenv("H5FD_DSM_CONFIG_PATH");
   H5FDdsmConstString dsmServerEnvPath = getenv("H5FD_DSM_SERVER_CONFIG_PATH");
 
   if (dsmServerEnvPath) {
     mode = "server";
-    configPath = std::string(dsmServerEnvPath) + std::string("/.dsm_server_config");
+    configFilePath = std::string(dsmServerEnvPath) + std::string("/.dsm_server_config");
   } else {
+#ifdef _WIN32
+    if (!dsmEnvPath) dsmEnvPath = getenv("USERPROFILE");
+    configFilePath = std::string(dsmEnvPath) + std::string("\\.dsm_client_config");
+#else
     if (!dsmEnvPath) dsmEnvPath = getenv("HOME");
-    configPath = std::string(dsmEnvPath) + std::string("/.dsm_client_config");
-  }
-  if (FileExists(configPath.c_str())) {
-    if (this->UpdatePiece == 0) {
-      H5FDdsmDebug("Reading from " << configPath.c_str());
+    configFilePath = std::string(dsmEnvPath) + std::string("/.dsm_client_config");
+#endif
+    if (!dsmEnvPath) {
+      H5FDdsmError("Could not find DSM config path");
+      return(H5FD_DSM_FAIL);
     }
-    std::string size = config.GetValue("DSM_INIT_SIZE",   "General", configPath);
+  }
+  if (FileExists(configFilePath.c_str())) {
+    if (this->UpdatePiece == 0) H5FDdsmDebug("Reading from " << configFilePath.c_str());
+    std::string size = configFile.GetValue("DSM_INIT_SIZE",   "General", configFilePath);
 
-    std::string comm = config.GetValue("DSM_COMM_SYSTEM", "Comm", configPath);
-    std::string static_intercomm = config.GetValue("DSM_STATIC_INTERCOMM", "Comm", configPath);
-    std::string host = config.GetValue("DSM_BASE_HOST",   "Comm", configPath);
-    std::string port = config.GetValue("DSM_BASE_PORT",   "Comm", configPath);
+    std::string comm = configFile.GetValue("DSM_COMM_SYSTEM", "Comm", configFilePath);
+    std::string static_intercomm = configFile.GetValue("DSM_STATIC_INTERCOMM", "Comm", configFilePath);
+    std::string host = configFile.GetValue("DSM_BASE_HOST",   "Comm", configFilePath);
+    std::string port = configFile.GetValue("DSM_BASE_PORT",   "Comm", configFilePath);
 
     // General settings
     if (mode == "server" && atoi(size.c_str())) {
