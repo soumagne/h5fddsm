@@ -23,16 +23,26 @@
 
 =========================================================================*/
 #include "H5FDdsmManager.h"
+//
 #include "H5FDdsmCommSocket.h"
 #include "H5FDdsmCommMpi.h"
 #include "H5FDdsmCommMpiRma.h"
-#ifdef H5FD_DSM_HAVE_DMAPP
-#include "H5FDdsmCommDmapp.h"
+//
+#ifdef __CRAYXT_COMPUTE_LINUX_TARGET
+  #ifdef H5FD_DSM_HAVE_DMAPP
+    #include "H5FDdsmCommDmapp.h"
+  #endif
+  #ifdef H5FD_DSM_HAVE_UGNI
+    #include "H5FDdsmCommUGni.h"
+  #endif
 #endif
+//
 #include "H5FDdsmIniFile.h"
+//
 #ifdef H5FD_DSM_HAVE_STEERING
-#include "H5FDdsmSteerer.h"
+  #include "H5FDdsmSteerer.h"
 #endif
+//
 #include "H5FDdsmDump.h"
 //
 #ifdef _WIN32
@@ -40,7 +50,7 @@
   #define access _access
   #define atoll _atoi64 
 #endif
-
+//
 #include <vector>
 #include <string>
 
@@ -239,11 +249,19 @@ H5FDdsmInt32 H5FDdsmManager::Create()
     this->DsmComm = new H5FDdsmCommSocket();
     H5FDdsmDebug("Using Socket Intercomm...");
     break;
+#ifdef __CRAYXT_COMPUTE_LINUX_TARGET
 #ifdef H5FD_DSM_HAVE_DMAPP
   case H5FD_DSM_COMM_DMAPP:
     this->DsmComm = new H5FDdsmCommDmapp();
     H5FDdsmDebug("Using DMAPP Intercomm...");
     break;
+#endif
+#ifdef H5FD_DSM_HAVE_UGNI
+  case H5FD_DSM_COMM_UGNI:
+    this->DsmComm = new H5FDdsmCommUGni();
+    H5FDdsmDebug("Using UGNI Intercomm...");
+    break;
+#endif
 #endif
   default:
     H5FDdsmError("DSM communication type not supported");

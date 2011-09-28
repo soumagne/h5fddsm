@@ -53,7 +53,7 @@
 #include "H5FDdsmComm.h"
 #include "H5FDdsmMsg.h"
 #include "H5FDdsmStorage.h"
-#include "H5FDdsmStorageMpiRma.h"
+#include "H5FDdsmStorageMpi.h"
 #include "H5FDdsmAddressMapper.h"
 
 // Align
@@ -202,18 +202,21 @@ H5FDdsmDriver::SetLength(H5FDdsmUInt64 aLength, H5FDdsmBoolean AllowAllocate)
 {
   if (!this->Storage) {
     if (this->Comm) {
-      if (this->Comm->GetUseOneSidedComm()) {
-        this->Storage = new H5FDdsmStorageMpiRma;
-      } else {
+      switch (this->Comm->GetInterCommType()) {
+	case H5FD_DSM_COMM_MPI_RMA:
+	  this->Storage = new H5FDdsmStorageMpi;
+	  H5FDdsmDebug("Using MPI Storage...");
+	  break;
+	default:
         this->Storage = new H5FDdsmStorage;
       }
     } else {
-      H5FDdsmError("Storage has not been initialized");
+      H5FDdsmError("DSM communicator has not been initialized");
       return(H5FD_DSM_FAIL);
     }
   }
   if (this->Storage->SetLength(aLength, AllowAllocate) != H5FD_DSM_SUCCESS) {
-    H5FDdsmError("Cannot set Dsm Length to " << Length);
+    H5FDdsmError("Cannot set DSM Length to " << Length);
     return(H5FD_DSM_FAIL);
   }
   this->Length = aLength;

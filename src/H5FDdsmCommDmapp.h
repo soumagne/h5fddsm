@@ -49,7 +49,6 @@ public:
   H5FDdsmInt32   Disconnect();
 
 protected:
-  MPI_Win          Win;
   H5FDdsmCommDmappInternals *CommDmappInternals;
   H5FDdsmBoolean   IsDmappInitialized;
   H5FDdsmInt32     DmappRank;

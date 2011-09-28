@@ -22,7 +22,9 @@
 #define H5_HAVE_DSM
 
 #cmakedefine H5FD_DSM_HAVE_STEERING
+
 #cmakedefine H5FD_DSM_HAVE_DMAPP
+#cmakedefine H5FD_DSM_HAVE_UGNI
 
 #cmakedefine H5FD_DSM_DEBUG_SYNCED
 #cmakedefine H5FD_DSM_DEBUG_GLOBAL

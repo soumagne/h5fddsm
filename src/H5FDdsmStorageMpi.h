@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Project                 : H5FDdsm
-  Module                  : H5FDdsmStorageMpiRma.h
+  Module                  : H5FDdsmStorageMpi.h
 
   Authors:
      John Biddiscombe     Jerome Soumagne
@@ -23,20 +23,20 @@
 
 =========================================================================*/
 
-#ifndef __H5FDdsmStorageMpiRma_h
-#define __H5FDdsmStorageMpiRma_h
+#ifndef __H5FDdsmStorageMpi_h
+#define __H5FDdsmStorageMpi_h
 
 #include "H5FDdsmStorage.h"
 
-class H5FDdsm_EXPORT H5FDdsmStorageMpiRma : public H5FDdsmStorage {
+class H5FDdsm_EXPORT H5FDdsmStorageMpi : public H5FDdsmStorage {
 
 public:
-  H5FDdsmStorageMpiRma();
-  virtual ~H5FDdsmStorageMpiRma();
+  H5FDdsmStorageMpi();
+  virtual ~H5FDdsmStorageMpi();
 
 protected:
   H5FDdsmInt32 Allocate();
   H5FDdsmInt32 Deallocate();
 };
 
-#endif // __H5FDdsmStorageMpiRma_h
+#endif // __H5FDdsmStorageMpi_h

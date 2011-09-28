@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Project                 : H5FDdsm
-  Module                  : H5FDdsmStorageMpiRma.cxx
+  Module                  : H5FDdsmStorageMpi.cxx
 
   Authors:
      John Biddiscombe     Jerome Soumagne
@@ -23,21 +23,21 @@
 
 =========================================================================*/
 
-#include "H5FDdsmStorageMpiRma.h"
+#include "H5FDdsmStorageMpi.h"
 
 #include <mpi.h>
 
 //----------------------------------------------------------------------------
-H5FDdsmStorageMpiRma::H5FDdsmStorageMpiRma() {}
+H5FDdsmStorageMpi::H5FDdsmStorageMpi() {}
 
 //----------------------------------------------------------------------------
-H5FDdsmStorageMpiRma::~H5FDdsmStorageMpiRma()
+H5FDdsmStorageMpi::~H5FDdsmStorageMpi()
 {
   this->Deallocate();
 }
 
 //----------------------------------------------------------------------------
-H5FDdsmInt32 H5FDdsmStorageMpiRma::Allocate()
+H5FDdsmInt32 H5FDdsmStorageMpi::Allocate()
 {
   int err;
   if (this->DataPointer) {
@@ -61,7 +61,7 @@ H5FDdsmInt32 H5FDdsmStorageMpiRma::Allocate()
 }
 
 //----------------------------------------------------------------------------
-H5FDdsmInt32 H5FDdsmStorageMpiRma::Deallocate()
+H5FDdsmInt32 H5FDdsmStorageMpi::Deallocate()
 {
   if (this->DataPointer) {
     H5FDdsmDebug("Deallocating memory with MPI_Free_mem");
