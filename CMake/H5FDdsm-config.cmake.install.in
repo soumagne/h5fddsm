@@ -1,36 +1,36 @@
 #-----------------------------------------------------------------------------
 # HDF5 Config file for compiling against hdf5 install directory
 #-----------------------------------------------------------------------------
-GET_FILENAME_COMPONENT (SELF_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+get_filename_component(SELF_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
 
 #-----------------------------------------------------------------------------
 # User Options
 #-----------------------------------------------------------------------------
-SET (H5FD_DSM_BUILD_FORTRAN @H5FD_DSM_BUILD_FORTRAN@)
+set(H5FD_DSM_BUILD_FORTRAN @H5FD_DSM_BUILD_FORTRAN@)
 
 #-----------------------------------------------------------------------------
 # Directories
 #-----------------------------------------------------------------------------
-SET (H5FD_DSM_INCLUDE_DIR "@H5FD_DSM_INSTALL_INCLUDE_DIR@" )
+set(H5FD_DSM_INCLUDE_DIR "@H5FD_DSM_INSTALL_INCLUDE_DIR@" )
 
-IF (H5FD_DSM_BUILD_FORTRAN)
-  SET (H5FD_DSM_INCLUDE_DIR_FORTRAN "@H5FD_DSM_INSTALL_INCLUDE_DIR@/fortran" )
-ENDIF (H5FD_DSM_BUILD_FORTRAN)
+if(H5FD_DSM_BUILD_FORTRAN)
+  set(H5FD_DSM_INCLUDE_DIR_FORTRAN "@H5FD_DSM_INSTALL_INCLUDE_DIR@/fortran" )
+endif(H5FD_DSM_BUILD_FORTRAN)
 
 #-----------------------------------------------------------------------------
 # Version Strings
 #-----------------------------------------------------------------------------
-SET (H5FD_DSM_VERSION_STRING  @H5FDdsm_PACKAGE_VERSION@)
-SET (H5FD_DSM_VERSION_MAJOR   @H5FDdsm_VERS_MAJOR@)
-SET (H5FD_DSM_VERSION_MINOR   @H5FDdsm_VERS_MINOR@)
-SET (H5FD_DSM_VERSION_RELEASE @H5FDdsm_VERS_RELEASE@)
-SET (H5FD_DSM_PACKAGE_STRING  @H5FDdsm_PACKAGE_STRING@)
+set(H5FD_DSM_VERSION_STRING  @H5FDdsm_PACKAGE_VERSION@)
+set(H5FD_DSM_VERSION_MAJOR   @H5FDdsm_VERS_MAJOR@)
+set(H5FD_DSM_VERSION_MINOR   @H5FDdsm_VERS_MINOR@)
+set(H5FD_DSM_VERSION_RELEASE @H5FDdsm_VERS_RELEASE@)
+set(H5FD_DSM_PACKAGE_STRING  @H5FDdsm_PACKAGE_STRING@)
 
 #-----------------------------------------------------------------------------
 # Don't include targets if this file is being picked up by another
 # project which has already build H5FDdsm as a subproject
 #-----------------------------------------------------------------------------
-IF (NOT TARGET "H5FDdsm" AND NOT H5FD_DSM_INSTALL_SKIP_TARGETS)
-  INCLUDE (${SELF_DIR}/h5fddsm-targets.cmake)
-ENDIF (NOT TARGET "H5FDdsm" AND NOT H5FD_DSM_INSTALL_SKIP_TARGETS)
+if(NOT TARGET "H5FDdsm" AND NOT H5FD_DSM_INSTALL_SKIP_TARGETS)
+  include(${SELF_DIR}/h5fddsm-targets.cmake)
+endif(NOT TARGET "H5FDdsm" AND NOT H5FD_DSM_INSTALL_SKIP_TARGETS)
 
