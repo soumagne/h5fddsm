@@ -29,6 +29,8 @@
 #include <cstring>
 #include <vector>
 
+#define DMAPP_DQW_SIZE 16 // DMAPP_DQW
+
 struct H5FDdsmCommDmappInternals
 {
   struct DmappSegEntry
@@ -123,9 +125,9 @@ H5FDdsmCommDmapp::Put(H5FDdsmMsg *DataMsg)
   H5FDdsmDebug("Putting " << DataMsg->Length << " Bytes to Address "
       << DataMsg->Address << " to Id = " << DataMsg->Dest);
 
-  numberOfDQW = DataMsg->Length / sizeof(DMAPP_DQW);
+  numberOfDQW = DataMsg->Length / DMAPP_DQW_SIZE;
   if (numberOfDQW > 0) {
-    H5FDdsmInt32 numberOfLeftBytes = DataMsg->Length - numberOfDQW * sizeof(DMAPP_DQW);
+    H5FDdsmInt32 numberOfLeftBytes = DataMsg->Length - numberOfDQW * DMAPP_DQW_SIZE;
 
     status = dmapp_put(targetPtr, targetSeg, targetPE, DataMsg->Data, numberOfDQW, DMAPP_DQW);
     if (status != DMAPP_RC_SUCCESS) {
@@ -135,7 +137,7 @@ H5FDdsmCommDmapp::Put(H5FDdsmMsg *DataMsg)
     }
     //
     if (numberOfLeftBytes > 0) {
-      status = dmapp_put(targetPtr - numberOfLeftBytes, targetSeg, targetPE,
+      status = dmapp_put(targetPtr + DataMsg->Length - numberOfLeftBytes, targetSeg, targetPE,
           DataMsg->Data + DataMsg->Length - numberOfLeftBytes, numberOfLeftBytes, DMAPP_BYTE);
       if (status != DMAPP_RC_SUCCESS) {
         H5FDdsmError("Id = " << this->Id << " dmapp_put failed to put "
