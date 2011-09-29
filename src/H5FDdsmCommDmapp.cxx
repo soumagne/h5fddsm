@@ -116,18 +116,40 @@ H5FDdsmCommDmapp::Put(H5FDdsmMsg *DataMsg)
       (this->CommDmappInternals->DmappSegTable[DataMsg->Dest].Addr + DataMsg->Address);
   dmapp_seg_desc_t *targetSeg = &this->CommDmappInternals->DmappSegTable[DataMsg->Dest].SegDesc;
   H5FDdsmInt32 targetPE = this->CommDmappInternals->DmappSegTable[DataMsg->Dest].PE;
+  H5FDdsmInt32 numberOfDQW;
 
   if (H5FDdsmCommMpi::Put(DataMsg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
   H5FDdsmDebug("Putting " << DataMsg->Length << " Bytes to Address "
       << DataMsg->Address << " to Id = " << DataMsg->Dest);
-  status = dmapp_put(targetPtr, targetSeg, targetPE, DataMsg->Data,
-      DataMsg->Length, DMAPP_BYTE);
-  if (status != DMAPP_RC_SUCCESS) {
-    H5FDdsmError("Id = " << this->Id << " dmapp_put failed to put "
-        << DataMsg->Length
-        << " Bytes to " << DataMsg->Dest << " (PE " << targetPE << ")");
-    return(H5FD_DSM_FAIL);
+
+  numberOfDQW = DataMsg->Length / sizeof(DMAPP_DQW);
+  if (numberOfDQW > 0) {
+    H5FDdsmInt32 numberOfLeftBytes = DataMsg->Length - numberOfDQW * sizeof(DMAPP_DQW);
+
+    status = dmapp_put(targetPtr, targetSeg, targetPE, DataMsg->Data, numberOfDQW, DMAPP_DQW);
+    if (status != DMAPP_RC_SUCCESS) {
+      H5FDdsmError("Id = " << this->Id << " dmapp_put failed to put "
+          << DataMsg->Length << " Bytes to " << DataMsg->Dest << " (PE " << targetPE << ")");
+      return(H5FD_DSM_FAIL);
+    }
+    //
+    if (numberOfLeftBytes > 0) {
+      status = dmapp_put(targetPtr - numberOfLeftBytes, targetSeg, targetPE,
+          DataMsg->Data + DataMsg->Length - numberOfLeftBytes, numberOfLeftBytes, DMAPP_BYTE);
+      if (status != DMAPP_RC_SUCCESS) {
+        H5FDdsmError("Id = " << this->Id << " dmapp_put failed to put "
+            << DataMsg->Length << " Bytes to " << DataMsg->Dest << " (PE " << targetPE << ")");
+        return(H5FD_DSM_FAIL);
+      }
+    }
+  } else {
+    status = dmapp_put(targetPtr, targetSeg, targetPE, DataMsg->Data, DataMsg->Length, DMAPP_BYTE);
+    if (status != DMAPP_RC_SUCCESS) {
+      H5FDdsmError("Id = " << this->Id << " dmapp_put failed to put "
+          << DataMsg->Length << " Bytes to " << DataMsg->Dest << " (PE " << targetPE << ")");
+      return(H5FD_DSM_FAIL);
+    }
   }
 
   return(H5FD_DSM_SUCCESS);
@@ -137,7 +159,24 @@ H5FDdsmCommDmapp::Put(H5FDdsmMsg *DataMsg)
 H5FDdsmInt32
 H5FDdsmCommDmapp::Get(H5FDdsmMsg *DataMsg)
 {
-  /* Do not do a get with dmapp for now */
+  dmapp_return_t status;
+  H5FDdsmByte *sourcePtr = (H5FDdsmByte *)
+      (this->CommDmappInternals->DmappSegTable[DataMsg->Source].Addr + DataMsg->Address);
+  dmapp_seg_desc_t *sourceSeg = &this->CommDmappInternals->DmappSegTable[DataMsg->Source].SegDesc;
+  H5FDdsmInt32 sourcePE = this->CommDmappInternals->DmappSegTable[DataMsg->Source].PE;
+
+  if (H5FDdsmCommMpi::Get(DataMsg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+
+  H5FDdsmDebug("Getting " << DataMsg->Length << " Bytes from Address "
+      << DataMsg->Address << " from Id = " << DataMsg->Source);
+  status = dmapp_get(DataMsg->Data, sourcePtr, sourceSeg, sourcePE,
+      DataMsg->Length, DMAPP_BYTE);
+  if (status != DMAPP_RC_SUCCESS) {
+    H5FDdsmError("Id = " << this->Id << " dmapp_get failed to get "
+        << DataMsg->Length << " Bytes from " << DataMsg->Source << " (PE " << sourcePE << ")");
+    return(H5FD_DSM_FAIL);
+  }
+
   return(H5FD_DSM_SUCCESS);
 }
 
