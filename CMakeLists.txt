@@ -15,7 +15,7 @@ project(H5FDdsm C CXX)
 #-----------------------------------------------------------------------------
 set(H5FDdsm_VERS_MAJOR   "0")
 set(H5FDdsm_VERS_MINOR   "9")
-set(H5FDdsm_VERS_RELEASE "7")
+set(H5FDdsm_VERS_RELEASE "8")
 set(H5FDdsm_PACKAGE "h5fddsm")
 set(H5FDdsm_PACKAGE_NAME "H5FDdsm")
 set(H5FDdsm_PACKAGE_VERSION "${H5FDdsm_VERS_MAJOR}.${H5FDdsm_VERS_MINOR}.${H5FDdsm_VERS_RELEASE}")
@@ -133,9 +133,15 @@ if(H5FD_DSM_USE_CRAY_UGNI)
     if(CRAY_UGNI_INCLUDE_DIR)
       include_directories(${CRAY_UGNI_INCLUDE_DIR})
     endif(CRAY_UGNI_INCLUDE_DIR)
-    if(CRAY_UGNI_INCLUDE_DIR)
+    #
+    find_path(CRAY_LIBONESIDED_INTEROP_INCLUDE_DIR gni_libonesided_interop.h)
+    if(CRAY_LIBONESIDED_INTEROP_INCLUDE_DIR)
+      include_directories(${CRAY_LIBONESIDED_INTEROP_INCLUDE_DIR})
+    endif(CRAY_LIBONESIDED_INTEROP_INCLUDE_DIR)
+    #
+    if(CRAY_UGNI_INCLUDE_DIR AND CRAY_LIBONESIDED_INTEROP_INCLUDE_DIR)
       set(H5FD_DSM_HAVE_UGNI TRUE)
-    endif(CRAY_UGNI_INCLUDE_DIR)
+    endif(CRAY_UGNI_INCLUDE_DIR AND CRAY_LIBONESIDED_INTEROP_INCLUDE_DIR)
     #
 endif(H5FD_DSM_USE_CRAY_UGNI)
 

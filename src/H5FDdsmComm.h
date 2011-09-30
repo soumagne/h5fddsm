@@ -59,10 +59,11 @@
 //! Base comm object for Distributed Shared Memory implementation
 
 // Macros to choose inter communication system to use
-#define H5FD_DSM_COMM_MPI        0x10
-#define H5FD_DSM_COMM_SOCKET     0x11
-#define H5FD_DSM_COMM_MPI_RMA    0x12
-#define H5FD_DSM_COMM_DMAPP      0x13
+#define H5FD_DSM_COMM_MPI       0x10
+#define H5FD_DSM_COMM_SOCKET    0x11
+#define H5FD_DSM_COMM_MPI_RMA   0x12
+#define H5FD_DSM_COMM_DMAPP     0x13
+#define H5FD_DSM_COMM_UGNI      0x14
 
 // Macros to switch between intra/inter communicators
 #define H5FD_DSM_INTRA_COMM  0x20

@@ -53,11 +53,11 @@ struct H5FDdsmCommDmappInternals
 H5FDdsmCommDmapp::H5FDdsmCommDmapp()
 {
   this->InterCommType = H5FD_DSM_COMM_DMAPP;
-  this->UseOneSidedComm = 1;
+  this->UseOneSidedComm = H5FD_DSM_TRUE;
   this->CommDmappInternals = new H5FDdsmCommDmappInternals;
-  this->IsDmappInitialized = 0;
+  this->IsDmappInitialized = H5FD_DSM_FALSE;
   this->DmappRank = 0;
-  this->IsStorageSegRegistered = 0;
+  this->IsStorageSegRegistered = H5FD_DSM_FALSE;
 }
 
 //----------------------------------------------------------------------------
@@ -66,7 +66,7 @@ H5FDdsmCommDmapp::~H5FDdsmCommDmapp()
   delete this->CommDmappInternals;
   if (this->IsDmappInitialized) {
     dmapp_finalize();
-    this->IsDmappInitialized = 0;
+    this->IsDmappInitialized = H5FD_DSM_FALSE;
   }
 }
 
@@ -91,20 +91,20 @@ H5FDdsmCommDmapp::Init()
   // Initialize DMAPP
   status = dmapp_init_ext(&rma_args, &actual_args);
   if (status != DMAPP_RC_SUCCESS) {
-    H5FDdsmError("dmapp_init Failed: " << status);
+    H5FDdsmError("Id = " << this->Id << " dmapp_init failed: " << status);
     return(H5FD_DSM_FAIL);
   }
 
   // Get job related information
   status = dmapp_get_jobinfo(&job);
   if (status != DMAPP_RC_SUCCESS) {
-    H5FDdsmError("Id = " << this->Id << "dmapp_get_jobinfo FAILED: " << status);
+    H5FDdsmError("Id = " << this->Id << " dmapp_get_jobinfo failed: " << status);
     return(H5FD_DSM_FAIL);
   }
 
   this->DmappRank = job.pe;
 
-  this->IsDmappInitialized = 1;
+  this->IsDmappInitialized = H5FD_DSM_TRUE;
   H5FDdsmDebug("CommDmapp initialized");
   return(H5FD_DSM_SUCCESS);
 }
@@ -205,7 +205,7 @@ H5FDdsmCommDmapp::Accept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSiz
   // Register memory segments
   status = dmapp_mem_register(storagePointer, storageSize, &this->StorageSegDesc);
   if (status != DMAPP_RC_SUCCESS) {
-    H5FDdsmError("dmapp_mem_register Failed: " << status);
+    H5FDdsmError("dmapp_mem_register failed: " << status);
     return(H5FD_DSM_FAIL);
   }
   this->IsStorageSegRegistered = 1;
