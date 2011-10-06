@@ -27,13 +27,19 @@
 #include "H5FDdsmMsg.h"
 
 #include <cstring>
-#include <vector>
+#include <cstdlib>
 
 #include <gni_libonesided_interop.h>
 
 #define GNI_RDMA_OFFLOAD_THRESHOLD 0
 #define GNI_FMA_OFFLOAD_THRESHOLD 0
-
+//
+typedef struct UGniMdhEntry_
+{
+  H5FDdsmAddr      addr;
+  gni_mem_handle_t mdh;
+} UGniMdhEntry;
+//
 struct H5FDdsmCommUGniInternals
 {
   H5FDdsmCommUGniInternals()
@@ -66,12 +72,6 @@ struct H5FDdsmCommUGniInternals
     if(this->local_inst_ids) free(this->local_inst_ids);
     this->local_inst_ids = NULL;
   }
-  //
-  typedef struct UGniMdhEntry_
-  {
-    H5FDdsmAddr      addr;
-    gni_mem_handle_t mdh;
-  } UGniMdhEntry;
   //
   gni_nic_handle_t  nic_handle; // NIC handle used for the communication
   gni_cq_handle_t   cq_handle;  // Completion queue handle
@@ -106,7 +106,6 @@ H5FDdsmCommUGni::~H5FDdsmCommUGni()
     status = GNI_CqDestroy(this->CommUGniInternals->cq_handle);
     if (status != GNI_RC_SUCCESS) {
       H5FDdsmError("Id = " << this->Id << " GNI_CqDestroy failed: " << status);
-      return(H5FD_DSM_FAIL);
     }
   }
   delete this->CommUGniInternals;
@@ -244,12 +243,12 @@ H5FDdsmCommUGni::Accept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize
   status = this->GatherIntraNicAddresses();
   if (status != H5FD_DSM_SUCCESS) {
     H5FDdsmError("Id = " << this->Id << " GatherIntraNicAddresses failed");
-    return(H5F_DSM_FAIL);
+    return(H5FD_DSM_FAIL);
   }
   status = this->GatherIntraInstIds();
   if (status != H5FD_DSM_SUCCESS) {
     H5FDdsmError("Id = " << this->Id << " GatherIntraInstIds failed");
-    return(H5F_DSM_FAIL);
+    return(H5FD_DSM_FAIL);
   }
   //
   // Send local NIC addresses and local ids
@@ -377,7 +376,7 @@ H5FDdsmCommUGni::Disconnect()
   if (H5FDdsmCommMpi::Disconnect() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
   //
   if (this->CommUGniInternals->IsLocalMemRegistered) {
-    status = GNI_MemDeregister(this->CommUGniInternals->nic_handle, &src_mem_handle);
+    status = GNI_MemDeregister(this->CommUGniInternals->nic_handle, &this->CommUGniInternals->local_mdh_entry.mdh);
     if (status != GNI_RC_SUCCESS) {
       H5FDdsmError("Id = " << this->Id << " GNI_MemDeregister failed: " << status);
       ret = H5FD_DSM_FAIL;
@@ -516,8 +515,7 @@ H5FDdsmCommUGni::GetGniNicAddress(H5FDdsmInt32 device_id)
   p_ptr = getenv("PMI_GNI_DEV_ID");
   if (!p_ptr) {
     // Get the nic address for the specified device.
-    status = GNI_CdmGetNicAddress(device_id, &address, &cpu_id);
-    if (status != GNI_RC_SUCCESS) {
+    if (GNI_CdmGetNicAddress(device_id, &address, &cpu_id) != GNI_RC_SUCCESS) {
       H5FDdsmError("Id = " << this->Id << " GNI_CdmGetNicAddress failed: " << status);
       return(H5FD_DSM_FAIL);
     }
@@ -574,7 +572,7 @@ H5FDdsmCommUGni::GatherIntraNicAddresses()
   local_addr = this->GetGniNicAddress(0);
   if (local_addr != H5FD_DSM_SUCCESS) {
     H5FDdsmError("Id = " << this->Id << " GetGniNicAddress failed");
-    return(H5F_DSM_FAIL);
+    return(H5FD_DSM_FAIL);
   }
   //
   // Allocate a buffer to hold the NIC addresses from all of the other ranks.
