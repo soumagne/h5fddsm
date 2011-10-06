@@ -143,7 +143,7 @@ H5FDdsmCommUGni::Init()
   }
   //
   // Assuming a single gemini device, copy the given nic handle
-  memcpy(&this->CommUGniInternals->nic_handle, nic_hndls[0], sizeof(gni_nic_handle_t));
+  memcpy(&this->CommUGniInternals->nic_handle, &nic_hndls[0], sizeof(gni_nic_handle_t));
   free(nic_hndls);
   //
   // Create a completion queue
@@ -502,12 +502,12 @@ H5FDdsmCommUGni::GetRdma(H5FDdsmMsg *DataMsg)
 //----------------------------------------------------------------------------
 // Methods below are derived from utility_functions.h (courtesy of Cray Inc.)
 //----------------------------------------------------------------------------
-H5FDdsmUInt32
-H5FDdsmCommUGni::GetGniNicAddress(H5FDdsmInt32 device_id)
+H5FDdsmInt32
+H5FDdsmCommUGni::GetGniNicAddress(H5FDdsmInt32 device_id, H5FDdsmUInt32 *address)
 {
   H5FDdsmInt32    alps_address = -1;
   H5FDdsmInt32    alps_dev_id = -1;
-  H5FDdsmUInt32   address, cpu_id;
+  H5FDdsmUInt32   cpu_id;
   gni_return_t    status;
   H5FDdsmInt32    i;
   H5FDdsmString   token, p_ptr;
@@ -515,7 +515,7 @@ H5FDdsmCommUGni::GetGniNicAddress(H5FDdsmInt32 device_id)
   p_ptr = getenv("PMI_GNI_DEV_ID");
   if (!p_ptr) {
     // Get the nic address for the specified device.
-    if (GNI_CdmGetNicAddress(device_id, &address, &cpu_id) != GNI_RC_SUCCESS) {
+    if (GNI_CdmGetNicAddress(device_id, address, &cpu_id) != GNI_RC_SUCCESS) {
       H5FDdsmError("Id = " << this->Id << " GNI_CdmGetNicAddress failed: " << status);
       return(H5FD_DSM_FAIL);
     }
@@ -557,8 +557,9 @@ H5FDdsmCommUGni::GetGniNicAddress(H5FDdsmInt32 device_id)
       H5FDdsmError("Id = " << this->Id << " Cannot retrieve GNI NIC address");
       return(H5FD_DSM_FAIL);
     }
+    *address = alps_address;
   }
-  return(address);
+  return(H5FD_DSM_SUCCESS);
 }
 
 //----------------------------------------------------------------------------
@@ -569,8 +570,8 @@ H5FDdsmCommUGni::GatherIntraNicAddresses()
   H5FDdsmInt32  status;
   //
   // Assuming a single gemini device.
-  local_addr = this->GetGniNicAddress(0);
-  if (local_addr != H5FD_DSM_SUCCESS) {
+  status = this->GetGniNicAddress(0, &local_addr);
+  if (status != H5FD_DSM_SUCCESS) {
     H5FDdsmError("Id = " << this->Id << " GetGniNicAddress failed");
     return(H5FD_DSM_FAIL);
   }

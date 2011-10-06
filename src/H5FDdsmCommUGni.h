@@ -55,7 +55,7 @@ protected:
   H5FDdsmInt32   PutRdma(H5FDdsmMsg *DataMsg, gni_mem_handle_t src_mem_handle);
   H5FDdsmInt32   GetRdma(H5FDdsmMsg *DataMsg);
 
-  H5FDdsmUInt32  GetGniNicAddress(H5FDdsmInt32 device_id);
+  H5FDdsmInt32   GetGniNicAddress(H5FDdsmInt32 device_id, H5FDdsmUInt32 *address);
   H5FDdsmInt32   GatherIntraNicAddresses();
   H5FDdsmInt32   GatherIntraInstIds();
 
