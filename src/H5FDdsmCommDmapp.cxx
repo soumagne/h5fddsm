@@ -275,7 +275,7 @@ H5FDdsmCommDmapp::Disconnect()
 
   if (this->IsStorageSegRegistered) {
     dmapp_mem_unregister(&this->StorageSegDesc);
-    this->IsStorageSegRegistered = 0;
+    this->IsStorageSegRegistered = H5FD_DSM_FALSE;
   }
 
   return(H5FD_DSM_SUCCESS);

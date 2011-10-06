@@ -395,6 +395,11 @@ void receiverInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *
       staticInterComm = true;
       if (rank == 0) std::cout << "# DMAPP Inter-Communicator selected" << std::endl;
     }
+    else if (!strcmp(argv[2], "UGNI")) {
+      commType = H5FD_DSM_COMM_UGNI;
+      staticInterComm = true;
+      if (rank == 0) std::cout << "# UGNI Inter-Communicator selected" << std::endl;
+    }
   }
 
   if (argc > 3) {
@@ -529,6 +534,10 @@ void senderInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *co
     }
     else if (!strcmp(argv[2], "DMAPP")) {
       commType = H5FD_DSM_COMM_DMAPP;
+      staticInterComm = true;
+    }
+    else if (!strcmp(argv[2], "UGNI")) {
+      commType = H5FD_DSM_COMM_UGNI;
       staticInterComm = true;
     }
     dsmManager->SetInterCommType(commType);

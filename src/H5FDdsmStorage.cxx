@@ -66,10 +66,17 @@ H5FDdsmInt32 H5FDdsmStorage::Allocate()
 {
   if (this->DataPointer) {
     // try to reallocate
+    // this should not be called in most cases
     this->DataPointer = realloc(this->DataPointer, this->Length*sizeof(H5FDdsmByte));
   } else {
+#ifdef _WIN32
     H5FDdsmDebug("Allocating memory with calloc");
     this->DataPointer = calloc(this->Length, sizeof(H5FDdsmByte));
+#else
+    H5FDdsmDebug("Allocating memory with alignment of " << getpagesize());
+    posix_memalign(&this->DataPointer, getpagesize(), this->Length);
+    memset(this->DataPointer, 0, this->Length);
+#endif
   }
   if (this->DataPointer == NULL) {
     H5FDdsmError("Allocation Failed, unable to allocate " << this->Length);
