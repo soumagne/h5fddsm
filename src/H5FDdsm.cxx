@@ -756,14 +756,6 @@ H5FD_dsm_open(const char *name, unsigned UNUSED flags, hid_t fapl_id, haddr_t ma
     if (!file->DsmBuffer->GetIsLocked()) {
       file->DsmBuffer->RequestLockAcquire();
     }
-
-#ifdef H5FD_DSM_HAVE_STEERING
-    if ((H5F_ACC_CREAT & flags) && !file->DsmBuffer->GetIsServer()) {
-      // TODO Probably do this somewhere else but here for now
-      // so we get automatic pause and play
-      file->DsmBuffer->GetSteerer()->GetSteeringCommands();
-    }
-#endif
     //
     PRINT_INFO("Opening " << name);
     if (DsmGetEntry(file) == H5FD_DSM_FAIL) {
