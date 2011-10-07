@@ -150,7 +150,7 @@ H5FDdsmCommUGni::Init()
   //
   // Create a completion queue
   H5FDdsmDebug("Creating a new CQ");
-  gni_status = GNI_CqCreate(this->CommUGniInternals->nic_handle, 10, 0, GNI_CQ_NOBLOCK,
+  gni_status = GNI_CqCreate(this->CommUGniInternals->nic_handle, 10, 0, GNI_CQ_BLOCKING,
       NULL, NULL, &this->CommUGniInternals->cq_handle);
   if (gni_status != GNI_RC_SUCCESS) {
     H5FDdsmError("Id = " << this->Id << " GNI_CqCreate failed: " << gni_status);
@@ -177,7 +177,7 @@ H5FDdsmCommUGni::Put(H5FDdsmMsg *DataMsg)
   if (H5FDdsmCommMpi::Put(DataMsg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
   //
   // Register memory
-  H5FDdsmDebug("Register memory with the NIC");
+  H5FDdsmDebug("Register local memory with the NIC");
   gni_status = GNI_MemRegister(this->CommUGniInternals->nic_handle, (uint64_t) DataMsg->Data,
       DataMsg->Length, NULL, GNI_MEM_READ_ONLY, -1, &src_mem_handle);
   if (gni_status != GNI_RC_SUCCESS) {
@@ -204,14 +204,21 @@ H5FDdsmCommUGni::Put(H5FDdsmMsg *DataMsg)
   }
   //
   // Process events from completion queue
-  status = this->GetCqEvent(this->CommUGniInternals->cq_handle, &event_data);
+/*  status = this->GetCqEvent(this->CommUGniInternals->cq_handle, &event_data);
   if (status != H5FD_DSM_SUCCESS) {
     H5FDdsmError("Id = " << this->Id << " GetCqEvent failed");
     ret = H5FD_DSM_FAIL;
   } else {
+  */
+  status = GNI_CqWaitEvent(this->CommUGniInternals->cq_handle, -1, &event_data);
+  if (status != GNI_RC_SUCCESS) {
+    H5FDdsmError("Id = " << this->Id << " GNI_CqWaitEvent failed: " << status);
+    return(H5FD_DSM_FAIL);
+  } else {
+
     gni_status = GNI_GetCompleted(this->CommUGniInternals->cq_handle, event_data, &event_post_desc_ptr);
     if (gni_status != GNI_RC_SUCCESS) {
-      H5FDdsmError("Id = " << this->Id << " GNI_GetCompleted failed: " << gni_status);
+      H5FDdsmError("Id = " << this->Id << " GNI_GetCompleted failed: " << gni_status << " event_data: " << event_data);
       ret = H5FD_DSM_FAIL;
     } else {
       // Validate the current event's instance id with the expected id.
@@ -226,6 +233,7 @@ H5FDdsmCommUGni::Put(H5FDdsmMsg *DataMsg)
   }
   //
   // De-register memory
+  H5FDdsmDebug("De-register local memory");
   gni_status = GNI_MemDeregister(this->CommUGniInternals->nic_handle, &src_mem_handle);
   if (gni_status != GNI_RC_SUCCESS) {
     H5FDdsmError("Id = " << this->Id << " GNI_MemDeregister failed: " << gni_status);
@@ -270,6 +278,7 @@ H5FDdsmCommUGni::Accept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize
   //
   // Gather local NIC addresses and instance IDs
   // TODO We may not need to do that on the client side
+  H5FDdsmDebug("Gather local NIC addresses and instance IDs");
   status = this->GatherIntraNicAddresses();
   if (status != H5FD_DSM_SUCCESS) {
     H5FDdsmError("Id = " << this->Id << " GatherIntraNicAddresses failed");
@@ -299,7 +308,7 @@ H5FDdsmCommUGni::Accept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize
   //
   // Create local MDH entry
   this->CommUGniInternals->local_mdh_entry.addr = (H5FDdsmAddr) storagePointer;
-  H5FDdsmDebug("Register memory with the NIC");
+  H5FDdsmDebug("Register DSM memory with the NIC");
   gni_status = GNI_MemRegister(this->CommUGniInternals->nic_handle, (uint64_t) storagePointer,
       storageSize, NULL, GNI_MEM_READWRITE, -1, &this->CommUGniInternals->local_mdh_entry.mdh);
   if (gni_status != GNI_RC_SUCCESS) {
@@ -334,6 +343,7 @@ H5FDdsmCommUGni::Connect()
   if (H5FDdsmCommMpi::Connect() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
   //
   // Get remote NIC addresses and instance IDs
+  H5FDdsmDebug("Get remote NIC addresses and instance IDs");
   if (this->CommUGniInternals->remote_nic_addresses) free(this->CommUGniInternals->remote_nic_addresses);
   this->CommUGniInternals->remote_nic_addresses = (H5FDdsmUInt32*) malloc(this->InterSize * sizeof(H5FDdsmUInt32));
   if (this->CommUGniInternals->remote_inst_ids) free(this->CommUGniInternals->remote_inst_ids);
@@ -355,6 +365,7 @@ H5FDdsmCommUGni::Connect()
   }
   //
   // Get remote MDH entries
+  H5FDdsmDebug("Get remote MDH entries");
   if (this->CommUGniInternals->remote_mdh_entries) free(this->CommUGniInternals->remote_mdh_entries);
   this->CommUGniInternals->remote_mdh_entries = (UGniMdhEntry*) malloc(this->InterSize * sizeof(UGniMdhEntry));
   for (H5FDdsmInt32 i = 0; i < this->InterSize; i++) {
@@ -625,7 +636,7 @@ H5FDdsmCommUGni::GatherIntraInstIds()
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-GetCqEvent(gni_cq_handle_t cq_handle, gni_cq_entry_t *event_data)
+H5FDdsmCommUGni::GetCqEvent(gni_cq_handle_t cq_handle, gni_cq_entry_t *event_data)
 {
   gni_return_t    status = GNI_RC_NOT_DONE;
   H5FDdsmUInt32   wait_count = 0;
@@ -635,11 +646,12 @@ GetCqEvent(gni_cq_handle_t cq_handle, gni_cq_entry_t *event_data)
     status = GNI_CqGetEvent(cq_handle, event_data);
     if (status == GNI_RC_SUCCESS) {
       // Processed event succesfully.
+      H5FDdsmDebug("Processed event succesfully");
       return(H5FD_DSM_SUCCESS);
     } else if (status != GNI_RC_NOT_DONE) {
        // An error occurred getting the event.
       char           *cqErrorStr;
-      char           *cqOverrunErrorStr = "";
+      char const     *cqOverrunErrorStr = "";
       gni_return_t    tmp_status = GNI_RC_SUCCESS;
 
       // Did the event queue overrun condition occurred?
