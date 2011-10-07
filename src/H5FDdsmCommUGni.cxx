@@ -260,7 +260,7 @@ H5FDdsmCommUGni::Get(H5FDdsmMsg *DataMsg)
     ret = H5FD_DSM_FAIL;
   }
   //
-  return(H5FD_DSM_SUCCESS);
+  return(ret);
 }
 
 //----------------------------------------------------------------------------
