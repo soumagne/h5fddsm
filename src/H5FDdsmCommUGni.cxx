@@ -97,6 +97,7 @@ H5FDdsmCommUGni::H5FDdsmCommUGni()
   this->InterCommType = H5FD_DSM_COMM_UGNI;
   this->UseOneSidedComm = H5FD_DSM_TRUE;
   this->CommUGniInternals = new H5FDdsmCommUGniInternals;
+  this->UseBlockingComm = H5FD_DSM_TRUE;
 }
 
 //----------------------------------------------------------------------------
@@ -119,6 +120,7 @@ H5FDdsmCommUGni::Init()
 {
   H5FDdsmInt32 nhandles;
   gni_nic_handle_t *nic_hndls;
+  gni_cq_mode_t cq_mode;
   gni_return_t gni_status;
   H5FDdsmInt32 status;
   //
@@ -150,7 +152,8 @@ H5FDdsmCommUGni::Init()
   //
   // Create a completion queue
   H5FDdsmDebug("Creating a new CQ");
-  gni_status = GNI_CqCreate(this->CommUGniInternals->nic_handle, 10, 0, GNI_CQ_BLOCKING,
+  cq_mode = (this->UseBlockingComm) ? GNI_CQ_BLOCKING : GNI_CQ_NOBLOCK;
+  gni_status = GNI_CqCreate(this->CommUGniInternals->nic_handle, 4096, 0, cq_mode,
       NULL, NULL, &this->CommUGniInternals->cq_handle);
   if (gni_status != GNI_RC_SUCCESS) {
     H5FDdsmError("Id = " << this->Id << " GNI_CqCreate failed: " << gni_status);
@@ -167,10 +170,7 @@ H5FDdsmInt32
 H5FDdsmCommUGni::Put(H5FDdsmMsg *DataMsg)
 {
   gni_mem_handle_t src_mem_handle;
-  gni_post_descriptor_t *event_post_desc_ptr;
-  gni_cq_entry_t event_data;
-  H5FDdsmInt32 event_id;
-  gni_return_t gni_status;
+ gni_return_t gni_status;
   H5FDdsmInt32 status;
   H5FDdsmInt32 ret = H5FD_DSM_SUCCESS;
   //
@@ -200,35 +200,6 @@ H5FDdsmCommUGni::Put(H5FDdsmMsg *DataMsg)
     if (status != H5FD_DSM_SUCCESS) {
       H5FDdsmError("Id = " << this->Id << " PutFma failed");
       ret = H5FD_DSM_FAIL;
-    }
-  }
-  //
-  // Process events from completion queue
-/*  status = this->GetCqEvent(this->CommUGniInternals->cq_handle, &event_data);
-  if (status != H5FD_DSM_SUCCESS) {
-    H5FDdsmError("Id = " << this->Id << " GetCqEvent failed");
-    ret = H5FD_DSM_FAIL;
-  } else {
-  */
-  status = GNI_CqWaitEvent(this->CommUGniInternals->cq_handle, -1, &event_data);
-  if (status != GNI_RC_SUCCESS) {
-    H5FDdsmError("Id = " << this->Id << " GNI_CqWaitEvent failed: " << status);
-    return(H5FD_DSM_FAIL);
-  } else {
-
-    gni_status = GNI_GetCompleted(this->CommUGniInternals->cq_handle, event_data, &event_post_desc_ptr);
-    if (gni_status != GNI_RC_SUCCESS) {
-      H5FDdsmError("Id = " << this->Id << " GNI_GetCompleted failed: " << gni_status << " event_data: " << event_data);
-      ret = H5FD_DSM_FAIL;
-    } else {
-      // Validate the current event's instance id with the expected id.
-      event_id = GNI_CQ_GET_INST_ID(event_data);
-      if (event_id != this->CommUGniInternals->remote_inst_ids[DataMsg->Dest]) {
-        // The event's inst_id was not the expected inst_id value.
-        H5FDdsmError("Id = " << this->Id << " CQ Event data error received inst_id: " << event_id
-            << " expected inst_id: " << this->CommUGniInternals->remote_inst_ids[DataMsg->Dest]);
-        ret = H5FD_DSM_FAIL;
-      }
     }
   }
   //
@@ -452,7 +423,11 @@ H5FDdsmInt32
 H5FDdsmCommUGni::PutFma(H5FDdsmMsg *DataMsg, gni_mem_handle_t src_mem_handle)
 {
   gni_post_descriptor_t fma_post_desc;
-  gni_return_t status;
+  gni_post_descriptor_t *event_post_desc_ptr;
+  gni_cq_entry_t event_data;
+  H5FDdsmInt32 event_id;
+  H5FDdsmInt32 status;
+  gni_return_t gni_status;
   //
   fma_post_desc.type            = GNI_POST_FMA_PUT;
   fma_post_desc.cq_mode         = GNI_CQMODE_GLOBAL_EVENT;
@@ -464,9 +439,37 @@ H5FDdsmCommUGni::PutFma(H5FDdsmMsg *DataMsg, gni_mem_handle_t src_mem_handle)
   fma_post_desc.remote_mem_hndl = this->CommUGniInternals->remote_mdh_entries[DataMsg->Dest].mdh;
   fma_post_desc.length          = DataMsg->Length;
   //
-  status = GNI_PostFma(this->CommUGniInternals->ep_handles[DataMsg->Dest], &fma_post_desc);
-  if (status != GNI_RC_SUCCESS) {
-    H5FDdsmError("Id = " << this->Id << " GNI_EpPostFma failed: " << status);
+  gni_status = GNI_PostFma(this->CommUGniInternals->ep_handles[DataMsg->Dest], &fma_post_desc);
+  if (gni_status != GNI_RC_SUCCESS) {
+    H5FDdsmError("Id = " << this->Id << " GNI_EpPostFma failed: " << gni_status);
+    return(H5FD_DSM_FAIL);
+  }
+  // Process events from completion queue
+  if (this->UseBlockingComm) {
+    gni_status = GNI_CqWaitEvent(this->CommUGniInternals->cq_handle, -1, &event_data);
+    if (gni_status != GNI_RC_SUCCESS) {
+      H5FDdsmError("Id = " << this->Id << " GNI_CqWaitEvent failed: " << gni_status);
+      return(H5FD_DSM_FAIL);
+    }
+  } else {
+    status = this->GetCqEvent(this->CommUGniInternals->cq_handle, &event_data);
+    if (status != H5FD_DSM_SUCCESS) {
+      H5FDdsmError("Id = " << this->Id << " GetCqEvent failed");
+      return(H5FD_DSM_FAIL);
+    } 
+  }
+  //
+  gni_status = GNI_GetCompleted(this->CommUGniInternals->cq_handle, event_data, &event_post_desc_ptr);
+  if (gni_status != GNI_RC_SUCCESS) {
+    H5FDdsmError("Id = " << this->Id << " GNI_GetCompleted failed: " << gni_status << " event_data: " << event_data);
+    return(H5FD_DSM_FAIL);
+  }
+  // Validate the current event's instance id with the expected id.
+  event_id = GNI_CQ_GET_INST_ID(event_data);
+  if (event_id != this->CommUGniInternals->remote_inst_ids[DataMsg->Dest]) {
+    // The event's inst_id was not the expected inst_id value.
+    H5FDdsmError("Id = " << this->Id << " CQ Event data error received inst_id: " << event_id
+        << " expected inst_id: " << this->CommUGniInternals->remote_inst_ids[DataMsg->Dest]);
     return(H5FD_DSM_FAIL);
   }
   //
@@ -486,7 +489,11 @@ H5FDdsmInt32
 H5FDdsmCommUGni::PutRdma(H5FDdsmMsg *DataMsg, gni_mem_handle_t src_mem_handle)
 {
   gni_post_descriptor_t rdma_post_desc;
-  gni_return_t status;
+  gni_post_descriptor_t *event_post_desc_ptr;
+  gni_cq_entry_t event_data;
+  H5FDdsmInt32 event_id;
+  H5FDdsmInt32 status;
+  gni_return_t gni_status;
   //
   rdma_post_desc.type            = GNI_POST_RDMA_PUT;
   rdma_post_desc.cq_mode         = GNI_CQMODE_GLOBAL_EVENT;
@@ -499,9 +506,37 @@ H5FDdsmCommUGni::PutRdma(H5FDdsmMsg *DataMsg, gni_mem_handle_t src_mem_handle)
   rdma_post_desc.length          = DataMsg->Length;
   rdma_post_desc.src_cq_hndl     = this->CommUGniInternals->cq_handle;
   //
-  status = GNI_PostRdma(this->CommUGniInternals->ep_handles[DataMsg->Dest], &rdma_post_desc);
-  if (status != GNI_RC_SUCCESS) {
-    H5FDdsmError("Id = " << this->Id << " GNI_EpPostRdma failed: " << status);
+  gni_status = GNI_PostRdma(this->CommUGniInternals->ep_handles[DataMsg->Dest], &rdma_post_desc);
+  if (gni_status != GNI_RC_SUCCESS) {
+    H5FDdsmError("Id = " << this->Id << " GNI_EpPostRdma failed: " << gni_status);
+    return(H5FD_DSM_FAIL);
+  }
+  // Process events from completion queue
+  if (this->UseBlockingComm) {
+    gni_status = GNI_CqWaitEvent(this->CommUGniInternals->cq_handle, -1, &event_data);
+    if (gni_status != GNI_RC_SUCCESS) {
+      H5FDdsmError("Id = " << this->Id << " GNI_CqWaitEvent failed: " << gni_status);
+      return(H5FD_DSM_FAIL);
+    }
+  } else {
+    status = this->GetCqEvent(this->CommUGniInternals->cq_handle, &event_data);
+    if (status != H5FD_DSM_SUCCESS) {
+      H5FDdsmError("Id = " << this->Id << " GetCqEvent failed");
+      return(H5FD_DSM_FAIL);
+    } 
+  }
+  //
+  gni_status = GNI_GetCompleted(this->CommUGniInternals->cq_handle, event_data, &event_post_desc_ptr);
+  if (gni_status != GNI_RC_SUCCESS) {
+    H5FDdsmError("Id = " << this->Id << " GNI_GetCompleted failed: " << gni_status << " event_data: " << event_data);
+    return(H5FD_DSM_FAIL);
+  }
+  // Validate the current event's instance id with the expected id.
+  event_id = GNI_CQ_GET_INST_ID(event_data);
+  if (event_id != this->CommUGniInternals->remote_inst_ids[DataMsg->Dest]) {
+    // The event's inst_id was not the expected inst_id value.
+    H5FDdsmError("Id = " << this->Id << " CQ Event data error received inst_id: " << event_id
+        << " expected inst_id: " << this->CommUGniInternals->remote_inst_ids[DataMsg->Dest]);
     return(H5FD_DSM_FAIL);
   }
   //
@@ -525,7 +560,6 @@ H5FDdsmCommUGni::GetGniNicAddress(H5FDdsmInt32 device_id, H5FDdsmUInt32 *address
   H5FDdsmInt32    alps_address = -1;
   H5FDdsmInt32    alps_dev_id = -1;
   H5FDdsmUInt32   cpu_id;
-  gni_return_t    status;
   H5FDdsmInt32    i;
   H5FDdsmString   token, p_ptr;
   //
@@ -533,7 +567,7 @@ H5FDdsmCommUGni::GetGniNicAddress(H5FDdsmInt32 device_id, H5FDdsmUInt32 *address
   if (!p_ptr) {
     // Get the nic address for the specified device.
     if (GNI_CdmGetNicAddress(device_id, address, &cpu_id) != GNI_RC_SUCCESS) {
-      H5FDdsmError("Id = " << this->Id << " GNI_CdmGetNicAddress failed: " << status);
+      H5FDdsmError("Id = " << this->Id << " GNI_CdmGetNicAddress failed");
       return(H5FD_DSM_FAIL);
     }
   } else {

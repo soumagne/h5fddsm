@@ -38,6 +38,9 @@ public:
   H5FDdsmCommUGni();
   virtual ~H5FDdsmCommUGni();
 
+  H5FDdsmGetValueMacro(UseBlockingComm, H5FDdsmBoolean);
+  H5FDdsmSetValueMacro(UseBlockingComm, H5FDdsmBoolean);
+
   H5FDdsmInt32   Init();
 
   H5FDdsmInt32   Put(H5FDdsmMsg *DataMsg);
@@ -62,6 +65,7 @@ protected:
 
   H5FDdsmCommUGniInternals *CommUGniInternals;
   H5FDdsmBoolean   IsCommInitialized;
+  H5FDdsmBoolean   UseBlockingComm;
 };
 
 #endif // __H5FDdsmCommUGni_h
