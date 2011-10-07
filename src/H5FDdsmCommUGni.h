@@ -58,6 +58,7 @@ protected:
   H5FDdsmInt32   GetGniNicAddress(H5FDdsmInt32 device_id, H5FDdsmUInt32 *address);
   H5FDdsmInt32   GatherIntraNicAddresses();
   H5FDdsmInt32   GatherIntraInstIds();
+  H5FDdsmInt32   GetCqEvent(gni_cq_handle_t cq_handle, gni_cq_entry_t *event_data);
 
   H5FDdsmCommUGniInternals *CommUGniInternals;
   H5FDdsmBoolean   IsCommInitialized;

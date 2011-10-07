@@ -28,11 +28,13 @@
 
 #include <cstring>
 #include <cstdlib>
+#include <sched.h>
 
 #include <gni_libonesided_interop.h>
 
-#define GNI_RDMA_OFFLOAD_THRESHOLD 0
+#define GNI_RDMA_OFFLOAD_THRESHOLD 4096
 #define GNI_FMA_OFFLOAD_THRESHOLD 0
+#define MAXIMUM_CQ_RETRY_COUNT 200000
 //
 typedef struct UGniMdhEntry_
 {
@@ -148,7 +150,7 @@ H5FDdsmCommUGni::Init()
   //
   // Create a completion queue
   H5FDdsmDebug("Creating a new CQ");
-  gni_status = GNI_CqCreate(this->CommUGniInternals->nic_handle, 10, 0, GNI_CQ_BLOCKING,
+  gni_status = GNI_CqCreate(this->CommUGniInternals->nic_handle, 10, 0, GNI_CQ_NOBLOCK,
       NULL, NULL, &this->CommUGniInternals->cq_handle);
   if (gni_status != GNI_RC_SUCCESS) {
     H5FDdsmError("Id = " << this->Id << " GNI_CqCreate failed: " << gni_status);
@@ -165,20 +167,25 @@ H5FDdsmInt32
 H5FDdsmCommUGni::Put(H5FDdsmMsg *DataMsg)
 {
   gni_mem_handle_t src_mem_handle;
+  gni_post_descriptor_t *event_post_desc_ptr;
+  gni_cq_entry_t event_data;
+  H5FDdsmInt32 event_id;
   gni_return_t gni_status;
   H5FDdsmInt32 status;
   H5FDdsmInt32 ret = H5FD_DSM_SUCCESS;
   //
   if (H5FDdsmCommMpi::Put(DataMsg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
   //
+  // Register memory
   H5FDdsmDebug("Register memory with the NIC");
-  status = GNI_MemRegister(this->CommUGniInternals->nic_handle, (uint64_t) DataMsg->Data,
+  gni_status = GNI_MemRegister(this->CommUGniInternals->nic_handle, (uint64_t) DataMsg->Data,
       DataMsg->Length, NULL, GNI_MEM_READ_ONLY, -1, &src_mem_handle);
-  if (status != GNI_RC_SUCCESS) {
-    H5FDdsmError("Id = " << this->Id << " GNI_MemRegister failed: " << status);
+  if (gni_status != GNI_RC_SUCCESS) {
+    H5FDdsmError("Id = " << this->Id << " GNI_MemRegister failed: " << gni_status);
     return(H5FD_DSM_FAIL);
   }
   //
+  // Put Data to DataMsg->Dest
   H5FDdsmDebug("Putting " << DataMsg->Length << " Bytes to Address "
       << DataMsg->Address << " to Id = " << DataMsg->Dest);
   if (DataMsg->Length > GNI_RDMA_OFFLOAD_THRESHOLD) {
@@ -196,9 +203,32 @@ H5FDdsmCommUGni::Put(H5FDdsmMsg *DataMsg)
     }
   }
   //
-  status = GNI_MemDeregister(this->CommUGniInternals->nic_handle, &src_mem_handle);
-  if (status != GNI_RC_SUCCESS) {
-    H5FDdsmError("Id = " << this->Id << " GNI_MemDeregister failed: " << status);
+  // Process events from completion queue
+  status = this->GetCqEvent(this->CommUGniInternals->cq_handle, &event_data);
+  if (status != H5FD_DSM_SUCCESS) {
+    H5FDdsmError("Id = " << this->Id << " GetCqEvent failed");
+    ret = H5FD_DSM_FAIL;
+  } else {
+    gni_status = GNI_GetCompleted(this->CommUGniInternals->cq_handle, event_data, &event_post_desc_ptr);
+    if (gni_status != GNI_RC_SUCCESS) {
+      H5FDdsmError("Id = " << this->Id << " GNI_GetCompleted failed: " << gni_status);
+      ret = H5FD_DSM_FAIL;
+    } else {
+      // Validate the current event's instance id with the expected id.
+      event_id = GNI_CQ_GET_INST_ID(event_data);
+      if (event_id != this->CommUGniInternals->remote_inst_ids[DataMsg->Dest]) {
+        // The event's inst_id was not the expected inst_id value.
+        H5FDdsmError("Id = " << this->Id << " CQ Event data error received inst_id: " << event_id
+            << " expected inst_id: " << this->CommUGniInternals->remote_inst_ids[DataMsg->Dest]);
+        ret = H5FD_DSM_FAIL;
+      }
+    }
+  }
+  //
+  // De-register memory
+  gni_status = GNI_MemDeregister(this->CommUGniInternals->nic_handle, &src_mem_handle);
+  if (gni_status != GNI_RC_SUCCESS) {
+    H5FDdsmError("Id = " << this->Id << " GNI_MemDeregister failed: " << gni_status);
     ret = H5FD_DSM_FAIL;
   }
   //
@@ -410,9 +440,7 @@ H5FDdsmCommUGni::Disconnect()
 H5FDdsmInt32
 H5FDdsmCommUGni::PutFma(H5FDdsmMsg *DataMsg, gni_mem_handle_t src_mem_handle)
 {
-  gni_post_descriptor_t  fma_post_desc;
-  gni_post_descriptor_t *event_post_desc_ptr;
-  gni_cq_entry_t event_data;
+  gni_post_descriptor_t fma_post_desc;
   gni_return_t status;
   //
   fma_post_desc.type            = GNI_POST_FMA_PUT;
@@ -428,16 +456,6 @@ H5FDdsmCommUGni::PutFma(H5FDdsmMsg *DataMsg, gni_mem_handle_t src_mem_handle)
   status = GNI_PostFma(this->CommUGniInternals->ep_handles[DataMsg->Dest], &fma_post_desc);
   if (status != GNI_RC_SUCCESS) {
     H5FDdsmError("Id = " << this->Id << " GNI_EpPostFma failed: " << status);
-    return(H5FD_DSM_FAIL);
-  }
-  status = GNI_CqWaitEvent(this->CommUGniInternals->cq_handle, -1, &event_data);
-  if (status != GNI_RC_SUCCESS) {
-    H5FDdsmError("Id = " << this->Id << " GNI_CqWaitEvent failed: " << status);
-    return(H5FD_DSM_FAIL);
-  }
-  status = GNI_GetCompleted(this->CommUGniInternals->cq_handle, event_data, &event_post_desc_ptr);
-  if (status != GNI_RC_SUCCESS) {
-    H5FDdsmError("Id = " << this->Id << " GNI_GetCompleted failed: " << status);
     return(H5FD_DSM_FAIL);
   }
   //
@@ -456,9 +474,7 @@ H5FDdsmCommUGni::GetFma(H5FDdsmMsg *DataMsg)
 H5FDdsmInt32
 H5FDdsmCommUGni::PutRdma(H5FDdsmMsg *DataMsg, gni_mem_handle_t src_mem_handle)
 {
-  gni_post_descriptor_t  rdma_post_desc;
-  gni_post_descriptor_t *event_post_desc_ptr;
-  gni_cq_entry_t event_data;
+  gni_post_descriptor_t rdma_post_desc;
   gni_return_t status;
   //
   rdma_post_desc.type            = GNI_POST_RDMA_PUT;
@@ -475,16 +491,6 @@ H5FDdsmCommUGni::PutRdma(H5FDdsmMsg *DataMsg, gni_mem_handle_t src_mem_handle)
   status = GNI_PostRdma(this->CommUGniInternals->ep_handles[DataMsg->Dest], &rdma_post_desc);
   if (status != GNI_RC_SUCCESS) {
     H5FDdsmError("Id = " << this->Id << " GNI_EpPostRdma failed: " << status);
-    return(H5FD_DSM_FAIL);
-  }
-  status = GNI_CqWaitEvent(this->CommUGniInternals->cq_handle, -1, &event_data);
-  if (status != GNI_RC_SUCCESS) {
-    H5FDdsmError("Id = " << this->Id << " GNI_CqWaitEvent failed: " << status);
-    return(H5FD_DSM_FAIL);
-  }
-  status = GNI_GetCompleted(this->CommUGniInternals->cq_handle, event_data, &event_post_desc_ptr);
-  if (status != GNI_RC_SUCCESS) {
-    H5FDdsmError("Id = " << this->Id << " GNI_GetCompleted failed: " << status);
     return(H5FD_DSM_FAIL);
   }
   //
@@ -612,6 +618,76 @@ H5FDdsmCommUGni::GatherIntraInstIds()
   if (status != MPI_SUCCESS) {
     H5FDdsmError("Id = " << this->Id << " MPI_Gather of instance IDs failed");
     return(H5FD_DSM_FAIL);
+  }
+  //
+  return(H5FD_DSM_SUCCESS);
+}
+
+//----------------------------------------------------------------------------
+H5FDdsmInt32
+GetCqEvent(gni_cq_handle_t cq_handle, gni_cq_entry_t *event_data)
+{
+  gni_return_t    status = GNI_RC_NOT_DONE;
+  H5FDdsmUInt32   wait_count = 0;
+
+  while (status == GNI_RC_NOT_DONE) {
+    // Get the next event from the specified completion queue handle.
+    status = GNI_CqGetEvent(cq_handle, event_data);
+    if (status == GNI_RC_SUCCESS) {
+      // Processed event succesfully.
+      return(H5FD_DSM_SUCCESS);
+    } else if (status != GNI_RC_NOT_DONE) {
+       // An error occurred getting the event.
+      char           *cqErrorStr;
+      char           *cqOverrunErrorStr = "";
+      gni_return_t    tmp_status = GNI_RC_SUCCESS;
+
+      // Did the event queue overrun condition occurred?
+      // This means that all of the event queue entries were used up
+      // and another event occurred, i.e. there was no entry available
+      // to put the new event into.
+      if (GNI_CQ_OVERRUN(*event_data)) {
+        cqOverrunErrorStr = "CQ_OVERRUN detected";
+      }
+      cqErrorStr = (char *) malloc(256);
+      if (cqErrorStr != NULL) {
+         // Print a user understandable error message.
+        tmp_status = GNI_CqErrorStr(*event_data, cqErrorStr, 256);
+        if (tmp_status == GNI_RC_SUCCESS) {
+          H5FDdsmError("Id = " << this->Id << " GNI_CqGetEvent error " <<
+              cqOverrunErrorStr << " : " << status << " GNI_CqErrorStr: " << cqErrorStr);
+        } else {
+          // Print the error number.
+          H5FDdsmError("Id = " << this->Id << " GNI_CqGetEvent error " <<
+                        cqOverrunErrorStr << " : " << status);
+        }
+        free(cqErrorStr);
+      } else {
+         // Print the error number.
+        H5FDdsmError("Id = " << this->Id << " GNI_CqGetEvent error " <<
+                      cqOverrunErrorStr << " : " << status);
+      }
+      return(H5FD_DSM_FAIL);
+    } else {
+       // An event has not been received yet.
+      wait_count++;
+
+      if (wait_count >= MAXIMUM_CQ_RETRY_COUNT) {
+         // This prevents an indefinite retry, which could hang the application.
+        H5FDdsmError("Id = " << this->Id << " GNI_CqGetEvent error no event was received: "
+                       << status << " retry count: " << wait_count);
+        return(H5FD_DSM_FAIL);
+      }
+      //
+      // Release the cpu to allow the event to be received.
+      // This is basically a sleep, if other processes need to do some work.
+      if ((wait_count % (MAXIMUM_CQ_RETRY_COUNT / 10)) == 0) {
+         // Sometimes it takes a little longer for the datagram to arrive.
+        sleep(1);
+      } else {
+        sched_yield();
+      }
+    }
   }
   //
   return(H5FD_DSM_SUCCESS);
