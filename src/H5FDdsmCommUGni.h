@@ -52,11 +52,8 @@ public:
   H5FDdsmInt32   Disconnect();
 
 protected:
-  H5FDdsmInt32   PutFma(H5FDdsmMsg *DataMsg, gni_mem_handle_t src_mem_handle);
-  H5FDdsmInt32   GetFma(H5FDdsmMsg *DataMsg);
-
-  H5FDdsmInt32   PutRdma(H5FDdsmMsg *DataMsg, gni_mem_handle_t src_mem_handle);
-  H5FDdsmInt32   GetRdma(H5FDdsmMsg *DataMsg);
+  H5FDdsmInt32   PostTrans(gni_post_type_t trans_type, H5FDdsmInt32 remote_id,
+      H5FDdsmMsg *DataMsg, gni_mem_handle_t local_mem_handle);
 
   H5FDdsmInt32   GetGniNicAddress(H5FDdsmInt32 device_id, H5FDdsmUInt32 *address);
   H5FDdsmInt32   GatherIntraNicAddresses();
