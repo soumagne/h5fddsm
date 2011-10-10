@@ -179,7 +179,7 @@ H5FDdsmCommUGni::Put(H5FDdsmMsg *DataMsg)
   // Register memory
   H5FDdsmDebug("Register local memory with the NIC");
   gni_status = GNI_MemRegister(this->CommUGniInternals->nic_handle, (uint64_t) DataMsg->Data,
-      DataMsg->Length, NULL, GNI_MEM_READ_ONLY, -1, &src_mem_handle);
+      DataMsg->Length, NULL, GNI_MEM_READ_ONLY | GNI_MEM_RELAXED_PI_ORDERING, -1, &src_mem_handle);
   if (gni_status != GNI_RC_SUCCESS) {
     H5FDdsmError("Id = " << this->Id << " GNI_MemRegister failed: " << gni_status);
     return(H5FD_DSM_FAIL);
@@ -228,7 +228,7 @@ H5FDdsmCommUGni::Get(H5FDdsmMsg *DataMsg)
   // Register memory
   H5FDdsmDebug("Register local memory with the NIC");
   gni_status = GNI_MemRegister(this->CommUGniInternals->nic_handle, (uint64_t) DataMsg->Data,
-      DataMsg->Length, NULL, GNI_MEM_READWRITE, -1, &dest_mem_handle);
+      DataMsg->Length, NULL, GNI_MEM_READWRITE | GNI_MEM_RELAXED_PI_ORDERING, -1, &dest_mem_handle);
   if (gni_status != GNI_RC_SUCCESS) {
     H5FDdsmError("Id = " << this->Id << " GNI_MemRegister failed: " << gni_status);
     return(H5FD_DSM_FAIL);
