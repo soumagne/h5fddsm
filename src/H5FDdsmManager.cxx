@@ -274,7 +274,7 @@ H5FDdsmInt32 H5FDdsmManager::Create()
   //
   // Create the DSM buffer
   //
-  this->DsmBuffer = new H5FDdsmBuffer();
+  this->DsmBuffer = new H5FDdsmBufferService();
   //
   if (this->IsServer) {
     // Uniform Dsm : every node has a buffer the same size. (Addresses are sequential)

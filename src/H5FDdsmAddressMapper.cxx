@@ -24,7 +24,7 @@
 =========================================================================*/
 
 #include "H5FDdsmAddressMapper.h"
-#include "H5FDdsmDriver.h"
+#include "H5FDdsmBuffer.h"
 #include "H5FDdsmMsg.h"
 #include <algorithm>
 
@@ -168,15 +168,15 @@ class PartitionedAddressMapper : public AddressMapperStrategy {
 H5FDdsmAddressMapper::H5FDdsmAddressMapper()
 {
   this->DsmType = H5FD_DSM_TYPE_UNIFORM;
-  this->DsmDriver = NULL;
+  this->DsmBuffer = NULL;
   this->AddressingStrategy = NULL;
 }
 
 //----------------------------------------------------------------------------
-H5FDdsmAddressMapper::H5FDdsmAddressMapper(H5FDdsmDriver *dsmDriver)
+H5FDdsmAddressMapper::H5FDdsmAddressMapper(H5FDdsmBuffer *dsmBuffer)
 {
   this->DsmType = H5FD_DSM_TYPE_UNIFORM;
-  this->DsmDriver = dsmDriver;
+  this->DsmBuffer = dsmBuffer;
   this->AddressingStrategy = NULL;
 }
 
@@ -193,7 +193,7 @@ H5FDdsmAddressMapper::Translate(H5FDdsmAddr address, H5FDdsmUInt64 length, H5FDd
   if (!this->AddressingStrategy) {
     // Operation order is : Cyclic->IntSized->RemoteAddress
     this->AddressingStrategy = new PartitionedAddressMapper(
-      this->DsmDriver->GetLength()
+      this->DsmBuffer->GetLength()
     );
     AddressMapperStrategy *LastStrategy = this->AddressingStrategy;
     //
@@ -205,18 +205,18 @@ H5FDdsmAddressMapper::Translate(H5FDdsmAddr address, H5FDdsmUInt64 length, H5FDd
     //
     if (this->DsmType == H5FD_DSM_TYPE_BLOCK_CYCLIC) {
       BlockCyclicAddressMapper *BCAM = new BlockCyclicAddressMapper(
-        this->DsmDriver->GetBlockLength(),
-        this->DsmDriver->GetLength(),
-        this->DsmDriver->GetTotalLength()
+        this->DsmBuffer->GetBlockLength(),
+        this->DsmBuffer->GetLength(),
+        this->DsmBuffer->GetTotalLength()
       );
       LastStrategy->SetDelegate(BCAM);
       LastStrategy = BCAM;
     }
     else if (this->DsmType == H5FD_DSM_TYPE_BLOCK_RANDOM) {
       BlockRandomAddressMapper *BRAM = new BlockRandomAddressMapper(
-        this->DsmDriver->GetBlockLength(),
-        this->DsmDriver->GetLength(),
-        this->DsmDriver->GetTotalLength()
+        this->DsmBuffer->GetBlockLength(),
+        this->DsmBuffer->GetLength(),
+        this->DsmBuffer->GetTotalLength()
       );
       LastStrategy->SetDelegate(BRAM);
       LastStrategy = BRAM;

@@ -23,405 +23,238 @@
 
 =========================================================================*/
 
-/*=========================================================================
-  This code is derived from an earlier work and is distributed
-  with permission from, and thanks to ...
-=========================================================================*/
-
-/*******************************************************************/
-/*                               XDMF                              */
-/*                   eXtensible Data Model and Format              */
-/*                                                                 */
-/*                                                                 */
-/*  Author:                                                        */
-/*     Jerry A. Clarke                                             */
-/*     clarke@arl.army.mil                                         */
-/*     US Army Research Laboratory                                 */
-/*     Aberdeen Proving Ground, MD                                 */
-/*                                                                 */
-/*     Copyright @ 2007 US Army Research Laboratory                */
-/*     All Rights Reserved                                         */
-/*     See Copyright.txt or http://www.arl.hpc.mil/ice for details */
-/*                                                                 */
-/*     This software is distributed WITHOUT ANY WARRANTY; without  */
-/*     even the implied warranty of MERCHANTABILITY or FITNESS     */
-/*     FOR A PARTICULAR PURPOSE.  See the above copyright notice   */
-/*     for more information.                                       */
-/*                                                                 */
-/*******************************************************************/
 #include "H5FDdsmDriver.h"
-#include "H5FDdsmComm.h"
-#include "H5FDdsmMsg.h"
-#include "H5FDdsmStorage.h"
-#include "H5FDdsmStorageMpi.h"
-#include "H5FDdsmAddressMapper.h"
+#include "H5FDdsmManager.h"
+//
+#include "H5Eprivate.h" // Error handling
+// H5private.h defines attribute, but we don't want it as it causes link errors
+// on some gcc versions
+#ifdef __GNUC__
+# undef __attribute__
+#endif
 
-// Align
-typedef struct {
-    H5FDdsmInt32 Opcode;
-    H5FDdsmInt32 Source;
-    H5FDdsmInt32 Target;
-    H5FDdsmAddr  Address;
-    H5FDdsmInt32 Length;
-    H5FDdsmInt64 Parameters[10];
-} H5FDdsmCommand;
-
-//----------------------------------------------------------------------------
-H5FDdsmDriver::H5FDdsmDriver()
-{
-    this->StartAddress = this->EndAddress = 0;
-    this->StartServerId = this->EndServerId = -1;
-    // For Alignment
-    this->Length = 0;
-    this->TotalLength = 0;
-    this->BlockLength = 0;
-    this->MaskLength  = 0;
-    this->Storage = NULL;
-    this->Comm = NULL;
-    this->DataPointer = NULL;
-    this->AddressMapper = new H5FDdsmAddressMapper(this);
+#define DSM_DRIVER_GOTO_ERROR(x, ret_val)                                  \
+{                                                                          \
+   fprintf(stderr, "Error at %s %s:%d %s\n", __FILE__, FUNC, __LINE__, x); \
+   err_occurred = TRUE;                                                    \
+   if (err_occurred) { HGOTO_DONE(ret_val) }                               \
 }
 
-//----------------------------------------------------------------------------
-H5FDdsmDriver::~H5FDdsmDriver()
-{
-    if (this->Storage) delete this->Storage;
-    this->Storage = NULL;
-    delete this->AddressMapper;
-}
+// #define H5FD_DSM_DEBUG
+#ifdef H5FD_DSM_DEBUG
+#  define PRINT_INFO(x) std::cout << "(" << file->DsmBuffer->GetComm()->GetId() << ") " << x << std::endl;
+#  define PRINT_DSM_INFO(a,x) std::cout << "(" << a << ") " << x << std::endl;
+#else
+#  define PRINT_INFO(x)
+#  define PRINT_DSM_INFO(a,x)
+#endif
 
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmDriver::GetDsmType()
+//--------------------------------------------------------------------------
+herr_t
+DsmUpdateEntry(H5FD_dsm_t *file)
 {
-    return((this->AddressMapper) ? this->AddressMapper->GetDsmType() : H5FD_DSM_FAIL);
-}
-//----------------------------------------------------------------------------
-void
-H5FDdsmDriver::SetDsmType(H5FDdsmInt32 DsmType)
-{
-  this->AddressMapper->SetDsmType(DsmType);
-}
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmDriver::SetMaskLength(H5FDdsmUInt64 dataSize)
-{
-  this->MaskLength = this->Length - (dataSize / (this->EndServerId - this->StartServerId + 1));
-  // Do not make the mask fit exactly to the size of data to be written so that
-  // additional space is left for metadata
-  this->Length -= (this->MaskLength - H5FD_DSM_ALIGNMENT);
-  this->TotalLength = this->Length * (this->EndServerId - this->StartServerId + 1);
-  return(H5FD_DSM_SUCCESS);
-}
+  H5FDdsmAddr  addr;
+  H5FDdsmEntry entry;
 
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmDriver::SetStorage(H5FDdsmStorage *aStorage)
-{
-    if (this->Storage) delete this->Storage;
-    this->Storage = aStorage;
-    this->DataPointer = (H5FDdsmByte *)this->Storage->GetDataPointer();
-    return(H5FD_DSM_SUCCESS);
-}
+  PRINT_INFO("DsmUpdateEntry()");
 
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmDriver::ClearStorage()
-{
-  if (this->Storage) {
-    H5FDdsmDebug("Resetting storage");
-    H5FDdsmDebug("start address: " << this->StartAddress);
-    H5FDdsmDebug("end address: " << this->EndAddress);
-    this->SetLength(this->Length);
-    this->DataPointer = (H5FDdsmByte *)this->Storage->GetDataPointer();
+  if (!file->DsmBuffer) return (H5FD_DSM_FAIL);
+
+  file->end = MAX((file->start + file->eof), file->end);
+  file->eof = file->end - file->start;
+
+  if (!file->DsmBuffer->GetIsReadOnly()) {
+    entry.start = file->start;
+    entry.end = file->end;
+    addr = (H5FDdsmAddr) (file->DsmBuffer->GetTotalLength() - sizeof(H5FDdsmMetaData));
+
+    PRINT_INFO("DsmUpdateEntry start " <<
+        file->start <<
+        " end " << file->end <<
+        " addr " << addr);
+
+    // Only one of the processes writing to the DSM needs to write file metadata
+    // but we must be careful that all the processes keep the metadata synchronized
+    // Do not send anything if the end of the file is 0
+    if ((file->DsmBuffer->GetComm()->GetId() == 0) && (entry.end > 0)) {
+      if (file->DsmBuffer->Put(addr, sizeof(entry), &entry) != H5FD_DSM_SUCCESS) return H5FD_DSM_FAIL;
+    }
+    file->DsmBuffer->GetComm()->Barrier();
   }
   return(H5FD_DSM_SUCCESS);
 }
 
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmDriver::ConfigureUniform(H5FDdsmComm *aComm, H5FDdsmUInt64 aLength, H5FDdsmInt32 StartId, H5FDdsmInt32 EndId, 
-  H5FDdsmUInt64 aBlockLength, H5FDdsmBoolean random)
+//--------------------------------------------------------------------------
+herr_t
+DsmGetEntry(H5FD_dsm_t *file)
 {
-    if (StartId < 0) StartId = 0;
-    if (EndId < 0) EndId = aComm->GetIntraSize() - 1;
-    this->SetDsmType(H5FD_DSM_TYPE_UNIFORM_RANGE);
-    if ((StartId == 0) && (EndId == aComm->GetIntraSize() - 1)) {
-        this->SetDsmType(H5FD_DSM_TYPE_UNIFORM);
-    }
-    if (aBlockLength) {
-      if (!random) {
-        this->SetDsmType(H5FD_DSM_TYPE_BLOCK_CYCLIC);
-      } else {
-        this->SetDsmType(H5FD_DSM_TYPE_BLOCK_RANDOM);
-      }
-      this->SetBlockLength(aBlockLength);
-    }
-    this->StartServerId = StartId;
-    this->EndServerId = EndId;
-    this->SetComm(aComm);
-    if ((aComm->GetId() >= StartId) && (aComm->GetId() <= EndId)) {
-        if (aBlockLength) {
-          // For optimization we make the DSM length fit to a multiple of block size
-          this->SetLength((H5FDdsmUInt64(aLength / aBlockLength)) * aBlockLength, 1);
-        } else {
-          this->SetLength(aLength, 1);
-        }
-        this->StartAddress = (aComm->GetId() - StartId) * aLength;
-        this->EndAddress = this->StartAddress + aLength - 1;
-    } else {
-      if (aBlockLength) {
-        this->Length = (H5FDdsmUInt64(aLength / aBlockLength)) * aBlockLength;
-      } else {
-        this->Length = aLength;
-      }
-    }
-    this->TotalLength = this->GetLength() * (EndId - StartId + 1);
-    return(H5FD_DSM_SUCCESS);
+  H5FDdsmAddr  addr;
+  H5FDdsmEntry entry;
+
+  PRINT_INFO("DsmGetEntry()");
+
+  if (!file->DsmBuffer) return (H5FD_DSM_FAIL);
+
+  addr = (H5FDdsmAddr) (file->DsmBuffer->GetTotalLength() - sizeof(H5FDdsmMetaData));
+
+  // Get is done by every process so we can do independent reads (in parallel by blocks)
+  // using the driver as a serial driver
+  if (file->DsmBuffer->Get(addr, sizeof(entry), &entry) != H5FD_DSM_SUCCESS) {
+    PRINT_INFO("DsmGetEntry failed");
+    return H5FD_DSM_FAIL;
+  }
+
+  file->start = entry.start;
+  file->end = entry.end;
+
+  PRINT_INFO("DsmGetEntry start " <<
+      file->start <<
+      " end " << file->end <<
+      " addr " << addr);
+
+  return(H5FD_DSM_SUCCESS);
 }
 
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmDriver::SendDone()
+//--------------------------------------------------------------------------
+herr_t
+DsmAutoAlloc(MPI_Comm comm)
 {
-    H5FDdsmInt32   who, status = H5FD_DSM_SUCCESS;
-
-    for(who = this->StartServerId ; who <= this->EndServerId ; who++) {
-      status = this->SendCommandHeader(H5FD_DSM_OPCODE_DONE, who, 0, 0);
-      if (status != H5FD_DSM_SUCCESS) {
-        H5FDdsmError("Cannot send termination command to DSM process " << who);
-        return(status);
+  if (!dsmManagerSingleton) {
+    dsmManagerSingleton = new H5FDdsmManager();
+    dsmManagerSingleton->ReadConfigFile();
+    dsmManagerSingleton->SetMpiComm(comm);
+    dsmManagerSingleton->Create();
+    if (dsmManagerSingleton->GetIsServer()) {
+      // TODO Leave the auto publish here for now
+      dsmManagerSingleton->Publish();
+      while (!dsmManagerSingleton->GetDsmBuffer()->GetIsConnected()) {
+        // Spin
       }
     }
-    return(status);
+    dsmManagerSingleton->GetDsmBuffer()->SetIsAutoAllocated(H5FD_DSM_TRUE);
+  }
+  return(H5FD_DSM_SUCCESS);
 }
 
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmDriver::SetLength(H5FDdsmUInt64 aLength, H5FDdsmBoolean AllowAllocate)
+//--------------------------------------------------------------------------
+herr_t
+DsmAutoDealloc()
 {
-  if (!this->Storage) {
-    if (this->Comm) {
-      switch (this->Comm->GetInterCommType()) {
-	case H5FD_DSM_COMM_MPI_RMA:
-	  this->Storage = new H5FDdsmStorageMpi;
-	  H5FDdsmDebug("Using MPI Storage...");
-	  break;
-	default:
-        this->Storage = new H5FDdsmStorage;
-      }
-    } else {
-      H5FDdsmError("DSM communicator has not been initialized");
+  if (dsmManagerSingleton) {
+    if (!dsmManagerSingleton->GetIsServer() && dsmManagerSingleton->GetDsmBuffer()->GetIsConnected()) {
+      dsmManagerSingleton->Disconnect();
+    }
+    if (dsmManagerSingleton->GetIsServer()) {
+      dsmManagerSingleton->Unpublish();
+    }
+    delete dsmManagerSingleton;
+    dsmManagerSingleton = NULL;
+  }
+  return(H5FD_DSM_SUCCESS);
+}
+
+//--------------------------------------------------------------------------
+H5FDdsmBuffer *
+DsmGetAutoAllocatedBuffer()
+{
+  H5FDdsmBuffer *buffer = NULL;
+
+  if (dsmManagerSingleton) {
+    buffer = dsmManagerSingleton->GetDsmBuffer();
+  }
+  return(buffer);
+}
+
+//--------------------------------------------------------------------------
+H5FDdsmManager *
+DsmGetAutoAllocatedManager()
+{
+  H5FDdsmManager *manager = NULL;
+
+  if (dsmManagerSingleton) {
+    manager = dsmManagerSingleton;;
+  }
+  return(manager);
+}
+
+//--------------------------------------------------------------------------
+herr_t
+DsmBufferConnect(H5FDdsmBufferService *dsmBuffer)
+{
+  // Initialize the connection if it has not been done already
+  if (!dsmBuffer->GetIsConnected()) {
+    if (dsmBuffer->GetComm()->Connect() == H5FD_DSM_SUCCESS) {
+      PRINT_DSM_INFO(dsmBuffer->GetComm()->GetId(), "Connected!");
+      dsmBuffer->SetIsConnected(H5FD_DSM_TRUE);
+      dsmBuffer->ReceiveInfo();
+    }
+    else {
+      PRINT_DSM_INFO(dsmBuffer->GetComm()->GetId(), "DSMBuffer Comm_connect returned FAIL");
       return(H5FD_DSM_FAIL);
     }
   }
-  if (this->Storage->SetLength(aLength, AllowAllocate) != H5FD_DSM_SUCCESS) {
-    H5FDdsmError("Cannot set DSM Length to " << Length);
-    return(H5FD_DSM_FAIL);
-  }
-  this->Length = aLength;
-  this->DataPointer = (H5FDdsmByte *)this->Storage->GetDataPointer();
   return(H5FD_DSM_SUCCESS);
 }
 
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmDriver::ProbeCommandHeader(H5FDdsmInt32 *Source)
+//--------------------------------------------------------------------------
+herr_t
+DsmSetOptions(unsigned long flags)
 {
-  H5FDdsmInt32 status = H5FD_DSM_FAIL;
-  H5FDdsmMsg Msg;
+  herr_t ret_value = SUCCEED;
+  H5FDdsmBufferService *dsmBufferService;
+  FUNC_ENTER_NOAPI(DsmSetOptions, FAIL)
 
-  Msg.SetTag(H5FD_DSM_COMMAND_TAG);
-  status = this->Comm->Probe(&Msg);
-  if (status != H5FD_DSM_FAIL) *Source = Msg.Source;
-  return(status);
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmDriver::SendCommandHeader(H5FDdsmInt32 Opcode, H5FDdsmInt32 Dest, H5FDdsmAddr Address, H5FDdsmInt32 aLength)
-{
-    H5FDdsmCommand  Cmd;
-    H5FDdsmInt32 Status;
-
-    H5FDdsmMsg Msg;
-
-    memset(&Cmd, 0, sizeof(Cmd));
-    Cmd.Opcode = Opcode;
-    Cmd.Source = this->Comm->GetId();
-    Cmd.Target = Dest;
-    Cmd.Address = Address;
-    Cmd.Length = aLength;
-
-    Msg.SetSource(this->Comm->GetId());
-    Msg.SetDest(Dest);
-    Msg.SetTag(H5FD_DSM_COMMAND_TAG);
-    Msg.SetLength(sizeof(Cmd));
-    Msg.SetData(&Cmd);
-
-    Status = this->Comm->Send(&Msg);
-    H5FDdsmDebug("(" << this->Comm->GetId() << ") sent opcode " << Cmd.Opcode);
-    return(Status);
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmDriver::ReceiveCommandHeader(H5FDdsmInt32 *Opcode, H5FDdsmInt32 *Source,
-    H5FDdsmAddr *Address, H5FDdsmInt32 *aLength, H5FDdsmInt32 IsRemoteService, H5FDdsmInt32 RemoteSource)
-{
-  H5FDdsmCommand  Cmd;
-  H5FDdsmInt32    status = H5FD_DSM_FAIL;
-
-  H5FDdsmMsg Msg;
-
-  Msg.Source = (RemoteSource>=0) ? RemoteSource : H5FD_DSM_ANY_SOURCE;
-  Msg.SetLength(sizeof(Cmd));
-  Msg.SetTag(H5FD_DSM_COMMAND_TAG);
-  Msg.SetData(&Cmd);
-
-  memset(&Cmd, 0, sizeof(H5FDdsmCommand));
-
-  if (IsRemoteService) {
-    status  = this->Comm->Receive(&Msg, H5FD_DSM_INTER_COMM);
+  if (dsmManagerSingleton) {
+    dsmBufferService = dsmManagerSingleton->GetDsmBuffer();
   } else {
-    status  = this->Comm->Receive(&Msg);
+    DSM_DRIVER_GOTO_ERROR("No DSM buffer found", FAIL);
   }
-  if (status == H5FD_DSM_FAIL) {
-    H5FDdsmError("Communicator Receive Failed");
-    return(H5FD_DSM_FAIL);
+
+  switch(flags) {
+    case H5FD_DSM_DONT_RELEASE:
+      dsmBufferService->SetReleaseLockOnClose(H5FD_DSM_FALSE);
+      /* If we don't release the file, we don't send notifications as well */
+    case H5FD_DSM_DONT_NOTIFY:
+      dsmBufferService->SetNotificationOnClose(H5FD_DSM_FALSE);
+      break;
+    default:
+      PRINT_DSM_INFO(dsmBufferService->GetComm()->GetId(), "Not implemented option");
+      break;
+  }
+
+done:
+  FUNC_LEAVE_NOAPI(ret_value);
+}
+
+//--------------------------------------------------------------------------
+herr_t
+DsmNotify(unsigned long flags)
+{
+  herr_t ret_value = SUCCEED;
+  H5FDdsmBufferService *dsmBufferService;
+  FUNC_ENTER_NOAPI(DsmNotify, FAIL)
+
+  if (dsmManagerSingleton) {
+    dsmBufferService = dsmManagerSingleton->GetDsmBuffer();
   } else {
-    *Opcode = Cmd.Opcode;
-    *Source = Cmd.Source;
-    *Address = Cmd.Address;
-    *aLength = Cmd.Length;
-    status = H5FD_DSM_SUCCESS;
-    if (IsRemoteService) {
-      H5FDdsmDebug("(Remote Service Server " << this->Comm->GetId() << ") got opcode " << Cmd.Opcode);
-    } else {
-      H5FDdsmDebug("(Server " << this->Comm->GetId() << ") got opcode " << Cmd.Opcode);
-    }
+    DSM_DRIVER_GOTO_ERROR("No DSM buffer found", FAIL);
   }
-  return(status);
+
+  switch(flags) {
+    case H5FD_DSM_NEW_INFORMATION:
+    case H5FD_DSM_NEW_DATA:
+      dsmBufferService->SetNotification(flags);
+      break;
+    default:
+      PRINT_DSM_INFO(dsmBufferService->GetComm()->GetId(), "Not implemented notification");
+      break;
+  }
+
+  if (!dsmBufferService->GetIsLocked()) dsmBufferService->RequestLockAcquire();
+  dsmBufferService->RequestNotification();
+
+done:
+    FUNC_LEAVE_NOAPI(ret_value);
 }
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmDriver::SendInfo()
-{
-  H5FDdsmInfo dsmInfo;
-
-  dsmInfo.type = this->GetDsmType();
-  dsmInfo.length = this->GetLength();
-  dsmInfo.total_length = this->GetTotalLength();
-  dsmInfo.block_length = this->GetBlockLength();
-  dsmInfo.start_server_id = this->GetStartServerId();
-  dsmInfo.end_server_id = this->GetEndServerId();
-
-  return(this->Comm->SendInfo(&dsmInfo));
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmDriver::ReceiveInfo()
-{
-  H5FDdsmInfo dsmInfo;
-
-  if (this->Comm->RecvInfo(&dsmInfo) != H5FD_DSM_SUCCESS) {
-    return(H5FD_DSM_FAIL);
-  }
-  this->SetDsmType(dsmInfo.type);
-  H5FDdsmDebug("Type received: " << this->GetDsmType());
-
-  this->SetLength(dsmInfo.length, 0);
-  H5FDdsmDebug("Length received: " << this->GetLength());
-
-  this->TotalLength = dsmInfo.total_length;
-  H5FDdsmDebug("totalLength received: " << this->GetTotalLength());
-
-  this->SetBlockLength(dsmInfo.block_length);
-  H5FDdsmDebug("blockLength received: " << this->GetBlockLength());
-
-  this->StartServerId = dsmInfo.start_server_id;
-  H5FDdsmDebug("startServerId received: " << this->GetStartServerId());
-
-  this->EndServerId = dsmInfo.end_server_id;
-  H5FDdsmDebug("endServerId received: " << this->GetEndServerId());
-
-  return(H5FD_DSM_SUCCESS);
-}
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmDriver::SendMaskLength()
-{
-  H5FDdsmInfo dsmInfo;
-
-  dsmInfo.length = this->GetMaskLength();
-
-  return(this->Comm->SendInfo(&dsmInfo));
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmDriver::ReceiveMaskLength()
-{
-  H5FDdsmInfo dsmInfo;
-
-  if (this->Comm->RecvInfo(&dsmInfo) != H5FD_DSM_SUCCESS) {
-    return(H5FD_DSM_FAIL);
-  }
-
-  if (this->Comm->GetId() == 0) {
-    H5FDdsmDebug("Old Length: " << this->GetLength());
-    H5FDdsmDebug("Old Total Length: " << this->GetTotalLength());
-  }
-  this->MaskLength = dsmInfo.length;
-  this->Length -= (this->MaskLength - H5FD_DSM_ALIGNMENT);
-  this->TotalLength = this->Length * (this->EndServerId - this->StartServerId + 1);
-  if (this->Comm->GetId() == 0) {
-    H5FDdsmDebug("Mask Length received: " << this->GetMaskLength());
-    H5FDdsmDebug("New Length: " << this->GetLength());
-    H5FDdsmDebug("New Total Length: " << this->GetTotalLength());
-  }
-
-  return(H5FD_DSM_SUCCESS);
-}
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmDriver::SendData(H5FDdsmInt32 Dest, H5FDdsmPointer Data,
-    H5FDdsmInt32 aLength, H5FDdsmInt32 Tag, H5FDdsmAddr aAddress)
-{
-  H5FDdsmMsg Msg;
-
-  Msg.SetSource(this->Comm->GetId());
-  Msg.SetDest(Dest);
-  Msg.SetLength(aLength);
-  Msg.SetTag(Tag);
-  Msg.SetAddress(aAddress);
-  Msg.SetData(Data);
-  if (this->Comm->GetUseOneSidedComm()) {
-    return(this->Comm->Put(&Msg));
-  }
-  else {
-    return(this->Comm->Send(&Msg));
-  }
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmDriver::ReceiveData(H5FDdsmInt32 Source, H5FDdsmPointer Data,
-    H5FDdsmInt32 aLength, H5FDdsmInt32 Tag, H5FDdsmAddr aAddress)
-{
-  H5FDdsmMsg Msg;
-
-  Msg.SetSource(Source);
-  Msg.SetLength(aLength);
-  Msg.SetTag(Tag);
-  Msg.SetAddress(aAddress);
-  Msg.SetData(Data);
-  if (this->Comm->GetUseOneSidedComm()) {
-    return(this->Comm->Get(&Msg));
-  }
-  else {
-    return(this->Comm->Receive(&Msg));
-  }
-}
+//--------------------------------------------------------------------------
+//--------------------------------------------------------------------------

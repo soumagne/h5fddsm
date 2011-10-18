@@ -161,20 +161,21 @@ void particleWriteDsm(
   H5FDdsmAddr metadataAddr = (H5FDdsmAddr) (dsmBuffer->GetTotalLength() - sizeof(H5FDdsmMetaData));
   H5FDdsmEntry entry;
   H5FDdsmBoolean dirty = 0, isSomeoneDirty = 0;
+  H5FDdsmBufferService *dsmBufferService = dynamic_cast<H5FDdsmBufferService*> (dsmBuffer);
 
   // Simulate open
-  if (!dsmBuffer->GetIsLocked() && dsmBuffer->GetIsConnected()) {
-    dsmBuffer->RequestLockAcquire();
+  if (!dsmBufferService->GetIsLocked() && dsmBufferService->GetIsConnected()) {
+    dsmBufferService->RequestLockAcquire();
   }
   // Simulate get of DSM metadata
-  if (dsmBuffer->Get(metadataAddr, sizeof(entry), &entry) != H5FD_DSM_SUCCESS) {
+  if (dsmBufferService->Get(metadataAddr, sizeof(entry), &entry) != H5FD_DSM_SUCCESS) {
     std::cerr << "DsmGetEntry failed" << std::endl;
     return;
   }
   dsmBuffer->GetComm()->Barrier();
 
   // Simulate write
-  if (dsmBuffer->Put(start*sizeof(H5FDdsmFloat64), N*C*sizeof(H5FDdsmFloat64), (void *) (*buf).Ddata) != H5FD_DSM_SUCCESS) {
+  if (dsmBufferService->Put(start*sizeof(H5FDdsmFloat64), N*C*sizeof(H5FDdsmFloat64), (void *) (*buf).Ddata) != H5FD_DSM_SUCCESS) {
     std::cerr << "can't write to DSM" << std::endl;
     return;
   }
@@ -182,7 +183,7 @@ void particleWriteDsm(
 
   // Simulate close
   if (dsmBuffer->GetComm()->GetId() == 0) {
-    if (dsmBuffer->Put(metadataAddr, sizeof(entry), &entry) != H5FD_DSM_SUCCESS) {
+    if (dsmBufferService->Put(metadataAddr, sizeof(entry), &entry) != H5FD_DSM_SUCCESS) {
       std::cerr << "DsmUpdateEntry failed" << std::endl;
       return;
     }
@@ -190,8 +191,8 @@ void particleWriteDsm(
   dsmBuffer->GetComm()->Barrier();
   MPI_Allreduce(&dirty, &isSomeoneDirty, sizeof(H5FDdsmBoolean),
       MPI_UNSIGNED_CHAR, MPI_MAX, dsmBuffer->GetComm()->GetIntraComm());
-  dsmBuffer->SetIsDataModified(H5FD_DSM_TRUE);
-  dsmBuffer->RequestNotification();
+  dsmBufferService->SetIsDataModified(H5FD_DSM_TRUE);
+  dsmBufferService->RequestNotification();
 }
 
 //----------------------------------------------------------------------------
@@ -349,6 +350,7 @@ void receiverInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *
   // we must therefore have MPI_THREAD_MULTIPLE
   //
   MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
+  // MPI_Init_thread(&argc, &argv, MPI_THREAD_SERIALIZED, &provided);
   MPI_Comm_rank(*comm, &rank);
   MPI_Comm_size(*comm, &size);
   //

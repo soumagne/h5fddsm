@@ -286,13 +286,14 @@ endmacro(set_fortran_link_options)
 # Specify project source files
 #-----------------------------------------------------------------------------
 set(H5FDdsmSources
-  src/H5FDdsm.cxx
+  src/H5FDdsm.c
+  src/H5FDdsmDriver.cxx
   src/H5FDdsmBuffer.cxx
+  src/H5FDdsmBufferService.cxx
   src/H5FDdsmComm.cxx
   src/H5FDdsmCommMpi.cxx
   src/H5FDdsmCommMpiRma.cxx
   src/H5FDdsmCommSocket.cxx
-  src/H5FDdsmDriver.cxx
   src/H5FDdsmIniFile.cxx
   src/H5FDdsmObject.cxx
   src/H5FDdsmMsg.cxx

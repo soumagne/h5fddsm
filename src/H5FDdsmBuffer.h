@@ -52,172 +52,140 @@
 #ifndef __H5FDdsmBuffer_h
 #define __H5FDdsmBuffer_h
 
-#include "H5FDdsmDriver.h"
+#include "H5FDdsmObject.h"
 
-#ifdef _WIN32
-  #include <windows.h>
-  #define H5FD_DSM_CONDVAR_MINVER _WIN32_WINNT_LONGHORN
-#else
-  #include <pthread.h>
-#endif
-
-#ifdef H5FD_DSM_HAVE_STEERING
-class H5FDdsmSteerer;
-#endif
+#define H5FD_DSM_OPCODE_DONE    0xFF
 
 //! Base comm object for Distributed Shared Memory implementation
 /*!
 */
-class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmDriver {
+
+struct H5FDdsmMsg;
+class  H5FDdsmComm;
+class  H5FDdsmBuffer;
+class  H5FDdsmStorage;
+class  H5FDdsmAddressMapper;
+
+#define H5FD_DSM_TYPE_UNIFORM       0
+#define H5FD_DSM_TYPE_UNIFORM_RANGE 1
+#define H5FD_DSM_TYPE_MIXED         2
+#define H5FD_DSM_TYPE_BLOCK_CYCLIC  3
+#define H5FD_DSM_TYPE_BLOCK_RANDOM  4
+#define H5FD_DSM_TYPE_DYNAMIC_MASK  5
+
+#define H5FD_DSM_DEFAULT_LENGTH 10000
+#define H5FD_DSM_DEFAULT_BLOCK_LENGTH 1024
+#define H5FD_DSM_ALIGNMENT 4096
+
+typedef struct
+{
+  H5FDdsmAddr start;
+  H5FDdsmAddr end;
+} H5FDdsmEntry; // 16
+
+typedef struct
+{
+  H5FDdsmByte  object_names[64*16]; // TODO Size to be better handled
+  H5FDdsmInt32 number_of_objects;
+} H5FDdsmDisabledObjectEntries;
+
+typedef struct
+{
+  H5FDdsmEntry entry;
+  H5FDdsmByte  steering_cmd[40];
+  H5FDdsmDisabledObjectEntries disabled_objects;
+  H5FDdsmInt64 unused;
+} H5FDdsmMetaData;
+
+class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmObject {
 
   public:
     H5FDdsmBuffer();
     virtual ~H5FDdsmBuffer();
 
-    // Is the DSMBuffer auto allocated within the driver or not
-    H5FDdsmGetValueMacro(IsAutoAllocated, H5FDdsmBoolean);
-    H5FDdsmSetValueMacro(IsAutoAllocated, H5FDdsmBoolean);
+    // Type
+    H5FDdsmInt32 GetDsmType();
+    void SetDsmType(H5FDdsmInt32 DsmType);
 
-    // Is the DSMBuffer in server or client mode
-    H5FDdsmGetValueMacro(IsServer, H5FDdsmBoolean);
-    H5FDdsmSetValueMacro(IsServer, H5FDdsmBoolean);
+    // End Address
+    H5FDdsmGetValueMacro(EndAddress, H5FDdsmAddr);
 
-    // Is the DSMBuffer connected
-    H5FDdsmGetValueMacro(IsConnected, H5FDdsmBoolean);
-    H5FDdsmSetValueMacro(IsConnected, H5FDdsmBoolean);
-    H5FDdsmInt32 SignalConnection();
-    H5FDdsmInt32 WaitForConnection();
+    // Start Address
+    H5FDdsmGetValueMacro(StartAddress, H5FDdsmAddr);
 
-    // Is a DSM notification set
-    H5FDdsmGetValueMacro(IsNotified, H5FDdsmBoolean);
-    H5FDdsmSetValueMacro(IsNotified, H5FDdsmBoolean);
-    H5FDdsmInt32 SignalNotification();
-    H5FDdsmInt32 WaitForNotification();
+    // Start Id
+    H5FDdsmGetValueMacro(StartServerId, H5FDdsmInt32);
 
-    // Set/Get Notification
-    H5FDdsmGetValueMacro(Notification, H5FDdsmInt32);
-    H5FDdsmSetValueMacro(Notification, H5FDdsmInt32);
+    // End Id
+    H5FDdsmGetValueMacro(EndServerId, H5FDdsmInt32);
 
-    // Is the server automatically notified on H5Fclose or not
-    H5FDdsmGetValueMacro(NotificationOnClose, H5FDdsmBoolean);
-    H5FDdsmSetValueMacro(NotificationOnClose, H5FDdsmBoolean);
+    // Length
+    H5FDdsmGetValueMacro(Length, H5FDdsmUInt64);
 
-    // Has the data been modified
-    H5FDdsmGetValueMacro(IsDataModified, H5FDdsmBoolean);
-    H5FDdsmSetValueMacro(IsDataModified, H5FDdsmBoolean);
+    // TotalLength
+    H5FDdsmGetValueMacro(TotalLength, H5FDdsmUInt64);
 
-    // Is the DSM locked
-    H5FDdsmGetValueMacro(IsLocked, H5FDdsmBoolean);
-    H5FDdsmSetValueMacro(IsLocked, H5FDdsmBoolean);
+    // BlockLength
+    H5FDdsmGetValueMacro(BlockLength, H5FDdsmUInt64);
+    H5FDdsmSetValueMacro(BlockLength, H5FDdsmUInt64);
 
-    // Releases the lock automatically on H5Fclose or not
-    H5FDdsmGetValueMacro(ReleaseLockOnClose, H5FDdsmBoolean);
-    H5FDdsmSetValueMacro(ReleaseLockOnClose, H5FDdsmBoolean);
+    // MaskLength
+    H5FDdsmGetValueMacro(MaskLength, H5FDdsmUInt64);
+    H5FDdsmInt32 SetMaskLength(H5FDdsmUInt64 dataSize);
 
-    // Is the DSMBuffer open for Read Only operations
-    H5FDdsmGetValueMacro(IsReadOnly, H5FDdsmBoolean);
-    H5FDdsmSetValueMacro(IsReadOnly, H5FDdsmBoolean);
+    // Storage
+    H5FDdsmGetValueMacro(Storage, H5FDdsmStorage *);
+    H5FDdsmInt32   SetStorage(H5FDdsmStorage *Storage);
+    H5FDdsmInt32   ClearStorage();
 
-    // Is synchronization required
-    H5FDdsmGetValueMacro(IsSyncRequired, H5FDdsmBoolean);
-    H5FDdsmSetValueMacro(IsSyncRequired, H5FDdsmBoolean);
+    // Comm
+    H5FDdsmGetValueMacro(Comm, H5FDdsmComm *);
+    H5FDdsmSetValueMacro(Comm, H5FDdsmComm *);
 
-    // Debug: add ability to send xml string
-    H5FDdsmGetStringMacro(XMLDescription);
-    H5FDdsmSetStringMacro(XMLDescription);
+    // Configure the system. Set the Comm and ServerIds
+    H5FDdsmInt32   ConfigureUniform(H5FDdsmComm *Comm, H5FDdsmUInt64 Length, H5FDdsmInt32 StartId=-1, H5FDdsmInt32 EndId=-1, 
+      H5FDdsmUInt64 aBlockLength=0, H5FDdsmBoolean random=H5FD_DSM_FALSE);
 
-    void *         ServiceThread();
-    void *         RemoteServiceThread();
+    H5FDdsmInt32   ProbeCommandHeader(H5FDdsmInt32 *Source);
+    H5FDdsmInt32   SendCommandHeader(H5FDdsmInt32 Opcode, H5FDdsmInt32 Dest, H5FDdsmAddr Address, H5FDdsmInt32 Length);
+    H5FDdsmInt32   ReceiveCommandHeader(H5FDdsmInt32 *Opcode, H5FDdsmInt32 *Source, H5FDdsmAddr *Address, H5FDdsmInt32 *Length, H5FDdsmInt32 IsRemoteService=0, H5FDdsmInt32 RemoteSource=-1);
 
-    H5FDdsmInt32   ServiceLoop(H5FDdsmInt32 *ReturnOpcode=0);
-    H5FDdsmInt32   Service(H5FDdsmInt32 *ReturnOpcode=0);
-    H5FDdsmInt32   StartService();
-    H5FDdsmInt32   EndService();
+    // Send/Recv Methods for point-to-point exchange of DSM information between
+    // two different jobs/applications
+    H5FDdsmInt32   SendInfo();
+    H5FDdsmInt32   ReceiveInfo();
 
-    H5FDdsmInt32   RemoteService(H5FDdsmInt32 *ReturnOpcode=0);
-    H5FDdsmInt32   StartRemoteService();
-    H5FDdsmInt32   EndRemoteService();
+    // Send/Recv Mask length (used with H5FD_DSM_TYPE_DYNAMIC_MASK)
+    H5FDdsmInt32   SendMaskLength();
+    H5FDdsmInt32   ReceiveMaskLength();
 
-    H5FDdsmInt32   Put(H5FDdsmAddr Address, H5FDdsmUInt64 Length, H5FDdsmPointer Data);
-    H5FDdsmInt32   Get(H5FDdsmAddr Address, H5FDdsmUInt64 Length, H5FDdsmPointer Data);
+    // Send/Recv Methods for point-to-point comm
+    H5FDdsmInt32   SendData(H5FDdsmInt32 Dest,H5FDdsmPointer Data, H5FDdsmInt32 Length, H5FDdsmInt32 Tag, H5FDdsmAddr Address=0);
+    H5FDdsmInt32   ReceiveData(H5FDdsmInt32 Source, H5FDdsmPointer Data, H5FDdsmInt32 Length, H5FDdsmInt32 Tag, H5FDdsmAddr Address=0);
 
-    H5FDdsmInt32   RequestLockAcquire();
-    H5FDdsmInt32   RequestLockRelease();
-
-    H5FDdsmInt32   RequestAccept();
-    H5FDdsmInt32   RequestDisconnect();
-
-    H5FDdsmInt32   RequestNotification();
-
-    H5FDdsmInt32   RequestClearStorage();
-    H5FDdsmInt32   RequestXMLExchange();
-
-#ifdef H5FD_DSM_HAVE_STEERING
-    H5FDdsmSteerer *GetSteerer() { return(Steerer); }
-#endif
+    H5FDdsmInt32   SendDone();
 
   protected:
-    H5FDdsmBoolean          IsAutoAllocated;
-    H5FDdsmBoolean          IsServer;
+    H5FDdsmInt32   SetLength(H5FDdsmUInt64 Length, H5FDdsmBoolean AllowAllocate=1);
 
-    H5FDdsmBoolean          IsConnecting;
-    H5FDdsmBoolean          IsConnected;
-#ifdef _WIN32
-#if (WINVER < H5FD_DSM_CONDVAR_MINVER)
-    HANDLE                  ConnectionEvent;
-#else
-    CRITICAL_SECTION        ConnectionCritSection;
-    CONDITION_VARIABLE      ConnectionCond;
-#endif
-#else
-    pthread_mutex_t         ConnectionMutex;
-    pthread_cond_t          ConnectionCond;
-#endif
+    H5FDdsmAddr     EndAddress;
+    H5FDdsmAddr     StartAddress;
 
-    H5FDdsmBoolean          IsNotified;
-#ifdef _WIN32
-#if (WINVER < H5FD_DSM_CONDVAR_MINVER)
-    HANDLE                  NotificationEvent;
-#else
-    CRITICAL_SECTION        NotificationCritSection;
-    CONDITION_VARIABLE      NotificationCond;
-#endif
-#else
-    pthread_mutex_t         NotificationMutex;
-    pthread_cond_t          NotificationCond;
-#endif
+    H5FDdsmInt32    StartServerId;
+    H5FDdsmInt32    EndServerId;
 
-    H5FDdsmInt32            Notification;
-    H5FDdsmBoolean          NotificationOnClose;
-    H5FDdsmBoolean          IsDataModified;
+    H5FDdsmUInt64   Length;
+    H5FDdsmUInt64   TotalLength;
+    H5FDdsmUInt64   BlockLength;
+    H5FDdsmUInt64   MaskLength;
 
-    H5FDdsmBoolean          IsLocked;
-#ifdef _WIN32
-    HANDLE                  Lock;
-#else
-    pthread_mutex_t         Lock;
-#endif
-    H5FDdsmBoolean          ReleaseLockOnClose;
-    H5FDdsmBoolean          IsReadOnly;
-    H5FDdsmBoolean          IsSyncRequired;
+    H5FDdsmStorage *Storage;
 
-    H5FDdsmString           XMLDescription;
+    H5FDdsmComm    *Comm;
 
-#ifdef H5FD_DSM_HAVE_STEERING
-    H5FDdsmSteerer         *Steerer;
-#endif
+    H5FDdsmByte    *DataPointer;
 
-    H5FDdsmBoolean          ThreadDsmReady;
-    H5FDdsmBoolean          ThreadRemoteDsmReady;
-#ifdef _WIN32
-    DWORD                   ServiceThreadPtr;
-    HANDLE                  ServiceThreadHandle;
-    DWORD                   RemoteServiceThreadPtr;
-    HANDLE                  RemoteServiceThreadHandle;
-#else
-    pthread_t               ServiceThreadPtr;
-    pthread_t               RemoteServiceThreadPtr;
-#endif
+    H5FDdsmAddressMapper *AddressMapper;
 };
 
 #endif // __H5FDdsmBuffer_h

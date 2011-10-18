@@ -31,7 +31,7 @@
 #include <vector>
 
 struct H5FDdsmMsg;
-class  H5FDdsmDriver;
+class  H5FDdsmBuffer;
 
 class H5FDdsm_EXPORT AddressMapperStrategy : public H5FDdsmObject {
   public:
@@ -57,7 +57,7 @@ class H5FDdsm_EXPORT H5FDdsmAddressMapper : public H5FDdsmObject {
 
 public:
   H5FDdsmAddressMapper();
-  H5FDdsmAddressMapper(H5FDdsmDriver *dsmDriver);
+  H5FDdsmAddressMapper(H5FDdsmBuffer *dsmDriver);
   ~H5FDdsmAddressMapper();
 
   // Description:
@@ -68,8 +68,8 @@ public:
 
   // Description:
   // Get/Set DSM driver object
-  H5FDdsmSetValueMacro(DsmDriver, H5FDdsmDriver*);
-  H5FDdsmGetValueMacro(DsmDriver, H5FDdsmDriver*);
+  H5FDdsmSetValueMacro(DsmBuffer, H5FDdsmBuffer*);
+  H5FDdsmGetValueMacro(DsmBuffer, H5FDdsmBuffer*);
 
   // Description:
   // A Single access of length L, might actually straddle one or more
@@ -87,7 +87,7 @@ public:
 
 protected:
   H5FDdsmInt32           DsmType;
-  H5FDdsmDriver         *DsmDriver;
+  H5FDdsmBuffer         *DsmBuffer;
   AddressMapperStrategy *AddressingStrategy;
 };
 

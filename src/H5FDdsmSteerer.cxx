@@ -24,7 +24,7 @@
 =========================================================================*/
 
 #include "H5FDdsmSteerer.h"
-#include "H5FDdsmBuffer.h"
+#include "H5FDdsmBufferService.h"
 #include "H5FDdsmComm.h"
 #include "H5FDdsmCommMpi.h"
 #include "H5FDdsmCommSocket.h"
@@ -48,7 +48,7 @@ H5FDdsmSteerer::H5FDdsmSteerer()
 }
 
 //----------------------------------------------------------------------------
-H5FDdsmSteerer::H5FDdsmSteerer(H5FDdsmBuffer *buffer)
+H5FDdsmSteerer::H5FDdsmSteerer(H5FDdsmBufferService *buffer)
 {
   this->WriteToDSM                = 1;
   this->CurrentCommand            = NULL;
@@ -247,7 +247,7 @@ H5FDdsmInt32 H5FDdsmSteerer::BeginInteractionsCache(unsigned int mode)
   this->BeginHideHDF5Errors();
   //
   this->Cache_fapl = H5Pcreate(H5P_FILE_ACCESS);
-  H5Pset_fapl_dsm(this->Cache_fapl, MPI_COMM_WORLD, this->DsmBuffer);
+//  H5Pset_fapl_dsm(this->Cache_fapl, MPI_COMM_WORLD, this->DsmBuffer);
   this->Cache_fileId = H5Fopen("dsm", mode, this->Cache_fapl);
   if (this->Cache_fileId < 0) {
     if (this->Cache_fapl) H5Pclose(this->Cache_fapl);

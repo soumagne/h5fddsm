@@ -29,7 +29,7 @@
 #ifndef __H5FDdsmManager_h
 #define __H5FDdsmManager_h
 
-#include "H5FDdsmBuffer.h"
+#include "H5FDdsmBufferService.h"
 #include "H5FDdsmComm.h"
 
 struct H5FDdsmManagerInternals;
@@ -52,7 +52,7 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
 
     // Description:
     // Get the DSM buffer used by this DSM manager
-    H5FDdsmGetValueMacro(DsmBuffer, H5FDdsmBuffer*);
+    H5FDdsmGetValueMacro(DsmBuffer, H5FDdsmBufferService*);
 
     // Description:
     // Set/Get the size of the buffer to be reserved on this process
@@ -229,7 +229,7 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     H5FDdsmUInt32   LocalBufferSizeMBytes;
 
     static MPI_Comm MpiComm;
-    H5FDdsmBuffer  *DsmBuffer;
+    H5FDdsmBufferService *DsmBuffer;
     H5FDdsmComm    *DsmComm;
     //
     H5FDdsmBoolean  IsServer;

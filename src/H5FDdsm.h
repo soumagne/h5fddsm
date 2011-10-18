@@ -82,11 +82,6 @@
 #define H5FD_DSM (H5FD_dsm_init())
 
 /*
- * Default memory allocation block size
- */
-#define H5FD_DSM_INCREMENT 1000000
-
-/*
  * Specific DSM operating modes:
  * - H5FD_DSM_DONT_RELEASE prevents the DSM to automatically release the file on a close
  * - H5FD_DSM_DONT_NOTIFY prevents the DSM server to be automatically notified on a close
@@ -138,7 +133,7 @@ extern "C" {
    *   - H5FD_DSM_DONT_RELEASE
    *   - H5FD_DSM_DONT_NOTIFY
    */
-  H5FDdsm_EXPORT herr_t H5FD_dsm_set_options(unsigned long flags, void *dsmBuffer);
+  H5FDdsm_EXPORT herr_t H5FD_dsm_set_options(unsigned long flags);
 
   /* Description:
    * Send a notification to the DSM host.
@@ -146,19 +141,23 @@ extern "C" {
    *   - H5FD_DSM_NEW_DATA
    *   - H5FD_DSM_NEW_INFORMATION
    */
-  H5FDdsm_EXPORT herr_t H5FD_dsm_notify(unsigned long flags, void *dsmBuffer);
+  H5FDdsm_EXPORT herr_t H5FD_dsm_notify(unsigned long flags);
 
   /* Description:
    * Modify the file access property list to use the H5FDdsm driver defined
    * in this source file.
-   * dsmBuffer must be NULL or a pointer to an H5FDdsmBuffer object.
+   * If local_buf_ptr is NULL, the local memory buffer will be automatically
+   * allocated or (C++ only) be used from an existing H5FDdsmBuffer object
+   * using H5FD_dsm_set_buffer().
    */
-  H5FDdsm_EXPORT herr_t H5Pset_fapl_dsm(hid_t fapl_id, MPI_Comm  dsmComm, void  *dsmBuffer);
+  H5FDdsm_EXPORT herr_t H5Pset_fapl_dsm(hid_t fapl_id, MPI_Comm comm,
+      void  *local_buf_ptr, size_t local_buf_len);
 
   /* Description:
-   * Queries properties set by the H5Pset_fapl_dsm() function.
+   * Query properties set by the H5Pset_fapl_dsm() function.
    */
-  H5FDdsm_EXPORT herr_t H5Pget_fapl_dsm(hid_t fapl_id, MPI_Comm *dsmComm, void **dsmBuffer);
+  H5FDdsm_EXPORT herr_t H5Pget_fapl_dsm(hid_t fapl_id, MPI_Comm *comm /* out */,
+      void **local_buf_ptr_ptr /* out */, size_t *local_buf_len_ptr /* out */);
 
 #ifdef __cplusplus
 }
