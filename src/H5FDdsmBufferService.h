@@ -114,10 +114,6 @@ class H5FDdsm_EXPORT H5FDdsmBufferService : public H5FDdsmBuffer {
     H5FDdsmGetValueMacro(ReleaseLockOnClose, H5FDdsmBoolean);
     H5FDdsmSetValueMacro(ReleaseLockOnClose, H5FDdsmBoolean);
 
-    // Is the DSMBuffer open for Read Only operations
-    H5FDdsmGetValueMacro(IsReadOnly, H5FDdsmBoolean);
-    H5FDdsmSetValueMacro(IsReadOnly, H5FDdsmBoolean);
-
     // Is synchronization required
     H5FDdsmGetValueMacro(IsSyncRequired, H5FDdsmBoolean);
     H5FDdsmSetValueMacro(IsSyncRequired, H5FDdsmBoolean);
@@ -198,7 +194,6 @@ class H5FDdsm_EXPORT H5FDdsmBufferService : public H5FDdsmBuffer {
     pthread_mutex_t         Lock;
 #endif
     H5FDdsmBoolean          ReleaseLockOnClose;
-    H5FDdsmBoolean          IsReadOnly;
     H5FDdsmBoolean          IsSyncRequired;
 
     H5FDdsmString           XMLDescription;

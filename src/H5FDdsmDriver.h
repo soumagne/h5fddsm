@@ -33,23 +33,32 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+  H5FDdsm_EXPORT hbool_t DsmIsServer();
+  H5FDdsm_EXPORT herr_t  DsmSetOptions(unsigned long flags);
 
-  // This H5FDdsmManager is used only when no DsmBuffer
-  // is passed to set_fapl_dsm function
-  static void *dsmManagerSingleton = NULL;
+  H5FDdsm_EXPORT void   *DsmGetManager();
+  H5FDdsm_EXPORT herr_t  DsmSetManager(void *manager);
 
-//  H5FDdsm_EXPORT herr_t DsmUpdateEntry(H5FD_dsm_t *file);
-//  H5FDdsm_EXPORT herr_t DsmGetEntry(H5FD_dsm_t *file);
-  H5FDdsm_EXPORT herr_t DsmAutoAlloc(MPI_Comm comm);
-  H5FDdsm_EXPORT herr_t DsmAutoDealloc();
-  H5FDdsm_EXPORT void *DsmGetAutoAllocatedBuffer();
-  H5FDdsm_EXPORT void *DsmGetAutoAllocatedManager();
-  H5FDdsm_EXPORT herr_t DsmBufferConnect(void *dsmBuffer);
+  H5FDdsm_EXPORT herr_t  DsmAutoAlloc(MPI_Comm comm, MPI_Comm *intra_comm,
+      void **buf_ptr_ptr, size_t *buf_len_ptr);
+  H5FDdsm_EXPORT herr_t  DsmAutoDealloc();
+  H5FDdsm_EXPORT herr_t  DsmGetBuffer(MPI_Comm *intra_comm, void **buf_ptr_ptr,
+      size_t *buf_len_ptr);
 
-  H5FDdsm_EXPORT herr_t DsmSetOptions(unsigned long flags);
-  H5FDdsm_EXPORT herr_t DsmNotify(unsigned long flags);
+  H5FDdsm_EXPORT herr_t  DsmConnect();
+  H5FDdsm_EXPORT hbool_t DsmIsConnected();
 
+  H5FDdsm_EXPORT herr_t  DsmUpdateEntry(haddr_t start, haddr_t end);
+  H5FDdsm_EXPORT herr_t  DsmGetEntry(haddr_t *start_ptr, haddr_t *end_ptr);
 
+  H5FDdsm_EXPORT herr_t  DsmLock();
+  H5FDdsm_EXPORT herr_t  DsmUnlock();
+
+  H5FDdsm_EXPORT herr_t  DsmRead(haddr_t addr, size_t len, void *buf_ptr);
+  H5FDdsm_EXPORT herr_t  DsmWrite(haddr_t addr, size_t len, const void *buf_ptr);
+
+  H5FDdsm_EXPORT herr_t  DsmSetModified();
+  H5FDdsm_EXPORT herr_t  DsmNotify(unsigned long flags);
 #ifdef __cplusplus
 }
 #endif

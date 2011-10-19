@@ -173,7 +173,6 @@ H5FDdsmBufferService::H5FDdsmBufferService()
 #endif
 
   this->ReleaseLockOnClose  = H5FD_DSM_TRUE;
-  this->IsReadOnly          = H5FD_DSM_TRUE;
   this->IsSyncRequired      = H5FD_DSM_TRUE;
 
   this->XMLDescription      = NULL;

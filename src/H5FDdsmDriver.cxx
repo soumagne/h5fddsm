@@ -27,11 +27,15 @@
 #include "H5FDdsmManager.h"
 //
 #include "H5Eprivate.h" // Error handling
+//
 // H5private.h defines attribute, but we don't want it as it causes link errors
 // on some gcc versions
 #ifdef __GNUC__
 # undef __attribute__
 #endif
+
+// pointer to internal DSM manager reference
+H5FDdsmManager *dsmManager = NULL;
 
 #define DSM_DRIVER_GOTO_ERROR(x, ret_val)                                  \
 {                                                                          \
@@ -42,13 +46,46 @@
 
 // #define H5FD_DSM_DEBUG
 #ifdef H5FD_DSM_DEBUG
-#  define PRINT_INFO(x) std::cout << "(" << file->DsmBuffer->GetComm()->GetId() << ") " << x << std::endl;
-#  define PRINT_DSM_INFO(a,x) std::cout << "(" << a << ") " << x << std::endl;
+#  define PRINT_DSM_DRIVER_INFO(a,x) std::cout << "(" << a << ") " << x << std::endl;
 #else
-#  define PRINT_INFO(x)
-#  define PRINT_DSM_INFO(a,x)
+#  define PRINT_DSM_DRIVER_INFO(a,x)
 #endif
 
+//--------------------------------------------------------------------------
+herr_t
+DsmLock()
+{
+  herr_t ret_value = SUCCEED;
+  H5FDdsmBufferService *dsmBufferService;
+  FUNC_ENTER_NOAPI(DsmNotify, FAIL)
+
+  if (dsmManagerSingleton) {
+    dsmBufferService = dsmManagerSingleton->GetDsmBuffer();
+  } else {
+    DSM_DRIVER_GOTO_ERROR("No DSM buffer found", FAIL);
+  }
+
+  if (!dsmBufferService->GetIsLocked()) dsmBufferService->RequestLockAcquire();
+
+done:
+    FUNC_LEAVE_NOAPI(ret_value);
+}
+
+//--------------------------------------------------------------------------
+herr_t
+DsmUnlock()
+{
+  herr_t ret_value = SUCCEED;
+  H5FDdsmBufferService *dsmBufferService;
+  FUNC_ENTER_NOAPI(DsmNotify, FAIL)
+
+  if (file->DsmBuffer->GetReleaseLockOnClose() && file->DsmBuffer->GetIsLocked()) {
+    file->DsmBuffer->RequestLockRelease();
+  }
+
+done:
+    FUNC_LEAVE_NOAPI(ret_value);
+}
 //--------------------------------------------------------------------------
 herr_t
 DsmUpdateEntry(H5FD_dsm_t *file)
@@ -60,8 +97,8 @@ DsmUpdateEntry(H5FD_dsm_t *file)
 
   if (!file->DsmBuffer) return (H5FD_DSM_FAIL);
 
-  file->end = MAX((file->start + file->eof), file->end);
-  file->eof = file->end - file->start;
+//  file->end = MAX((file->start + file->eof), file->end);
+//  file->eof = file->end - file->start;
 
   if (!file->DsmBuffer->GetIsReadOnly()) {
     entry.start = file->start;
@@ -86,7 +123,7 @@ DsmUpdateEntry(H5FD_dsm_t *file)
 
 //--------------------------------------------------------------------------
 herr_t
-DsmGetEntry(H5FD_dsm_t *file)
+DsmGetEntry(haddr_t *start_ptr, haddr_t *end_ptr)
 {
   H5FDdsmAddr  addr;
   H5FDdsmEntry entry;
@@ -104,8 +141,8 @@ DsmGetEntry(H5FD_dsm_t *file)
     return H5FD_DSM_FAIL;
   }
 
-  file->start = entry.start;
-  file->end = entry.end;
+  *start_ptr = entry.start;
+  *end_ptr = entry.end;
 
   PRINT_INFO("DsmGetEntry start " <<
       file->start <<
@@ -256,5 +293,23 @@ DsmNotify(unsigned long flags)
 done:
     FUNC_LEAVE_NOAPI(ret_value);
 }
+
 //--------------------------------------------------------------------------
+herr_t
+DsmSetModified()
+{
+  herr_t ret_value = SUCCEED;
+  H5FDdsmBufferService *dsmBufferService;
+  FUNC_ENTER_NOAPI(DsmNotify, FAIL)
+//file->DsmBuffer->SetIsDataModified(H5FD_DSM_TRUE);
+//if (file->DsmBuffer->GetNotificationOnClose()) {
+//  if (!file->DsmBuffer->GetIsServer()) {
+//    H5FD_dsm_notify(H5FD_DSM_NEW_DATA, file->DsmBuffer);
+//  } else {
+//    file->DsmBuffer->SignalNotification();
+//  }
+//}
+  done:
+      FUNC_LEAVE_NOAPI(ret_value);
+}
 //--------------------------------------------------------------------------

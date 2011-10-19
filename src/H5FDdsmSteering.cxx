@@ -51,7 +51,7 @@ extern H5FDdsmManager* DsmGetAutoAllocatedManager();
 //----------------------------------------------------------------------------
 // C steering bindings
 
-H5FDdsmBuffer *dsm_buffer = NULL; // pointer to internal dsm buffer reference
+H5FDdsmBuffer *dsm_buffer = NULL; // pointer to internal DSM buffer reference
 
 //----------------------------------------------------------------------------
 // Function:    H5FD_dsm_steering_init

@@ -52,11 +52,7 @@
 
 #define H5_INTERFACE_INIT_FUNC  H5FD_dsm_init_interface
 
-#include "mpi.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <mpi.h>
 
 #include "H5private.h"    /* Generic Functions      */
 #include "H5ACprivate.h"  /* Metadata cache         */
@@ -68,11 +64,7 @@ extern "C" {
 #include "H5Iprivate.h"   /* IDs                    */
 #include "H5Pprivate.h"   /* Property lists         */
 
-#include "H5FDmpio.h"
-
-#ifdef __cplusplus
-}
-#endif
+/* #include "H5FDmpio.h" */
 
 /*
  * H5private.h defines attribute, but we don't want it
@@ -95,19 +87,17 @@ extern "C" {
   #endif
 #endif
 
-
 #include "H5FDdsmDriver.h"
 
 #ifdef H5_HAVE_PARALLEL
 
 #undef MAX
-#define MAX(X,Y)  ((X)>(Y)?(X):(Y))
+#define MAX(X,Y)  ((X) > (Y) ? (X) : (Y))
 #undef MIN
-#define MIN(X,Y)  ((X)<(Y)?(X):(Y))
+#define MIN(X,Y)  ((X) < (Y) ? (X) : (Y))
 
 /* The driver identification number, initialized at runtime */
 static hid_t H5FD_DSM_g = 0;
-
 
 /*
  * The description of a file belonging to this driver. The `eoa' and `eof'
@@ -116,26 +106,27 @@ static hid_t H5FD_DSM_g = 0;
  */
 typedef struct H5FD_dsm_t
 {
-  H5FD_t pub;         /* public stuff, must be first */
-  char *name;         /* for equivalence testing     */
-  void *dsm_buffer;   /* underlying DSM buffer       */
-//  H5FDdsmBufferService *DsmBuffer;
-  MPI_Comm  comm;     /* communicator                */
-  int       mpi_rank; /* this process's rank         */
-  int       mpi_size; /* total number of processes   */
-  haddr_t eoa;        /* end of address marker       */
-  haddr_t eof;        /* end of file marker          */
-  haddr_t start;      /* current DSM start address   */
-  haddr_t end;        /* current DSM end address     */
-  hbool_t dirty;      /* dirty marker                */
+  H5FD_t pub;           /* public stuff, must be first             */
+  char *name;           /* for equivalence testing                 */
+  MPI_Comm intra_comm;  /* intra-communicator                      */
+  int intra_rank;       /* this process's rank in intra_comm       */
+  int intra_size;       /* total number of processes in intra_comm */
+  void *local_buf_ptr;  /* underlying local DSM buffer             */
+  size_t local_buf_len; /* local DSM buffer length                 */
+  haddr_t eoa;          /* end of address marker                   */
+  haddr_t eof;          /* end of file marker                      */
+  haddr_t start;        /* current DSM start address               */
+  haddr_t end;          /* current DSM end address                 */
+  hbool_t read_only;    /* file access is read-only                */
+  hbool_t dirty;        /* dirty marker                            */
 } H5FD_dsm_t;
 
 /* Driver-specific file access properties */
 typedef struct H5FD_dsm_fapl_t
 {
-  MPI_Comm  comm;     /* communicator                */
-  void  *buf_ptr;     /* local buffer pointer        */
-  size_t buf_len;     /* local buffer length         */
+  MPI_Comm intra_comm;      /* intra-communicator          */
+  void  *local_buf_ptr;     /* local buffer pointer        */
+  size_t local_buf_len;     /* local buffer length         */
 } H5FD_dsm_fapl_t;
 
 
@@ -161,24 +152,24 @@ typedef struct H5FD_dsm_fapl_t
                                  (size_t)((A)+(Z))<(size_t)(A))
 
 /* Private Prototypes */
-
-/* Callbacks */
 static void    *H5FD_dsm_fapl_get(H5FD_t *_file);
-static H5FD_t  *H5FD_dsm_open(const char *name, unsigned flags, hid_t fapl_id, haddr_t maxaddr);
+static void    *H5FD_dsm_fapl_copy(const void *_old_fa);
+static herr_t   H5FD_dsm_fapl_free(void *_fa);
+static H5FD_t  *H5FD_dsm_open(const char *name, unsigned flags, hid_t fapl_id,
+    haddr_t maxaddr);
 static herr_t   H5FD_dsm_close(H5FD_t *_file);
-static int      H5FD_dsm_cmp(const H5FD_t *_f1, const H5FD_t *_f2);
+static herr_t   H5FD_dsm_query(const H5FD_t *_f1, unsigned long *flags);
 static haddr_t  H5FD_dsm_get_eoa(const H5FD_t *_file, H5FD_mem_t type);
 static herr_t   H5FD_dsm_set_eoa(H5FD_t *_file, H5FD_mem_t type, haddr_t addr);
 static haddr_t  H5FD_dsm_get_eof(const H5FD_t *_file);
-static herr_t   H5FD_dsm_read(H5FD_t *_file, H5FD_mem_t type, hid_t fapl_id, haddr_t addr, size_t size, void *buf);
-static herr_t   H5FD_dsm_write(H5FD_t *_file, H5FD_mem_t type, hid_t fapl_id, haddr_t addr, size_t size, const void *buf);
+static herr_t   H5FD_dsm_read(H5FD_t *_file, H5FD_mem_t type, hid_t fapl_id,
+    haddr_t addr, size_t size, void *buf);
+static herr_t   H5FD_dsm_write(H5FD_t *_file, H5FD_mem_t type, hid_t fapl_id,
+    haddr_t addr, size_t size, const void *buf);
 static herr_t   H5FD_dsm_flush(H5FD_t *_file, hid_t dxpl_id, unsigned closing);
-
-// MPI specific ones
 static int      H5FD_dsm_mpi_rank(const H5FD_t *_file);
 static int      H5FD_dsm_mpi_size(const H5FD_t *_file);
 static MPI_Comm H5FD_dsm_communicator(const H5FD_t *_file);
-
 
 /* The DSM file driver information */
 static const H5FD_class_mpi_t H5FD_dsm_g = {
@@ -194,14 +185,14 @@ static const H5FD_class_mpi_t H5FD_dsm_g = {
         NULL,                                   /* sb_decode            */
         sizeof(H5FD_dsm_fapl_t),                /* fapl_size            */
         H5FD_dsm_fapl_get,                      /* fapl_get             */
-        NULL,                                   /* fapl_copy            */
-        NULL,                                   /* fapl_free            */
+        H5FD_dsm_fapl_copy,                     /* fapl_copy            */
+        H5FD_dsm_fapl_free,                     /* fapl_free            */
         0,                                      /* dxpl_size            */
         NULL,                                   /* dxpl_copy            */
         NULL,                                   /* dxpl_free            */
         H5FD_dsm_open,                          /* open                 */
         H5FD_dsm_close,                         /* close                */
-        H5FD_dsm_cmp,                           /* cmp                  */
+        NULL,                                   /* cmp                  */
         H5FD_dsm_query,                         /* query                */
         NULL,                                   /* get_type_map         */
         NULL,                                   /* alloc                */
@@ -227,16 +218,16 @@ static const H5FD_class_mpi_t H5FD_dsm_g = {
 };
 
 /*--------------------------------------------------------------------------
- NAME
- H5FD_dsm_init_interface -- Initialize interface-specific information
- USAGE
- herr_t H5FD_dsm_init_interface()
+NAME
+   H5FD_dsm_init_interface -- Initialize interface-specific information
+USAGE
+   herr_t H5FD_dsm_init_interface()
 
- RETURNS
- Non-negative on success/Negative on failure
- DESCRIPTION
- Initializes any interface-specific data or routines.  (Just calls
- H5FD_dsm_init currently).
+RETURNS
+   Non-negative on success/Negative on failure
+DESCRIPTION
+   Initializes any interface-specific data or routines.  (Just calls
+   H5FD_dsm_init currently).
 
  --------------------------------------------------------------------------*/
 static herr_t
@@ -245,17 +236,17 @@ H5FD_dsm_init_interface(void)
   FUNC_ENTER_NOAPI_NOINIT_NOFUNC(H5FD_dsm_init_interface)
 
   FUNC_LEAVE_NOAPI(H5FD_dsm_init());
-} /* H5FD_dsm_init_interface() */
+} /* end H5FD_dsm_init_interface() */
 
 /*-------------------------------------------------------------------------
- * Function:  H5FD_dsm_init
+ * Function:    H5FD_dsm_init
  *
- * Purpose:  Initialize this driver by registering the driver with the
- *           library.
+ * Purpose:     Initialize this driver by registering the driver with the
+ *              library.
  *
- * Return:   Success:  The driver ID for the dsm driver.
+ * Return:      Success:        The driver ID for the dsm driver.
  *
- *           Failure:  Negative.
+ *              Failure:        Negative.
  *
  *-------------------------------------------------------------------------
  */
@@ -277,15 +268,18 @@ done:
   if (err_occurred) {
     /* Nothing */
   }
+
   FUNC_LEAVE_NOAPI(ret_value);
-}
+} /* end H5FD_dsm_init() */
 
 /*-------------------------------------------------------------------------
- * Function:  H5FD_dsm_term
+ * Function:    H5FD_dsm_term
  *
- * Purpose:  Shut down the driver
+ * Purpose:     Shut down the driver
  *
- * Return:  <none>
+ * Return:      Success:        0
+ *
+ *              Failure:        -1
  *
  *-------------------------------------------------------------------------
  */
@@ -296,14 +290,12 @@ void
 #endif
 H5FD_dsm_term(void)
 {
-  int dsm_ret;
 #ifdef HDF_NEW_VFD
   herr_t ret_value = SUCCEED;
 #endif
   FUNC_ENTER_NOAPI_NOINIT_NOFUNC(H5FD_dsm_term)
 
-  dsm_ret = DsmAutoDealloc();
-  if (dsm_ret < 0) {
+  if (SUCCEED != DsmAutoDealloc()) {
 #ifdef HDF_NEW_VFD
     HGOTO_ERROR(H5E_VFL, H5E_CANTFREE, FAIL, "DsmAutoDealloc failed");
 #endif
@@ -321,11 +313,13 @@ done:
 } /* end H5FD_dsm_term() */
 
 /*-------------------------------------------------------------------------
- * Function:  H5FD_dsm_set_options
+ * Function:    H5FD_dsm_set_options
  *
- * Purpose:  Set a specific option to the DSM
+ * Purpose:     Set a specific option to the DSM
  *
- * Return:  <none>
+ * Return:      Success:        0
+ *
+ *              Failure:        -1
  *
  *-------------------------------------------------------------------------
  */
@@ -342,15 +336,18 @@ done:
   if (err_occurred) {
     /* Nothing */
   }
+
   FUNC_LEAVE_NOAPI(ret_value);
-}
+} /* end H5FD_dsm_set_options() */
 
 /*-------------------------------------------------------------------------
- * Function:  H5FD_dsm_notify
+ * Function:    H5FD_dsm_notify
  *
- * Purpose:  Send a notification to the DSM host
+ * Purpose:     Send a notification to the DSM host
  *
- * Return:  <none>
+ * Return:      Success:        0
+ *
+ *              Failure:        -1
  *
  *-------------------------------------------------------------------------
  */
@@ -367,24 +364,56 @@ done:
   if (err_occurred) {
     /* Nothing */
   }
+
   FUNC_LEAVE_NOAPI(ret_value);
-}
+} /* end H5FD_dsm_notify() */
 
 /*-------------------------------------------------------------------------
- * Function:  H5Pset_fapl_dsm
+ * Function:    H5FD_dsm_set_manager
  *
- * Purpose:  Modify the file access property list to use the H5FDdsm
- *    driver defined in this source file.
- *    If local_buf_ptr is NULL, the local memory buffer will be automatically
- *    allocated or (C++ only) be used from an existing H5FDdsmBuffer object
- *    using H5FD_dsm_set_buffer().
+ * Purpose:     (C++ only) Associate an existing DSM manager to the driver.
  *
- * Return:  Non-negative on success/Negative on failure
+ * Return:      Success:        0
+ *
+ *              Failure:        -1
  *
  *-------------------------------------------------------------------------
  */
 herr_t
-H5Pset_fapl_dsm(hid_t fapl_id, MPI_Comm comm, void  *local_buf_ptr, size_t local_buf_len)
+H5FD_dsm_set_manager(void *manager)
+{
+  herr_t ret_value = SUCCEED;
+
+  FUNC_ENTER_NOAPI(H5FD_dsm_set_manager, FAIL)
+
+  ret_value = DsmSetManager(manager);
+
+done:
+  if (err_occurred) {
+    /* Nothing */
+  }
+
+  FUNC_LEAVE_NOAPI(ret_value);
+} /* end H5FD_dsm_set_manager() */
+
+/*-------------------------------------------------------------------------
+ * Function:    H5Pset_fapl_dsm
+ *
+ * Purpose:     Modify the file access property list to use the H5FDdsm
+ *              driver defined in this source file.
+ *              If local_buf_ptr is NULL, the local memory buffer will be
+ *              automatically allocated or (C++ only) be used from an
+ *              existing H5FDdsmBuffer object using H5FD_dsm_set_buffer().
+ *
+ * Return:      Success:        Non-negative
+ *
+ *              Failure:        Negative
+ *
+ *-------------------------------------------------------------------------
+ */
+herr_t
+H5Pset_fapl_dsm(hid_t fapl_id, MPI_Comm intra_comm,
+    void *local_buf_ptr, size_t local_buf_len)
 {
   H5FD_dsm_fapl_t fa;
   herr_t ret_value = SUCCEED;
@@ -395,106 +424,111 @@ H5Pset_fapl_dsm(hid_t fapl_id, MPI_Comm comm, void  *local_buf_ptr, size_t local
   /* Check arguments */
   if (NULL == (plist = (H5P_genplist_t*) H5P_object_verify(fapl_id, H5P_FILE_ACCESS)))
     HGOTO_ERROR(H5E_ARGS, H5E_BADTYPE, FAIL, "not a file access property list");
-  if (MPI_COMM_NULL == comm)
-    HGOTO_ERROR(H5E_PLIST, H5E_BADTYPE, FAIL, "not a valid communicator")
+  if (MPI_COMM_NULL == intra_comm)
+    HGOTO_ERROR(H5E_PLIST, H5E_BADTYPE, FAIL, "not a valid communicator");
 
   if (local_buf_ptr) {
     if (0 == local_buf_len)
-      HGOTO_ERROR(H5E_ARGS, H5E_BADVALUE, FAIL, "invalid buffer length");
-    fa.buf_len = local_buf_len;
-    fa.buf_ptr = local_buf_ptr;
+      HGOTO_ERROR(H5E_PLIST, H5E_BADVALUE, FAIL, "not a valid buffer length");
+    fa.intra_comm = intra_comm;
+    fa.local_buf_ptr = local_buf_ptr;
+    fa.local_buf_len = local_buf_len;
     /* TODO Init using pre-allocated buffer */
-    /* DsmAlloc(comm, buf_ptr, buf_len); */
+    /* DsmAlloc(intra_comm, buf_ptr, buf_len); */
   } else {
-    if (!DsmBufferIsSet(&fa.buf_ptr, &fa.buf_len)) {
-      DsmAutoAlloc(comm, &fa.buf_ptr, &fa.buf_len);
+    if (SUCCEED != DsmGetBuffer(&fa.intra_comm, &fa.local_buf_ptr,
+        &fa.local_buf_len)) {
+      ret_value = DsmAutoAlloc(intra_comm, &fa.intra_comm, &fa.local_buf_ptr,
+          &fa.local_buf_len);
+      if (SUCCEED != ret_value)
+        HGOTO_ERROR(H5E_PLIST, H5E_CANTALLOC, FAIL, "cannot allocate DSM buffer");
     }
   }
 
-  if (!DsmBufferIsConnected() && !DsmBufferIsServer()) {
-    DsmBufferConnect();
+  if (!DsmIsConnected() && !DsmIsServer()) {
+    /* TODO we should decide what to do if we cannot connect */
+    DsmConnect();
   }
 
-  fa.comm = DsmBufferGetComm();
-//  if (dsmBuffer) {
-//    fa.buffer = static_cast <H5FDdsmBufferService*> (dsmBuffer);
-//    if (!fa.buffer->GetIsServer()) DsmBufferConnect(fa.buffer);
-//  }
-//  else {
-//    if (dsmManagerSingleton == NULL) DsmAutoAlloc(dsmComm);
-//    fa.buffer = dsmManagerSingleton->GetDsmBuffer();
-//    if (!dsmManagerSingleton->GetIsConnected()) {
-//      dsmManagerSingleton->Connect();
-//    }
-//  }
+  /* TODO Not sure if we should keep this junk
+#ifdef H5FD_DSM_HAVE_STEERING
+  if (!fa.buffer->GetSteerer()->GetWriteToDSM() ||
+      (!fa.buffer->GetIsConnected() && !fa.buffer->GetIsServer())) {
+    if (fa.buffer->GetSteerer()) fa.buffer->GetSteerer()->SetWriteToDSM(1);
+#else
+ if (!fa.buffer->GetIsConnected() && !fa.buffer->GetIsServer()) {
+#endif
+    PRINT_DSM_INFO(fa.buffer->GetComm()->GetId(), "Using MPIO driver");
+    H5Pset_fapl_mpio(fapl_id, dsmComm, MPI_INFO_NULL);
+    goto done;
+  }
+  */
 
-// TODO Not sure if we should keep this junk
-//#ifdef H5FD_DSM_HAVE_STEERING
-//  if (!fa.buffer->GetSteerer()->GetWriteToDSM() ||
-//      (!fa.buffer->GetIsConnected() && !fa.buffer->GetIsServer())) {
-//    // next time step will go back to the DSM if a steering asked for writing to the disk
-//    if (fa.buffer->GetSteerer()) fa.buffer->GetSteerer()->SetWriteToDSM(1);
-//#else
-// if (!fa.buffer->GetIsConnected() && !fa.buffer->GetIsServer()) {
-//#endif
-//    // When the set_fapl_dsm is called with a NULL dsmBuffer argument and no connection can be established
-//    // use automatically the MPIO driver
-//    PRINT_DSM_INFO(fa.buffer->GetComm()->GetId(), "Using MPIO driver");
-//    H5Pset_fapl_mpio(fapl_id, dsmComm, MPI_INFO_NULL);
-//    goto done;
-//  }
   /* duplication is done during driver setting */
   ret_value = H5P_set_driver(plist, H5FD_DSM, &fa);
 
-done: 
+done:
   FUNC_LEAVE_API(ret_value)
-}
+} /* end H5Pset_fapl_dsm() */
 
 /*-------------------------------------------------------------------------
- * Function:  H5Pget_fapl_dsm
+ * Function:    H5Pget_fapl_dsm
  *
- * Purpose:  Queries properties set by the H5Pset_fapl_dsm() function.
+ * Purpose:     Query properties set by the H5Pset_fapl_dsm() function.
  *
- * Return:  Success:  Non-negative
+ * Return:      Success:        Non-negative
  *
- *    Failure:  Negative
+ *              Failure:        Negative
  *
  *-------------------------------------------------------------------------
  */
 herr_t
-H5Pget_fapl_dsm(hid_t fapl_id, MPI_Comm *dsmComm /* out */, void **dsmBuffer /* out */)
+H5Pget_fapl_dsm(hid_t fapl_id, MPI_Comm *intra_comm /* out */,
+    void **local_buf_ptr_ptr /* out */, size_t *local_buf_len_ptr /* out */)
 {
   H5FD_dsm_fapl_t *fa;
-  H5P_genplist_t *plist; // Property list pointer
-  herr_t ret_value = SUCCEED; // Return value
+  MPI_Comm intra_comm_tmp = MPI_COMM_NULL;
+  H5P_genplist_t *plist; /* Property list pointer */
+  herr_t ret_value = SUCCEED;
+  int mpi_code;
 
   FUNC_ENTER_API(H5Pget_fapl_dsm, FAIL)
 
-  if (NULL == (plist = (H5P_genplist_t*) H5P_object_verify(fapl_id,
-      H5P_FILE_ACCESS)))
+  if (NULL == (plist = (H5P_genplist_t*) H5P_object_verify(fapl_id, H5P_FILE_ACCESS)))
     HGOTO_ERROR(H5E_ARGS, H5E_BADTYPE, FAIL, "not a file access property list");
   if (H5FD_DSM != H5P_get_driver(plist))
     HGOTO_ERROR(H5E_PLIST, H5E_BADVALUE, FAIL, "incorrect VFL driver");
   if (NULL == (fa = (H5FD_dsm_fapl_t*) H5P_get_driver_info(plist)))
     HGOTO_ERROR(H5E_PLIST, H5E_BADVALUE, FAIL, "bad VFL driver info");
 
-  if (dsmComm) {
-    *dsmComm = fa->buffer->GetComm()->GetIntraComm();
+  if (intra_comm) {
+    if (MPI_SUCCESS != (mpi_code = MPI_Comm_dup(fa->intra_comm, &intra_comm_tmp)))
+      HMPI_GOTO_ERROR(FAIL, "MPI_Comm_dup failed", mpi_code);
+    *intra_comm = intra_comm_tmp;
   }
-  if (dsmBuffer) *dsmBuffer = fa->buffer;
 
-done: 
+  if (local_buf_ptr_ptr) *local_buf_ptr_ptr = fa->local_buf_ptr;
+
+  if (local_buf_len_ptr) *local_buf_len_ptr = fa->local_buf_len;
+
+done:
+  if (FAIL == ret_value) {
+    /* need to free anything created here */
+    if (intra_comm_tmp != MPI_COMM_NULL)
+      MPI_Comm_free(&intra_comm_tmp);
+  }
+
   FUNC_LEAVE_API(ret_value)
-}
+} /* end H5Pget_fapl_dsm() */
 
 /*-------------------------------------------------------------------------
- * Function:  H5FD_dsm_fapl_get
+ * Function:    H5FD_dsm_fapl_get
  *
- * Purpose:  Returns a copy of the file access properties.
+ * Purpose:     Return a copy of the file access properties.
  *
- * Return:  Success:  Ptr to new file access properties.
+ * Return:      Success:        Ptr to a new property list
  *
- *    Failure:  NULL
+ *              Failure:        NULL
  *
  *-------------------------------------------------------------------------
  */
@@ -502,146 +536,238 @@ static void *
 H5FD_dsm_fapl_get(H5FD_t *_file)
 {
   H5FD_dsm_t *file = (H5FD_dsm_t*) _file;
-  H5FD_dsm_fapl_t *fa = (H5FD_dsm_fapl_t *) calloc(1, sizeof(H5FD_dsm_fapl_t));
-  void *ret_value = NULL; // Return value
+  H5FD_dsm_fapl_t *fa = NULL;
+  void *ret_value = NULL;
+  int mpi_code;
 
   FUNC_ENTER_NOAPI(H5FD_dsm_fapl_get, NULL)
 
-  PRINT_INFO("Fapl Get");
+  HDassert(file);
+  HDassert(H5FD_DSM == file->pub.driver_id);
 
-  if (NULL == (fa = (H5FD_dsm_fapl_t*) calloc((size_t)1, sizeof(H5FD_dsm_fapl_t))))
+  if (NULL == (fa = (H5FD_dsm_fapl_t *) calloc((size_t)1, sizeof(H5FD_dsm_fapl_t))))
     HGOTO_ERROR(H5E_RESOURCE, H5E_NOSPACE, NULL, "memory allocation failed");
 
-  fa->increment = file->increment;
-  fa->buffer = file->DsmBuffer;
+  /* Duplicate communicator. */
+  fa->intra_comm = MPI_COMM_NULL;
+  if (MPI_SUCCESS != (mpi_code = MPI_Comm_dup(file->intra_comm, &fa->intra_comm)))
+    HMPI_GOTO_ERROR(NULL, "MPI_Comm_dup failed", mpi_code);
 
-  // Set return value
+  fa->local_buf_ptr = file->local_buf_ptr;
+  fa->local_buf_len = file->local_buf_len;
+
+  /* Set return value */
   ret_value = fa;
 
-done: 
+done:
+  if ((NULL == ret_value) && err_occurred) {
+    /* need to free anything created here */
+    if (fa && (MPI_COMM_NULL != fa->intra_comm))
+      MPI_Comm_free(&fa->intra_comm);
+  }
+
   FUNC_LEAVE_NOAPI(ret_value)
-}
+} /* end H5FD_dsm_fapl_get() */
 
 /*-------------------------------------------------------------------------
- * Function:  H5FD_dsm_open
+ * Function:    H5FD_dsm_fapl_copy
  *
- * Purpose:  Create memory as an HDF5 file.
+ * Purpose:     Copy the dsm-specific file access properties.
  *
- * Return:  Success:  A pointer to a new file data structure. The
- *        public fields will be initialized by the
- *        caller, which is always H5FD_open().
+ * Return:      Success:        Ptr to a new property list
  *
- *    Failure:  NULL
+ *              Failure:        NULL
+ *
+ *-------------------------------------------------------------------------
+ */
+static void *
+H5FD_dsm_fapl_copy(const void *_old_fa)
+{
+  void *ret_value = NULL;
+  const H5FD_dsm_fapl_t *old_fa = (const H5FD_dsm_fapl_t*)_old_fa;
+  H5FD_dsm_fapl_t *new_fa = NULL;
+  int mpi_code;
+
+  FUNC_ENTER_NOAPI(H5FD_dsm_fapl_copy, NULL)
+
+  if(NULL == (new_fa = (H5FD_dsm_fapl_t *) calloc((size_t)1, sizeof(H5FD_dsm_fapl_t))))
+    HGOTO_ERROR(H5E_RESOURCE, H5E_NOSPACE, NULL, "memory allocation failed");
+
+  /* Copy the general information */
+  HDmemcpy(new_fa, old_fa, sizeof(H5FD_dsm_fapl_t));
+
+  /* Duplicate communicator. */
+  new_fa->intra_comm = MPI_COMM_NULL;
+  if (MPI_SUCCESS != (mpi_code = MPI_Comm_dup(old_fa->intra_comm, &new_fa->intra_comm)))
+    HMPI_GOTO_ERROR(NULL, "MPI_Comm_dup failed", mpi_code);
+  ret_value = new_fa;
+
+done:
+  if ((NULL == ret_value) && err_occurred) {
+    /* cleanup */
+    if (new_fa && (MPI_COMM_NULL != new_fa->intra_comm))
+      MPI_Comm_free(&new_fa->intra_comm);
+    if (new_fa) free(new_fa);
+  }
+
+  FUNC_LEAVE_NOAPI(ret_value)
+} /* end H5FD_dsm_fapl_copy() */
+
+/*-------------------------------------------------------------------------
+ * Function:    H5FD_dsm_fapl_free
+ *
+ * Purpose:     Free the dsm-specific file access properties.
+ *
+ * Return:      Success:        0
+ *
+ *              Failure:        -1
+ *
+ *-------------------------------------------------------------------------
+ */
+static herr_t
+H5FD_dsm_fapl_free(void *_fa)
+{
+  herr_t ret_value = SUCCEED;
+  H5FD_dsm_fapl_t *fa = (H5FD_dsm_fapl_t*)_fa;
+
+  FUNC_ENTER_NOAPI(H5FD_dsm_fapl_free, FAIL)
+  assert(fa);
+
+  /* Free the internal communicator */
+  assert(MPI_COMM_NULL != fa->intra_comm);
+  MPI_Comm_free(&fa->intra_comm);
+  free(fa);
+
+done:
+  if (err_occurred) {
+    /* Nothing */
+  }
+
+  FUNC_LEAVE_NOAPI(ret_value)
+} /* end H5FD_dsm_fapl_free() */
+
+/*-------------------------------------------------------------------------
+ * Function:    H5FD_dsm_open
+ *
+ * Purpose:     Create memory as an HDF5 file.
+ *
+ * Return:      Success:        A pointer to a new file data structure. The
+ *              public fields will be initialized by the
+ *              caller, which is always H5FD_open().
+ *
+ *              Failure:        NULL
  *
  *-------------------------------------------------------------------------
  */
 static H5FD_t *
-H5FD_dsm_open(const char *name, unsigned UNUSED flags, hid_t fapl_id, haddr_t maxaddr)
+H5FD_dsm_open(const char *name, unsigned flags, hid_t fapl_id, haddr_t maxaddr)
 {
   H5FD_dsm_t *file = NULL;
-  H5FD_dsm_fapl_t *fa = NULL;
-  H5P_genplist_t *plist; // Property list pointer
+  int mpi_rank; /* MPI rank of this process */
+  int mpi_size; /* Total number of MPI processes */
+  int mpi_code;  /* mpi return code */
+  const H5FD_dsm_fapl_t *fa = NULL;
+  MPI_Comm intra_comm_dup = MPI_COMM_NULL;
+  H5P_genplist_t *plist; /* Property list pointer */
   H5FD_t *ret_value = NULL;
-
 
   FUNC_ENTER_NOAPI(H5FD_dsm_open, NULL)
 
-  // Check arguments
-  if (0 == maxaddr || HADDR_UNDEF == maxaddr) {
+  /* Check arguments */
+  if(!name || !*name)
+    HGOTO_ERROR(H5E_ARGS, H5E_BADVALUE, NULL, "invalid file name");
+  if (0 == maxaddr || HADDR_UNDEF == maxaddr)
     HGOTO_ERROR(H5E_ARGS, H5E_BADRANGE, NULL, "bogus maxaddr");
-  }
-  if (ADDR_OVERFLOW(maxaddr)) {
+  if (ADDR_OVERFLOW(maxaddr))
     HGOTO_ERROR(H5E_ARGS, H5E_OVERFLOW, NULL, "maxaddr overflow");
-  }
-  if (H5P_DEFAULT != fapl_id) {
-    if (NULL == (plist = (H5P_genplist_t*) H5I_object(fapl_id))) {
-      HGOTO_ERROR(H5E_ARGS, H5E_BADTYPE, NULL, "not a file access property list");
-    }
-    fa = (H5FD_dsm_fapl_t*) H5P_get_driver_info(plist);
-  } // end if
 
-  // Create the new file struct
-  if (NULL == (file = (H5FD_dsm_t *) calloc((size_t)1, sizeof(H5FD_dsm_t)))) {
-    HGOTO_ERROR(H5E_RESOURCE, H5E_NOSPACE, NULL, "unable to allocate file struct");
+  if (H5P_DEFAULT != fapl_id) {
+    if (NULL == (plist = (H5P_genplist_t*) H5I_object(fapl_id)))
+      HGOTO_ERROR(H5E_ARGS, H5E_BADTYPE, NULL, "not a file access property list");
+    fa = (const H5FD_dsm_fapl_t *) H5P_get_driver_info(plist);
+    assert(fa);
   }
+
+  /* Duplicate communicator. */
+  if (MPI_SUCCESS != (mpi_code = MPI_Comm_dup(fa->intra_comm, &intra_comm_dup)))
+    HMPI_GOTO_ERROR(NULL, "MPI_Comm_dup failed", mpi_code);
+
+  /* Get the MPI rank of this process and the total number of processes */
+  if (MPI_SUCCESS != (mpi_code = MPI_Comm_rank (intra_comm_dup, &mpi_rank)))
+    HMPI_GOTO_ERROR(NULL, "MPI_Comm_rank failed", mpi_code);
+  if (MPI_SUCCESS != (mpi_code = MPI_Comm_size (intra_comm_dup, &mpi_size)))
+    HMPI_GOTO_ERROR(NULL, "MPI_Comm_size failed", mpi_code);
+
+  /* Build the return value and initialize it */
+  if (NULL == (file = (H5FD_dsm_t *) calloc((size_t)1, sizeof(H5FD_dsm_t))))
+    HGOTO_ERROR(H5E_RESOURCE, H5E_NOSPACE, NULL, "memory allocation failed");
+
+  file->intra_comm = intra_comm_dup;
+  file->intra_rank = mpi_rank;
+  file->intra_size = mpi_size;
 
   if (name && *name) {
     file->name = HDstrdup(name);
   }
 
-  // See if DsmBuffer exists
-  if (!fa->buffer) {
-    if (file->name) HDfree(file->name);
-    free(file);
+  /* Get address information from DSM */
+  if (SUCCEED != DsmGetBuffer(NULL, NULL, NULL)) {
     HGOTO_ERROR(H5E_VFL, H5E_NOTFOUND, NULL, "DSM buffer not found");
   } else {
-    file->DsmBuffer = fa->buffer;
+    file->local_buf_ptr = fa->local_buf_ptr;
+    file->local_buf_len = fa->local_buf_len;
 
-    if (!file->DsmBuffer->GetIsLocked()) {
-      file->DsmBuffer->RequestLockAcquire();
-    }
-    //
-    PRINT_INFO("Opening " << name);
-    if (DsmGetEntry(file) == H5FD_DSM_FAIL) {
-      if (file->name) HDfree(file->name);
-      free(file);
-      HGOTO_ERROR(H5E_VFL, H5E_NOTFOUND, NULL, "Cannot get existing DSM buffer entries");
+    if (SUCCEED != DsmLock())
+      HGOTO_ERROR(H5E_VFL, H5E_CANTLOCK, NULL, "cannot lock DSM");
+
+    if (SUCCEED != DsmGetEntry(&file->start, &file->end)) {
+      HGOTO_ERROR(H5E_VFL, H5E_CANTRESTORE, NULL, "cannot restore DSM entries");
     } else {
       if (H5F_ACC_RDWR & flags) {
-        PRINT_INFO("SetIsReadOnly(H5FD_DSM_FALSE)");
-        file->DsmBuffer->SetIsReadOnly(H5FD_DSM_FALSE);
+        file->read_only = FALSE;
+      } else {
+        file->read_only = TRUE;
       }
       if (H5F_ACC_CREAT & flags) {
-        file->start = file->end = 0;
-        PRINT_INFO("Creating " << name);
-        DsmUpdateEntry(file);
-        PRINT_INFO("Created from Entry "
-            << name << " Start " << file->start << " End " << file->end);
+        /* Reset start and end markers */
+        file->start = 0;
+        file->end = 0;
+        file->eof = 0;
+        if (SUCCEED != DsmUpdateEntry(file->start, file->end))
+          HGOTO_ERROR(H5E_VFL, H5E_CANTUPDATE, NULL, "cannot update DSM entries");
       } else {
         file->eof = file->end - file->start;
-        PRINT_INFO("Opened from Entry "
-            << name << " Start " << file->start << " End " << file->end);
       }
     }
   }
-  //
-  // The increment comes from either the file access property list or the
-  // default value. But if the file access property list was zero then use
-  // the default value instead.
-  //
-  file->increment = (fa && fa->increment > 0) ? fa->increment
-      : H5FD_DSM_INCREMENT;
-  if (fa->buffer) {
-    PRINT_INFO(
-        "Opened " << name <<
-        " Start " << file->start <<
-        " End " << file->end <<
-        " Eoa " << file->eoa <<
-        " Eof  " << file->eof);
-  }
 
-  // Don't let any proc return until all have created the file.
+  /* Don't let any proc return until all have created the file. */
   if (H5F_ACC_CREAT & flags) {
-    if (file->DsmBuffer->GetComm()->Barrier() != H5FD_DSM_SUCCESS) {
-      HGOTO_ERROR(H5E_VFL, H5E_CANTLOCK, NULL, "Unable to sync processes");
-    }
+    if (MPI_SUCCESS != (mpi_code = MPI_Barrier(intra_comm_dup)))
+      HMPI_GOTO_ERROR(NULL, "MPI_Barrier failed", mpi_code);
   }
 
-  // Set return value
+  /* Set return value */
   ret_value = (H5FD_t *) file;
 
-done: 
+done:
+  if((ret_value == NULL) && err_occurred) {
+    if (file && file->name) HDfree(file->name);
+    if (MPI_COMM_NULL != intra_comm_dup) MPI_Comm_free(&intra_comm_dup);
+    if (file) free(file);
+  } /* end if */
+
   FUNC_LEAVE_NOAPI(ret_value)
-}
+} /* end H5FD_dsm_open() */
 
 /*-------------------------------------------------------------------------
- * Function:  H5FD_dsm_close
+ * Function:    H5FD_dsm_close
  *
- * Purpose:  Closes the file.
+ * Purpose:     Close the file.
  *
- * Return:  Success:  0
+ * Return:      Success:        0
  *
- *    Failure:  -1
+ *              Failure:        -1
  *
  *-------------------------------------------------------------------------
  */
@@ -649,230 +775,231 @@ static herr_t
 H5FD_dsm_close(H5FD_t *_file)
 {
   H5FD_dsm_t *file = (H5FD_dsm_t*) _file;
-  herr_t ret_value = SUCCEED; // Return value
-  hbool_t isSomeoneDirty = FALSE;
+  herr_t ret_value = SUCCEED; /* Return value */
+  hbool_t is_someone_dirty = FALSE;
+  int mpi_code;
 
   FUNC_ENTER_NOAPI(H5FD_dsm_close, FAIL)
 
-  PRINT_INFO("Closing Start " << file->start << " End " << file->end <<
-      " Eoa " << file->eoa << " Eof " << file->eof);
+  assert(file);
+  assert(H5FD_DSM == file->pub.driver_id);
 
-  if (DsmUpdateEntry(file) != H5FD_DSM_SUCCESS)
-    HGOTO_ERROR(H5E_VFL, H5E_CLOSEERROR, FAIL, "can't close DSM");
+  if (!file->read_only) {
+    file->end = MAX((file->start + file->eof), file->end);
+    if (SUCCEED != DsmUpdateEntry(file->start, file->end))
+      HGOTO_ERROR(H5E_VFL, H5E_CANTCLOSEFILE, FAIL, "cannot close DSM");
 
-  if (!file->DsmBuffer->GetIsReadOnly()) {
-    if (!file->DsmBuffer->GetIsServer() || !file->DsmBuffer->GetIsConnected()) {
-      PRINT_INFO("Gathering dirty info");
-      // Be sure that everyone's here before releasing resources (done with collective op)
-      // We're now ready to read from the DSM
-      // Gather all the dirty flags because some processes may not have written yet
-      MPI_Allreduce(&file->dirty, &isSomeoneDirty, sizeof(hbool_t),
-          MPI_UNSIGNED_CHAR, MPI_MAX, file->DsmBuffer->GetComm()->GetIntraComm());
-      if (isSomeoneDirty) {
-        file->DsmBuffer->SetIsDataModified(H5FD_DSM_TRUE);
-        if (file->DsmBuffer->GetNotificationOnClose()) {
-          if (!file->DsmBuffer->GetIsServer()) {
-            H5FD_dsm_notify(H5FD_DSM_NEW_DATA, file->DsmBuffer);
-          } else {
-            file->DsmBuffer->SignalNotification();
-          }
-        }
-        file->dirty = FALSE;
+    if (!DsmIsServer() || !DsmIsConnected()) {
+      /*
+       * Be sure that everyone's here before releasing resources (done with
+       * collective op). Gather all the dirty flags because some processes may
+       * not have written yet.
+       */
+      if (MPI_SUCCESS != (mpi_code = MPI_Allreduce(&file->dirty, &is_someone_dirty,
+          sizeof(hbool_t), MPI_UNSIGNED_CHAR, MPI_MAX, file->intra_comm)))
+        HMPI_GOTO_ERROR(FAIL, "MPI_Allreduce failed", mpi_code);
+      if (is_someone_dirty) {
+        if (SUCCEED != DsmSetModified())
+          HGOTO_ERROR(H5E_VFL, H5E_CANTUNLOCK, FAIL, "cannot mark DSM as modified");
       }
     }
-    PRINT_INFO("SetIsReadOnly(H5FD_DSM_TRUE)");
-    file->DsmBuffer->SetIsReadOnly(H5FD_DSM_TRUE);
   }
 
-  if (file->DsmBuffer->GetReleaseLockOnClose() && file->DsmBuffer->GetIsLocked()) {
-    file->DsmBuffer->RequestLockRelease();
-  }
+  if (SUCCEED != DsmUnlock())
+    HGOTO_ERROR(H5E_VFL, H5E_CANTUPDATE, FAIL, "cannot unlock DSM");
 
-  // Release resources
+  /* Release resources */
   if (file->name) HDfree(file->name);
+  if (MPI_COMM_NULL != file->intra_comm) MPI_Comm_free(&file->intra_comm);
   HDmemset(file, 0, sizeof(H5FD_dsm_t));
   free(file);
-  PRINT_DSM_INFO("Undef", "File closed");
 
 done:
+  if (err_occurred) {
+    /* Nothing */
+  }
+
   FUNC_LEAVE_NOAPI(ret_value)
-}
+} /* end H5FD_dsm_close() */
 
 /*-------------------------------------------------------------------------
- * Function:  H5FD_dsm_cmp
+ * Function:    H5FD_dsm_query
  *
- * Purpose:  Compares two files belonging to this driver by name. If one
- *    file doesn't have a name then it is less than the other file.
- *    If neither file has a name then the comparison is by file
- *    address.
+ * Purpose:     Set the flags that this VFL driver is capable of supporting.
+ *              (listed in H5FDpublic.h)
  *
- * Return:  Success:  A value like strcmp()
+ * Return:      Success:        non-negative
  *
- *    Failure:  never fails (arguments were checked by the
- *        caller).
+ *              Failure:        negative
  *
  *-------------------------------------------------------------------------
  */
-static int
-H5FD_dsm_cmp(const H5FD_t *_f1, const H5FD_t *_f2)
+herr_t
+H5FD_dsm_query(const H5FD_t *_file, unsigned long *flags /* out */)
 {
-  const H5FD_dsm_t *f1 = (const H5FD_dsm_t*) _f1;
-  const H5FD_dsm_t *f2 = (const H5FD_dsm_t*) _f2;
-  int ret_value;
+  H5FD_dsm_t *file = (H5FD_dsm_t*) _file;
+  herr_t ret_value = SUCCEED;
 
-  FUNC_ENTER_NOAPI(H5FD_dsm_cmp, FAIL)
+  FUNC_ENTER_NOAPI(H5FD_dsm_query, FAIL)
 
-  if (NULL == f1->name && NULL == f2->name) {
-    if (f1 < f2)
-      HGOTO_DONE(-1);
-    if (f1 > f2)
-      HGOTO_DONE(1);
-    HGOTO_DONE(0);
+  /* Set the VFL feature flags that this driver supports */
+  if (flags && !file->read_only) { /* If it is read-only use the driver serially */
+    *flags = 0;
+    *flags |= H5FD_FEAT_AGGREGATE_METADATA;  /* OK to aggregate metadata allocations */
+    *flags |= H5FD_FEAT_AGGREGATE_SMALLDATA; /* OK to aggregate "small" raw data allocations */
+    *flags |= H5FD_FEAT_HAS_MPI;             /* This driver uses MPI */
+    *flags |= H5FD_FEAT_ALLOCATE_EARLY;      /* Allocate space early instead of late */
+  } /* end if */
+
+done:
+  if (err_occurred) {
+    /* Nothing */
   }
 
-  if (NULL == f1->name)
-    HGOTO_DONE(-1);
-  if (NULL == f2->name)
-    HGOTO_DONE(1);
-
-  ret_value = HDstrcmp(f1->name, f2->name);
-
-done: 
   FUNC_LEAVE_NOAPI(ret_value)
-}
+} /* end H5FD_dsm_query() */
 
 /*-------------------------------------------------------------------------
- * Function:  H5FD_dsm_get_eoa
+ * Function:    H5FD_dsm_get_eoa
  *
- * Purpose:  Gets the end-of-address marker for the file. The EOA marker
- *    is the first address past the last byte allocated in the
- *    format address space.
+ * Purpose:     Gets the end-of-address marker for the file. The EOA marker
+ *              is the first address past the last byte allocated in the
+ *              format address space.
  *
- * Return:  Success:  The end-of-address marker.
+ * Return:      Success:        The end-of-address marker.
  *
- *    Failure:  HADDR_UNDEF
+ *              Failure:        HADDR_UNDEF
  *
  *-------------------------------------------------------------------------
  */
 static haddr_t
-H5FD_dsm_get_eoa(const H5FD_t *_file, H5FD_mem_t type)
+H5FD_dsm_get_eoa(const H5FD_t *_file, H5FD_mem_t UNUSED type)
 {
-  haddr_t ret_value; // Return value
+  haddr_t ret_value; /* Return value */
   H5FD_dsm_t *file = (H5FD_dsm_t*) _file;
 
   FUNC_ENTER_NOAPI(H5FD_dsm_get_eoa, HADDR_UNDEF)
 
-  // Set return value
+  assert(file);
+  assert(H5FD_DSM == file->pub.driver_id);
+
+  /* Set return value */
   ret_value = file->eoa;
 
 done:
+  if (err_occurred) {
+    /* Nothing */
+  }
+
   FUNC_LEAVE_NOAPI(ret_value)
-}
+} /* end H5FD_dsm_get_eoa() */
 
 /*-------------------------------------------------------------------------
- * Function:  H5FD_dsm_set_eoa
+ * Function:    H5FD_dsm_set_eoa
  *
- * Purpose:  Set the end-of-address marker for the file. This function is
- *    called shortly after an existing HDF5 file is opened in order
- *    to tell the driver where the end of the HDF5 data is located.
+ * Purpose:     Set the end-of-address marker for the file. This function is
+ *              called shortly after an existing HDF5 file is opened in order
+ *              to tell the driver where the end of the HDF5 data is located.
  *
- * Return:  Success:  0
+ * Return:      Success:        0
  *
- *    Failure:  -1
+ *              Failure:        -1
  *
  *-------------------------------------------------------------------------
  */
 static herr_t
-H5FD_dsm_set_eoa(H5FD_t *_file, H5FD_mem_t type, haddr_t addr)
+H5FD_dsm_set_eoa(H5FD_t *_file, H5FD_mem_t UNUSED type, haddr_t addr)
 {
   H5FD_dsm_t *file = (H5FD_dsm_t*) _file;
-  herr_t ret_value = SUCCEED; // Return value
+  herr_t ret_value = SUCCEED; /* Return value */
 
   FUNC_ENTER_NOAPI(H5FD_dsm_set_eoa, FAIL)
 
-  PRINT_INFO("H5FD_dsm_set_eoa Called " << addr);
+  assert(file);
+  assert(H5FD_DSM == file->pub.driver_id);
 
-  if (ADDR_OVERFLOW(addr)) {
-    PRINT_INFO("H5FD_dsm_set_eoa Address OverFLow at " << addr);
-    PRINT_INFO("H5FD_dsm_set_eoa MAXADDR = " << MAXADDR);
-    PRINT_INFO("H5FD_dsm_set_eoa Address (addr) & ~(haddr_t)MAXADDR) = " << (addr & ~(haddr_t)MAXADDR));
+  if (ADDR_OVERFLOW(addr))
     HGOTO_ERROR(H5E_ARGS, H5E_OVERFLOW, FAIL, "address overflow");
-  }
-  file->eof = file->eoa = addr;
-  DsmUpdateEntry(file);
+
+  file->eoa = addr;
+
+  file->end = MAX((file->start + file->eoa), file->end);
+  file->eof = file->end - file->start;
+  if (!file->read_only && (SUCCEED != DsmUpdateEntry(file->start, file->end)))
+    HGOTO_ERROR(H5E_VFL, H5E_CANTUPDATE, FAIL, "cannot update DSM entries");
 
 done:
+  if (err_occurred) {
+    /* Nothing */
+  }
+
   FUNC_LEAVE_NOAPI(ret_value)
-}
+} /* end H5FD_dsm_set_eoa() */
 
 /*-------------------------------------------------------------------------
- * Function:  H5FD_dsm_get_eof
+ * Function:    H5FD_dsm_get_eof
  *
- * Purpose:  Returns the end-of-file marker, which is the greater of
- *    either the size of the underlying memory or the HDF5
- *    end-of-address markers.
+ * Purpose:     Returns the end-of-file marker, which is the greater of
+ *              either the size of the underlying memory or the HDF5
+ *              end-of-address markers.
  *
- * Return:  Success:  End of file address, the first address past
- *        the end of the "file", either the memory
- *        or the HDF5 file.
+ * Return:      Success:        End of file address, the first address past
+ *              the end of the "file", either the memory or the HDF5 file.
  *
- *    Failure:  HADDR_UNDEF
+ *              Failure:        HADDR_UNDEF
  *
  *-------------------------------------------------------------------------
  */
 static haddr_t
 H5FD_dsm_get_eof(const H5FD_t *_file)
 {
-  haddr_t ret_value; // Return value
+  haddr_t ret_value; /* Return value */
 
   H5FD_dsm_t *file = (H5FD_dsm_t*) _file;
 
   FUNC_ENTER_NOAPI(H5FD_dsm_get_eof, HADDR_UNDEF)
 
-  PRINT_INFO("H5FD_dsm_get_eof Called " << MAX(file->eof, file->eoa));
+  assert(file);
+  assert(H5FD_DSM == file->pub.driver_id);
 
-  // Set return value
+  /* Set return value */
   ret_value = MAX(file->eof, file->eoa);
 
 done:
+  if (err_occurred) {
+    /* Nothing */
+  }
+
   FUNC_LEAVE_NOAPI(ret_value)
-}
+} /* end H5FD_dsm_get_eof() */
 
 /*-------------------------------------------------------------------------
- * Function:  H5FD_dsm_read
+ * Function:    H5FD_dsm_read
  *
- * Purpose:  Reads SIZE bytes of data from FILE beginning at address ADDR
- *    into buffer BUF according to data transfer properties in
- *    DXPL_ID.
+ * Purpose:     Reads SIZE bytes of data from FILE beginning at address ADDR
+ *              into buffer BUF.
  *
- * Return:  Success:  Zero. Result is stored in caller-supplied
- *        buffer BUF.
+ * Return:      Success:        Zero. Result is stored in caller-supplied
+ *                              buffer BUF.
  *
- *    Failure:  -1, Contents of buffer BUF are undefined.
+ *              Failure:        -1, Contents of buffer BUF are undefined.
  *
  *-------------------------------------------------------------------------
  */
 static herr_t
 H5FD_dsm_read(H5FD_t *_file, H5FD_mem_t UNUSED type, hid_t UNUSED dxpl_id,
-    haddr_t addr, size_t size, void *buf/*out*/)
+    haddr_t addr, size_t size, void *buf /* out */)
 {
   H5FD_dsm_t *file = (H5FD_dsm_t*) _file;
-  herr_t ret_value = SUCCEED; // Return value
+  herr_t ret_value = SUCCEED; /* Return value */
 
   FUNC_ENTER_NOAPI(H5FD_dsm_read, FAIL)
 
-  PRINT_INFO(
-      "Read Start " << file->start <<
-      " End " << file->end <<
-      " Addr " << addr <<
-      " Size " << size <<
-      " Eoa " << file->eoa <<
-      " Eof " << file->eof);
-
-  assert(file && file->pub.cls);
+  assert(file);
+  assert(H5FD_DSM == file->pub.driver_id);
   assert(buf);
 
-  // Check for overflow conditions
+  /* Check for overflow conditions */
   if (HADDR_UNDEF == addr)
     HGOTO_ERROR(H5E_IO, H5E_OVERFLOW, FAIL, "file address overflowed");
   if (REGION_OVERFLOW(addr, size))
@@ -880,9 +1007,7 @@ H5FD_dsm_read(H5FD_t *_file, H5FD_mem_t UNUSED type, hid_t UNUSED dxpl_id,
   if (addr + size > file->eoa)
     HGOTO_ERROR(H5E_IO, H5E_OVERFLOW, FAIL, "file address overflowed");
 
-  // Read the part which is before the EOF marker
-  PRINT_INFO("check addr (" << addr << ")  < file->eof (" << file->eof << ")");
-
+  /* Read the part which is before the EOF marker */
   if (addr < file->eof) {
     size_t  nbytes;
     hsize_t temp_nbytes;
@@ -890,32 +1015,36 @@ H5FD_dsm_read(H5FD_t *_file, H5FD_mem_t UNUSED type, hid_t UNUSED dxpl_id,
     temp_nbytes = file->eof - addr;
     H5_CHECK_OVERFLOW(temp_nbytes,hsize_t,size_t);
     nbytes = MIN(size,(size_t)temp_nbytes);
-    if (file->DsmBuffer->Get(file->start + addr, nbytes, buf) != H5FD_DSM_SUCCESS) {
-      HGOTO_ERROR(H5E_VFL, H5E_READERROR, FAIL, "can't read from DSM");
-    }
-    else {
+
+    /* Read from DSM to BUF */
+    if (SUCCEED != DsmRead(file->start + addr, nbytes, buf)) {
+      HGOTO_ERROR(H5E_IO, H5E_READERROR, FAIL, "cannot read from DSM");
+    } else {
       size -= nbytes;
       addr += nbytes;
       buf = (char*) buf + nbytes;
     }
   }
-  // Read zeros for the part which is after the EOF markers
+  /* Read zeros for the part which is after the EOF markers */
   if (size > 0) HDmemset(buf, 0, size);
 
 done: 
+  if (err_occurred) {
+    /* Nothing */
+  }
+
   FUNC_LEAVE_NOAPI(ret_value)
-}
+} /* end H5FD_dsm_read() */
 
 /*-------------------------------------------------------------------------
- * Function:  H5FD_dsm_write
+ * Function:    H5FD_dsm_write
  *
- * Purpose:  Writes SIZE bytes of data to FILE beginning at address ADDR
- *    from buffer BUF according to data transfer properties in
- *    DXPL_ID.
+ * Purpose:     Writes SIZE bytes of data to FILE beginning at address ADDR
+ *              from buffer BUF.
  *
- * Return:  Success:  Zero
+ * Return:      Success:        Zero
  *
- *    Failure:  -1
+ *              Failure:        -1
  *
  *-------------------------------------------------------------------------
  */
@@ -924,114 +1053,105 @@ H5FD_dsm_write(H5FD_t *_file, H5FD_mem_t UNUSED type, hid_t UNUSED dxpl_id,
     haddr_t addr, size_t size, const void *buf)
 {
   H5FD_dsm_t *file = (H5FD_dsm_t*) _file;
-  herr_t ret_value = SUCCEED; // Return value
+  herr_t ret_value = SUCCEED; /* Return value */
 
   FUNC_ENTER_NOAPI(H5FD_dsm_write, FAIL)
 
-  assert(file && file->pub.cls);
+  assert(file);
+  assert(H5FD_DSM == file->pub.driver_id);
   assert(buf);
 
-  if (file->DsmBuffer->GetIsReadOnly()) {
-    HGOTO_ERROR(H5E_VFL, H5E_WRITEERROR, FAIL, "can't write to DSM open in read-only");
-  }
+  if (file->read_only)
+    HGOTO_ERROR(H5E_IO, H5E_RESOURCE, FAIL, "cannot write to DSM open in read-only");
 
-  PRINT_INFO(
-      "Write Start " << file->start <<
-      " End " << file->end <<
-      " Addr " << addr <<
-      " Size " << size <<
-      " Eoa " << file->eoa <<
-      " Eof " << file->eof);
-
-  // Check for overflow conditions
+  /* Check for overflow conditions */
   if (REGION_OVERFLOW(addr, size))
     HGOTO_ERROR(H5E_IO, H5E_OVERFLOW, FAIL, "file address overflowed");
   if (addr + size > file->eoa)
     HGOTO_ERROR(H5E_IO, H5E_OVERFLOW, FAIL, "file address overflowed");
 
-  if (addr + size > file->eof) {
-    haddr_t new_eof;
+  /* For now, do not allow dynamic reallocation of the DSM */
+  if (addr + size > file->eof)
+    HGOTO_ERROR(H5E_IO, H5E_NOSPACE, FAIL, "not enough space in DSM");
 
-    new_eof = file->increment * ((addr + size) / file->increment);
-    if ((addr + size) % file->increment) new_eof += file->increment;
-    // TODO Dangerous here since we don't do any realloc
-    PRINT_INFO("HDF::Write New eof " << new_eof);
+  /* Write from BUF to DSM */
+  if (SUCCEED != DsmWrite(file->start + addr, size, buf))
+    HGOTO_ERROR(H5E_IO, H5E_WRITEERROR, FAIL, "cannot write to DSM");
 
-    // Blindly Grab more DSM for now
-    file->end = file->start + new_eof;
-    file->eof = new_eof;
-    // Write it out to DSM
-    if (DsmUpdateEntry(file) != H5FD_DSM_SUCCESS)
-      HGOTO_ERROR(H5E_VFL, H5E_NOSPACE, FAIL, "dsm update entry failed");
-  }
-
-  // Write from BUF to DSM
-  if (file->DsmBuffer->Put(file->start + addr, size, (void *) buf) != H5FD_DSM_SUCCESS) {
-    HGOTO_ERROR(H5E_VFL, H5E_WRITEERROR, FAIL, "can't write to DSM");
-  }
+  /* Set dirty flag so that we know someone has written something */
   file->dirty = TRUE;
 
-done: 
+done:
+  if (err_occurred) {
+    /* Nothing */
+  }
+
   FUNC_LEAVE_NOAPI(ret_value)
-}
+} /* end H5FD_dsm_write() */
 
 /*-------------------------------------------------------------------------
- * Function:  H5FD_dsm_flush
+ * Function:    H5FD_dsm_flush
  *
- * Purpose:  Flushes the file to backing store if there is any and if the
- *    dirty flag is set.
+ * Purpose:     Flushes the file to backing store if there is any and if the
+ *              dirty flag is set.
+ *              Could use flush if we have an additional caching mechanism.
  *
- * Return:  Success:  0
+ * Return:      Success:        0
  *
- *    Failure:  -1
+ *              Failure:        -1
  *
  *-------------------------------------------------------------------------
  */
 static herr_t
 H5FD_dsm_flush(H5FD_t *_file, hid_t UNUSED dxpl_id, unsigned UNUSED closing)
 {
-  H5FD_dsm_t *file = (H5FD_dsm_t*) _file;
-  herr_t ret_value = SUCCEED; // Return value
+  /* H5FD_dsm_t *file = (H5FD_dsm_t*) _file; */
+  herr_t ret_value = SUCCEED; /* Return value */
 
   FUNC_ENTER_NOAPI(H5FD_dsm_flush, FAIL)
 
-  // Write to backing store
+  /* Write to backing store */
+  /*
   if (file->dirty) {
-   /* haddr_t size = file->eof;
-    
-         unsigned char *ptr = file->mem;
+    haddr_t size = file->eof;
 
-         if (0!=HDlseek(file->fd, (off_t)0, SEEK_SET))
-         HGOTO_ERROR(H5E_IO, H5E_SEEKERROR, FAIL, "error seeking in backing store")
+    unsigned char *ptr = file->mem;
 
-         while (size) {
-         ssize_t n;
+    if (0!=HDlseek(file->fd, (off_t)0, SEEK_SET))
+      HGOTO_ERROR(H5E_IO, H5E_SEEKERROR, FAIL, "error seeking in backing store")
 
-         H5_CHECK_OVERFLOW(size,hsize_t,size_t);
-         n = HDwrite(file->fd, ptr, (size_t)size);
-         if (n<0 && EINTR==errno)
-         continue;
-         if (n<0)
-         HGOTO_ERROR(H5E_IO, H5E_WRITEERROR, FAIL, "error writing backing store")
-         ptr += (size_t)n;
-         size -= (size_t)n;
-         }
-     
+      while (size) {
+        ssize_t n;
+
+        H5_CHECK_OVERFLOW(size,hsize_t,size_t);
+        n = HDwrite(file->fd, ptr, (size_t)size);
+        if (n<0 && EINTR==errno)
+          continue;
+        if (n<0)
+          HGOTO_ERROR(H5E_IO, H5E_WRITEERROR, FAIL, "error writing backing store")
+          ptr += (size_t)n;
+        size -= (size_t)n;
+      }
+
     file->dirty = FALSE;
-  */
   }
+  */
 
 done:
+  if (err_occurred) {
+    /* Nothing */
+  }
+
   FUNC_LEAVE_NOAPI(ret_value)
-}
+} /* end H5FD_dsm_flush() */
 
 /*-------------------------------------------------------------------------
- * Function:  H5FD_dsm_mpi_rank
+ * Function:    H5FD_dsm_mpi_rank
  *
- * Purpose:  Returns the MPI rank for a process
+ * Purpose:     Returns the MPI rank for a process
  *
- * Return:  Success: non-negative
- *    Failure: negative
+ * Return:      Success: non-negative
+ *              Failure: negative
  *
  *-------------------------------------------------------------------------
  */
@@ -1039,27 +1159,31 @@ static int
 H5FD_dsm_mpi_rank(const H5FD_t *_file)
 {
   const H5FD_dsm_t *file = (const H5FD_dsm_t*) _file;
-  int ret_value; // Return value
+  int ret_value; /* Return value */
 
   FUNC_ENTER_NOAPI(H5FD_dsm_mpi_rank, FAIL)
 
   assert(file);
-  assert(H5FD_DSM==file->pub.driver_id);
+  assert(H5FD_DSM == file->pub.driver_id);
 
-  // Set return value
-  ret_value = file->DsmBuffer->GetComm()->GetId();
+  /* Set return value */
+  ret_value = file->intra_rank;
 
 done:
+  if (err_occurred) {
+    /* Nothing */
+  }
+
   FUNC_LEAVE_NOAPI(ret_value)
-} // end H5FD_dsm_mpi_rank()
+} /* end H5FD_dsm_mpi_rank() */
 
 /*-------------------------------------------------------------------------
- * Function:  H5FD_dsm_mpi_size
+ * Function:    H5FD_dsm_mpi_size
  *
- * Purpose:  Returns the number of MPI processes
+ * Purpose:     Returns the number of MPI processes
  *
- * Return:  Success: non-negative
- *    Failure: negative
+ * Return:      Success: non-negative
+ *              Failure: negative
  *
  *-------------------------------------------------------------------------
  */
@@ -1067,28 +1191,32 @@ static int
 H5FD_dsm_mpi_size(const H5FD_t *_file)
 {
   const H5FD_dsm_t *file = (const H5FD_dsm_t*) _file;
-  int ret_value; // Return value
+  int ret_value; /* Return value */
 
   FUNC_ENTER_NOAPI(H5FD_dsm_mpi_size, FAIL)
 
   assert(file);
-  assert(H5FD_DSM==file->pub.driver_id);
+  assert(H5FD_DSM == file->pub.driver_id);
 
   /* Set return value */
-  ret_value = file->DsmBuffer->GetComm()->GetIntraSize();
+  ret_value = file->intra_size;
 
 done:
+  if (err_occurred) {
+    /* Nothing */
+  }
+
   FUNC_LEAVE_NOAPI(ret_value)
-} // end H5FD_dsm_mpi_size()
+} /* end H5FD_dsm_mpi_size() */
 
 /*-------------------------------------------------------------------------
- * Function:  H5FD_dsm_communicator
+ * Function:    H5FD_dsm_communicator
  *
- * Purpose:  Returns the MPI communicator for the file.
+ * Purpose:     Returns the MPI communicator for the file.
  *
- * Return:  Success:  The communicator
+ * Return:      Success:        The communicator
  *
- *    Failure:  NULL
+ *              Failure:        NULL
  *
  *-------------------------------------------------------------------------
  */
@@ -1096,52 +1224,22 @@ static MPI_Comm
 H5FD_dsm_communicator(const H5FD_t *_file)
 {
   const H5FD_dsm_t *file = (const H5FD_dsm_t*) _file;
-  MPI_Comm ret_value = MPI_COMM_NULL; // Return value
+  MPI_Comm ret_value = MPI_COMM_NULL; /* Return value */
 
   FUNC_ENTER_NOAPI(H5FD_dsm_communicator, MPI_COMM_NULL)
 
   assert(file);
-  assert(H5FD_DSM==file->pub.driver_id);
+  assert(H5FD_DSM == file->pub.driver_id);
 
-  // Set return value
-  ret_value = file->DsmBuffer->GetComm()->GetIntraComm();
-
-done:
-  FUNC_LEAVE_NOAPI(ret_value)
-} // end H5FD_mpi_posix_communicator()
-
-/*-------------------------------------------------------------------------
- * Function:    H5FD_dsm_query
- *
- * Purpose:    Set the flags that this VFL driver is capable of supporting.
- *              (listed in H5FDpublic.h)
- *
- * Return:    Success:    non-negative
- *
- *        Failure:    negative
- *
- *-------------------------------------------------------------------------
- */
-herr_t
-H5FD_dsm_query(const H5FD_t *_file, unsigned long *flags)
-{
-  H5FD_dsm_t *file = (H5FD_dsm_t*) _file;
-  herr_t ret_value=SUCCEED;
-
-  FUNC_ENTER_NOAPI(H5FD_dsm_query, FAIL)
-
-  /* Set the VFL feature flags that this driver supports */
-  if (flags && !file->DsmBuffer->GetIsReadOnly()) { // If it is read-only use the driver serially
-    *flags=0;
-    *flags|=H5FD_FEAT_AGGREGATE_METADATA;  /* OK to aggregate metadata allocations */
-    *flags|=H5FD_FEAT_AGGREGATE_SMALLDATA; /* OK to aggregate "small" raw data allocations */
-    *flags|=H5FD_FEAT_HAS_MPI;             /* This driver uses MPI */
-    *flags|=H5FD_FEAT_ALLOCATE_EARLY;      /* Allocate space early instead of late */
-  } /* end if */
+  /* Set return value */
+  ret_value = file->intra_comm;
 
 done:
+  if (err_occurred) {
+    /* Nothing */
+  }
+
   FUNC_LEAVE_NOAPI(ret_value)
-}
+} /* end H5FD_mpi_posix_communicator() */
 
-
-#endif // H5_HAVE_PARALLEL
+#endif /* H5_HAVE_PARALLEL */

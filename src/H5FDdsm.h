@@ -121,13 +121,6 @@ extern "C" {
 #endif
 
   /* Description:
-   * Set the flags that this VFL driver is capable of supporting.
-   * (listed in H5FDpublic.h)
-   * Users should never need to call it manually.
-   */
-  H5FDdsm_EXPORT herr_t H5FD_dsm_query(const H5FD_t *_file, unsigned long *flags);
-
-  /* Description:
    * Set a specific option to the DSM.
    * Options available are:
    *   - H5FD_DSM_DONT_RELEASE
@@ -144,19 +137,24 @@ extern "C" {
   H5FDdsm_EXPORT herr_t H5FD_dsm_notify(unsigned long flags);
 
   /* Description:
+   * (C++ only) Associate an existing DSM manager to the driver.
+   */
+  H5FDdsm_EXPORT herr_t H5FD_dsm_set_manager(void *manager);
+
+  /* Description:
    * Modify the file access property list to use the H5FDdsm driver defined
    * in this source file.
    * If local_buf_ptr is NULL, the local memory buffer will be automatically
    * allocated or (C++ only) be used from an existing H5FDdsmBuffer object
-   * using H5FD_dsm_set_buffer().
+   * using H5FD_dsm_set_manager().
    */
-  H5FDdsm_EXPORT herr_t H5Pset_fapl_dsm(hid_t fapl_id, MPI_Comm comm,
-      void  *local_buf_ptr, size_t local_buf_len);
+  H5FDdsm_EXPORT herr_t H5Pset_fapl_dsm(hid_t fapl_id, MPI_Comm intra_comm,
+      void *local_buf_ptr, size_t local_buf_len);
 
   /* Description:
    * Query properties set by the H5Pset_fapl_dsm() function.
    */
-  H5FDdsm_EXPORT herr_t H5Pget_fapl_dsm(hid_t fapl_id, MPI_Comm *comm /* out */,
+  H5FDdsm_EXPORT herr_t H5Pget_fapl_dsm(hid_t fapl_id, MPI_Comm *intra_comm /* out */,
       void **local_buf_ptr_ptr /* out */, size_t *local_buf_len_ptr /* out */);
 
 #ifdef __cplusplus
