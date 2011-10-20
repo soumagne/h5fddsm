@@ -4518,7 +4518,7 @@ free_handler(struct handler_t *hand, int len)
  *-------------------------------------------------------------------------
  */
 void
-H5dump(int argc, const char *argv[], std::ostringstream &stream, void *dsmBuffer)
+H5dump(int argc, const char *argv[], std::ostringstream &stream, void *dsmManager)
 {
     hid_t               fid, gid;
     char               *fname = NULL;
@@ -4589,7 +4589,7 @@ H5dump(int argc, const char *argv[], std::ostringstream &stream, void *dsmBuffer
     }
     fname = HDstrdup(argv[opt_ind]);
 
-    fid = h5tools_fopen(fname, H5F_ACC_RDONLY, H5P_DEFAULT, driver, NULL, 0, dsmBuffer);
+    fid = h5tools_fopen(fname, H5F_ACC_RDONLY, H5P_DEFAULT, driver, NULL, 0, dsmManager);
 
     if (fid < 0) {
         error_msg("unable to open file \"%s\"\n", fname);

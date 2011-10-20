@@ -15,17 +15,15 @@
   implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 =========================================================================*/
-#include "h5dump.h"
-
-#include "H5FDdsmBuffer.h"
 #include "H5FDdsmDump.h"
-#include "H5FDdsmComm.h"
+#include "H5FDdsmManager.h"
 
+#include "h5dump.h"
 //----------------------------------------------------------------------------
 H5FDdsmDump::H5FDdsmDump()
 {
-  this->DsmBuffer = NULL;
-  this->FileName = NULL;
+  this->DsmManager = NULL;
+  this->FileName   = NULL;
 }
 //----------------------------------------------------------------------------
 H5FDdsmDump::~H5FDdsmDump()
@@ -34,39 +32,35 @@ H5FDdsmDump::~H5FDdsmDump()
 }
 //----------------------------------------------------------------------------
 void
-H5FDdsmDump::SetDsmBuffer(H5FDdsmBuffer *dsmBuffer)
+H5FDdsmDump::SetDsmManager(H5FDdsmManager *dsmManager)
 {
-  this->DsmBuffer = dsmBuffer;
+  this->DsmManager = dsmManager;
 }
 //----------------------------------------------------------------------------
 void
 H5FDdsmDump::Dump()
 {
   const char *argv[4]={"./h5dump", "-f", "dsm", this->FileName};
-  int print_rank;
   std::ostringstream stream;
-  H5dump(4, (const char**) argv, stream, this->DsmBuffer);
-  MPI_Comm_rank(this->DsmBuffer->GetComm()->GetIntraComm(), &print_rank);
-  if (print_rank == 0) std::cout << stream.str() << std::endl;
+  H5dump(4, (const char**) argv, stream, this->DsmManager);
+  if (this->DsmManager->GetUpdatePiece() == 0) std::cout << stream.str() << std::endl;
 }
 //----------------------------------------------------------------------------
 void
 H5FDdsmDump::DumpLight()
 {
   const char *argv[5]={"./h5dump", "-f", "dsm", "-H", this->FileName};
-  int print_rank;
   std::ostringstream stream;
-  H5dump(5, (const char**) argv, stream, this->DsmBuffer);
-  MPI_Comm_rank(this->DsmBuffer->GetComm()->GetIntraComm(), &print_rank);
-  if (print_rank == 0) std::cout << stream.str() << std::endl;
+  H5dump(5, (const char**) argv, stream, this->DsmManager);
+  if (this->DsmManager->GetUpdatePiece() == 0) std::cout << stream.str() << std::endl;
 }
 //----------------------------------------------------------------------------
 void
 H5FDdsmDump::DumpXML(std::ostringstream &stream)
 {
-  if (this->DsmBuffer) {
+  if (this->DsmManager) {
     const char *argv[8] = {"./h5dump", "-f", "dsm", "-x", "-X", ":", "-H", this->FileName};
-    H5dump(8, (const char**) argv, stream, this->DsmBuffer);
+    H5dump(8, (const char**) argv, stream, this->DsmManager);
   } else {
     const char *argv[6] = {"./h5dump", "-x", "-X", ":", "-H", this->FileName};
     H5dump(6, (const char**) argv, stream, NULL);

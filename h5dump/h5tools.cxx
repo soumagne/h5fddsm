@@ -396,7 +396,7 @@ h5tools_close(void)
  *-------------------------------------------------------------------------
  */
 static hid_t
-h5tools_get_fapl(hid_t fapl, const char *driver, unsigned *drivernum, void *dsmBuffer)
+h5tools_get_fapl(hid_t fapl, const char *driver, unsigned *drivernum, void *dsmManager)
 {
     hid_t new_fapl; /* Copy of file access property list passed in, or new property list */
 
@@ -473,13 +473,14 @@ h5tools_get_fapl(hid_t fapl, const char *driver, unsigned *drivernum, void *dsmB
         } /* end if */
 #ifdef H5_HAVE_DSM
     }
-            else if(!strcmp(driver, drivernames[DSM_IDX]) && dsmBuffer) {
+            else if(!strcmp(driver, drivernames[DSM_IDX]) && dsmManager) {
                 /* DSM Driver */
                 /* check if MPI has been initialized. */
                 if(!h5tools_mpi_init_g)
-                MPI_Initialized(&h5tools_mpi_init_g);
+                    MPI_Initialized(&h5tools_mpi_init_g);
                 if(h5tools_mpi_init_g) {
-                    if(H5Pset_fapl_dsm(new_fapl, MPI_COMM_WORLD, dsmBuffer) < 0)
+                    H5FD_dsm_set_manager(dsmManager);
+                    if(H5Pset_fapl_dsm(new_fapl, MPI_COMM_WORLD, NULL, 0) < 0)
                 goto error;
 
             if(drivernum)
@@ -570,7 +571,7 @@ error:
  */
 hid_t
 h5tools_fopen(const char *fname, unsigned flags, hid_t fapl, const char *driver,
-    char *drivername, size_t drivername_size, void *dsmBuffer)
+    char *drivername, size_t drivername_size, void *dsmManager)
 {
     unsigned    drivernum;
     hid_t       fid = FAIL;
@@ -578,7 +579,7 @@ h5tools_fopen(const char *fname, unsigned flags, hid_t fapl, const char *driver,
 
     if (driver && *driver) {
         /* Get the correct FAPL for the given driver */
-        if ((my_fapl = h5tools_get_fapl(fapl, driver, &drivernum, dsmBuffer)) < 0)
+        if ((my_fapl = h5tools_get_fapl(fapl, driver, &drivernum, dsmManager)) < 0)
             goto done;
 
         H5E_BEGIN_TRY {
@@ -593,7 +594,7 @@ h5tools_fopen(const char *fname, unsigned flags, hid_t fapl, const char *driver,
         /* Try to open the file using each of the drivers */
         for (drivernum = 0; drivernum < NUM_DRIVERS; drivernum++) {
             /* Get the correct FAPL for the given driver */
-            if((my_fapl = h5tools_get_fapl(fapl, drivernames[drivernum], NULL, dsmBuffer)) < 0)
+            if((my_fapl = h5tools_get_fapl(fapl, drivernames[drivernum], NULL, dsmManager)) < 0)
                 goto done;
 
             H5E_BEGIN_TRY {

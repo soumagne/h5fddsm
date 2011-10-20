@@ -61,10 +61,6 @@
   #include <pthread.h>
 #endif
 
-#ifdef H5FD_DSM_HAVE_STEERING
-class H5FDdsmSteerer;
-#endif
-
 //! Base comm object for Distributed Shared Memory implementation
 /*!
 */
@@ -73,10 +69,6 @@ class H5FDdsm_EXPORT H5FDdsmBufferService : public H5FDdsmBuffer {
   public:
     H5FDdsmBufferService();
     virtual ~H5FDdsmBufferService();
-
-    // Is the DSMBuffer auto allocated within the driver or not
-    H5FDdsmGetValueMacro(IsAutoAllocated, H5FDdsmBoolean);
-    H5FDdsmSetValueMacro(IsAutoAllocated, H5FDdsmBoolean);
 
     // Is the DSMBuffer in server or client mode
     H5FDdsmGetValueMacro(IsServer, H5FDdsmBoolean);
@@ -148,12 +140,7 @@ class H5FDdsm_EXPORT H5FDdsmBufferService : public H5FDdsmBuffer {
     H5FDdsmInt32   RequestClearStorage();
     H5FDdsmInt32   RequestXMLExchange();
 
-#ifdef H5FD_DSM_HAVE_STEERING
-    H5FDdsmSteerer *GetSteerer() { return(Steerer); }
-#endif
-
   protected:
-    H5FDdsmBoolean          IsAutoAllocated;
     H5FDdsmBoolean          IsServer;
 
     H5FDdsmBoolean          IsConnecting;
@@ -197,10 +184,6 @@ class H5FDdsm_EXPORT H5FDdsmBufferService : public H5FDdsmBuffer {
     H5FDdsmBoolean          IsSyncRequired;
 
     H5FDdsmString           XMLDescription;
-
-#ifdef H5FD_DSM_HAVE_STEERING
-    H5FDdsmSteerer         *Steerer;
-#endif
 
     H5FDdsmBoolean          ThreadDsmReady;
     H5FDdsmBoolean          ThreadRemoteDsmReady;

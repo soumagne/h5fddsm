@@ -52,9 +52,6 @@
 #include "H5FDdsmBufferService.h"
 #include "H5FDdsmComm.h"
 #include "H5FDdsmMsg.h"
-#ifdef H5FD_DSM_HAVE_STEERING
-#include "H5FDdsmSteerer.h"
-#endif
 #include "H5FDdsmAddressMapper.h"
 
 #define H5FD_DSM_OPCODE_PUT          0x01
@@ -131,7 +128,6 @@ H5FDdsmBufferService::H5FDdsmBufferService()
 {
   this->DataPointer     = NULL;
 
-  this->IsAutoAllocated = H5FD_DSM_FALSE;
   this->IsServer        = H5FD_DSM_TRUE;
 
   this->IsConnecting    = H5FD_DSM_FALSE;
@@ -177,11 +173,6 @@ H5FDdsmBufferService::H5FDdsmBufferService()
 
   this->XMLDescription      = NULL;
 
-#ifdef H5FD_DSM_HAVE_STEERING
-  // Initialize steerer
-  this->Steerer             = new H5FDdsmSteerer(this);
-#endif
-
   this->ThreadDsmReady               = H5FD_DSM_FALSE;
   this->ThreadRemoteDsmReady         = H5FD_DSM_FALSE;
   this->ServiceThreadPtr             = 0;
@@ -219,9 +210,6 @@ H5FDdsmBufferService::~H5FDdsmBufferService()
 #endif
 
   if (this->XMLDescription) delete[] this->XMLDescription;
-#ifdef H5FD_DSM_HAVE_STEERING
-  if (this->Steerer) delete this->Steerer;
-#endif
 }
 
 //----------------------------------------------------------------------------

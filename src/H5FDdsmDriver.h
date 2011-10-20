@@ -33,20 +33,18 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-  H5FDdsm_EXPORT hbool_t DsmIsServer();
-  H5FDdsm_EXPORT herr_t  DsmSetOptions(unsigned long flags);
-
   H5FDdsm_EXPORT void   *DsmGetManager();
   H5FDdsm_EXPORT herr_t  DsmSetManager(void *manager);
 
-  H5FDdsm_EXPORT herr_t  DsmAutoAlloc(MPI_Comm comm, MPI_Comm *intra_comm,
-      void **buf_ptr_ptr, size_t *buf_len_ptr);
-  H5FDdsm_EXPORT herr_t  DsmAutoDealloc();
-  H5FDdsm_EXPORT herr_t  DsmGetBuffer(MPI_Comm *intra_comm, void **buf_ptr_ptr,
-      size_t *buf_len_ptr);
+  H5FDdsm_EXPORT herr_t  DsmAlloc(MPI_Comm intra_comm, void *buf_ptr, size_t buf_len,
+      MPI_Comm *new_intra_comm, void **new_buf_ptr_ptr, size_t *new_buf_len_ptr);
+  H5FDdsm_EXPORT herr_t  DsmDealloc();
 
-  H5FDdsm_EXPORT herr_t  DsmConnect();
+  H5FDdsm_EXPORT hbool_t DsmIsServer();
+  H5FDdsm_EXPORT herr_t  DsmSetOptions(unsigned long flags);
+
   H5FDdsm_EXPORT hbool_t DsmIsConnected();
+  H5FDdsm_EXPORT herr_t  DsmConnect();
 
   H5FDdsm_EXPORT herr_t  DsmUpdateEntry(haddr_t start, haddr_t end);
   H5FDdsm_EXPORT herr_t  DsmGetEntry(haddr_t *start_ptr, haddr_t *end_ptr);

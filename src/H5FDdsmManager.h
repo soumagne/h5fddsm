@@ -32,6 +32,9 @@
 #include "H5FDdsmBufferService.h"
 #include "H5FDdsmComm.h"
 
+#ifdef H5FD_DSM_HAVE_STEERING
+class H5FDdsmSteerer;
+#endif
 struct H5FDdsmManagerInternals;
 
 class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
@@ -59,6 +62,10 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     // the DSM total size will be the sum of the local sizes from all processes
     H5FDdsmSetValueMacro(LocalBufferSizeMBytes, H5FDdsmUInt32);
     H5FDdsmGetValueMacro(LocalBufferSizeMBytes, H5FDdsmUInt32);
+
+    // Is the DSMBuffer auto allocated within the driver or not
+    H5FDdsmGetValueMacro(IsAutoAllocated, H5FDdsmBoolean);
+    H5FDdsmSetValueMacro(IsAutoAllocated, H5FDdsmBoolean);
 
     // Description:
     // Set/Get IsServer info
@@ -193,6 +200,8 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     static MPI_Comm GetGlobalMPICommunicator();
 
 #ifdef H5FD_DSM_HAVE_STEERING
+    inline H5FDdsmSteerer *GetSteerer() { return(Steerer); }
+
     H5FDdsmInt32 WriteSteeredData();
     H5FDdsmInt32 UpdateSteeredObjects();
 
@@ -232,6 +241,7 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     H5FDdsmBufferService *DsmBuffer;
     H5FDdsmComm    *DsmComm;
     //
+    H5FDdsmBoolean  IsAutoAllocated;
     H5FDdsmBoolean  IsServer;
     H5FDdsmInt32    DsmType;
     H5FDdsmUInt64   BlockLength;
@@ -241,6 +251,10 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     H5FDdsmInt32    ServerPort;
     //
     H5FDdsmString   XMLStringSend;
+    //
+#ifdef H5FD_DSM_HAVE_STEERING
+    H5FDdsmSteerer *Steerer;
+#endif
     //
     H5FDdsmManagerInternals *ManagerInternals;
 

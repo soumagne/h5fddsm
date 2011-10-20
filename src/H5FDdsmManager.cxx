@@ -95,14 +95,19 @@ H5FDdsmManager::H5FDdsmManager()
   //
   this->DsmBuffer               = NULL;
   this->DsmComm                 = NULL;
+  this->IsAutoAllocated         = H5FD_DSM_FALSE;
+  this->IsServer                = H5FD_DSM_TRUE;
   this->DsmType                 = H5FD_DSM_TYPE_UNIFORM;
   this->BlockLength             = H5FD_DSM_DEFAULT_BLOCK_LENGTH;
   this->InterCommType           = H5FD_DSM_COMM_MPI;
   this->UseStaticInterComm      = H5FD_DSM_FALSE;
-  this->IsServer                = H5FD_DSM_TRUE;
   this->ServerHostName          = NULL;
   this->ServerPort              = 0;
   this->XMLStringSend           = NULL;
+#ifdef H5FD_DSM_HAVE_STEERING
+  // Initialize steerer
+  this->Steerer                 = new H5FDdsmSteerer(this);
+#endif
   this->ManagerInternals        = new H5FDdsmManagerInternals;
 }
 
@@ -112,6 +117,9 @@ H5FDdsmManager::~H5FDdsmManager()
   this->Destroy();
 
   this->SetXMLStringSend(NULL);
+#ifdef H5FD_DSM_HAVE_STEERING
+  if (this->Steerer) delete this->Steerer;
+#endif
   delete this->ManagerInternals;
 }
 
@@ -513,7 +521,7 @@ void H5FDdsmManager::H5Dump()
 {  
   if (this->DsmBuffer) {
     H5FDdsmDump *myDsmDump = new H5FDdsmDump();
-    myDsmDump->SetDsmBuffer(this->DsmBuffer);
+    myDsmDump->SetDsmManager(this);
     myDsmDump->SetFileName("DSM.h5");
     myDsmDump->Dump();
     if (this->UpdatePiece == 0) H5FDdsmDebug("Dump done");
@@ -526,7 +534,7 @@ void H5FDdsmManager::H5DumpLight()
 {  
   if (this->DsmBuffer) {
     H5FDdsmDump *myDsmDump = new H5FDdsmDump();
-    myDsmDump->SetDsmBuffer(this->DsmBuffer);
+    myDsmDump->SetDsmManager(this);
     myDsmDump->SetFileName("DSM.h5");
     myDsmDump->DumpLight();
     if (this->UpdatePiece == 0) H5FDdsmDebug("Dump light done");
@@ -540,7 +548,7 @@ void H5FDdsmManager::H5DumpXML()
   if (this->DsmBuffer) {
     std::ostringstream dumpStream;
     H5FDdsmDump *myDsmDump = new H5FDdsmDump();
-    myDsmDump->SetDsmBuffer(this->DsmBuffer);
+    myDsmDump->SetDsmManager(this);
     myDsmDump->SetFileName("DSM.h5");
     myDsmDump->DumpXML(dumpStream);
     if (this->UpdatePiece == 0) H5FDdsmDebug("Dump XML done");

@@ -20,7 +20,7 @@
 
 #include "H5FDdsmObject.h"
 
-class H5FDdsmBuffer;
+class H5FDdsmManager;
 
 #include <cstring>
 #include <sstream>
@@ -38,11 +38,11 @@ class H5FDdsm_EXPORT H5FDdsmDump : public H5FDdsmObject
     void DumpLight();
     void DumpXML(std::ostringstream &);
 
-    void SetDsmBuffer(H5FDdsmBuffer* _arg);
+    void SetDsmManager(H5FDdsmManager* _arg);
 
   protected:
-    H5FDdsmBuffer *DsmBuffer;
-    H5FDdsmString  FileName;
+    H5FDdsmManager *DsmManager;
+    H5FDdsmString   FileName;
 };
 
 #endif // __H5FDdsmDump_h

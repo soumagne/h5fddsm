@@ -37,7 +37,7 @@ extern "C" {
    * Initialize the steering interface. This must be called before using
    * the other steering functions.
    */
-  H5FDdsm_EXPORT herr_t H5FD_dsm_steering_init(MPI_Comm comm, void *buffer);
+  H5FDdsm_EXPORT herr_t H5FD_dsm_steering_init(MPI_Comm intra_comm);
 
   /* Description:
    * Update the steering orders and get from the GUI newly modified parameters.

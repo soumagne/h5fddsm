@@ -552,7 +552,7 @@ H5TOOLS_DLLVAR int     region_output;       /* region output */
 H5TOOLS_DLL void     h5tools_init(void);
 H5TOOLS_DLL void     h5tools_close(void);
 H5TOOLS_DLL hid_t    h5tools_fopen(const char *fname, unsigned flags, hid_t fapl,
-                    const char *driver, char *drivername, size_t drivername_len, void *dsmBuffer);
+                    const char *driver, char *drivername, size_t drivername_len, void *dsmManager);
 H5TOOLS_DLL int      h5tools_dump_dset(FILE *stream, const h5tool_format_t *info, hid_t dset,
                                   hid_t p_typ, struct subset_t *sset, int indentlevel);
 H5TOOLS_DLL int      h5tools_dump_mem(FILE *stream, const h5tool_format_t *info, hid_t obj_id,

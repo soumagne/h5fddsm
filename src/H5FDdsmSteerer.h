@@ -31,7 +31,7 @@
 
 #include "H5FDdsmObject.h"
 
-class H5FDdsmBufferService;
+class H5FDdsmManager;
 
 struct H5FDdsmSteererInternals;
 
@@ -39,7 +39,7 @@ class H5FDdsm_EXPORT H5FDdsmSteerer : public H5FDdsmObject {
 
 public:
   H5FDdsmSteerer();
-  H5FDdsmSteerer(H5FDdsmBufferService *);
+  H5FDdsmSteerer(H5FDdsmManager *);
   ~H5FDdsmSteerer();
 
   // Set/Get the current command
@@ -88,7 +88,7 @@ protected:
 
   void SetDisabledObject(H5FDdsmConstString objectName);
 
-  H5FDdsmBufferService    *DsmBuffer;
+  H5FDdsmManager          *DsmManager;
   H5FDdsmString            CurrentCommand;
   H5FDdsmInt32             WriteToDSM;
   H5FDdsmSteererInternals *SteererInternals;

@@ -28,6 +28,7 @@
 #include "H5FDdsmSteerer.h"
 #include "H5FDdsmManager.h"
 #include "H5FDdsm.h"
+#include "H5FDdsmDriver.h"
 //
 #include "H5Eprivate.h" // Error handling
 // H5private.h defines attribute, but we don't want it as it causes link errors
@@ -44,14 +45,10 @@
    if (err_occurred) { HGOTO_DONE(ret_val) }                               \
 }
 
-extern H5FDdsmInt32 DsmAutoAlloc(MPI_Comm comm);
-extern H5FDdsmInt32 DsmAutoDealloc();
-extern H5FDdsmBuffer*  DsmGetAutoAllocatedBuffer();
-extern H5FDdsmManager* DsmGetAutoAllocatedManager();
 //----------------------------------------------------------------------------
 // C steering bindings
 
-H5FDdsmBuffer *dsm_buffer = NULL; // pointer to internal DSM buffer reference
+//H5FDdsmBuffer *dsm_buffer = NULL; // pointer to internal DSM buffer reference
 
 //----------------------------------------------------------------------------
 // Function:    H5FD_dsm_steering_init
@@ -63,29 +60,23 @@ H5FDdsmBuffer *dsm_buffer = NULL; // pointer to internal DSM buffer reference
 //              Failure:        negative
 //
 //----------------------------------------------------------------------------
-herr_t H5FD_dsm_steering_init(MPI_Comm comm, void *buffer)
+herr_t H5FD_dsm_steering_init(MPI_Comm intra_comm)
 {
   herr_t ret_value = SUCCEED;
-  H5FDdsmBufferService *dsmBufferService;
+  H5FDdsmManager *dsmManager;
   FUNC_ENTER_NOAPI(H5FD_dsm_steering_init, FAIL)
 
-  if (!buffer) {
-    DsmAutoAlloc(comm);
-    dsm_buffer = DsmGetAutoAllocatedBuffer();
-  } else {
-    dsm_buffer = static_cast<H5FDdsmBufferService *> (buffer);
+  if (!DsmGetManager()) {
+    if (SUCCEED != DsmAlloc(intra_comm, NULL, 0, NULL, NULL, NULL))
+      DSM_STEERING_GOTO_ERROR("Error during initialization of the DSM Steering library", FAIL);
   }
 
-  if (!dsm_buffer) {
-    DSM_STEERING_GOTO_ERROR("Error during initialization of the DSM Steering library", FAIL)
-  }
+  dsmManager = static_cast<H5FDdsmManager *> (DsmGetManager());
 
-  dsmBufferService = dynamic_cast<H5FDdsmBufferService *> (dsm_buffer);
-  if (dsmBufferService->GetIsAutoAllocated() && !dsmBufferService->GetIsConnected()) {
-    H5FDdsmManager *dsmManager = DsmGetAutoAllocatedManager();
+  if (dsmManager->GetIsAutoAllocated() && !dsmManager->GetIsConnected()) {
     dsmManager->ReadConfigFile();
     if (dsmManager->Connect() == H5FD_DSM_FAIL) {
-      DsmAutoDealloc();
+      DsmDealloc();
       dsm_buffer = NULL;
       DSM_STEERING_GOTO_ERROR("DSM Connection failed, destroying dsmManager Singleton", FAIL)
     }

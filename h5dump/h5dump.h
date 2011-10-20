@@ -170,7 +170,7 @@ typedef struct h5dump_header_t {
 extern "C" {
 #endif
 
-H5TOOLS_DLL void H5dump(int argc, const char *argv[], std::ostringstream &stream, void *dsmBuffer);
+H5TOOLS_DLL void H5dump(int argc, const char *argv[], std::ostringstream &stream, void *dsmManager);
 
 #ifdef __cplusplus
 }
