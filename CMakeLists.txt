@@ -347,6 +347,7 @@ if(WIN32)
   target_link_libraries(H5FDdsm
     wsock32 ws2_32
   )
+  add_definitions(-D_CRT_SECURE_NO_WARNINGS -Dhdf5_tools_EXPORTS)
 endif(WIN32)
 
 set_lib_options(H5FDdsm "H5FDdsm" ${H5FDdsm_LIBTYPE})

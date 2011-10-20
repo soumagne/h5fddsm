@@ -102,6 +102,7 @@ typedef H5FDdsmUInt64 H5FDdsmAddr;
 //------------------------------------------------------------------------------
 #ifdef H5FD_DSM_DEBUG_SYNCED
 #ifdef _WIN32
+  #include <winsock2.h>
   #include <windows.h>
 #else
   #include <pthread.h>

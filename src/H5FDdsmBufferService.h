@@ -55,6 +55,7 @@
 #include "H5FDdsmBuffer.h"
 
 #ifdef _WIN32
+  #include <winsock2.h>
   #include <windows.h>
   #define H5FD_DSM_CONDVAR_MINVER _WIN32_WINNT_LONGHORN
 #else

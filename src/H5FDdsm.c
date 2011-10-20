@@ -85,6 +85,8 @@
     int dummy = TRUE;
     #define H5_INIT_GLOBAL dummy
   #endif
+  #undef HMPI_ERROR
+  #define HMPI_ERROR(X)
 #endif
 
 #include "H5FDdsmDriver.h"
