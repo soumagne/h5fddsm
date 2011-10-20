@@ -380,13 +380,9 @@ set(H5FDdsmHeaders
   ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsm.h
   ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmManager.h
   ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmBuffer.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmDriver.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmBufferService.h
   ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmObject.h
   ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmComm.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmCommSocket.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmCommMpi.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmCommMpiRma.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmAddressMapper.h
   ${H5FDdsm_BINARY_DIR}/src/H5FDdsmConfig.h
 )
 
