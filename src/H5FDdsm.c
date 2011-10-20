@@ -295,9 +295,9 @@ H5FD_dsm_term(void)
 #endif
   FUNC_ENTER_NOAPI_NOINIT_NOFUNC(H5FD_dsm_term)
 
-  if (SUCCEED != DsmDealloc()) {
+  if (SUCCEED != dsm_free()) {
 #ifdef HDF_NEW_VFD
-    HGOTO_ERROR(H5E_VFL, H5E_CANTFREE, FAIL, "DsmDealloc failed");
+    HGOTO_ERROR(H5E_VFL, H5E_CANTFREE, FAIL, "dsm_free failed");
 #endif
   }
 
@@ -330,7 +330,7 @@ H5FD_dsm_set_options(unsigned long flags)
 
   FUNC_ENTER_NOAPI(H5FD_dsm_set_options, FAIL)
 
-  if (SUCCEED != DsmSetOptions(flags))
+  if (SUCCEED != dsm_set_options(flags))
     HGOTO_ERROR(H5E_VFL, H5E_CANTMODIFY, FAIL, "cannot set options");
 
 done:
@@ -359,7 +359,7 @@ H5FD_dsm_notify(unsigned long flags)
 
   FUNC_ENTER_NOAPI(H5FD_dsm_notify, FAIL)
 
-  if (SUCCEED != DsmNotify(flags))
+  if (SUCCEED != dsm_notify(flags))
     HGOTO_ERROR(H5E_VFL, H5E_CANTUPDATE, FAIL, "cannot notify DSM");
 
 done:
@@ -388,7 +388,7 @@ H5FD_dsm_set_manager(void *manager)
 
   FUNC_ENTER_NOAPI(H5FD_dsm_set_manager, FAIL)
 
-  ret_value = DsmSetManager(manager);
+  ret_value = dsm_set_manager(manager);
 
 done:
   if (err_occurred) {
@@ -414,8 +414,8 @@ done:
  *-------------------------------------------------------------------------
  */
 herr_t
-H5Pset_fapl_dsm(hid_t fapl_id, MPI_Comm intra_comm,
-    void *local_buf_ptr, size_t local_buf_len)
+H5Pset_fapl_dsm(hid_t fapl_id, MPI_Comm intra_comm, void *local_buf_ptr,
+    size_t local_buf_len)
 {
   H5FD_dsm_fapl_t fa;
   herr_t ret_value = SUCCEED;
@@ -424,23 +424,22 @@ H5Pset_fapl_dsm(hid_t fapl_id, MPI_Comm intra_comm,
   FUNC_ENTER_API(H5Pset_fapl_dsm, FAIL)
 
   /* Check arguments */
-  if (NULL == (plist = (H5P_genplist_t*) H5P_object_verify(fapl_id, H5P_FILE_ACCESS)))
+  if (NULL == (plist = H5P_object_verify(fapl_id, H5P_FILE_ACCESS)))
     HGOTO_ERROR(H5E_ARGS, H5E_BADTYPE, FAIL, "not a file access property list");
   if (MPI_COMM_NULL == intra_comm)
     HGOTO_ERROR(H5E_PLIST, H5E_BADTYPE, FAIL, "not a valid communicator");
 
-  if (NULL != DsmGetManager()) {
-    ret_value = DsmAlloc(intra_comm, NULL, 0, &fa.intra_comm, &fa.local_buf_ptr,
-        &fa.local_buf_len);
-    if (SUCCEED != ret_value)
+  if (!dsm_get_manager()) {
+    if (SUCCEED != dsm_alloc(intra_comm, local_buf_ptr, local_buf_len))
       HGOTO_ERROR(H5E_PLIST, H5E_CANTALLOC, FAIL, "cannot allocate DSM buffer");
-  } else {
-    /* TODO we should get the local buf ptr etc, but not used for now */
   }
 
-  if (!DsmIsConnected() && !DsmIsServer()) {
+  if (SUCCEED != dsm_get_properties(&fa.intra_comm, &fa.local_buf_ptr, &fa.local_buf_len))
+    HGOTO_ERROR(H5E_PLIST, H5E_CANTALLOC, FAIL, "cannot get DSM properties");
+
+  if (!dsm_is_connected() && !dsm_is_server()) {
     /* TODO we should decide what to do if we cannot connect */
-    DsmConnect();
+    dsm_connect();
   }
 
   /* TODO Not sure if we should keep this junk
@@ -704,20 +703,20 @@ H5FD_dsm_open(const char *name, unsigned flags, hid_t fapl_id, haddr_t maxaddr)
   }
 
   /* Get address information from DSM */
-  if (SUCCEED != DsmGetManager()) {
+  if (!dsm_get_manager()) {
     HGOTO_ERROR(H5E_VFL, H5E_NOTFOUND, NULL, "DSM buffer not found");
   } else {
     file->local_buf_ptr = fa->local_buf_ptr;
     file->local_buf_len = fa->local_buf_len;
 
-    if (SUCCEED != DsmLock())
+    if (SUCCEED != dsm_lock())
       HGOTO_ERROR(H5E_VFL, H5E_CANTLOCK, NULL, "cannot lock DSM");
 
     /* TODO  Get is done by every process so we can do independent reads
      * (in parallel by blocks) using the driver as a serial driver. It may not
      * perform well though so we should change that.
      */
-    if (SUCCEED != DsmGetEntry(&file->start, &file->end)) {
+    if (SUCCEED != dsm_get_entry(&file->start, &file->end)) {
       HGOTO_ERROR(H5E_VFL, H5E_CANTRESTORE, NULL, "cannot restore DSM entries");
     } else {
       if (H5F_ACC_RDWR & flags) {
@@ -730,10 +729,6 @@ H5FD_dsm_open(const char *name, unsigned flags, hid_t fapl_id, haddr_t maxaddr)
         file->start = 0;
         file->end = 0;
         file->eof = 0;
-        //  file->end = MAX((file->start + file->eof), file->end);
-        //  file->eof = file->end - file->start;
-//        if (SUCCEED != DsmUpdateEntry(file->start, file->end))
-//          HGOTO_ERROR(H5E_VFL, H5E_CANTUPDATE, NULL, "cannot update DSM entries");
       } else {
         file->eof = file->end - file->start;
       }
@@ -786,8 +781,8 @@ H5FD_dsm_close(H5FD_t *_file)
   if (!file->read_only) {
     file->end = MAX((file->start + file->eof), file->end);
 
-    if ((file->intra_rank == 0) && (SUCCEED != DsmUpdateEntry(file->start, file->end))) {
-      /* If 0 fails in DsmUpdateEntry we still need to sync with others */
+    if ((file->intra_rank == 0) && (SUCCEED != dsm_update_entry(file->start, file->end))) {
+      /* If 0 fails in dsm_update_entry we still need to sync with others */
       if (MPI_SUCCESS != (mpi_code = MPI_Barrier(file->intra_comm)))
         HMPI_GOTO_ERROR(FAIL, "MPI_Barrier failed", mpi_code);
       HGOTO_ERROR(H5E_VFL, H5E_CANTUPDATE, FAIL, "cannot update DSM entries");
@@ -796,7 +791,7 @@ H5FD_dsm_close(H5FD_t *_file)
     if (MPI_SUCCESS != (mpi_code = MPI_Barrier(file->intra_comm)))
       HMPI_GOTO_ERROR(FAIL, "MPI_Barrier failed", mpi_code);
 
-    if (!DsmIsServer() || !DsmIsConnected()) {
+    if (!dsm_is_server() || !dsm_is_connected()) {
       /*
        * Be sure that everyone's here before releasing resources (done with
        * collective op). Gather all the dirty flags because some processes may
@@ -806,13 +801,13 @@ H5FD_dsm_close(H5FD_t *_file)
           sizeof(hbool_t), MPI_UNSIGNED_CHAR, MPI_MAX, file->intra_comm)))
         HMPI_GOTO_ERROR(FAIL, "MPI_Allreduce failed", mpi_code);
       if (is_someone_dirty) {
-        if (SUCCEED != DsmSetModified())
+        if (SUCCEED != dsm_set_modified())
           HGOTO_ERROR(H5E_VFL, H5E_CANTUNLOCK, FAIL, "cannot mark DSM as modified");
       }
     }
   }
 
-  if (SUCCEED != DsmUnlock())
+  if (SUCCEED != dsm_unlock())
     HGOTO_ERROR(H5E_VFL, H5E_CANTUPDATE, FAIL, "cannot unlock DSM");
 
   /* Release resources */
@@ -934,8 +929,8 @@ H5FD_dsm_set_eoa(H5FD_t *_file, H5FD_mem_t UNUSED type, haddr_t addr)
   file->end = MAX((file->start + file->eoa), file->end);
   file->eof = file->end - file->start;
   if (!file->read_only) {
-    if ((file->intra_rank == 0) && (SUCCEED != DsmUpdateEntry(file->start, file->end))) {
-      /* If 0 fails in DsmUpdateEntry we still need to sync with others */
+    if ((file->intra_rank == 0) && (SUCCEED != dsm_update_entry(file->start, file->end))) {
+      /* If 0 fails in dsm_update_entry we still need to sync with others */
       if (MPI_SUCCESS != (mpi_code = MPI_Barrier(file->intra_comm)))
         HMPI_GOTO_ERROR(FAIL, "MPI_Barrier failed", mpi_code);
       HGOTO_ERROR(H5E_VFL, H5E_CANTUPDATE, FAIL, "cannot update DSM entries");
@@ -1034,7 +1029,7 @@ H5FD_dsm_read(H5FD_t *_file, H5FD_mem_t UNUSED type, hid_t UNUSED dxpl_id,
     nbytes = MIN(size,(size_t)temp_nbytes);
 
     /* Read from DSM to BUF */
-    if (SUCCEED != DsmRead(file->start + addr, nbytes, buf)) {
+    if (SUCCEED != dsm_read(file->start + addr, nbytes, buf)) {
       HGOTO_ERROR(H5E_IO, H5E_READERROR, FAIL, "cannot read from DSM");
     } else {
       size -= nbytes;
@@ -1092,7 +1087,7 @@ H5FD_dsm_write(H5FD_t *_file, H5FD_mem_t UNUSED type, hid_t UNUSED dxpl_id,
     HGOTO_ERROR(H5E_IO, H5E_NOSPACE, FAIL, "not enough space in DSM");
 
   /* Write from BUF to DSM */
-  if (SUCCEED != DsmWrite(file->start + addr, size, buf))
+  if (SUCCEED != dsm_write(file->start + addr, size, buf))
     HGOTO_ERROR(H5E_IO, H5E_WRITEERROR, FAIL, "cannot write to DSM");
 
   /* Set dirty flag so that we know someone has written something */

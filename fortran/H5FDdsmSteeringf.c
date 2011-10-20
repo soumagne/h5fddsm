@@ -42,7 +42,7 @@ int_f nh5fd_dsm_steering_init_c(int_f* comm)
   /*
    * Call H5FD_dsm_steering_init function.
    */
-  ret = H5FD_dsm_steering_init(c_comm, NULL);
+  ret = H5FD_dsm_steering_init(c_comm);
   if (ret < 0) return ret_value;
   ret_value = 0;
   return ret_value;
@@ -123,7 +123,7 @@ int_f nh5fd_dsm_steering_is_set_c(_fcd name, int_f* namelen, int_f* set)
      /*
       * Call H5FD_dsm_steering_is_set function.
       */
-     ret = H5FD_dsm_steering_is_set(c_name, set);
+     ret = H5FD_dsm_steering_is_set(c_name, (hbool_t*) set);
      HDfree(c_name);
      if (ret < 0) return ret_value;
      return 0;

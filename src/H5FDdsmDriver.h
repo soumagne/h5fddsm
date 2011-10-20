@@ -33,30 +33,31 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-  H5FDdsm_EXPORT void   *DsmGetManager();
-  H5FDdsm_EXPORT herr_t  DsmSetManager(void *manager);
+  H5FDdsm_EXPORT void   *dsm_get_manager();
+  H5FDdsm_EXPORT herr_t  dsm_get_properties(MPI_Comm *intra_comm,
+      void **buf_ptr_ptr, size_t *buf_len_ptr);
+  H5FDdsm_EXPORT herr_t  dsm_set_manager(void *manager);
 
-  H5FDdsm_EXPORT herr_t  DsmAlloc(MPI_Comm intra_comm, void *buf_ptr, size_t buf_len,
-      MPI_Comm *new_intra_comm, void **new_buf_ptr_ptr, size_t *new_buf_len_ptr);
-  H5FDdsm_EXPORT herr_t  DsmDealloc();
+  H5FDdsm_EXPORT herr_t  dsm_alloc(MPI_Comm intra_comm, void *buf_ptr, size_t buf_len);
+  H5FDdsm_EXPORT herr_t  dsm_free();
 
-  H5FDdsm_EXPORT hbool_t DsmIsServer();
-  H5FDdsm_EXPORT herr_t  DsmSetOptions(unsigned long flags);
+  H5FDdsm_EXPORT hbool_t dsm_is_server();
+  H5FDdsm_EXPORT herr_t  dsm_set_options(unsigned long flags);
 
-  H5FDdsm_EXPORT hbool_t DsmIsConnected();
-  H5FDdsm_EXPORT herr_t  DsmConnect();
+  H5FDdsm_EXPORT hbool_t dsm_is_connected();
+  H5FDdsm_EXPORT herr_t  dsm_connect();
 
-  H5FDdsm_EXPORT herr_t  DsmUpdateEntry(haddr_t start, haddr_t end);
-  H5FDdsm_EXPORT herr_t  DsmGetEntry(haddr_t *start_ptr, haddr_t *end_ptr);
+  H5FDdsm_EXPORT herr_t  dsm_update_entry(haddr_t start, haddr_t end);
+  H5FDdsm_EXPORT herr_t  dsm_get_entry(haddr_t *start_ptr, haddr_t *end_ptr);
 
-  H5FDdsm_EXPORT herr_t  DsmLock();
-  H5FDdsm_EXPORT herr_t  DsmUnlock();
+  H5FDdsm_EXPORT herr_t  dsm_lock();
+  H5FDdsm_EXPORT herr_t  dsm_unlock();
 
-  H5FDdsm_EXPORT herr_t  DsmRead(haddr_t addr, size_t len, void *buf_ptr);
-  H5FDdsm_EXPORT herr_t  DsmWrite(haddr_t addr, size_t len, const void *buf_ptr);
+  H5FDdsm_EXPORT herr_t  dsm_read(haddr_t addr, size_t len, void *buf_ptr);
+  H5FDdsm_EXPORT herr_t  dsm_write(haddr_t addr, size_t len, const void *buf_ptr);
 
-  H5FDdsm_EXPORT herr_t  DsmSetModified();
-  H5FDdsm_EXPORT herr_t  DsmNotify(unsigned long flags);
+  H5FDdsm_EXPORT herr_t  dsm_set_modified();
+  H5FDdsm_EXPORT herr_t  dsm_notify(unsigned long flags);
 #ifdef __cplusplus
 }
 #endif

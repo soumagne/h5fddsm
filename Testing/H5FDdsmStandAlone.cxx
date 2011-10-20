@@ -47,12 +47,11 @@ main(int argc, char * argv[])
 
   // Write Data
   TestParticleWrite(fullname, numParticles, 1, 1, dsmManager->GetUpdatePiece(),
-      dsmManager->GetUpdateNumPieces(), comm, dsmManager->GetDsmBuffer(), usingHDF);
+      dsmManager->GetUpdateNumPieces(), comm, dsmManager, usingHDF);
 
   // Read and Check Data
   TestParticleRead(fullname, dsmManager->GetUpdatePiece(),
-      dsmManager->GetUpdateNumPieces() * numParticles, comm,
-      dsmManager->GetDsmBuffer());
+      dsmManager->GetUpdateNumPieces() * numParticles, comm, dsmManager);
 
   delete dsmManager;
 

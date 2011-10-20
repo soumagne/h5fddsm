@@ -659,11 +659,11 @@ H5FDdsmInt32 H5FDdsmManager::WriteSteeredData()
 {
   if (this->ManagerInternals->SteeringValuesInt.size() ||
       this->ManagerInternals->SteeringValuesDouble.size()) {
-    this->DsmBuffer->GetSteerer()->BeginInteractionsCache(H5F_ACC_RDWR);
+    this->Steerer->BeginInteractionsCache(H5F_ACC_RDWR);
     while (!this->ManagerInternals->SteeringValuesInt.empty()) {
       H5FDdsmManagerInternals::SteeringEntryInt entryInt =
           this->ManagerInternals->SteeringValuesInt.back();
-      this->DsmBuffer->GetSteerer()->WriteInteractions(entryInt.Text.c_str(),
+      this->Steerer->WriteInteractions(entryInt.Text.c_str(),
           entryInt.NumberOfElements, entryInt.Values);
       delete []entryInt.Values;
       this->ManagerInternals->SteeringValuesInt.pop_back();
@@ -671,12 +671,12 @@ H5FDdsmInt32 H5FDdsmManager::WriteSteeredData()
     while (!this->ManagerInternals->SteeringValuesDouble.empty()) {
       H5FDdsmManagerInternals::SteeringEntryDouble entryDouble =
           this->ManagerInternals->SteeringValuesDouble.back();
-      this->DsmBuffer->GetSteerer()->WriteInteractions(entryDouble.Text.c_str(),
+      this->Steerer->WriteInteractions(entryDouble.Text.c_str(),
           entryDouble.NumberOfElements, entryDouble.Values);
       delete []entryDouble.Values;
       this->ManagerInternals->SteeringValuesDouble.pop_back();
     }
-    this->DsmBuffer->GetSteerer()->EndInteractionsCache();
+    this->Steerer->EndInteractionsCache();
   }
   return(H5FD_DSM_SUCCESS);
 }
@@ -687,13 +687,13 @@ H5FDdsmInt32 H5FDdsmManager::UpdateSteeredObjects()
   this->WriteSteeredData();
 
   while (!this->ManagerInternals->RequestedDisabledObjects.empty()) {
-    this->DsmBuffer->GetSteerer()->SetDisabledObject(
+    this->Steerer->SetDisabledObject(
         this->ManagerInternals->RequestedDisabledObjects.back().c_str());
     this->ManagerInternals->RequestedDisabledObjects.pop_back();
   }
 
-  this->DsmBuffer->GetSteerer()->UpdateSteeringCommands();
-  this->DsmBuffer->GetSteerer()->UpdateDisabledObjects();
+  this->Steerer->UpdateSteeringCommands();
+  this->Steerer->UpdateDisabledObjects();
   return(H5FD_DSM_SUCCESS);
 }
 
@@ -704,7 +704,7 @@ void H5FDdsmManager::SetSteeringCommand(H5FDdsmConstString cmd)
   if (cmd) {
     if (!strcmp(cmd, "none")) { return; }
     // Send command
-    this->DsmBuffer->GetSteerer()->SetCurrentCommand(cmd);
+    this->Steerer->SetCurrentCommand(cmd);
   }
 }
 
@@ -742,9 +742,9 @@ H5FDdsmInt32 H5FDdsmManager::GetSteeringValues(const char *name, int numberOfEle
 {
   H5FDdsmInt32 ret = H5FD_DSM_FALSE;
   if (numberOfElements) {
-    this->DsmBuffer->GetSteerer()->BeginInteractionsCache(H5F_ACC_RDONLY);
-    ret = (H5FD_DSM_SUCCESS==this->DsmBuffer->GetSteerer()->ReadInteractions(name, numberOfElements, values));
-    this->DsmBuffer->GetSteerer()->EndInteractionsCache();
+    this->Steerer->BeginInteractionsCache(H5F_ACC_RDONLY);
+    ret = (H5FD_DSM_SUCCESS==this->Steerer->ReadInteractions(name, numberOfElements, values));
+    this->Steerer->EndInteractionsCache();
   }
   return(ret);
 }
@@ -783,9 +783,9 @@ H5FDdsmInt32 H5FDdsmManager::GetSteeringValues(const char *name, int numberOfEle
 {
   H5FDdsmInt32 ret = H5FD_DSM_FALSE;
   if (numberOfElements) {
-    this->DsmBuffer->GetSteerer()->BeginInteractionsCache(H5F_ACC_RDONLY);
-    ret = (H5FD_DSM_SUCCESS==this->DsmBuffer->GetSteerer()->ReadInteractions(name, numberOfElements, values));
-    this->DsmBuffer->GetSteerer()->EndInteractionsCache();
+    this->Steerer->BeginInteractionsCache(H5F_ACC_RDONLY);
+    ret = (H5FD_DSM_SUCCESS==this->Steerer->ReadInteractions(name, numberOfElements, values));
+    this->Steerer->EndInteractionsCache();
   }
   return(ret);
 }
@@ -794,9 +794,9 @@ H5FDdsmInt32 H5FDdsmManager::GetSteeringValues(const char *name, int numberOfEle
 H5FDdsmInt32 H5FDdsmManager::GetInteractionsGroupPresent()
 {
   H5FDdsmInt32 ret = H5FD_DSM_FALSE;
-  if ((this->DsmBuffer != NULL) && (this->DsmBuffer->GetSteerer() != NULL)) {
-    ret = (H5FD_DSM_SUCCESS==this->DsmBuffer->GetSteerer()->BeginInteractionsCache(H5F_ACC_RDONLY));
-    this->DsmBuffer->GetSteerer()->EndInteractionsCache();
+  if ((this->DsmBuffer != NULL) && (this->Steerer != NULL)) {
+    ret = (H5FD_DSM_SUCCESS==this->Steerer->BeginInteractionsCache(H5F_ACC_RDONLY));
+    this->Steerer->EndInteractionsCache();
   }
   return(ret);
 }

@@ -66,8 +66,8 @@ public:
   void           BeginHideHDF5Errors();
   void           EndHideHDF5Errors();
 
-  H5FDdsmInt32 IsObjectEnabled(H5FDdsmConstString name);
-  H5FDdsmInt32 IsObjectPresent(H5FDdsmConstString name, int &present);
+  H5FDdsmBoolean IsObjectEnabled(H5FDdsmConstString name);
+  H5FDdsmInt32 IsObjectPresent(H5FDdsmConstString name, H5FDdsmBoolean &present);
   H5FDdsmInt32 GetScalar(H5FDdsmConstString name, hid_t memType, void *data);
   H5FDdsmInt32 SetScalar(H5FDdsmConstString name, hid_t memType, void *data);
   H5FDdsmInt32 GetVector(H5FDdsmConstString name, hid_t memType, hsize_t numberOfElements, void *data);

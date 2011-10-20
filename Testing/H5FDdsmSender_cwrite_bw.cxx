@@ -46,7 +46,8 @@ int main(int argc, char **argv)
       (sizeof(H5FDdsmFloat64) * DIM_DATASETS * dsmManager->GetUpdateNumPieces()));
   numParticles /= NUM_DATASETS;
   if (dsmManager->GetDsmBuffer()->GetDsmType() == H5FD_DSM_TYPE_DYNAMIC_MASK) {
-    dsmManager->GetDsmBuffer()->SetMaskLength(numParticles * sizeof(H5FDdsmFloat64) * DIM_DATASETS * dsmManager->GetUpdateNumPieces());
+    dsmManager->GetDsmBuffer()->SetMaskLength(numParticles * sizeof(H5FDdsmFloat64) *
+        DIM_DATASETS * dsmManager->GetUpdateNumPieces());
     dsmManager->GetDsmBuffer()->SendMaskLength();
   }
   Bytes       = numParticles * sizeof(H5FDdsmFloat64) * DIM_DATASETS * NUM_DATASETS; // 3 = {x,y,z}
@@ -75,10 +76,14 @@ int main(int argc, char **argv)
       // Warming up
       for (int skip = 0; skip < SKIP; skip++) {
         if (type == 0) {
-          TestParticleWrite(fullname, numParticles, DIM_DATASETS, NUM_DATASETS, dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(), comm, dsmManager->GetDsmBuffer(), usingHDF);
+          TestParticleWrite(fullname, numParticles, DIM_DATASETS, NUM_DATASETS,
+              dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(),
+              comm, dsmManager, usingHDF);
         }
         else if (type == 1) {
-          TestParticleWrite(hdffile.c_str(), numParticles, DIM_DATASETS, NUM_DATASETS, dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(), comm, NULL, usingHDF);
+          TestParticleWrite(hdffile.c_str(), numParticles, DIM_DATASETS, NUM_DATASETS,
+              dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(),
+              comm, NULL, usingHDF);
         }
       }
       for (int loop = 0; loop < LOOPS; loop++) {
@@ -88,10 +93,14 @@ int main(int argc, char **argv)
             // We have configured everything manually using the DSM manager, so pass the buffer
             // into the read/write code so that we can use the dsm that we have setup
             // otherwise it creates a new DSM server object
-            totaltime += TestParticleWrite(fullname, numParticles, DIM_DATASETS, NUM_DATASETS, dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(), comm, dsmManager->GetDsmBuffer(), usingHDF);
+            totaltime += TestParticleWrite(fullname, numParticles, DIM_DATASETS, NUM_DATASETS,
+                dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(),
+                comm, dsmManager, usingHDF);
           }
           else if (type == 1) {
-            totaltime += TestParticleWrite(hdffile.c_str(), numParticles, DIM_DATASETS, NUM_DATASETS, dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(), comm, NULL, usingHDF);
+            totaltime += TestParticleWrite(hdffile.c_str(), numParticles, DIM_DATASETS, NUM_DATASETS,
+                dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(),
+                comm, NULL, usingHDF);
           }
         }
         totaltime = totaltime / AVERAGE;

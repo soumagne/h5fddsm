@@ -49,7 +49,7 @@ extern "C" {
    * Either the HDF path of a particular dataset or the grid object name
    * can be given (In this last case, it has to match the name given in the template).
    */
-  H5FDdsm_EXPORT herr_t H5FD_dsm_steering_is_enabled(const char *name);
+  H5FDdsm_EXPORT hbool_t H5FD_dsm_steering_is_enabled(const char *name);
 
   /* Description:
    * Pause and wait until completion of steering orders, released by a play.
@@ -72,7 +72,7 @@ extern "C" {
   /* Description:
    * Return true if the object exists in the "Interactions" group.
    */
-  H5FDdsm_EXPORT herr_t H5FD_dsm_steering_is_set(const char *name, int *set);
+  H5FDdsm_EXPORT herr_t H5FD_dsm_steering_is_set(const char *name, hbool_t *set);
 
   /* Description:
    * Get/Set the scalar value corresponding to the property name given in the template.

@@ -46,8 +46,8 @@ H5FDdsmManager *dsmManager = NULL;
    if (err_occurred) { HGOTO_DONE(ret_val) }                               \
 }
 
-// #define H5FD_DSM_DEBUG
-#ifdef H5FD_DSM_DEBUG
+//#define H5FD_DSM_DRIVER_DEBUG
+#ifdef H5FD_DSM_DRIVER_DEBUG
 #  define PRINT_DSM_DRIVER_INFO(a,x) std::cout << "(" << a << ") " << x << std::endl;
 #else
 #  define PRINT_DSM_DRIVER_INFO(a,x)
@@ -55,11 +55,11 @@ H5FDdsmManager *dsmManager = NULL;
 
 //--------------------------------------------------------------------------
 void*
-DsmGetManager()
+dsm_get_manager()
 {
   void *ret_value = NULL;
 
-  FUNC_ENTER_NOAPI_NOFUNC(DsmGetManager)
+  FUNC_ENTER_NOAPI_NOFUNC(dsm_get_manager)
 
   if (dsmManager) ret_value = static_cast <void*> (dsmManager);
 
@@ -68,11 +68,41 @@ DsmGetManager()
 
 //--------------------------------------------------------------------------
 herr_t
-DsmSetManager(void *manager)
+dsm_get_properties(MPI_Comm *intra_comm, void **buf_ptr_ptr, size_t *buf_len_ptr)
 {
   herr_t ret_value = SUCCEED;
 
-  FUNC_ENTER_NOAPI(DsmSetManager, FAIL)
+  FUNC_ENTER_NOAPI(dsm_get_properties, FAIL)
+
+  if (!dsmManager)
+    DSM_DRIVER_GOTO_ERROR("No DSM manager found", FAIL);
+
+  if (intra_comm) *intra_comm = dsmManager->GetMpiComm();
+  if (dsmManager->GetIsServer()) {
+    if (buf_ptr_ptr) *buf_ptr_ptr =
+        dsmManager->GetDsmBuffer()->GetStorage()->GetDataPointer();
+    if (buf_len_ptr) *buf_len_ptr =
+        dsmManager->GetDsmBuffer()->GetStorage()->GetLength();
+  } else {
+    if (buf_ptr_ptr) *buf_ptr_ptr = NULL;
+    if (buf_len_ptr) *buf_len_ptr = 0;
+  }
+
+done:
+  if (err_occurred) {
+    /* Nothing */
+  }
+
+  FUNC_LEAVE_NOAPI(ret_value);
+}
+
+//--------------------------------------------------------------------------
+herr_t
+dsm_set_manager(void *manager)
+{
+  herr_t ret_value = SUCCEED;
+
+  FUNC_ENTER_NOAPI(dsm_set_manager, FAIL)
 
   if (!manager)
     DSM_DRIVER_GOTO_ERROR("Invalid argument", FAIL);
@@ -89,12 +119,11 @@ done:
 
 //--------------------------------------------------------------------------
 herr_t
-DsmAlloc(MPI_Comm intra_comm, void *buf_ptr, size_t buf_len,
-    MPI_Comm *new_intra_comm, void **new_buf_ptr_ptr, size_t *new_buf_len_ptr)
+dsm_alloc(MPI_Comm intra_comm, void *buf_ptr, size_t buf_len)
 {
   herr_t ret_value = SUCCEED;
 
-  FUNC_ENTER_NOAPI(DsmAlloc, FAIL)
+  FUNC_ENTER_NOAPI(dsm_alloc, FAIL)
 
   // Check arguments
   if (dsmManager)
@@ -122,15 +151,6 @@ DsmAlloc(MPI_Comm intra_comm, void *buf_ptr, size_t buf_len,
     // }
   // }
 
-  if (new_intra_comm) *new_intra_comm = dsmManager->GetMpiComm();
-  if (dsmManager->GetIsServer()) {
-    if (new_buf_ptr_ptr) *new_buf_ptr_ptr = dsmManager->GetDsmBuffer()->GetStorage()->GetDataPointer();
-    if (new_buf_len_ptr) *new_buf_len_ptr = dsmManager->GetDsmBuffer()->GetStorage()->GetLength();
-  } else {
-    if (new_buf_ptr_ptr) *new_buf_ptr_ptr = NULL;
-    if (new_buf_len_ptr) *new_buf_len_ptr = 0;
-  }
-
 done:
   if (err_occurred) {
     /* Nothing */
@@ -141,11 +161,11 @@ done:
 
 //--------------------------------------------------------------------------
 herr_t
-DsmDealloc()
+dsm_free()
 {
   herr_t ret_value = SUCCEED;
 
-  FUNC_ENTER_NOAPI(DsmDealloc, FAIL)
+  FUNC_ENTER_NOAPI(dsm_free, FAIL)
 
   if (dsmManager) {
     if (dsmManager->GetIsAutoAllocated()) {
@@ -169,11 +189,11 @@ done:
 
 //--------------------------------------------------------------------------
 hbool_t
-DsmIsServer()
+dsm_is_server()
 {
   herr_t ret_value = TRUE;
 
-  FUNC_ENTER_NOAPI(DsmIsServer, FAIL)
+  FUNC_ENTER_NOAPI(dsm_is_server, FAIL)
 
   if (!dsmManager)
     DSM_DRIVER_GOTO_ERROR("No DSM manager found", FAIL);
@@ -190,12 +210,12 @@ done:
 
 //--------------------------------------------------------------------------
 herr_t
-DsmSetOptions(unsigned long flags)
+dsm_set_options(unsigned long flags)
 {
   herr_t ret_value = SUCCEED;
   H5FDdsmBufferService *dsmBufferService = NULL;
 
-  FUNC_ENTER_NOAPI(DsmSetOptions, FAIL)
+  FUNC_ENTER_NOAPI(dsm_set_options, FAIL)
 
   if (dsmManager) {
     dsmBufferService = dsmManager->GetDsmBuffer();
@@ -227,11 +247,11 @@ done:
 
 //--------------------------------------------------------------------------
 hbool_t
-DsmIsConnected()
+dsm_is_connected()
 {
   herr_t ret_value = TRUE;
 
-  FUNC_ENTER_NOAPI(DsmIsConnected, FAIL)
+  FUNC_ENTER_NOAPI(dsm_is_connected, FAIL)
 
   if (!dsmManager)
     DSM_DRIVER_GOTO_ERROR("No DSM manager found", FAIL);
@@ -248,11 +268,11 @@ done:
 
 //--------------------------------------------------------------------------
 herr_t
-DsmConnect()
+dsm_connect()
 {
   herr_t ret_value = SUCCEED;
 
-  FUNC_ENTER_NOAPI(DsmConnect, FAIL)
+  FUNC_ENTER_NOAPI(dsm_connect, FAIL)
 
   if (!dsmManager)
     DSM_DRIVER_GOTO_ERROR("No DSM manager found", FAIL);
@@ -277,14 +297,14 @@ done:
 
 //--------------------------------------------------------------------------
 herr_t
-DsmUpdateEntry(haddr_t start, haddr_t end)
+dsm_update_entry(haddr_t start, haddr_t end)
 {
   herr_t ret_value = SUCCEED;
   H5FDdsmAddr addr;
   H5FDdsmEntry entry;
   H5FDdsmBufferService *dsmBufferService = NULL;
 
-  FUNC_ENTER_NOAPI(DsmUpdateEntry, FAIL)
+  FUNC_ENTER_NOAPI(dsm_update_entry, FAIL)
 
   if (dsmManager) {
     dsmBufferService = dsmManager->GetDsmBuffer();
@@ -299,14 +319,14 @@ DsmUpdateEntry(haddr_t start, haddr_t end)
   addr = (H5FDdsmAddr) (dsmBufferService->GetTotalLength() - sizeof(H5FDdsmMetaData));
 
   PRINT_DSM_DRIVER_INFO(dsmManager->GetUpdatePiece(),
-      "DsmUpdateEntry start " << start << " end " << end << " addr " << addr);
+      "dsm_update_entry start " << start << " end " << end << " addr " << addr);
 
   // Do not send anything if the end of the file is 0
   if (entry.end > 0) {
     if (dsmBufferService->Put(addr, sizeof(entry), &entry) != H5FD_DSM_SUCCESS)
       DSM_DRIVER_GOTO_ERROR("Cannot put entry", FAIL);
   } else {
-    PRINT_DSM_DRIVER_INFO(dsmManager->GetUpdatePiece(), "End entry is " << entry.end);
+    PRINT_DSM_DRIVER_INFO(dsmManager->GetUpdatePiece(), "end entry is " << entry.end);
   }
 
 done:
@@ -319,14 +339,14 @@ done:
 
 //--------------------------------------------------------------------------
 herr_t
-DsmGetEntry(haddr_t *start_ptr, haddr_t *end_ptr)
+dsm_get_entry(haddr_t *start_ptr, haddr_t *end_ptr)
 {
   herr_t ret_value = SUCCEED;
   H5FDdsmAddr addr;
   H5FDdsmEntry entry;
   H5FDdsmBufferService *dsmBufferService = NULL;
 
-  FUNC_ENTER_NOAPI(DsmGetEntry, FAIL)
+  FUNC_ENTER_NOAPI(dsm_get_entry, FAIL)
 
   if (dsmManager) {
     dsmBufferService = dsmManager->GetDsmBuffer();
@@ -344,8 +364,8 @@ DsmGetEntry(haddr_t *start_ptr, haddr_t *end_ptr)
   *start_ptr = entry.start;
   *end_ptr   = entry.end;
 
-  PRINT_DSM_DRIVER_INFO(dsmManager->GetUpdatePiece(), "DsmGetEntry start " <<
-      file->start << " end " << file->end << " addr " << addr);
+  PRINT_DSM_DRIVER_INFO(dsmManager->GetUpdatePiece(), "dsm_get_entry start " <<
+      *start_ptr << " end " << *end_ptr << " addr " << addr);
 
 done:
   if (err_occurred) {
@@ -357,12 +377,12 @@ done:
 
 //--------------------------------------------------------------------------
 herr_t
-DsmLock()
+dsm_lock()
 {
   herr_t ret_value = SUCCEED;
   H5FDdsmBufferService *dsmBufferService = NULL;
 
-  FUNC_ENTER_NOAPI(DsmLock, FAIL)
+  FUNC_ENTER_NOAPI(dsm_lock, FAIL)
 
   if (dsmManager) {
     dsmBufferService = dsmManager->GetDsmBuffer();
@@ -387,12 +407,12 @@ done:
 
 //--------------------------------------------------------------------------
 herr_t
-DsmUnlock()
+dsm_unlock()
 {
   herr_t ret_value = SUCCEED;
   H5FDdsmBufferService *dsmBufferService;
 
-  FUNC_ENTER_NOAPI(DsmUnlock, FAIL)
+  FUNC_ENTER_NOAPI(dsm_unlock, FAIL)
 
   if (dsmManager) {
     dsmBufferService = dsmManager->GetDsmBuffer();
@@ -417,12 +437,12 @@ done:
 
 //--------------------------------------------------------------------------
 herr_t
-DsmRead(haddr_t addr, size_t len, void *buf_ptr)
+dsm_read(haddr_t addr, size_t len, void *buf_ptr)
 {
   herr_t ret_value = SUCCEED;
   H5FDdsmBufferService *dsmBufferService;
 
-  FUNC_ENTER_NOAPI(DsmRead, FAIL)
+  FUNC_ENTER_NOAPI(dsm_read, FAIL)
 
   if (dsmManager) {
     dsmBufferService = dsmManager->GetDsmBuffer();
@@ -446,12 +466,12 @@ done:
 
 //--------------------------------------------------------------------------
 herr_t
-DsmWrite(haddr_t addr, size_t len, const void *buf_ptr)
+dsm_write(haddr_t addr, size_t len, const void *buf_ptr)
 {
   herr_t ret_value = SUCCEED;
   H5FDdsmBufferService *dsmBufferService;
 
-  FUNC_ENTER_NOAPI(DsmWrite, FAIL)
+  FUNC_ENTER_NOAPI(dsm_write, FAIL)
 
   if (dsmManager) {
     dsmBufferService = dsmManager->GetDsmBuffer();
@@ -474,12 +494,12 @@ done:
 }
 //--------------------------------------------------------------------------
 herr_t
-DsmSetModified()
+dsm_set_modified()
 {
   herr_t ret_value = SUCCEED;
   H5FDdsmBufferService *dsmBufferService;
 
-  FUNC_ENTER_NOAPI(DsmSetModified, FAIL)
+  FUNC_ENTER_NOAPI(dsm_set_modified, FAIL)
 
   if (dsmManager) {
     dsmBufferService = dsmManager->GetDsmBuffer();
@@ -491,7 +511,7 @@ DsmSetModified()
 
   dsmBufferService->SetIsDataModified(H5FD_DSM_TRUE);
   if (dsmBufferService->GetNotificationOnClose()) {
-    if (SUCCEED != DsmNotify(H5FD_DSM_NEW_DATA))
+    if (SUCCEED != dsm_notify(H5FD_DSM_NEW_DATA))
       DSM_DRIVER_GOTO_ERROR("cannot notify DSM", FAIL);
   }
 
@@ -505,12 +525,12 @@ done:
 
 //--------------------------------------------------------------------------
 herr_t
-DsmNotify(unsigned long flags)
+dsm_notify(unsigned long flags)
 {
   herr_t ret_value = SUCCEED;
   H5FDdsmBufferService *dsmBufferService;
 
-  FUNC_ENTER_NOAPI(DsmNotify, FAIL)
+  FUNC_ENTER_NOAPI(dsm_notify, FAIL)
 
   if (dsmManager) {
     dsmBufferService = dsmManager->GetDsmBuffer();

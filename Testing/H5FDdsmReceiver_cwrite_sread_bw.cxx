@@ -28,7 +28,7 @@ int main(int argc, char *argv[])
         // printf("Trying to read %d * %llu particles\n", nRemoteProcs, numParticles);
       }
       TestParticleRead(fullname, dsmManager->GetUpdatePiece(),
-          nRemoteProcs * numParticles, comm, dsmManager->GetDsmBuffer());
+          nRemoteProcs * numParticles, comm, dsmManager);
       // Sync here
       MPI_Barrier(comm);
       // Clean up for next step

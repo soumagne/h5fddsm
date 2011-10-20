@@ -12,33 +12,34 @@
 int main(int argc, char **argv)
 {
   MPI_Comm comm = MPI_COMM_WORLD;
-  H5FDdsmInt32 intScalarSet, intVectorSet;
-  H5FDdsmInt32 doubleScalarSet, doubleVectorSet;
+  hbool_t intScalarSet, intVectorSet;
+  hbool_t doubleScalarSet, doubleVectorSet;
   H5FDdsmFloat64 remoteMB;
   H5FDdsmUInt64 numParticles;
   H5FDdsmConstString fullname = "dsm";
   H5FDdsmManager *dsmManager = new H5FDdsmManager();
 
   senderInit(argc, argv, dsmManager, &comm);
-  H5FD_dsm_steering_init(comm, dsmManager->GetDsmBuffer());
+  H5FD_dsm_set_manager(dsmManager);
+  H5FD_dsm_steering_init(comm);
 
   remoteMB = dsmManager->GetDsmBuffer()->GetTotalLength() / (1024.0 * 1024.0);
   numParticles = (H5FDdsmUInt64) ((1024 * 1024 * remoteMB / 2) /
       (sizeof(H5FDdsmFloat64) * DIM_DATASETS * dsmManager->GetUpdateNumPieces()));
 
   // Step 0: array is enabled and written
-  assert(H5FD_dsm_steering_is_enabled("Position") == 0);
-  if (H5FD_dsm_steering_is_enabled("Position") == 0) {
+  assert(H5FD_dsm_steering_is_enabled("Position"));
+  if (H5FD_dsm_steering_is_enabled("Position")) {
     TestParticleWrite(fullname, numParticles, DIM_DATASETS, NUM_DATASETS, dsmManager->GetUpdatePiece(),
-        dsmManager->GetUpdateNumPieces(), comm, dsmManager->GetDsmBuffer(), usingHDF);
+        dsmManager->GetUpdateNumPieces(), comm, dsmManager, usingHDF);
   }
 
   H5FD_dsm_steering_update();
   // Step 1: array is set disabled
-  assert(H5FD_dsm_steering_is_enabled("Position") < 0);
-  if (H5FD_dsm_steering_is_enabled("Position") == 0) {
+  assert(!H5FD_dsm_steering_is_enabled("Position"));
+  if (H5FD_dsm_steering_is_enabled("Position")) {
     TestParticleWrite(fullname, numParticles, DIM_DATASETS, NUM_DATASETS, dsmManager->GetUpdatePiece(),
-        dsmManager->GetUpdateNumPieces(), comm, dsmManager->GetDsmBuffer(), usingHDF);
+        dsmManager->GetUpdateNumPieces(), comm, dsmManager, usingHDF);
   }
 
   H5FD_dsm_steering_update();

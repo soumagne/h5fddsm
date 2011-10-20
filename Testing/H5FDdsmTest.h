@@ -46,29 +46,29 @@ void freeBuffer(ParticleBuffer_t *buffer);
 
 // pointer to a function, either HDF5 or DSM write function
 typedef void (*FuncPointer)(ParticleBuffer*, H5FDdsmConstString, H5FDdsmUInt64,
-    H5FDdsmUInt64, H5FDdsmUInt32, H5FDdsmUInt64, H5FDdsmUInt64, MPI_Comm, H5FDdsmBuffer*);
+    H5FDdsmUInt64, H5FDdsmUInt32, H5FDdsmUInt64, H5FDdsmUInt64, MPI_Comm, H5FDdsmManager*);
 
 void particleWriteHdf(ParticleBuffer *buf, H5FDdsmConstString filename,
     H5FDdsmUInt64 N, H5FDdsmUInt64 C, H5FDdsmUInt32 numberOfDataSets,
-    H5FDdsmUInt64 start, H5FDdsmUInt64 total, MPI_Comm comm, H5FDdsmBuffer *dsmBuffer);
+    H5FDdsmUInt64 start, H5FDdsmUInt64 total, MPI_Comm comm, H5FDdsmManager *dsmManager);
 
 void particleWriteDsm(ParticleBuffer *buf, H5FDdsmConstString filename,
     H5FDdsmUInt64 N, H5FDdsmUInt64 C, H5FDdsmUInt32 numberOfDataSets,
-    H5FDdsmUInt64 start, H5FDdsmUInt64 total, MPI_Comm comm, H5FDdsmBuffer *dsmBuffer);
+    H5FDdsmUInt64 start, H5FDdsmUInt64 total, MPI_Comm comm, H5FDdsmManager *dsmManager);
 
 const FuncPointer usingHDF = particleWriteHdf;
 const FuncPointer usingDSM = particleWriteDsm;
 
-void particleReadHdf(ParticleBuffer_t *buf, const char *filename, int rank, H5FDdsmBuffer *dsmBuffer);
+void particleReadHdf(ParticleBuffer_t *buf, const char *filename, int rank, H5FDdsmManager *dsmManager);
 
 H5FDdsmFloat64 TestParticleWrite(
     H5FDdsmConstString filename, H5FDdsmUInt64 N, H5FDdsmUInt64 C,
     H5FDdsmUInt32 numberOfDataSets, H5FDdsmInt32 mpiId, H5FDdsmInt32 mpiNum,
-    MPI_Comm dcomm, H5FDdsmBuffer *dsmBuffer, FuncPointer pointer);
+    MPI_Comm dcomm, H5FDdsmManager *dsmManager, FuncPointer pointer);
 
 H5FDdsmFloat64 TestParticleRead(
     H5FDdsmConstString filename, H5FDdsmInt32 rank, H5FDdsmUInt64 N,
-    MPI_Comm comm, H5FDdsmBuffer *dsmBuffer);
+    MPI_Comm comm, H5FDdsmManager *dsmManager);
 
 void receiverInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *comm);
 void receiverFinalize(H5FDdsmManager *dsmManager, MPI_Comm *comm);

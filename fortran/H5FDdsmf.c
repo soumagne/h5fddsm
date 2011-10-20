@@ -63,7 +63,7 @@ int_f nh5pset_fapl_dsm_c(hid_t_f *prp_id, int_f* comm)
      /*
       * Call H5Pset_fapl_dsm function.
       */
-     ret = H5Pset_fapl_dsm(c_prp_id, c_comm, NULL);
+     ret = H5Pset_fapl_dsm(c_prp_id, c_comm, NULL, 0);
      if (ret < 0) return ret_value;
      ret_value = 0;
      return ret_value;
@@ -87,7 +87,7 @@ int_f nh5pget_fapl_dsm_c(hid_t_f *prp_id, int_f* comm)
       * Call H5Pget_fapl_dsm function.
       */
      c_prp_id = *prp_id;
-     ret = H5Pget_fapl_dsm(c_prp_id, &c_comm, NULL);
+     ret = H5Pget_fapl_dsm(c_prp_id, &c_comm, NULL, NULL);
      if (ret < 0) return ret_value;
      *comm = (int_f) MPI_Comm_c2f(c_comm);
      ret_value = 0;
@@ -111,7 +111,7 @@ int_f nh5fd_dsm_set_options_c(int_f* options)
      /*
       * Call H5FD_dsm_set_options function.
       */
-     ret = H5FD_dsm_set_options(c_options, NULL);
+     ret = H5FD_dsm_set_options(c_options);
      if (ret < 0) return ret_value;
      ret_value = 0;
      return ret_value;
@@ -135,7 +135,7 @@ int_f nh5fd_dsm_notify_c(int_f* notifications)
      /*
       * Call H5FD_dsm_notify function.
       */
-     ret = H5FD_dsm_notify(c_notifications, NULL);
+     ret = H5FD_dsm_notify(c_notifications);
      if (ret < 0) return ret_value;
      ret_value = 0;
      return ret_value;

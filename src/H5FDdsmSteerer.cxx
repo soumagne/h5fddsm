@@ -221,12 +221,12 @@ H5FDdsmInt32 H5FDdsmSteerer::GetDisabledObjects()
 }
 
 //----------------------------------------------------------------------------
-H5FDdsmInt32 H5FDdsmSteerer::IsObjectEnabled(H5FDdsmConstString name)
+H5FDdsmBoolean H5FDdsmSteerer::IsObjectEnabled(H5FDdsmConstString name)
 {
-  H5FDdsmInt32 ret = H5FD_DSM_FAIL;
+  H5FDdsmInt32 ret = H5FD_DSM_FALSE;
   // if the object is found and set to true, it has been disabled in the GUI
   if (!this->SteererInternals->DisabledObjects[name]) {
-    ret = H5FD_DSM_SUCCESS;
+    ret = H5FD_DSM_TRUE;
   }
   return(ret);
 }
@@ -314,7 +314,7 @@ void H5FDdsmSteerer::EndHideHDF5Errors()
 }
 
 //----------------------------------------------------------------------------
-H5FDdsmInt32 H5FDdsmSteerer::IsObjectPresent(H5FDdsmConstString name, int &present)
+H5FDdsmInt32 H5FDdsmSteerer::IsObjectPresent(H5FDdsmConstString name, H5FDdsmBoolean &present)
 {
   H5FDdsmInt32 ret = H5FD_DSM_SUCCESS;
   H5FDdsmBoolean usecache = this->InteractionsCacheActive();
@@ -328,14 +328,15 @@ H5FDdsmInt32 H5FDdsmSteerer::IsObjectPresent(H5FDdsmConstString name, int &prese
     // Try dataset if attribute failed
     hid_t datasetId = H5Dopen(this->Cache_interactionGroupId, name, H5P_DEFAULT);
     if (datasetId < 0) {
-      present = 0;
-      ret = H5FD_DSM_FAIL;
+      present = H5FD_DSM_FALSE;
+      // TODO should not return fail here
+      // ret = H5FD_DSM_FAIL;
     } else {
-      present = 1;
+      present = H5FD_DSM_TRUE;
       H5Dclose(datasetId);
     }
   } else {
-    present = 1;
+    present = H5FD_DSM_TRUE;
     H5Aclose(attributeId);
   }
   // Clean up

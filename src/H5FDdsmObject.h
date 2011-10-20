@@ -84,7 +84,7 @@
 typedef char          H5FDdsmByte;
 typedef const char*   H5FDdsmConstString;
 typedef char*         H5FDdsmString;
-typedef H5FDdsmInt32  H5FDdsmBoolean;
+typedef H5FDdsmUInt32 H5FDdsmBoolean;
 typedef float         H5FDdsmFloat32;
 typedef double        H5FDdsmFloat64;
 typedef void*         H5FDdsmPointer;

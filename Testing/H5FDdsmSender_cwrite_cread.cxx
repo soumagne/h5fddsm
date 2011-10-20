@@ -11,8 +11,6 @@ int main(int argc, char * argv[])
   H5FDdsmManager *dsmManager = new H5FDdsmManager();
   senderInit(argc, argv, dsmManager, &comm);
 
-  H5FDdsmBuffer *dsmBuffer = dsmManager->GetDsmBuffer();
-
   // Create Array
   int array[3] = { 1, 2, 3 };
   int read_array[3];
@@ -22,8 +20,9 @@ int main(int argc, char * argv[])
   hid_t fapl = H5Pcreate(H5P_FILE_ACCESS);
 
   // Use DSM driver
-  H5Pset_fapl_dsm(fapl, MPI_COMM_WORLD, dsmBuffer);
-  H5FD_dsm_set_options(H5FD_DSM_DONT_NOTIFY, dsmBuffer);
+  H5FD_dsm_set_manager(dsmManager);
+  H5Pset_fapl_dsm(fapl, comm, NULL, 0);
+  H5FD_dsm_set_options(H5FD_DSM_DONT_NOTIFY);
 
   // Create DSM
   hid_t hdf5Handle = H5Fcreate("dsm", H5F_ACC_TRUNC, H5P_DEFAULT, fapl);
@@ -52,7 +51,8 @@ int main(int argc, char * argv[])
   // Set up file access property list with parallel I/O
   fapl = H5Pcreate(H5P_FILE_ACCESS);
 
-  H5Pset_fapl_dsm(fapl, MPI_COMM_WORLD, dsmManager->GetDsmBuffer());
+  H5FD_dsm_set_manager(dsmManager);
+  H5Pset_fapl_dsm(fapl, comm, NULL, 0);
 
   hdf5Handle = H5Fopen("dsm", H5F_ACC_RDONLY, fapl);
 
@@ -76,7 +76,7 @@ int main(int argc, char * argv[])
   H5Sclose(dataspace);
   H5Dclose(dataset);
   H5Fclose(hdf5Handle);
-  H5FD_dsm_notify(H5FD_DSM_NEW_DATA, dsmBuffer);
+  H5FD_dsm_notify(H5FD_DSM_NEW_DATA);
 
   senderFinalize(dsmManager, &comm);
   delete dsmManager;

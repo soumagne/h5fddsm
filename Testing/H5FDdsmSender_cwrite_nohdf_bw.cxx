@@ -61,7 +61,7 @@ int main(int argc, char **argv)
             // otherwise it creates a new DSM server object
             totaltime += TestParticleWrite(fullname, numParticles, 1, 1,
                 dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(),
-                comm, dsmManager->GetDsmBuffer(), usingDSM);
+                comm, dsmManager, usingDSM);
           }
           else if (type == 1) {
             totaltime += TestParticleWrite(hdffile.c_str(), numParticles, 1, 1,
