@@ -664,6 +664,7 @@ H5FD_dsm_open(const char *name, unsigned flags, hid_t fapl_id, haddr_t maxaddr)
   MPI_Comm intra_comm_dup = MPI_COMM_NULL;
   H5P_genplist_t *plist; /* Property list pointer */
   H5FD_t *ret_value = NULL;
+  herr_t dsm_code = SUCCEED;
 
   FUNC_ENTER_NOAPI(H5FD_dsm_open, NULL)
 
@@ -705,36 +706,44 @@ H5FD_dsm_open(const char *name, unsigned flags, hid_t fapl_id, haddr_t maxaddr)
   }
 
   /* Get address information from DSM */
-  if (!dsm_get_manager()) {
+  if (!dsm_get_manager())
     HGOTO_ERROR(H5E_VFL, H5E_NOTFOUND, NULL, "DSM buffer not found");
+
+  file->local_buf_ptr = fa->local_buf_ptr;
+  file->local_buf_len = fa->local_buf_len;
+
+  if (SUCCEED != dsm_lock())
+    HGOTO_ERROR(H5E_VFL, H5E_CANTLOCK, NULL, "cannot lock DSM");
+
+  if ((file->intra_rank == 0) && (SUCCEED != dsm_get_entry(&file->start, &file->end)))
+    dsm_code = FAIL;
+  /* Wait for the DSM entry to be updated */
+  if (MPI_SUCCESS != (mpi_code = MPI_Bcast(&dsm_code, sizeof(herr_t),
+      MPI_UNSIGNED_CHAR, 0, file->intra_comm)))
+    HMPI_GOTO_ERROR(NULL, "MPI_Bcast failed", mpi_code);
+  if (SUCCEED != dsm_code)
+    HGOTO_ERROR(H5E_VFL, H5E_CANTRESTORE, NULL, "cannot restore DSM entries");
+
+  if (MPI_SUCCESS != (mpi_code = MPI_Bcast(&file->start, sizeof(haddr_t),
+      MPI_UNSIGNED_CHAR, 0, file->intra_comm)))
+    HMPI_GOTO_ERROR(NULL, "MPI_Bcast failed", mpi_code);
+  if (MPI_SUCCESS != (mpi_code = MPI_Bcast(&file->end, sizeof(haddr_t),
+      MPI_UNSIGNED_CHAR, 0, file->intra_comm)))
+    HMPI_GOTO_ERROR(NULL, "MPI_Bcast failed", mpi_code);
+
+  if (H5F_ACC_RDWR & flags) {
+    file->read_only = FALSE;
   } else {
-    file->local_buf_ptr = fa->local_buf_ptr;
-    file->local_buf_len = fa->local_buf_len;
+    file->read_only = TRUE;
+  }
 
-    if (SUCCEED != dsm_lock())
-      HGOTO_ERROR(H5E_VFL, H5E_CANTLOCK, NULL, "cannot lock DSM");
-
-    /* TODO  Get is done by every process so we can do independent reads
-     * (in parallel by blocks) using the driver as a serial driver. It may not
-     * perform well though so we should change that.
-     */
-    if (SUCCEED != dsm_get_entry(&file->start, &file->end)) {
-      HGOTO_ERROR(H5E_VFL, H5E_CANTRESTORE, NULL, "cannot restore DSM entries");
-    } else {
-      if (H5F_ACC_RDWR & flags) {
-        file->read_only = FALSE;
-      } else {
-        file->read_only = TRUE;
-      }
-      if (H5F_ACC_CREAT & flags) {
-        /* Reset start and end markers */
-        file->start = 0;
-        file->end = 0;
-        file->eof = 0;
-      } else {
-        file->eof = file->end - file->start;
-      }
-    }
+  if (H5F_ACC_CREAT & flags) {
+    /* Reset start and end markers */
+    file->start = 0;
+    file->end = 0;
+    file->eof = 0;
+  } else {
+    file->eof = file->end - file->start;
   }
 
   /* Don't let any proc return until all have created the file. */
@@ -774,6 +783,7 @@ H5FD_dsm_close(H5FD_t *_file)
   herr_t ret_value = SUCCEED; /* Return value */
   hbool_t is_someone_dirty = FALSE;
   int mpi_code;
+  herr_t dsm_code = SUCCEED;
 
   FUNC_ENTER_NOAPI(H5FD_dsm_close, FAIL)
 
@@ -783,15 +793,14 @@ H5FD_dsm_close(H5FD_t *_file)
   if (!file->read_only) {
     file->end = MAX((file->start + file->eof), file->end);
 
-    if ((file->intra_rank == 0) && (SUCCEED != dsm_update_entry(file->start, file->end))) {
-      /* If 0 fails in dsm_update_entry we still need to sync with others */
-      if (MPI_SUCCESS != (mpi_code = MPI_Barrier(file->intra_comm)))
-        HMPI_GOTO_ERROR(FAIL, "MPI_Barrier failed", mpi_code);
-      HGOTO_ERROR(H5E_VFL, H5E_CANTUPDATE, FAIL, "cannot update DSM entries");
-    }
+    if ((file->intra_rank == 0) && (SUCCEED != dsm_update_entry(file->start, file->end)))
+      dsm_code = FAIL;
     /* Wait for the DSM entry to be updated */
-    if (MPI_SUCCESS != (mpi_code = MPI_Barrier(file->intra_comm)))
-      HMPI_GOTO_ERROR(FAIL, "MPI_Barrier failed", mpi_code);
+    if (MPI_SUCCESS != (mpi_code = MPI_Bcast(&dsm_code, sizeof(herr_t),
+        MPI_UNSIGNED_CHAR, 0, file->intra_comm)))
+      HMPI_GOTO_ERROR(FAIL, "MPI_Bcast failed", mpi_code);
+    if (SUCCEED != dsm_code)
+      HGOTO_ERROR(H5E_VFL, H5E_CANTUPDATE, FAIL, "cannot update DSM entries");
 
     if (!dsm_is_server() || !dsm_is_connected()) {
       /*
@@ -839,15 +848,14 @@ done:
  *-------------------------------------------------------------------------
  */
 herr_t
-H5FD_dsm_query(const H5FD_t *_file, unsigned long *flags /* out */)
+H5FD_dsm_query(const H5FD_t UNUSED *_file, unsigned long *flags /* out */)
 {
-  H5FD_dsm_t *file = (H5FD_dsm_t*) _file;
   herr_t ret_value = SUCCEED;
 
   FUNC_ENTER_NOAPI(H5FD_dsm_query, FAIL)
 
   /* Set the VFL feature flags that this driver supports */
-  if (flags && !file->read_only) { /* If it is read-only use the driver serially */
+  if (flags) {
     *flags = 0;
     *flags |= H5FD_FEAT_AGGREGATE_METADATA;  /* OK to aggregate metadata allocations */
     *flags |= H5FD_FEAT_AGGREGATE_SMALLDATA; /* OK to aggregate "small" raw data allocations */
@@ -917,6 +925,7 @@ H5FD_dsm_set_eoa(H5FD_t *_file, H5FD_mem_t UNUSED type, haddr_t addr)
   H5FD_dsm_t *file = (H5FD_dsm_t*) _file;
   herr_t ret_value = SUCCEED; /* Return value */
   int mpi_code;
+  herr_t dsm_code = SUCCEED;
 
   FUNC_ENTER_NOAPI(H5FD_dsm_set_eoa, FAIL)
 
@@ -931,15 +940,14 @@ H5FD_dsm_set_eoa(H5FD_t *_file, H5FD_mem_t UNUSED type, haddr_t addr)
   file->end = MAX((file->start + file->eoa), file->end);
   file->eof = file->end - file->start;
   if (!file->read_only) {
-    if ((file->intra_rank == 0) && (SUCCEED != dsm_update_entry(file->start, file->end))) {
-      /* If 0 fails in dsm_update_entry we still need to sync with others */
-      if (MPI_SUCCESS != (mpi_code = MPI_Barrier(file->intra_comm)))
-        HMPI_GOTO_ERROR(FAIL, "MPI_Barrier failed", mpi_code);
-      HGOTO_ERROR(H5E_VFL, H5E_CANTUPDATE, FAIL, "cannot update DSM entries");
-    }
+    if ((file->intra_rank == 0) && (SUCCEED != dsm_update_entry(file->start, file->end)))
+      dsm_code = FAIL;
     /* Wait for the DSM entry to be updated */
-    if (MPI_SUCCESS != (mpi_code = MPI_Barrier(file->intra_comm)))
-      HMPI_GOTO_ERROR(FAIL, "MPI_Barrier failed", mpi_code);
+    if (MPI_SUCCESS != (mpi_code = MPI_Bcast(&dsm_code, sizeof(herr_t),
+        MPI_UNSIGNED_CHAR, 0, file->intra_comm)))
+      HMPI_GOTO_ERROR(FAIL, "MPI_Bcast failed", mpi_code);
+    if (SUCCEED != dsm_code)
+      HGOTO_ERROR(H5E_VFL, H5E_CANTUPDATE, FAIL, "cannot update DSM entries");
   }
 
 done:
