@@ -17,9 +17,11 @@ endif(WIN32 AND CMAKE_MAJOR_VERSION EQUAL 2 AND CMAKE_MINOR_VERSION EQUAL 8
 #-----------------------------------------------------------------------------
 if(CMAKE_Fortran_COMPILER MATCHES ifort)
   if(WIN32 AND MSVC)
-    set(CMAKE_Fortran_FLAGS_DEBUG "/debug:full /dbglibs" CACHE
+    set(CMAKE_Fortran_FLAGS_DEBUG "/debug:full /libs:dll /threads /dbglibs" CACHE
       "Default debug compiler flags" STRING FORCE)
-    set(CMAKE_Fortran_FLAGS_RELWITHDEBINFO "/debug:full /dbglibs" CACHE
+    set(CMAKE_Fortran_FLAGS_RELEASE "/libs:dll /threads" CACHE
+      "Default debug compiler flags" STRING FORCE)
+    set(CMAKE_Fortran_FLAGS_RELWITHDEBINFO "/debug:full /libs:dll /threads /dbglibs" CACHE
       "Default debug compiler flags" STRING FORCE)
     set(CMAKE_EXE_LINKER_FLAGS_DEBUG "/DEBUG" CACHE
       "Default debug linker flags" STRING FORCE)

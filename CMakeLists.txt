@@ -268,13 +268,13 @@ macro(set_fortran_link_options target)
     if(BUILD_SHARED_LIBS)
       set_target_properties(${target}
           PROPERTIES
-              COMPILE_FLAGS "/dll"
+              COMPILE_FLAGS "/libs:dll /threads "
               LINK_FLAGS "/SUBSYSTEM:CONSOLE"
       )
     else(BUILD_SHARED_LIBS)
       set_target_properties(${target}
           PROPERTIES
-              COMPILE_FLAGS "/libs:static /threads "
+              COMPILE_FLAGS "/libs:dll /threads "
               LINK_FLAGS "/SUBSYSTEM:CONSOLE /NODEFAULTLIB:LIBCMT /NODEFAULTLIB:LIBCMTD ${addlinkflags}"
       )
     endif(BUILD_SHARED_LIBS)
