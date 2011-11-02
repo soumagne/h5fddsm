@@ -208,7 +208,8 @@ H5FDdsmBuffer::SetLength(H5FDdsmUInt64 aLength, H5FDdsmBoolean AllowAllocate)
 	  H5FDdsmDebug("Using MPI Storage...");
 	  break;
 	default:
-        this->Storage = new H5FDdsmStorage;
+	  this->Storage = new H5FDdsmStorage;
+	  break;
       }
     } else {
       H5FDdsmError("DSM communicator has not been initialized");

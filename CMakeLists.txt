@@ -426,7 +426,7 @@ install(
   EXPORT
     ${H5FD_DSM_EXPORTED_TARGETS}
   DESTINATION
-    ${H5FD_DSM_INSTALL_DATA_DIR}/cmake/h5fddsm-${H5FDdsm_PACKAGE_VERSION}
+    ${H5FD_DSM_INSTALL_DATA_DIR}/cmake/h5fddsm
   FILE
     h5fddsm-targets.cmake
 )
@@ -467,7 +467,7 @@ install(
   FILES
     ${H5FDdsm_BINARY_DIR}/CMakeFiles/h5fddsm-config.cmake
   DESTINATION
-    ${H5FD_DSM_INSTALL_DATA_DIR}/cmake/h5fddsm-${H5FDdsm_PACKAGE_VERSION}
+    ${H5FD_DSM_INSTALL_DATA_DIR}/cmake/h5fddsm
 )
 
 #-----------------------------------------------------------------------------
@@ -481,7 +481,7 @@ install(
   FILES
     ${H5FDdsm_BINARY_DIR}/CMakeFiles/h5fddsm-config-version.cmake
   DESTINATION
-    ${H5FD_DSM_INSTALL_DATA_DIR}/cmake/h5fddsm-${H5FDdsm_PACKAGE_VERSION}
+    ${H5FD_DSM_INSTALL_DATA_DIR}/cmake/h5fddsm
 )
 
 #-----------------------------------------------------------------------------
