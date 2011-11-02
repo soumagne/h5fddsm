@@ -2,17 +2,6 @@ cmake_minimum_required(VERSION 2.8)
 project(H5FDdsm_F90 C CXX Fortran)
 
 #-----------------------------------------------------------------------------
-# Add MPI Fortran library on win32
-#-----------------------------------------------------------------------------
-if(WIN32 AND CMAKE_MAJOR_VERSION EQUAL 2 AND CMAKE_MINOR_VERSION EQUAL 8
-  AND CMAKE_PATCH_VERSION LESS 5)
-# Now defined with CMake v2.8.5
-  find_library(MPI_Fortran_LIBRARIES NAMES fmpich2 mpichf90
-    HINTS $ENV{ProgramFiles}/MPICH2/lib)
-endif(WIN32 AND CMAKE_MAJOR_VERSION EQUAL 2 AND CMAKE_MINOR_VERSION EQUAL 8
-  AND CMAKE_PATCH_VERSION LESS 5)
-
-#-----------------------------------------------------------------------------
 # Add debug information to default flags (intel Fortran) : JB
 #-----------------------------------------------------------------------------
 if(CMAKE_Fortran_COMPILER MATCHES ifort)

@@ -243,7 +243,8 @@ endif(HDF5_VERSION_MAJOR)
 #-----------------------------------------------------------------------------
 find_package(MPI REQUIRED)
 include_directories(${MPI_INCLUDE_PATH})
-# MPI libraries are imported with HDF5
+# MPI C libraries are imported with HDF5
+set(H5FD_DSM_LIB_DEPENDENCIES ${H5FD_DSM_LIB_DEPENDENCIES} ${MPI_CXX_LIBRARIES})
 
 #-----------------------------------------------------------------------------
 # Configure our module header file

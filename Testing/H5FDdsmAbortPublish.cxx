@@ -60,16 +60,10 @@ int main(int argc, char *argv[])
   //
   MPI_Barrier(comm);
   if (rank == 0) std::cout << "# Waiting for client..." << std::endl;
-//  while (dsmManager->GetIsConnected()) {
-//    if (dsmManager->WaitForNotification() > 0) {
-//      // H5Dump
-//      // dsmManager->H5DumpLight();
-//      // Sync here
-//      MPI_Barrier(comm);
-//      // Clean up for next step
-//      dsmManager->NotificationFinalize();
-//    }
-//  }
+  //
   delete dsmManager;
+  //
+  MPI_Finalize();
+  //
   return(EXIT_SUCCESS);
 }
