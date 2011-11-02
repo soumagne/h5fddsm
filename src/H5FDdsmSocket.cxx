@@ -84,11 +84,11 @@ H5FDdsmSocket::~H5FDdsmSocket()
   this->HostName = NULL;
 }
 
+#ifdef _WIN32
 //-----------------------------------------------------------------------------
 int
 H5FDdsmSocket::WinSockInit()
 {
-#ifdef _WIN32
   WORD wVersionRequested;
   WSADATA wsaData;
   int err;
@@ -116,7 +116,6 @@ H5FDdsmSocket::WinSockInit()
     WSACleanup();
     return -1;
   }
-#endif
   return 0;
 }
 
@@ -152,6 +151,8 @@ H5FDdsmSocket::WinSockPrintError(int error)
     return "WinSockPrintError Not Supported";
 #endif
 }
+#endif //_WIN32
+
 //-----------------------------------------------------------------------------
 int
 H5FDdsmSocket::Close()
@@ -359,46 +360,6 @@ H5FDdsmSocket::Bind(int port, const char *node)
   strcpy(this->HostName, result_host);
   this->Port = atoi(result_service);
   return 0;
-}
-
-//-----------------------------------------------------------------------------
-int
-H5FDdsmSocket::Select(unsigned long msec)
-{
-  int socketdescriptor = -1;
-
-  if (this->ClientSocketDescriptor < 0) {
-    socketdescriptor = this->SocketDescriptor;
-  } else {
-    socketdescriptor = this->ClientSocketDescriptor;
-  }
-
-  if (socketdescriptor < 0) {
-    // invalid socket descriptor.
-    return -1;
-  }
-
-  fd_set rset;
-  struct timeval tval;
-  struct timeval* tvalptr = 0;
-  if (msec > 0) {
-    tval.tv_sec = msec / 1000;
-    tval.tv_usec = (msec % 1000) * 1000;
-    tvalptr = &tval;
-  }
-  FD_ZERO(&rset);
-  FD_SET(socketdescriptor, &rset);
-  int res = select((int) socketdescriptor + 1, &rset, 0, 0, tvalptr);
-  if (res == 0) {
-    return 0; // for time limit expire
-  }
-
-  if (res < 0 || !(FD_ISSET(socketdescriptor, &rset))) {
-    // Some error.
-    return -1;
-  }
-  // The indicated socket has some activity on it.
-  return 1;
 }
 
 //-----------------------------------------------------------------------------

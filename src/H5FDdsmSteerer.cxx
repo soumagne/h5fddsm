@@ -25,10 +25,6 @@
 
 #include "H5FDdsmSteerer.h"
 #include "H5FDdsmManager.h"
-#include "H5FDdsmCommMpi.h"
-#include "H5FDdsmCommSocket.h"
-//
-#include "H5FDdsmDump.h"
 //
 #include <hdf5.h>
 #include <H5FDdsm.h>
@@ -37,7 +33,7 @@
 
 struct H5FDdsmSteererInternals {
   typedef std::map<std::string, H5FDdsmBoolean> SteeringEntriesString;
-  SteeringEntriesString               DisabledObjects;
+  SteeringEntriesString DisabledObjects;
   //
 };
 
@@ -94,11 +90,13 @@ H5FDdsmInt32 H5FDdsmSteerer::UpdateSteeringCommands()
   H5FDdsmDebug("Sending steering command " << this->CurrentCommand);
   memset(&metadata, 0, sizeof(metadata));
   strcpy(metadata.steering_cmd, (H5FDdsmConstString)this->CurrentCommand);
-  addr = (H5FDdsmAddr) (this->DsmManager->GetDsmBuffer()->GetTotalLength() - sizeof(metadata) + sizeof(metadata.entry));
+  addr = (H5FDdsmAddr) (this->DsmManager->GetDsmBuffer()->GetTotalLength() -
+      sizeof(metadata) + sizeof(metadata.entry));
   // Only one of the processes writing to the DSM needs to write file metadata
   // but we must be careful that all the processes keep the metadata synchronized
   if (this->DsmManager->GetUpdatePiece() == 0) {
-    if (this->DsmManager->GetDsmBuffer()->Put(addr, sizeof(metadata.steering_cmd), metadata.steering_cmd) != H5FD_DSM_SUCCESS) return H5FD_DSM_FAIL;
+    if (this->DsmManager->GetDsmBuffer()->Put(addr, sizeof(metadata.steering_cmd),
+        metadata.steering_cmd) != H5FD_DSM_SUCCESS) return H5FD_DSM_FAIL;
   }
   this->DsmManager->GetDsmBuffer()->GetComm()->Barrier();
   this->SetCurrentCommand("none");
@@ -112,17 +110,19 @@ H5FDdsmInt32 H5FDdsmSteerer::GetSteeringCommands()
   H5FDdsmMetaData metadata;
 
   memset(&metadata, 0, sizeof(metadata));
-  addr = (H5FDdsmAddr) (this->DsmManager->GetDsmBuffer()->GetTotalLength() - sizeof(metadata) + sizeof(metadata.entry));
+  addr = (H5FDdsmAddr) (this->DsmManager->GetDsmBuffer()->GetTotalLength() -
+      sizeof(metadata) + sizeof(metadata.entry));
 
-  if (this->DsmManager->GetDsmBuffer()->GetComm()->GetId() == 0) {
-    if (this->DsmManager->GetDsmBuffer()->Get(addr, sizeof(metadata.steering_cmd), metadata.steering_cmd) != H5FD_DSM_SUCCESS) {
+  if (this->DsmManager->GetUpdatePiece() == 0) {
+    if (this->DsmManager->GetDsmBuffer()->Get(addr, sizeof(metadata.steering_cmd),
+        metadata.steering_cmd) != H5FD_DSM_SUCCESS) {
       H5FDdsmDebug("DsmGetSteeringCmd failed");
       return H5FD_DSM_FAIL;
     }
   }
 
   MPI_Bcast(metadata.steering_cmd, sizeof(metadata.steering_cmd),
-      MPI_UNSIGNED_CHAR, 0, this->DsmManager->GetDsmBuffer()->GetComm()->GetIntraComm());
+      MPI_UNSIGNED_CHAR, 0, this->DsmManager->GetMpiComm());
   H5FDdsmDebug("Received steering command: " << metadata.steering_cmd);
   if (this->CheckCommand((H5FDdsmConstString) metadata.steering_cmd) == H5FD_DSM_SUCCESS) {
     // Steering command successfully treated, clear it
@@ -158,16 +158,17 @@ H5FDdsmInt32 H5FDdsmSteerer::UpdateDisabledObjects()
   metadata.disabled_objects.number_of_objects = index;
 
   if (index != prev_index) {
-    addr = (H5FDdsmAddr) (this->DsmManager->GetDsmBuffer()->GetTotalLength() - sizeof(metadata) + sizeof(metadata.entry)
-        + sizeof(metadata.steering_cmd));
+    addr = (H5FDdsmAddr) (this->DsmManager->GetDsmBuffer()->GetTotalLength() -
+        sizeof(metadata) + sizeof(metadata.entry) + sizeof(metadata.steering_cmd));
     // Only one of the processes writing to the DSM needs to write file metadata
     // but we must be careful that all the processes keep the metadata synchronized
-    if (this->DsmManager->GetDsmBuffer()->GetComm()->GetId() == 0) {
+    if (this->DsmManager->GetUpdatePiece() == 0) {
       if (this->DsmManager->GetDsmBuffer()->Put(addr, sizeof(metadata.disabled_objects.number_of_objects),
           &metadata.disabled_objects.number_of_objects) != H5FD_DSM_SUCCESS) {
         return H5FD_DSM_FAIL;
       }
-      if (this->DsmManager->GetDsmBuffer()->Put(addr+sizeof(metadata.disabled_objects.number_of_objects),
+      if (this->DsmManager->GetDsmBuffer()->Put(addr +
+          sizeof(metadata.disabled_objects.number_of_objects),
           sizeof(metadata.disabled_objects.object_names),
           metadata.disabled_objects.object_names) != H5FD_DSM_SUCCESS) {
         return H5FD_DSM_FAIL;
@@ -186,15 +187,17 @@ H5FDdsmInt32 H5FDdsmSteerer::GetDisabledObjects()
   H5FDdsmMetaData metadata;
 
   memset(&metadata, 0, sizeof(metadata));
-  addr = (H5FDdsmAddr) (this->DsmManager->GetDsmBuffer()->GetTotalLength() - sizeof(metadata) + sizeof(metadata.entry)
-      + sizeof(metadata.steering_cmd));
+  addr = (H5FDdsmAddr) (this->DsmManager->GetDsmBuffer()->GetTotalLength() -
+      sizeof(metadata) + sizeof(metadata.entry) + sizeof(metadata.steering_cmd));
 
-  if (this->DsmManager->GetDsmBuffer()->GetComm()->GetId() == 0) {
-    if (this->DsmManager->GetDsmBuffer()->Get(addr, sizeof(metadata.disabled_objects.number_of_objects),
+  if (this->DsmManager->GetUpdatePiece() == 0) {
+    if (this->DsmManager->GetDsmBuffer()->Get(addr,
+        sizeof(metadata.disabled_objects.number_of_objects),
         &metadata.disabled_objects.number_of_objects) != H5FD_DSM_SUCCESS) {
       return H5FD_DSM_FAIL;
     }
-    if (this->DsmManager->GetDsmBuffer()->Get(addr+sizeof(metadata.disabled_objects.number_of_objects),
+    if (this->DsmManager->GetDsmBuffer()->Get(addr +
+        sizeof(metadata.disabled_objects.number_of_objects),
         sizeof(metadata.disabled_objects.object_names),
         metadata.disabled_objects.object_names) != H5FD_DSM_SUCCESS) {
       return H5FD_DSM_FAIL;
@@ -203,10 +206,10 @@ H5FDdsmInt32 H5FDdsmSteerer::GetDisabledObjects()
 
   MPI_Bcast(&metadata.disabled_objects.number_of_objects,
       sizeof(metadata.disabled_objects.number_of_objects),
-      MPI_UNSIGNED_CHAR, 0, this->DsmManager->GetDsmBuffer()->GetComm()->GetIntraComm());
+      MPI_UNSIGNED_CHAR, 0, this->DsmManager->GetMpiComm());
   MPI_Bcast(metadata.disabled_objects.object_names,
       sizeof(metadata.disabled_objects.object_names),
-      MPI_UNSIGNED_CHAR, 0, this->DsmManager->GetDsmBuffer()->GetComm()->GetIntraComm());
+      MPI_UNSIGNED_CHAR, 0, this->DsmManager->GetMpiComm());
 
   H5FDdsmDebug("Received nb of Disabled objects: " << metadata.disabled_objects.number_of_objects);
 
@@ -234,7 +237,7 @@ H5FDdsmBoolean H5FDdsmSteerer::IsObjectEnabled(H5FDdsmConstString name)
 //----------------------------------------------------------------------------
 H5FDdsmBoolean H5FDdsmSteerer::InteractionsCacheActive()
 {
-  return (this->Cache_fapl!=H5I_BADID);
+  return (this->Cache_fapl != H5I_BADID);
 }
 
 //----------------------------------------------------------------------------
@@ -254,14 +257,15 @@ H5FDdsmInt32 H5FDdsmSteerer::BeginInteractionsCache(unsigned int mode)
     this->Cache_fapl = H5I_BADID;
     ret = H5FD_DSM_FAIL;
   } else {
-    if (mode==H5F_ACC_RDONLY) {
+    if (mode == H5F_ACC_RDONLY) {
       this->Cache_interactionGroupId = H5Gopen(this->Cache_fileId, "Interactions", H5P_DEFAULT);
     }
-    else if (mode==H5F_ACC_RDWR) {
+    else if (mode == H5F_ACC_RDWR) {
       // if it does not already exist, create it
       int exists = H5Lexists(this->Cache_fileId, "Interactions", H5P_DEFAULT);
-      if (exists!=1) {
-        this->Cache_interactionGroupId = H5Gcreate(this->Cache_fileId, "Interactions", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+      if (exists != 1) {
+        this->Cache_interactionGroupId = H5Gcreate(this->Cache_fileId, "Interactions",
+            H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
         if (this->Cache_interactionGroupId < 0) {
           H5Fclose(this->Cache_fileId);
           this->Cache_fileId = H5I_BADID;
@@ -276,7 +280,7 @@ H5FDdsmInt32 H5FDdsmSteerer::BeginInteractionsCache(unsigned int mode)
     }
   }
   this->EndHideHDF5Errors();
-
+  //
   return(ret);
 }
 
@@ -288,8 +292,9 @@ H5FDdsmInt32 H5FDdsmSteerer::EndInteractionsCache()
   if (!this->InteractionsCacheActive()) return ret;
   //
   if (H5Pclose(this->Cache_fapl)<0) ret = H5FD_DSM_FAIL;
-  if (this->Cache_interactionGroupId!=-1 && H5Gclose(this->Cache_interactionGroupId)<0) ret = H5FD_DSM_FAIL;
-  if (H5Fclose(this->Cache_fileId)<0) ret = H5FD_DSM_FAIL;
+  if ((this->Cache_interactionGroupId != -1) && H5Gclose(this->Cache_interactionGroupId) < 0)
+    ret = H5FD_DSM_FAIL;
+  if (H5Fclose(this->Cache_fileId) < 0) ret = H5FD_DSM_FAIL;
   //
   this->Cache_fapl               = H5I_BADID;
   this->Cache_fileId             = H5I_BADID;
@@ -319,9 +324,10 @@ H5FDdsmInt32 H5FDdsmSteerer::IsObjectPresent(H5FDdsmConstString name, H5FDdsmBoo
   H5FDdsmInt32 ret = H5FD_DSM_SUCCESS;
   H5FDdsmBoolean usecache = this->InteractionsCacheActive();
   if (!usecache) {
-    if (this->BeginInteractionsCache(H5F_ACC_RDONLY)!=H5FD_DSM_SUCCESS) return H5FD_DSM_FAIL;
+    if (this->BeginInteractionsCache(H5F_ACC_RDONLY) != H5FD_DSM_SUCCESS) return H5FD_DSM_FAIL;
   }
   this->BeginHideHDF5Errors();
+
   // Try attribute first
   hid_t attributeId = H5Aopen(this->Cache_interactionGroupId, name, H5P_DEFAULT);
   if (attributeId < 0) {
@@ -341,7 +347,7 @@ H5FDdsmInt32 H5FDdsmSteerer::IsObjectPresent(H5FDdsmConstString name, H5FDdsmBoo
   }
   // Clean up
   if (!usecache) {
-    if (this->EndInteractionsCache()!=H5FD_DSM_SUCCESS) ret = H5FD_DSM_FAIL;
+    if (this->EndInteractionsCache() != H5FD_DSM_SUCCESS) ret = H5FD_DSM_FAIL;
   }
   this->EndHideHDF5Errors();
   return(ret);
@@ -353,7 +359,7 @@ H5FDdsmInt32 H5FDdsmSteerer::GetScalar(H5FDdsmConstString name, H5FDdsmInt32 mem
   H5FDdsmInt32 ret = H5FD_DSM_SUCCESS;
   H5FDdsmBoolean usecache = this->InteractionsCacheActive();
   if (!usecache) {
-    if (this->BeginInteractionsCache(H5F_ACC_RDONLY)!=H5FD_DSM_SUCCESS) return H5FD_DSM_FAIL;
+    if (this->BeginInteractionsCache(H5F_ACC_RDONLY) != H5FD_DSM_SUCCESS) return H5FD_DSM_FAIL;
   }
   this->BeginHideHDF5Errors();
 
@@ -369,7 +375,7 @@ H5FDdsmInt32 H5FDdsmSteerer::GetScalar(H5FDdsmConstString name, H5FDdsmInt32 mem
   }
   // Clean up
   if (!usecache) {
-    if (this->EndInteractionsCache()!=H5FD_DSM_SUCCESS) ret = H5FD_DSM_FAIL;
+    if (this->EndInteractionsCache() != H5FD_DSM_SUCCESS) ret = H5FD_DSM_FAIL;
   }
   this->EndHideHDF5Errors();
   return(ret);
@@ -381,21 +387,23 @@ H5FDdsmInt32 H5FDdsmSteerer::SetScalar(H5FDdsmConstString name, H5FDdsmInt32 mem
   H5FDdsmInt32 ret = H5FD_DSM_SUCCESS;
   H5FDdsmBoolean usecache = this->InteractionsCacheActive();
   if (!usecache) {
-    if (this->BeginInteractionsCache(H5F_ACC_RDWR)!=H5FD_DSM_SUCCESS) return H5FD_DSM_FAIL;
+    if (this->BeginInteractionsCache(H5F_ACC_RDWR) != H5FD_DSM_SUCCESS) return H5FD_DSM_FAIL;
   }
   // we don't hide errors when writing, we need to know if something has failed
 
   hid_t memspaceId = H5Screate(H5S_SCALAR);
   hid_t attributeId;
-  if (H5Aexists(this->Cache_interactionGroupId, name)>0) {
+  if (H5Aexists(this->Cache_interactionGroupId, name) > 0) {
     attributeId = H5Aopen(this->Cache_interactionGroupId, name, H5P_DEFAULT);
   }
   else {
-    attributeId = H5Acreate(this->Cache_interactionGroupId, name, memType, memspaceId, H5P_DEFAULT, H5P_DEFAULT);
+    attributeId = H5Acreate(this->Cache_interactionGroupId, name, memType,
+        memspaceId, H5P_DEFAULT, H5P_DEFAULT);
   }
   if (attributeId < 0) {
     ret = H5FD_DSM_FAIL;
   } else {
+    // Must be collective
     if (H5Awrite(attributeId, memType, data) < 0) {
       ret = H5FD_DSM_FAIL;
     }
@@ -404,7 +412,7 @@ H5FDdsmInt32 H5FDdsmSteerer::SetScalar(H5FDdsmConstString name, H5FDdsmInt32 mem
   H5Sclose(memspaceId);
   // Clean up
   if (!usecache) {
-    if (this->EndInteractionsCache()!=H5FD_DSM_SUCCESS) ret = H5FD_DSM_FAIL;
+    if (this->EndInteractionsCache() != H5FD_DSM_SUCCESS) ret = H5FD_DSM_FAIL;
   }
   return(ret);
 }
@@ -415,7 +423,7 @@ H5FDdsmInt32 H5FDdsmSteerer::GetVector(H5FDdsmConstString name, H5FDdsmInt32 mem
   H5FDdsmInt32 ret = H5FD_DSM_SUCCESS;
   H5FDdsmBoolean usecache = this->InteractionsCacheActive();
   if (!usecache) {
-    if (this->BeginInteractionsCache(H5F_ACC_RDONLY)!=H5FD_DSM_SUCCESS) return H5FD_DSM_FAIL;
+    if (this->BeginInteractionsCache(H5F_ACC_RDONLY) != H5FD_DSM_SUCCESS) return H5FD_DSM_FAIL;
   }
   this->BeginHideHDF5Errors();
 
@@ -434,7 +442,7 @@ H5FDdsmInt32 H5FDdsmSteerer::GetVector(H5FDdsmConstString name, H5FDdsmInt32 mem
   H5Sclose(memspaceId);
   // Clean up
   if (!usecache) {
-    if (this->EndInteractionsCache()!=H5FD_DSM_SUCCESS) ret = H5FD_DSM_FAIL;
+    if (this->EndInteractionsCache() != H5FD_DSM_SUCCESS) ret = H5FD_DSM_FAIL;
   }
   this->EndHideHDF5Errors();
   return(ret);
@@ -446,7 +454,7 @@ H5FDdsmInt32 H5FDdsmSteerer::SetVector(H5FDdsmConstString name, H5FDdsmInt32 mem
   H5FDdsmInt32 ret = H5FD_DSM_SUCCESS;
   H5FDdsmBoolean usecache = this->InteractionsCacheActive();
   if (!usecache) {
-    if (this->BeginInteractionsCache(H5F_ACC_RDWR)!=H5FD_DSM_SUCCESS) return H5FD_DSM_FAIL;
+    if (this->BeginInteractionsCache(H5F_ACC_RDWR) != H5FD_DSM_SUCCESS) return H5FD_DSM_FAIL;
   }
   // we don't hide errors when writing, we need to know if something has failed
 
@@ -457,7 +465,8 @@ H5FDdsmInt32 H5FDdsmSteerer::SetVector(H5FDdsmConstString name, H5FDdsmInt32 mem
   if (datasetId < 0) {
     ret = H5FD_DSM_FAIL;
   } else {
-    if ((this->DsmManager->GetDsmBuffer()->GetComm()->GetId() == 0) && H5Dwrite(datasetId, memType, H5S_ALL, H5S_ALL, H5P_DEFAULT, data) < 0) {
+    if ((this->DsmManager->GetUpdatePiece() == 0) && H5Dwrite(datasetId, memType,
+        H5S_ALL, H5S_ALL, H5P_DEFAULT, data) < 0) {
       ret = H5FD_DSM_FAIL;
     }
     H5Dclose(datasetId);
@@ -465,7 +474,7 @@ H5FDdsmInt32 H5FDdsmSteerer::SetVector(H5FDdsmConstString name, H5FDdsmInt32 mem
   H5Sclose(memspaceId);
   // Clean up
   if (!usecache) {
-    if (this->EndInteractionsCache()!=H5FD_DSM_SUCCESS) ret = H5FD_DSM_FAIL;
+    if (this->EndInteractionsCache() != H5FD_DSM_SUCCESS) ret = H5FD_DSM_FAIL;
   }
   return(ret);
 }
@@ -506,11 +515,7 @@ H5FDdsmInt32 H5FDdsmSteerer::FreeHandle(hid_t handle)
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmSteerer::DsmDump()
 {
-  H5FDdsmDump *dsmDump = new H5FDdsmDump();
-  dsmDump->SetDsmManager(this->DsmManager);
-  dsmDump->SetFileName("DSM.h5");
-  dsmDump->DumpLight();
-  delete dsmDump;
+  this->DsmManager->H5DumpLight();
   return(H5FD_DSM_SUCCESS);
 }
 

@@ -39,6 +39,8 @@ int main(int argc, char *argv[])
         dsmManager->SetSteeringValues("DoubleVectorTest", 3, doubleVector);
 //        dsmManager->SetSteeringCommand("play");
         break;
+      case 3:
+        dsmManager->H5DumpLight();
       default:
         break;
       }

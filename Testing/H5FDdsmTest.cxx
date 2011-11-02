@@ -349,7 +349,7 @@ void receiverInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *
   H5FDdsmInt32 commType = H5FD_DSM_COMM_SOCKET;
   H5FDdsmInt32 dsmType = H5FD_DSM_TYPE_UNIFORM;
   H5FDdsmUInt64 dsmBlockSize = 1024;
-  H5FDdsmBoolean staticInterComm = false;
+  H5FDdsmBoolean staticInterComm = H5FD_DSM_FALSE;
   //
   // Receiver will spawn a thread to handle incoming data Put/Get requests
   // we must therefore have MPI_THREAD_MULTIPLE
@@ -399,19 +399,19 @@ void receiverInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *
     }
     else if (!strcmp(argv[2], "DMAPP")) {
       commType = H5FD_DSM_COMM_DMAPP;
-      staticInterComm = true;
+      staticInterComm = H5FD_DSM_TRUE;
       if (rank == 0) std::cout << "# DMAPP Inter-Communicator selected" << std::endl;
     }
     else if (!strcmp(argv[2], "UGNI")) {
       commType = H5FD_DSM_COMM_UGNI;
-      staticInterComm = true;
+      staticInterComm = H5FD_DSM_TRUE;
       if (rank == 0) std::cout << "# UGNI Inter-Communicator selected" << std::endl;
     }
   }
 
   if (argc > 3) {
     if (!strcmp(argv[3], "Static") && (commType != H5FD_DSM_COMM_SOCKET)) {
-      staticInterComm = true;
+      staticInterComm = H5FD_DSM_TRUE;
     }
   }
 
@@ -504,7 +504,7 @@ void receiverFinalize(H5FDdsmManager *dsmManager, MPI_Comm *comm)
 void senderInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *comm, H5FDdsmInt32 *dataSizeMB)
 {
   H5FDdsmInt32   nlocalprocs, rank;
-  H5FDdsmBoolean staticInterComm = false;
+  H5FDdsmBoolean staticInterComm = H5FD_DSM_FALSE;
   H5FDdsmFloat64 remoteMB;
   H5FDdsmUInt32  numServers;
   //
@@ -541,14 +541,12 @@ void senderInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *co
     }
     else if (!strcmp(argv[2], "DMAPP")) {
       commType = H5FD_DSM_COMM_DMAPP;
-      staticInterComm = true;
     }
     else if (!strcmp(argv[2], "UGNI")) {
       commType = H5FD_DSM_COMM_UGNI;
-      staticInterComm = true;
     }
     dsmManager->SetInterCommType(commType);
-    dsmManager->SetUseStaticInterComm(1);
+    dsmManager->SetUseStaticInterComm(H5FD_DSM_TRUE);
   } else {
     dsmManager->ReadConfigFile();
   }
@@ -557,7 +555,7 @@ void senderInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *co
     MPI_Comm_split(MPI_COMM_WORLD, color, rank, comm);
     MPI_Comm_rank(*comm, &rank);
     MPI_Comm_size(*comm, &nlocalprocs);
-    staticInterComm = true;
+    staticInterComm = H5FD_DSM_TRUE;
   }
   //
   // Create a DSM manager

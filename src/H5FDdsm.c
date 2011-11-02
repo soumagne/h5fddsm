@@ -64,8 +64,6 @@
 #include "H5Iprivate.h"   /* IDs                    */
 #include "H5Pprivate.h"   /* Property lists         */
 
-/* #include "H5FDmpio.h" */
-
 /*
  * H5private.h defines attribute, but we don't want it
  * as it causes link errors on some gcc versions
@@ -443,20 +441,6 @@ H5Pset_fapl_dsm(hid_t fapl_id, MPI_Comm intra_comm, void *local_buf_ptr,
     /* TODO we should decide what to do if we cannot connect */
     dsm_connect();
   }
-
-  /* TODO Not sure if we should keep this junk
-#ifdef H5FD_DSM_HAVE_STEERING
-  if (!fa.buffer->GetSteerer()->GetWriteToDSM() ||
-      (!fa.buffer->GetIsConnected() && !fa.buffer->GetIsServer())) {
-    if (fa.buffer->GetSteerer()) fa.buffer->GetSteerer()->SetWriteToDSM(1);
-#else
- if (!fa.buffer->GetIsConnected() && !fa.buffer->GetIsServer()) {
-#endif
-    PRINT_DSM_INFO(fa.buffer->GetComm()->GetId(), "Using MPIO driver");
-    H5Pset_fapl_mpio(fapl_id, dsmComm, MPI_INFO_NULL);
-    goto done;
-  }
-  */
 
   /* duplication is done during driver setting */
   ret_value = H5P_set_driver(plist, H5FD_DSM, &fa);

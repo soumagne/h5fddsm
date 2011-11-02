@@ -56,38 +56,18 @@ public:
     string Value;
   };
 
-  enum CommentChar
-  {
-    Pound = '#',
-    SemiColon = ';'
-  };
-
   H5FDdsmIniFile(void);
   virtual ~H5FDdsmIniFile(void);
 
   static bool AddSection(string SectionName, string FileName);
-  static bool CommentRecord(CommentChar cc, string KeyName,string SectionName,string FileName);
-  static bool CommentSection(char CommentChar, string SectionName, string FileName);
-  static string Content(string FileName);
   static bool Create(string FileName);
-  static bool DeleteRecord(string KeyName, string SectionName, string FileName);
-  static bool DeleteSection(string SectionName, string FileName);
   static vector<Record> GetRecord(string KeyName, string SectionName, string FileName);
-  static vector<Record> GetSection(string SectionName, string FileName);
-  static vector<string> GetSectionNames(string FileName);
   static string GetValue(string KeyName, string SectionName, string FileName);
   static bool RecordExists(string KeyName, string SectionName, string FileName);
-  static bool RenameSection(string OldSectionName, string NewSectionName, string FileName);
   static bool SectionExists(string SectionName, string FileName);
-  static bool SetRecordComments(string Comments, string KeyName, string SectionName, string FileName);
-  static bool SetSectionComments(string Comments, string SectionName, string FileName);
   static bool SetValue(string KeyName, string Value, string SectionName, string FileName);
-  static bool Sort(string FileName, bool Descending);
-  static bool UnCommentRecord(string KeyName,string SectionName,string FileName);
-  static bool UnCommentSection(string SectionName, string FileName);
 
 private:
-  static vector<Record> GetSections(string FileName);
   static bool Load(string FileName, vector<Record>& content);  
   static bool Save(string FileName, vector<Record>& content);
 
@@ -109,38 +89,6 @@ private:
     bool operator()( const Record& rec ) const
     {
       return ((rec.Section == section_)&&(rec.Key == key_));
-    }
-  };
-
-  struct AscendingSectionSort
-  {
-    bool operator()(const Record& Start, const Record& End)
-    {
-      return Start.Section < End.Section;
-    }
-  };
-
-  struct DescendingSectionSort
-  {
-    bool operator()(const Record& Start, const Record& End)
-    {
-      return Start.Section > End.Section;
-    }
-  };
-
-  struct AscendingRecordSort
-  {
-    bool operator()(const Record& Start, const Record& End)
-    {
-      return Start.Key < End.Key;
-    }
-  };
-
-  struct DescendingRecordSort
-  {
-    bool operator()(const Record& Start, const Record& End)
-    {
-      return Start.Key > End.Key;
     }
   };
 };

@@ -64,7 +64,7 @@ macro(add_h5fd_dsm_static_test full_test_name server client)
       COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${MPIEXEC_MAX_NUMPROCS}
       ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${server}>
       ${H5FD_DSM_TESTING_LENGTH} ${comm} "Static" : ${MPIEXEC_NUMPROC_FLAG}
-      ${MPIEXEC_MAX_NUMPROCS} ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${client}> 0 ${comm}
+      ${MPIEXEC_MAX_NUMPROCS} ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${client}> 0 ${comm} "Static"
     )
   endforeach(comm)
 endmacro(add_h5fd_dsm_static_test)
@@ -88,7 +88,7 @@ macro(add_h5fd_dsm_static_block_test full_test_name blocktype server client)
       ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${server}>
       ${H5FD_DSM_TESTING_LENGTH} ${comm} "Static" ${blocktype}
       ${H5FD_DSM_TESTING_BLOCK_LENGTH} : ${MPIEXEC_NUMPROC_FLAG}
-      ${MPIEXEC_MAX_NUMPROCS} ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${client}> 0 ${comm}
+      ${MPIEXEC_MAX_NUMPROCS} ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${client}> 0 ${comm} "Static"
     )
   endforeach(comm)
 endmacro(add_h5fd_dsm_static_block_test)
@@ -135,14 +135,34 @@ target_link_libraries(H5FDdsmAbortPublish
 )
 
 #-----------------------------------------------------------------------------
-# H5FDdsmSender_cwrite_nohdf_bw : Bandwidth test of DSM write operations
+# H5FDdsmSender_cwrite_auto : Automatically create a DSM object and send data
 #-----------------------------------------------------------------------------
-add_executable(H5FDdsmSender_cwrite_nohdf_bw
-  H5FDdsmSender_cwrite_nohdf_bw.cxx
+add_executable(H5FDdsmSender_cwrite_auto
+  H5FDdsmSender_cwrite_auto.c
 )
-target_link_libraries(H5FDdsmSender_cwrite_nohdf_bw
+target_link_libraries(H5FDdsmSender_cwrite_auto
   H5FDdsmTesting
 )
+
+#-----------------------------------------------------------------------------
+# H5FDdsmReceiver_cwrite_auto : Allocate DSM and dump reveived data
+#-----------------------------------------------------------------------------
+add_executable(H5FDdsmReceiver_cwrite_auto
+  H5FDdsmReceiver_cwrite_auto.cxx
+)
+target_link_libraries(H5FDdsmReceiver_cwrite_auto
+  H5FDdsmTesting
+)
+
+#-----------------------------------------------------------------------------
+# H5FDdsmSender_cwrite_nohdf_bw : Bandwidth test of DSM write operations
+#-----------------------------------------------------------------------------
+#add_executable(H5FDdsmSender_cwrite_nohdf_bw
+#  H5FDdsmSender_cwrite_nohdf_bw.cxx
+#)
+#target_link_libraries(H5FDdsmSender_cwrite_nohdf_bw
+#  H5FDdsmTesting
+#)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmSender_cwrite_bw : Bandwidth test of DSM write operations
@@ -274,6 +294,7 @@ endif(H5FD_DSM_BUILD_STEERING)
 
 if(MPIEXEC)
   set(H5FDdsm_tests
+    cwrite_auto
     cwrite_bw
     cwrite_sread_bw
     cwrite_cread

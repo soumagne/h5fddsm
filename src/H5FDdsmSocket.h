@@ -65,9 +65,11 @@ public:
 
   // Description:
   // Initialize/Clean Windows Socket Library
+#ifdef _WIN32
   int WinSockInit();
   int WinSockCleanup();
   const char* WinSockPrintError(int error);
+#endif
 
   // Description:
   // Close the socket.
@@ -81,12 +83,6 @@ public:
   // Binds socket to a particular port.
   // Returns 0 on success other -1 is returned.
   int Bind(int port, const char *hostName=NULL);
-
-  // Description:
-  // Selects a socket ie. waits for it to change status.
-  // Returns 1 on success; 0 on timeout; -1 on error. msec=0 implies
-  // no timeout.
-  int Select(unsigned long msec);
 
   // Description:
   // Accept a connection on a socket. Returns -1 on error. Otherwise

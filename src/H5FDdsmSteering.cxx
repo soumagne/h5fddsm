@@ -213,7 +213,7 @@ herr_t H5FD_dsm_steering_begin_query()
 
   dsmManager = static_cast<H5FDdsmManager *> (dsm_get_manager());
 
-  if (dsmManager->GetSteerer()->BeginInteractionsCache(H5F_ACC_RDONLY) != H5FD_DSM_SUCCESS) {
+  if (dsmManager->GetSteerer()->BeginInteractionsCache(H5F_ACC_RDWR) != H5FD_DSM_SUCCESS) {
     /* TODO do we print an error message here */
     ret_value = FAIL;
   }
