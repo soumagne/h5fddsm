@@ -112,6 +112,9 @@ target_link_libraries(H5FDdsmTesting
   H5FDdsm
 )
 set_lib_options(H5FDdsmTesting "H5FDdsmTesting" STATIC)
+if(H5FD_DSM_ENABLE_COVERAGE)
+  set_coverage_flags(H5FDdsmTesting)
+endif(H5FD_DSM_ENABLE_COVERAGE)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmStandAlone : Simple parallel write/read test to a DSM (not connected)
@@ -122,6 +125,9 @@ add_executable(H5FDdsmStandAlone
 target_link_libraries(H5FDdsmStandAlone
   H5FDdsmTesting
 )
+if(H5FD_DSM_ENABLE_COVERAGE)
+  set_coverage_flags(H5FDdsmStandAlone)
+endif(H5FD_DSM_ENABLE_COVERAGE)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmAbortPublish : Simple parallel write/read test to abort DSM publish
@@ -133,6 +139,9 @@ add_executable(H5FDdsmAbortPublish
 target_link_libraries(H5FDdsmAbortPublish
   H5FDdsmTesting
 )
+if(H5FD_DSM_ENABLE_COVERAGE)
+  set_coverage_flags(H5FDdsmAbortPublish)
+endif(H5FD_DSM_ENABLE_COVERAGE)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmSender_cwrite_auto : Automatically create a DSM object and send data
@@ -143,6 +152,9 @@ add_executable(H5FDdsmSender_cwrite_auto
 target_link_libraries(H5FDdsmSender_cwrite_auto
   H5FDdsmTesting
 )
+if(H5FD_DSM_ENABLE_COVERAGE)
+  set_coverage_flags(H5FDdsmSender_cwrite_auto)
+endif(H5FD_DSM_ENABLE_COVERAGE)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmReceiver_cwrite_auto : Allocate DSM and dump reveived data
@@ -153,6 +165,9 @@ add_executable(H5FDdsmReceiver_cwrite_auto
 target_link_libraries(H5FDdsmReceiver_cwrite_auto
   H5FDdsmTesting
 )
+if(H5FD_DSM_ENABLE_COVERAGE)
+  set_coverage_flags(H5FDdsmReceiver_cwrite_auto)
+endif(H5FD_DSM_ENABLE_COVERAGE)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmSender_cwrite_nohdf_bw : Bandwidth test of DSM write operations
@@ -173,6 +188,9 @@ add_executable(H5FDdsmSender_cwrite_bw
 target_link_libraries(H5FDdsmSender_cwrite_bw
   H5FDdsmTesting
 )
+if(H5FD_DSM_ENABLE_COVERAGE)
+  set_coverage_flags(H5FDdsmSender_cwrite_bw)
+endif(H5FD_DSM_ENABLE_COVERAGE)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmReceiver_cwrite_bw : Bandwidth test receiver (does not do anything except hosting data)
@@ -183,6 +201,9 @@ add_executable(H5FDdsmReceiver_cwrite_bw
 target_link_libraries(H5FDdsmReceiver_cwrite_bw
   H5FDdsmTesting
 )
+if(H5FD_DSM_ENABLE_COVERAGE)
+  set_coverage_flags(H5FDdsmReceiver_cwrite_bw)
+endif(H5FD_DSM_ENABLE_COVERAGE)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmSender_cwrite_sread_bw : Data validity test of DSM write operations
@@ -193,6 +214,9 @@ add_executable(H5FDdsmSender_cwrite_sread_bw
 target_link_libraries(H5FDdsmSender_cwrite_sread_bw
   H5FDdsmTesting
 )
+if(H5FD_DSM_ENABLE_COVERAGE)
+  set_coverage_flags(H5FDdsmSender_cwrite_sread_bw)
+endif(H5FD_DSM_ENABLE_COVERAGE)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmReceiver_cwrite_sread_bw : Data validity test receiver - Checks received data
@@ -203,6 +227,9 @@ add_executable(H5FDdsmReceiver_cwrite_sread_bw
 target_link_libraries(H5FDdsmReceiver_cwrite_sread_bw
   H5FDdsmTesting
 )
+if(H5FD_DSM_ENABLE_COVERAGE)
+  set_coverage_flags(H5FDdsmReceiver_cwrite_sread_bw)
+endif(H5FD_DSM_ENABLE_COVERAGE)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmSender_cwrite_cread : Send data as a client and test RDONLY mode
@@ -213,6 +240,9 @@ add_executable(H5FDdsmSender_cwrite_cread
 target_link_libraries(H5FDdsmSender_cwrite_cread
   H5FDdsmTesting
 )
+if(H5FD_DSM_ENABLE_COVERAGE)
+  set_coverage_flags(H5FDdsmSender_cwrite_cread)
+endif(H5FD_DSM_ENABLE_COVERAGE)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmReceiver_cwrite_cread : Receive data as a server and dump the data
@@ -223,6 +253,9 @@ add_executable(H5FDdsmReceiver_cwrite_cread
 target_link_libraries(H5FDdsmReceiver_cwrite_cread
   H5FDdsmTesting
 )
+if(H5FD_DSM_ENABLE_COVERAGE)
+  set_coverage_flags(H5FDdsmReceiver_cwrite_cread)
+endif(H5FD_DSM_ENABLE_COVERAGE)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmSender_cwrite_sread_cwrite : Send data as a client and test RDWR mode
@@ -233,6 +266,9 @@ add_executable(H5FDdsmSender_cwrite_sread_cwrite
 target_link_libraries(H5FDdsmSender_cwrite_sread_cwrite
   H5FDdsmTesting
 )
+if(H5FD_DSM_ENABLE_COVERAGE)
+  set_coverage_flags(H5FDdsmSender_cwrite_sread_cwrite)
+endif(H5FD_DSM_ENABLE_COVERAGE)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmReceiver_cwrite_sread_cwrite : Receive data as a server and dump the data
@@ -243,6 +279,9 @@ add_executable(H5FDdsmReceiver_cwrite_sread_cwrite
 target_link_libraries(H5FDdsmReceiver_cwrite_sread_cwrite
   H5FDdsmTesting
 )
+if(H5FD_DSM_ENABLE_COVERAGE)
+  set_coverage_flags(H5FDdsmReceiver_cwrite_sread_cwrite)
+endif(H5FD_DSM_ENABLE_COVERAGE)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmSender_cwrite_swrite_cread : Send data as a client, wait for the server to give
@@ -254,6 +293,9 @@ add_executable(H5FDdsmSender_cwrite_swrite_cread
 target_link_libraries(H5FDdsmSender_cwrite_swrite_cread
   H5FDdsmTesting
 )
+if(H5FD_DSM_ENABLE_COVERAGE)
+  set_coverage_flags(H5FDdsmSender_cwrite_swrite_cread)
+endif(H5FD_DSM_ENABLE_COVERAGE)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmReceiver_cwrite_swrite_cread : Receive data as a server, dump the data, write back
@@ -265,6 +307,9 @@ add_executable(H5FDdsmReceiver_cwrite_swrite_cread
 target_link_libraries(H5FDdsmReceiver_cwrite_swrite_cread
   H5FDdsmTesting
 )
+if(H5FD_DSM_ENABLE_COVERAGE)
+  set_coverage_flags(H5FDdsmReceiver_cwrite_swrite_cread)
+endif(H5FD_DSM_ENABLE_COVERAGE)
 
 if(H5FD_DSM_BUILD_STEERING)
   #-----------------------------------------------------------------------------
@@ -277,6 +322,9 @@ if(H5FD_DSM_BUILD_STEERING)
   target_link_libraries(H5FDdsmSender_steer
     H5FDdsmTesting
   )
+  if(H5FD_DSM_ENABLE_COVERAGE)
+    set_coverage_flags(H5FDdsmSender_steer)
+  endif(H5FD_DSM_ENABLE_COVERAGE)
 
   #-----------------------------------------------------------------------------
   # H5FDdsmReceiver_steer : Receive data as a server, dump the data, 
@@ -288,6 +336,9 @@ if(H5FD_DSM_BUILD_STEERING)
   target_link_libraries(H5FDdsmReceiver_steer
     H5FDdsmTesting
   )
+  if(H5FD_DSM_ENABLE_COVERAGE)
+    set_coverage_flags(H5FDdsmReceiver_steer)
+  endif(H5FD_DSM_ENABLE_COVERAGE)
 
   #-----------------------------------------------------------------------------
 endif(H5FD_DSM_BUILD_STEERING)

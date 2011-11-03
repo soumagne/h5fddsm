@@ -92,6 +92,25 @@ option(H5FD_DSM_DEBUG_SYNCED "Enable synchronization of debug messages using thr
 option(H5FD_DSM_DEBUG_GLOBAL "Turn on all debug messages." OFF)
 
 #-----------------------------------------------------------------------------
+# Choose to enable coverage or not.
+#-----------------------------------------------------------------------------
+option(H5FD_DSM_ENABLE_COVERAGE "Enable coverage." OFF)
+if(H5FD_DSM_ENABLE_COVERAGE)
+  set(COVERAGE_FLAGS "-fprofile-arcs -ftest-coverage" CACHE STRING
+    "Flags to the coverage program that CTest uses for performing coverage inspection"
+  )
+  mark_as_advanced(COVERAGE_FLAGS)
+endif(H5FD_DSM_ENABLE_COVERAGE)
+
+macro(set_coverage_flags target)
+  set_target_properties(${target}
+    PROPERTIES
+      COMPILE_FLAGS ${COVERAGE_FLAGS}
+      LINK_FLAGS ${COVERAGE_FLAGS}
+  )
+endmacro(set_coverage_flags)
+
+#-----------------------------------------------------------------------------
 # Choose to build steering API or not.
 #-----------------------------------------------------------------------------
 option(H5FD_DSM_BUILD_STEERING "Build H5FDdsm steering functionalities." OFF)
@@ -205,6 +224,13 @@ if(NOT BUILD_SHARED_LIBS)
 endif(NOT BUILD_SHARED_LIBS)
 
 #-----------------------------------------------------------------------------
+# To fix CRT secure warning on WIN32
+#-----------------------------------------------------------------------------
+if(WIN32)
+  add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+endif(WIN32)
+
+#-----------------------------------------------------------------------------
 # Find HDF5
 #-----------------------------------------------------------------------------
 if(NOT H5FD_DSM_EXTERNALLY_CONFIGURED)
@@ -286,6 +312,16 @@ endmacro(set_fortran_link_options)
 #-----------------------------------------------------------------------------
 # Specify project source files
 #-----------------------------------------------------------------------------
+SET(H5FDdsmToolsSources
+  h5dump/h5dump.cxx
+  h5dump/h5tools.cxx
+  h5dump/h5tools_ref.cxx
+  h5dump/h5tools_str.cxx
+  h5dump/h5tools_type.cxx
+  h5dump/h5tools_utils.cxx
+  h5dump/h5trav.cxx
+)
+
 set(H5FDdsmSources
   src/H5FDdsm.c
   src/H5FDdsmDriver.cxx
@@ -304,13 +340,6 @@ set(H5FDdsmSources
   src/H5FDdsmManager.cxx
   src/H5FDdsmDump.cxx
   src/H5FDdsmAddressMapper.cxx
-  h5dump/h5dump.cxx
-  h5dump/h5tools.cxx
-  h5dump/h5tools_ref.cxx
-  h5dump/h5tools_str.cxx
-  h5dump/h5tools_type.cxx
-  h5dump/h5tools_utils.cxx
-  h5dump/h5trav.cxx
 )
 
 if(H5FD_DSM_BUILD_STEERING)
@@ -336,11 +365,21 @@ if(H5FD_DSM_USE_CRAY_UGNI)
 endif(H5FD_DSM_USE_CRAY_UGNI)
 
 #-----------------------------------------------------------------------------
-# Create the library
+# Create the libraries
+#-----------------------------------------------------------------------------
+add_library(H5FDdsmTools ${H5FDdsmToolsSources})
+
+set_lib_options(H5FDdsmTools "H5FDdsmTools" ${H5FDdsm_LIBTYPE})
+set_target_properties(H5FDdsmTools
+  PROPERTIES
+    COMPILE_FLAGS "-Dhdf5_tools_EXPORTS"
+)
+
 #-----------------------------------------------------------------------------
 add_library(H5FDdsm ${H5FDdsmSources})
 
 target_link_libraries(H5FDdsm
+  H5FDdsmTools
   ${H5FD_DSM_LIB_DEPENDENCIES}
 )
 
@@ -348,10 +387,12 @@ if(WIN32)
   target_link_libraries(H5FDdsm
     wsock32 ws2_32
   )
-  add_definitions(-D_CRT_SECURE_NO_WARNINGS -Dhdf5_tools_EXPORTS)
 endif(WIN32)
 
 set_lib_options(H5FDdsm "H5FDdsm" ${H5FDdsm_LIBTYPE})
+if(H5FD_DSM_ENABLE_COVERAGE)
+  set_coverage_flags(H5FDdsm)
+endif(H5FD_DSM_ENABLE_COVERAGE)
 
 #-----------------------------------------------------------------------------
 # Option to build Fortran bindings
@@ -411,7 +452,7 @@ install(
 #-----------------------------------------------------------------------------
 install(
   TARGETS
-    H5FDdsm
+    H5FDdsm H5FDdsmTools
   EXPORT
     ${H5FD_DSM_EXPORTED_TARGETS}
   LIBRARY DESTINATION ${H5FD_DSM_INSTALL_LIB_DIR}
@@ -437,7 +478,7 @@ install(
 if(NOT H5FD_DSM_EXTERNALLY_CONFIGURED)
 EXPORT (
   TARGETS
-    H5FDdsm
+    H5FDdsm H5FDdsmTools
   FILE
     h5fddsm-targets.cmake
 )
