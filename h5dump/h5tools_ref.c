@@ -13,21 +13,11 @@
  * access to either file, you may request a copy from help@hdfgroup.org.     *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
-#include <cstdio>
-#include <cstdlib>
+#include <stdio.h>
+#include <stdlib.h>
 #include "h5tools_ref.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include "H5private.h"
 #include "H5SLprivate.h"
-
-#ifdef __cplusplus
-}
-#endif
-
 #include "h5tools.h"
 #include "h5tools_utils.h"
 #include "h5trav.h"
@@ -228,7 +218,7 @@ ref_path_table_put(const char *path, haddr_t objno)
     HDassert(ref_path_table);
     HDassert(path);
 
-    if((new_node = (ref_path_node_t*)HDmalloc(sizeof(ref_path_node_t))) == NULL)
+    if((new_node = HDmalloc(sizeof(ref_path_node_t))) == NULL)
         return(-1);
 
     new_node->objno = objno;
@@ -310,7 +300,7 @@ lookup_ref_path(haddr_t ref)
     if(ref_path_table == NULL)
         init_ref_path_table();
 
-    node = (ref_path_node_t*)H5SL_search(ref_path_table, &ref);
+    node = H5SL_search(ref_path_table, &ref);
 
     return(node ? node->path : NULL);
 }

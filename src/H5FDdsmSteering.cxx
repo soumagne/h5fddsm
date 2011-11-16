@@ -31,12 +31,6 @@
 #include "H5FDdsmDriver.h"
 //
 #include "H5Eprivate.h" // Error handling
-// H5private.h defines attribute, but we don't want it as it causes link errors
-// on some gcc versions
-#ifdef __GNUC__
-# undef __attribute__
-#endif
-//
 
 #define DSM_STEERING_GOTO_ERROR(x, ret_val)                                \
 {                                                                          \

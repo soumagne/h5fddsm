@@ -90,7 +90,6 @@
 }
 
 //----------------------------------------------------------------------------
-extern "C"{
 #ifdef _WIN32
   H5FDdsm_EXPORT DWORD WINAPI H5FDdsmBufferServiceThread(void *DsmObj)
   {
@@ -122,7 +121,6 @@ extern "C"{
     return(Dsm->RemoteServiceThread());
   }
 #endif
-}
 //----------------------------------------------------------------------------
 H5FDdsmBufferService::H5FDdsmBufferService()
 {

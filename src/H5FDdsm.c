@@ -67,10 +67,10 @@
 /*
  * H5private.h defines attribute, but we don't want it
  * as it causes link errors on some gcc versions
- */
 #ifdef __GNUC__
 # undef __attribute__
 #endif
+ */
 
 /*
  * Unfortunately, some of the HDF5 macros use internal variables which are

@@ -314,12 +314,12 @@ endmacro(set_fortran_link_options)
 #-----------------------------------------------------------------------------
 SET(H5FDdsmToolsSources
   h5dump/h5dump.cxx
-  h5dump/h5tools.cxx
-  h5dump/h5tools_ref.cxx
-  h5dump/h5tools_str.cxx
-  h5dump/h5tools_type.cxx
+  h5dump/h5tools.c
+  h5dump/h5tools_ref.c
+  h5dump/h5tools_str.c
+  h5dump/h5tools_type.c
   h5dump/h5tools_utils.cxx
-  h5dump/h5trav.cxx
+  h5dump/h5trav.c
 )
 
 set(H5FDdsmSources

@@ -25,8 +25,6 @@
 #include "hdf5.h"
 #include "h5tools_error.h"
 
-#include "H5FDdsm.h"
-
 #define ESCAPE_HTML             1
 #define OPT(X,S)                ((X) ? (X) : (S))
 #define OPTIONAL_LINE_BREAK     "\001"  /* Special strings embedded in the output */
@@ -532,12 +530,9 @@ struct subset_t {
 extern "C" {
 #endif
 
-#ifdef H5_HAVE_H5DUMP_PACKED_BITS
 H5TOOLS_DLLVAR int     packed_bits_num;       /* number of packed bits to display */
-H5TOOLS_DLLVAR int         packed_data_offset; /* offset of packed bits to display */
-H5TOOLS_DLLVAR unsigned int packed_data_mask;  /* mask in which packed bits to display */
-#endif
-
+H5TOOLS_DLLVAR int     packed_data_offset;    /* offset of packed bits to display */
+H5TOOLS_DLLVAR unsigned long long packed_data_mask;  /* mask in which packed bits to display */
 H5TOOLS_DLLVAR FILE   *rawdatastream;       /* output stream for raw data */
 H5TOOLS_DLLVAR int     bin_output;          /* binary output */
 H5TOOLS_DLLVAR int     bin_form;            /* binary form */
@@ -552,7 +547,7 @@ H5TOOLS_DLLVAR int     region_output;       /* region output */
 H5TOOLS_DLL void     h5tools_init(void);
 H5TOOLS_DLL void     h5tools_close(void);
 H5TOOLS_DLL hid_t    h5tools_fopen(const char *fname, unsigned flags, hid_t fapl,
-                    const char *driver, char *drivername, size_t drivername_len, void *dsmManager);
+                    const char *driver, char *drivername, size_t drivername_len);
 H5TOOLS_DLL int      h5tools_dump_dset(FILE *stream, const h5tool_format_t *info, hid_t dset,
                                   hid_t p_typ, struct subset_t *sset, int indentlevel);
 H5TOOLS_DLL int      h5tools_dump_mem(FILE *stream, const h5tool_format_t *info, hid_t obj_id,
@@ -561,6 +556,9 @@ H5TOOLS_DLL hid_t    h5tools_get_native_type(hid_t type);
 H5TOOLS_DLL hid_t    h5tools_get_little_endian_type(hid_t type);
 H5TOOLS_DLL hid_t    h5tools_get_big_endian_type(hid_t type);
 
+H5TOOLS_DLL htri_t   h5tools_detect_vlen(hid_t tid);
+H5TOOLS_DLL htri_t   h5tools_detect_vlen_str(hid_t tid);
+H5TOOLS_DLL hbool_t   h5tools_is_obj_same(hid_t loc_id1, const char *name1, hid_t loc_id2, const char *name2);
 
 H5TOOLS_DLL void     h5tools_dump_simple_data(FILE *stream, const h5tool_format_t *info, hid_t container,
                          h5tools_context_t *ctx/*in,out*/, unsigned flags,
@@ -581,6 +579,7 @@ int             h5tools_print_datatype(h5tools_str_t *buffer/*in,out*/,
                          const h5tool_format_t *info, h5tools_context_t *ctx/*in,out*/,
                          hid_t type);
 int             h5tools_print_enum(h5tools_str_t *buffer/*in,out*/, hid_t type);
+
 #ifdef __cplusplus
 }
 #endif

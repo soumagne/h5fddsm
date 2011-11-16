@@ -74,11 +74,9 @@
 #define EXTERNAL_FILE   "EXTERNAL_FILE"
 #define FILLVALUE       "FILLVALUE"
 #define FILE_CONTENTS   "FILE_CONTENTS"
-#ifdef H5_HAVE_H5DUMP_PACKED_BITS
 #define PACKED_BITS     "PACKED_BITS"
 #define PACKED_OFFSET   "OFFSET"
 #define PACKED_LENGTH   "LENGTH"
-#endif
 
 #define BEGIN           "{"
 #define END             "}"
@@ -166,14 +164,8 @@ typedef struct h5dump_header_t {
 
 } h5dump_header_t;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+H5TOOLS_DLL void H5dump(int argc, const char *argv[], std::ostringstream &stream);
 
-H5TOOLS_DLL void H5dump(int argc, const char *argv[], std::ostringstream &stream, void *dsmManager);
 
-#ifdef __cplusplus
-}
-#endif
 
 #endif  /* !H5DUMP_H__ */

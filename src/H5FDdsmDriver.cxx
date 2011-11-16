@@ -29,12 +29,6 @@
 #include "H5FDdsm.h"
 //
 #include "H5Eprivate.h" // Error handling
-//
-// H5private.h defines attribute, but we don't want it as it causes link errors
-// on some gcc versions
-#ifdef __GNUC__
-# undef __attribute__
-#endif
 
 // pointer to internal DSM manager reference
 H5FDdsmManager *dsmManager = NULL;

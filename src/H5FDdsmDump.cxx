@@ -17,6 +17,7 @@
 =========================================================================*/
 #include "H5FDdsmDump.h"
 #include "H5FDdsmManager.h"
+#include "H5FDdsmDriver.h"
 
 #include "h5dump.h"
 //----------------------------------------------------------------------------
@@ -42,7 +43,8 @@ H5FDdsmDump::Dump()
 {
   const char *argv[4]={"./h5dump", "-f", "dsm", this->FileName};
   std::ostringstream stream;
-  H5dump(4, (const char**) argv, stream, this->DsmManager);
+  dsm_set_manager(this->DsmManager);
+  H5dump(4, (const char**) argv, stream);
   if (this->DsmManager->GetUpdatePiece() == 0) std::cout << stream.str() << std::endl;
 }
 //----------------------------------------------------------------------------
@@ -51,7 +53,8 @@ H5FDdsmDump::DumpLight()
 {
   const char *argv[5]={"./h5dump", "-f", "dsm", "-H", this->FileName};
   std::ostringstream stream;
-  H5dump(5, (const char**) argv, stream, this->DsmManager);
+  dsm_set_manager(this->DsmManager);
+  H5dump(5, (const char**) argv, stream);
   if (this->DsmManager->GetUpdatePiece() == 0) std::cout << stream.str() << std::endl;
 }
 //----------------------------------------------------------------------------
@@ -60,10 +63,11 @@ H5FDdsmDump::DumpXML(std::ostringstream &stream)
 {
   if (this->DsmManager) {
     const char *argv[8] = {"./h5dump", "-f", "dsm", "-x", "-X", ":", "-H", this->FileName};
-    H5dump(8, (const char**) argv, stream, this->DsmManager);
+    dsm_set_manager(this->DsmManager);
+    H5dump(8, (const char**) argv, stream);
   } else {
     const char *argv[6] = {"./h5dump", "-x", "-X", ":", "-H", this->FileName};
-    H5dump(6, (const char**) argv, stream, NULL);
+    H5dump(6, (const char**) argv, stream);
   }
 }
 //----------------------------------------------------------------------------
