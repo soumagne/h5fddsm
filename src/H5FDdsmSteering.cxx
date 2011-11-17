@@ -493,35 +493,3 @@ done:
 
   FUNC_LEAVE_NOAPI(ret_value);
 }
-
-//----------------------------------------------------------------------------
-// Function:    H5FD_dsm_dump
-//
-// Purpose:     Display the content of the DSM (Debug only).
-//
-// Return:      Success:        non-negative
-//              Failure:        negative
-//
-//----------------------------------------------------------------------------
-herr_t H5FD_dsm_dump()
-{
-  herr_t ret_value = SUCCEED;
-  H5FDdsmManager *dsmManager;
-
-  FUNC_ENTER_NOAPI(H5FD_dsm_dump, FAIL)
-
-  if (!dsm_get_manager())
-    DSM_STEERING_GOTO_ERROR("DSM Steering library not connected (H5FD_dsm_steering_init)", FAIL)
-
-  dsmManager = static_cast<H5FDdsmManager *> (dsm_get_manager());
-
-  if (dsmManager->GetSteerer()->DsmDump() != H5FD_DSM_SUCCESS)
-    DSM_STEERING_GOTO_ERROR("Cannot dump DSM", FAIL)
-
-done:
-  if (err_occurred) {
-    /* Nothing */
-  }
-
-  FUNC_LEAVE_NOAPI(ret_value);
-}

@@ -1,5 +1,6 @@
 #include "H5FDdsmTest.h"
 #include "H5FDdsmSteering.h"
+#include "H5FDdsmTools.h"
 
 #include <cstdlib>
 
@@ -40,7 +41,7 @@ int main(int argc, char *argv[])
 //        dsmManager->SetSteeringCommand("play");
         break;
       case 3:
-        dsmManager->H5DumpLight();
+        H5FD_dsm_dump();
       default:
         break;
       }

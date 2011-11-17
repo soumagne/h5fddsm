@@ -1,5 +1,6 @@
 #include "H5FDdsmTest.h"
 #include "H5FDdsm.h"
+#include "H5FDdsmTools.h"
 //
 #include <hdf5.h>
 #include <cstdlib>
@@ -16,7 +17,7 @@ int main(int argc, char *argv[])
       int array[3] = { 1, 2, 3 };
       hsize_t arraySize = 3;
       // H5Dump
-      dsmManager->H5DumpLight();
+      H5FD_dsm_dump();
       // Sync here
       MPI_Barrier(comm);
       // Add another group/array

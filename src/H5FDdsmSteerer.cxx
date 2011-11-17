@@ -513,13 +513,6 @@ H5FDdsmInt32 H5FDdsmSteerer::FreeHandle(hid_t handle)
 }
 
 //----------------------------------------------------------------------------
-H5FDdsmInt32 H5FDdsmSteerer::DsmDump()
-{
-  this->DsmManager->H5DumpLight();
-  return(H5FD_DSM_SUCCESS);
-}
-
-//----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmSteerer::WriteInteractions(H5FDdsmConstString name, hsize_t numberOfElements, int *data)
 {
   H5FDdsmInt32 ret = H5FD_DSM_FAIL;

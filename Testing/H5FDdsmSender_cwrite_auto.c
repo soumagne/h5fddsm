@@ -17,6 +17,7 @@ int main(int argc, char **argv)
   hsize_t array_size = 3;
   int rank;
   int static_intercomm = 0;
+  hid_t fapl, file_handle, memspace, dataset;
   MPI_Comm comm = MPI_COMM_WORLD;
 
   /* Initialize MPI */
@@ -44,14 +45,14 @@ int main(int argc, char **argv)
   }
 
   /* Create DSM file access property list and file */
-  hid_t fapl = H5Pcreate(H5P_FILE_ACCESS);
+  fapl = H5Pcreate(H5P_FILE_ACCESS);
   H5Pset_fapl_dsm(fapl, comm, NULL, 0);
-  hid_t file_handle = H5Fcreate("dsm", H5F_ACC_TRUNC, H5P_DEFAULT, fapl);
+  file_handle = H5Fcreate("dsm", H5F_ACC_TRUNC, H5P_DEFAULT, fapl);
   H5Pclose(fapl);
 
   /* Create dataspace and write data */
-  hid_t memspace = H5Screate_simple(1, &array_size, NULL);
-  hid_t dataset = H5Dcreate(file_handle, "Client_vector", H5T_NATIVE_INT, memspace,
+  memspace = H5Screate_simple(1, &array_size, NULL);
+  dataset = H5Dcreate(file_handle, "Client_vector", H5T_NATIVE_INT, memspace,
       H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   if (rank == 0)
     H5Dwrite(dataset, H5T_NATIVE_INT, memspace, H5S_ALL, H5P_DEFAULT, array);

@@ -166,18 +166,6 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     H5FDdsmInt32 Unpublish();
 
     // Description:
-    // Dump out the content of the DSM buffer (complete output).
-    void H5Dump();
-
-    // Description:
-    // Dump out the content of the DSM buffer (hierarchical output).
-    void H5DumpLight();
-
-    // Description:
-    // Dump out the content of the DSM buffer (XML output).
-    void H5DumpXML();
-
-    // Description:
     // (Debug) Send an XML string.
     void SendDSMXML();
 

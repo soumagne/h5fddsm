@@ -86,10 +86,6 @@ extern "C" {
   H5FDdsm_EXPORT herr_t H5FD_dsm_steering_vector_get(const char *name, hid_t mem_type, hsize_t number_of_elements, void *data);
   H5FDdsm_EXPORT herr_t H5FD_dsm_steering_vector_set(const char *name, hid_t mem_type, hsize_t number_of_elements, void *data);
 
-  /* Description:
-   * Display the content of the DSM (Debug only).
-   */
-  H5FDdsm_EXPORT herr_t H5FD_dsm_dump();
 #ifdef __cplusplus
 }
 #endif

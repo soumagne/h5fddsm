@@ -109,7 +109,7 @@ add_library(H5FDdsmTesting STATIC
   H5FDdsmTest.cxx
 )
 target_link_libraries(H5FDdsmTesting
-  H5FDdsm
+  H5FDdsmTools
 )
 set_lib_options(H5FDdsmTesting "H5FDdsmTesting" STATIC)
 if(H5FD_DSM_ENABLE_COVERAGE)

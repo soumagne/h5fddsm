@@ -43,8 +43,6 @@
   #include "H5FDdsmSteerer.h"
 #endif
 //
-#include "H5FDdsmDump.h"
-//
 #ifdef _WIN32
 #include <io.h>
   #define access _access
@@ -514,47 +512,6 @@ H5FDdsmInt32 H5FDdsmManager::Unpublish()
   }
   if (this->UpdatePiece == 0) H5FDdsmDebug("Port closed");
   return(H5FD_DSM_SUCCESS);
-}
-
-//----------------------------------------------------------------------------
-void H5FDdsmManager::H5Dump()
-{  
-  if (this->DsmBuffer) {
-    H5FDdsmDump *myDsmDump = new H5FDdsmDump();
-    myDsmDump->SetDsmManager(this);
-    myDsmDump->SetFileName("DSM.h5");
-    myDsmDump->Dump();
-    if (this->UpdatePiece == 0) H5FDdsmDebug("Dump done");
-    delete myDsmDump;
-  }
-}
-
-//----------------------------------------------------------------------------
-void H5FDdsmManager::H5DumpLight()
-{  
-  if (this->DsmBuffer) {
-    H5FDdsmDump *myDsmDump = new H5FDdsmDump();
-    myDsmDump->SetDsmManager(this);
-    myDsmDump->SetFileName("DSM.h5");
-    myDsmDump->DumpLight();
-    if (this->UpdatePiece == 0) H5FDdsmDebug("Dump light done");
-    delete myDsmDump;
-  }
-}
-
-//----------------------------------------------------------------------------
-void H5FDdsmManager::H5DumpXML()
-{
-  if (this->DsmBuffer) {
-    std::ostringstream dumpStream;
-    H5FDdsmDump *myDsmDump = new H5FDdsmDump();
-    myDsmDump->SetDsmManager(this);
-    myDsmDump->SetFileName("DSM.h5");
-    myDsmDump->DumpXML(dumpStream);
-    if (this->UpdatePiece == 0) H5FDdsmDebug("Dump XML done");
-    if (this->UpdatePiece == 0) H5FDdsmDebug(dumpStream.str().c_str());
-    delete myDsmDump;
-  }
 }
 
 //----------------------------------------------------------------------------

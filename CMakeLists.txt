@@ -54,7 +54,7 @@ if(NOT H5FD_DSM_EXTERNALLY_CONFIGURED)
   set(CMAKE_Fortran_MODULE_DIRECTORY
       ${PROJECT_BINARY_DIR}/bin/fortran CACHE PATH "Single Directory for all fortran modules."
   )
-  set(H5FD_DSM_LIB_DEPENDENCIES 
+  set(H5FD_DSM_LIB_DEPENDENCIES
     hdf5 
   )
 endif(NOT H5FD_DSM_EXTERNALLY_CONFIGURED)
@@ -284,7 +284,7 @@ configure_file(
 # Include all directories used by this source
 #-----------------------------------------------------------------------------
 include_directories(${H5FDdsm_SOURCE_DIR}/src)
-include_directories(${H5FDdsm_SOURCE_DIR}/h5dump)
+include_directories(${H5FDdsm_SOURCE_DIR}/tools)
 include_directories(${H5FDdsm_BINARY_DIR}/src)
 
 #----------------------------
@@ -313,13 +313,15 @@ endmacro(set_fortran_link_options)
 # Specify project source files
 #-----------------------------------------------------------------------------
 SET(H5FDdsmToolsSources
-  h5dump/h5dump.cxx
-  h5dump/h5tools.c
-  h5dump/h5tools_ref.c
-  h5dump/h5tools_str.c
-  h5dump/h5tools_type.c
-  h5dump/h5tools_utils.cxx
-  h5dump/h5trav.c
+  tools/h5dump.cxx
+  tools/h5tools.c
+  tools/h5tools_ref.c
+  tools/h5tools_str.c
+  tools/h5tools_type.c
+  tools/h5tools_utils.cxx
+  tools/h5trav.c
+  tools/H5FDdsmDump.cxx
+  tools/H5FDdsmTools.cxx
 )
 
 set(H5FDdsmSources
@@ -338,7 +340,6 @@ set(H5FDdsmSources
   src/H5FDdsmStorage.cxx
   src/H5FDdsmStorageMpi.cxx
   src/H5FDdsmManager.cxx
-  src/H5FDdsmDump.cxx
   src/H5FDdsmAddressMapper.cxx
 )
 
@@ -367,19 +368,9 @@ endif(H5FD_DSM_USE_CRAY_UGNI)
 #-----------------------------------------------------------------------------
 # Create the libraries
 #-----------------------------------------------------------------------------
-add_library(H5FDdsmTools ${H5FDdsmToolsSources})
-
-set_lib_options(H5FDdsmTools "H5FDdsmTools" ${H5FDdsm_LIBTYPE})
-set_target_properties(H5FDdsmTools
-  PROPERTIES
-    COMPILE_FLAGS "-Dhdf5_tools_EXPORTS"
-)
-
-#-----------------------------------------------------------------------------
 add_library(H5FDdsm ${H5FDdsmSources})
 
 target_link_libraries(H5FDdsm
-  H5FDdsmTools
   ${H5FD_DSM_LIB_DEPENDENCIES}
 )
 
@@ -393,6 +384,18 @@ set_lib_options(H5FDdsm "H5FDdsm" ${H5FDdsm_LIBTYPE})
 if(H5FD_DSM_ENABLE_COVERAGE)
   set_coverage_flags(H5FDdsm)
 endif(H5FD_DSM_ENABLE_COVERAGE)
+
+#-----------------------------------------------------------------------------
+add_library(H5FDdsmTools ${H5FDdsmToolsSources})
+
+set_lib_options(H5FDdsmTools "H5FDdsmTools" ${H5FDdsm_LIBTYPE})
+set_target_properties(H5FDdsmTools
+  PROPERTIES
+    COMPILE_FLAGS "-Dhdf5_tools_EXPORTS"
+)
+target_link_libraries(H5FDdsmTools
+  H5FDdsm
+)
 
 #-----------------------------------------------------------------------------
 # Option to build Fortran bindings
@@ -489,7 +492,7 @@ endif(NOT H5FD_DSM_EXTERNALLY_CONFIGURED)
 #-----------------------------------------------------------------------------
 set(H5FD_DSM_INCLUDES_BUILD_TIME
   ${H5FDdsm_SOURCE_DIR}/src
-  ${H5FDdsm_SOURCE_DIR}/h5dump
+  ${H5FDdsm_SOURCE_DIR}/tools
 )
 
 configure_file(

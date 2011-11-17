@@ -75,8 +75,6 @@ public:
   H5FDdsmInt32 GetHandle(H5FDdsmConstString name, hid_t *handle);
   H5FDdsmInt32 FreeHandle(hid_t handle);
 
-  H5FDdsmInt32 DsmDump();
-
 protected:
   friend class H5FDdsmManager;
 

@@ -19,30 +19,27 @@
 #define __H5FDdsmDump_h
 
 #include "H5FDdsmObject.h"
+#include "hdf5.h"
 
 class H5FDdsmManager;
 
 #include <cstring>
 #include <sstream>
 
-class H5FDdsm_EXPORT H5FDdsmDump : public H5FDdsmObject 
+class H5TOOLS_DLL H5FDdsmDump : public H5FDdsmObject
 {
   public:
     H5FDdsmDump();
    ~H5FDdsmDump();
 
-    H5FDdsmSetStringMacro(FileName);
-    H5FDdsmGetStringMacro(FileName);
-
-    void Dump();
-    void DumpLight();
-    void DumpXML(std::ostringstream &);
+    H5FDdsmInt32 Dump();
+    H5FDdsmInt32 DumpLight();
+    H5FDdsmInt32 DumpXML(std::ostringstream &);
 
     void SetDsmManager(H5FDdsmManager* _arg);
 
   protected:
     H5FDdsmManager *DsmManager;
-    H5FDdsmString   FileName;
 };
 
 #endif // __H5FDdsmDump_h
