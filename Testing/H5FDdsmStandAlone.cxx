@@ -1,4 +1,5 @@
 #include "H5FDdsmTest.h"
+#include "H5FDdsm.h"
 
 #include <cstdlib>
 
@@ -32,6 +33,7 @@ main(int argc, char * argv[])
   dsmManager->SetMpiComm(comm);
   dsmManager->SetLocalBufferSizeMBytes(dsmSize / size);
   dsmManager->Create();
+  H5FD_dsm_set_manager(dsmManager);
 
   dataMB = dsmManager->GetDsmBuffer()->GetTotalLength() / (1024.0 * 1024.0);
   numServers = dsmManager->GetDsmBuffer()->GetEndServerId() -

@@ -68,7 +68,6 @@ void particleWriteHdf(
   acc_plist_id = H5Pcreate(H5P_FILE_ACCESS);
   H5CHECK_ERROR(acc_plist_id, "H5Pcreate(H5P_FILE_ACCESS)");
   if (dsmManager) {
-    H5FD_dsm_set_manager(dsmManager);
     H5Pset_fapl_dsm(acc_plist_id, comm, NULL, 0);
     H5CHECK_ERROR(status, "H5Pset_fapl_dsm");
   } else {
@@ -211,7 +210,6 @@ void particleReadHdf(
   acc_plist_id = H5Pcreate(H5P_FILE_ACCESS);
   H5CHECK_ERROR(acc_plist_id, "H5Pcreate(H5P_FILE_ACCESS)");
   if (dsmManager) {
-    H5FD_dsm_set_manager(dsmManager);
     H5Pset_fapl_dsm(acc_plist_id, dsmManager->GetMpiComm(), NULL, 0);
     H5CHECK_ERROR(status, "H5Pset_fapl_dsm");
   }
@@ -455,6 +453,7 @@ void receiverInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *
   dsmManager->SetServerHostName("default");
   dsmManager->SetServerPort(22000);
   dsmManager->Create();
+  H5FD_dsm_set_manager(dsmManager);
 
   // Publish writes .dsm_config file with server name/port/mode in
   // then spawns thread which waits for incoming connections
@@ -563,6 +562,7 @@ void senderInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *co
   dsmManager->SetMpiComm(*comm);
   dsmManager->SetIsServer(H5FD_DSM_FALSE);
   dsmManager->Create();
+  H5FD_dsm_set_manager(dsmManager);
 
   if (staticInterComm) {
     dsmManager->Connect();

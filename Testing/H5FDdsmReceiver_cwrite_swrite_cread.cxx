@@ -22,7 +22,6 @@ int main(int argc, char *argv[])
       MPI_Barrier(comm);
       // Add another group/array
       hid_t fapl = H5Pcreate(H5P_FILE_ACCESS);
-      H5FD_dsm_set_manager(dsmManager);
       H5Pset_fapl_dsm(fapl, comm, NULL, 0);
       hid_t hdf5Handle = H5Fopen("dsm", H5F_ACC_RDWR, fapl);
       H5Pclose(fapl);

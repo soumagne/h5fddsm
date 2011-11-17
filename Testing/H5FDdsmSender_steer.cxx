@@ -23,7 +23,7 @@ int main(int argc, char **argv)
   H5FDdsmManager *dsmManager = new H5FDdsmManager();
 
   senderInit(argc, argv, dsmManager, &comm);
-  H5FD_dsm_set_manager(dsmManager);
+
   H5FD_dsm_steering_init(comm);
 
   remoteMB = dsmManager->GetDsmBuffer()->GetTotalLength() / (1024.0 * 1024.0);

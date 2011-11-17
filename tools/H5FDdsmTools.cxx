@@ -19,16 +19,16 @@
   implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
   This work has received funding from the European Community's Seventh
-  Framework Programme (FP7/2007-2013) under grant agreement 225967 ìNextMuSEî
+  Framework Programme (FP7/2007-2013) under grant agreement 225967 ‚ÄúNextMuSE‚Äù
 
 =========================================================================*/
 
 #include "H5FDdsmTools.h"
-#include "H5FDdsmDump.h"
 #include "H5FDdsmDriver.h"
 #include "H5FDdsmManager.h"
 //
 #include "H5Eprivate.h" // Error handling
+#include "h5dump.h"
 
 #define DSM_TOOLS_GOTO_ERROR(x, ret_val)                                \
 {                                                                          \
@@ -49,20 +49,20 @@
 herr_t H5FD_dsm_dump()
 {
   herr_t ret_value = SUCCEED;
+  const char *argv[5]={"./h5dump", "-f", "dsm", "-H", "dsm.h5"};
+  std::ostringstream stream;
   H5FDdsmManager *dsmManager;
-  H5FDdsmDump *dsmDump;
 
   FUNC_ENTER_NOAPI(H5FD_dsm_dump, FAIL)
 
   if (!dsm_get_manager())
-    DSM_TOOLS_GOTO_ERROR("DSM buffer not initialized", FAIL)
+    DSM_TOOLS_GOTO_ERROR("DSM buffer not initialized", FAIL);
 
   dsmManager = static_cast<H5FDdsmManager *> (dsm_get_manager());
-  dsmDump = new H5FDdsmDump();
-  dsmDump->SetDsmManager(dsmManager);
 
-  if (dsmDump->DumpLight() != H5FD_DSM_SUCCESS)
-    DSM_TOOLS_GOTO_ERROR("Cannot dump DSM", FAIL)
+  H5dump(5, (const char**) argv, stream);
+
+  if (dsmManager->GetUpdatePiece() == 0) std::cout << stream.str() << std::endl;
 
 done:
   if (err_occurred) {

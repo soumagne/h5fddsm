@@ -320,7 +320,6 @@ SET(H5FDdsmToolsSources
   tools/h5tools_type.c
   tools/h5tools_utils.cxx
   tools/h5trav.c
-  tools/H5FDdsmDump.cxx
   tools/H5FDdsmTools.cxx
 )
 
