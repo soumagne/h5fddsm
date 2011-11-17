@@ -23,8 +23,8 @@
 
 =========================================================================*/
 
-#ifndef _H5f90dsmSteeringproto_H
-#define _H5f90dsmSteeringproto_H
+#ifndef __H5f90dsmSteeringproto_h
+#define __H5f90dsmSteeringproto_h
 
 #include "H5f90.h"
 #include "H5public.h"
@@ -68,7 +68,4 @@ H5_FCDLL int_f nh5fd_dsm_steering_vector_get_c(_fcd name, int_f* namelen, hid_t_
 #define nh5fd_dsm_steering_vector_set_c H5_FC_FUNC_(h5fd_dsm_steering_vector_set_c, H5FD_DSM_STEERING_VECTOR_SET_C)
 H5_FCDLL int_f nh5fd_dsm_steering_vector_set_c(_fcd name, int_f* namelen, hid_t_f* mem_type_id, hsize_t_f* num_elem, _fcd buf);
 
-#define nh5fd_dsm_dump_c H5_FC_FUNC_(h5fd_dsm_dump_c, H5FD_DSM_DUMP_C)
-H5_FCDLL int_f nh5fd_dsm_dump_c();
-
-#endif /* _H5f90dsmSteeringproto_H */
+#endif /* __H5f90dsmSteeringproto_h */

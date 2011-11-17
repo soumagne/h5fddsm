@@ -33,6 +33,7 @@ include_directories(
 #-----------------------------------------------------------------------------
 set(H5FDdsm_F90_C_STUB_SRCS
   H5FDdsmf.c
+  H5FDdsmToolsf.c
 )
 
 if(H5FD_DSM_BUILD_STEERING)
@@ -47,7 +48,7 @@ add_library(H5FDdsm_f90CStub
 )
 
 target_link_libraries(H5FDdsm_f90CStub
-  H5FDdsm
+  H5FDdsmTools
   ${MPI_LIBRARY}
 )
 
@@ -65,6 +66,7 @@ endif(WIN32 AND MSVC AND BUILD_SHARED_LIBS)
 set(H5FDdsm_FORTRAN_SRC
   H5FDdsmf90global.f90
   H5FDdsmff.f90
+  H5FDdsmToolsff.f90
 )
 
 if(H5FD_DSM_BUILD_STEERING)

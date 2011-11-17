@@ -1,7 +1,11 @@
 /*=========================================================================
 
-  Project                 : vtkCSCS
-  Module                  : H5FDdsmDump.cxx
+  Project                 : H5FDdsm
+  Module                  : H5FDdsmDump.h
+
+  Authors:
+     John Biddiscombe     Jerome Soumagne
+     biddisco@cscs.ch     soumagne@cscs.ch
 
   Copyright (C) CSCS - Swiss National Supercomputing Centre.
   You may use modify and and distribute this code freely providing
@@ -14,7 +18,11 @@
   This software is distributed WITHOUT ANY WARRANTY; without even the
   implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
+  This work has received funding from the European Community's Seventh
+  Framework Programme (FP7/2007-2013) under grant agreement 225967 “NextMuSE”
+
 =========================================================================*/
+
 #ifndef __H5FDdsmDump_h
 #define __H5FDdsmDump_h
 

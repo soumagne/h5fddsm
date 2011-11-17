@@ -1,6 +1,6 @@
 /*=========================================================================
 
-  Project                 : H5FDdsmSteering
+  Project                 : H5FDdsm
   Module                  : H5FDdsmSteeringf.c
 
   Authors:
@@ -374,24 +374,4 @@ int_f nh5fd_dsm_steering_vector_set_c(_fcd name, int_f* namelen,
      HDfree(c_name);
      if (ret < 0) return ret_value;
      return 0;
-}
-
-/*----------------------------------------------------------------------------
- * Name:        h5fd_dsm_dump_c
- * Purpose:     Display the content of the DSM (Debug only)
- * Inputs:      none
- * Returns:     0 on success, -1 on failure
- *---------------------------------------------------------------------------*/
-int_f nh5fd_dsm_dump_c()
-{
-     int    ret_value = -1;
-     herr_t ret;
-
-     /*
-      * Call H5FD_dsm_dump function.
-      */
-     ret = H5FD_dsm_dump();
-     if (ret < 0) return ret_value;
-     ret_value = 0;
-     return ret_value;
 }

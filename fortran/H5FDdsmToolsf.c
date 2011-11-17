@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Project                 : H5FDdsm
-  Module                  : H5FDdsmTools.h
+  Module                  : H5FDdsmToolsf.c
 
   Authors:
      John Biddiscombe     Jerome Soumagne
@@ -23,21 +23,25 @@
 
 =========================================================================*/
 
-#ifndef __H5FDdsmTools_h
-#define __H5FDdsmTools_h
+#include "H5f90dsmToolsproto.h"
+#include "H5FDdsmTools.h"
 
-#include "H5Ipublic.h"
+/*----------------------------------------------------------------------------
+ * Name:        h5fd_dsm_dump_c
+ * Purpose:     Display the content of the DSM (Debug only)
+ * Inputs:      none
+ * Returns:     0 on success, -1 on failure
+ *---------------------------------------------------------------------------*/
+int_f nh5fd_dsm_dump_c()
+{
+     int    ret_value = -1;
+     herr_t ret;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-  /* Description:
-   * Display the content of the DSM (Debug only).
-   */
-  H5TOOLS_DLL herr_t H5FD_dsm_dump();
-  
-#ifdef __cplusplus
+     /*
+      * Call H5FD_dsm_dump function.
+      */
+     ret = H5FD_dsm_dump();
+     if (ret < 0) return ret_value;
+     ret_value = 0;
+     return ret_value;
 }
-#endif
-
-#endif /* __H5FDdsmTools_h */

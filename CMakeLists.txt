@@ -428,6 +428,7 @@ set(H5FDdsmHeaders
   ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmBufferService.h
   ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmObject.h
   ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmComm.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/tools/H5FDdsmTools.h
   ${H5FDdsm_BINARY_DIR}/src/H5FDdsmConfig.h
 )
 

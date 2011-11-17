@@ -23,8 +23,8 @@
 
 =========================================================================*/
 
-#ifndef _H5f90dsmproto_H
-#define _H5f90dsmproto_H
+#ifndef __H5f90dsmproto_h
+#define __H5f90dsmproto_h
 
 #include "H5f90.h"
 #include "H5public.h"
@@ -44,4 +44,4 @@ H5_FCDLL int_f nh5fd_dsm_set_options_c(int_f* options);
 #define nh5fd_dsm_notify_c H5_FC_FUNC_(h5fd_dsm_notify_c, H5FD_DSM_NOTIFY_C)
 H5_FCDLL int_f nh5fd_dsm_notify_c(int_f* notifications);
 
-#endif /* _H5f90dsmproto_H */
+#endif /* __H5f90dsmproto_h */

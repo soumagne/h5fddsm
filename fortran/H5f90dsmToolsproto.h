@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Project                 : H5FDdsm
-  Module                  : H5FDdsmTools.h
+  Module                  : H5f90dsmToolsproto.h
 
   Authors:
      John Biddiscombe     Jerome Soumagne
@@ -23,21 +23,13 @@
 
 =========================================================================*/
 
-#ifndef __H5FDdsmTools_h
-#define __H5FDdsmTools_h
+#ifndef __H5f90dsmToolsproto_h
+#define __H5f90dsmToolsproto_h
 
-#include "H5Ipublic.h"
+#include "H5f90.h"
+#include "H5public.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-  /* Description:
-   * Display the content of the DSM (Debug only).
-   */
-  H5TOOLS_DLL herr_t H5FD_dsm_dump();
-  
-#ifdef __cplusplus
-}
-#endif
+#define nh5fd_dsm_dump_c H5_FC_FUNC_(h5fd_dsm_dump_c, H5FD_DSM_DUMP_C)
+H5_FCDLL int_f nh5fd_dsm_dump_c();
 
-#endif /* __H5FDdsmTools_h */
+#endif /* __H5f90dsmToolsproto_h */

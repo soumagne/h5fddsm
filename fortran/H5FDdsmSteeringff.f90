@@ -1,6 +1,6 @@
 ! * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
 !
-! Project                 : H5FDdsmSteering
+! Project                 : H5FDdsm
 ! Module                  : H5FDdsmSteeringff.f90
 !
 ! Authors:
@@ -593,31 +593,5 @@ MODULE H5FDDSM_STEERING
     hdferr = h5fd_dsm_steering_vector_set_c(name, namelen, mem_type_id, &
                num_elem, buf)
   END SUBROUTINE h5fd_dsm_steering_vector_set_real8_f
-         
-!----------------------------------------------------------------------
-! Name:     h5fd_dsm_dump_f
-!
-! Purpose:  Display the content of the DSM (Debug only)
-!
-! Inputs:
-!               NONE
-! Outputs:
-!       hdferr:     - error code
-!                   Success:  0
-!                   Failure: -1
-! Optional parameters:
-!               NONE
-!
-!----------------------------------------------------------------------
-  SUBROUTINE h5fd_dsm_dump_f(hdferr)
-    !DEC$if defined(BUILD_H5FD_DSM_DLL)
-    !DEC$ ATTRIBUTES DLLEXPORT :: h5fd_dsm_dump_f
-    !DEC$endif
-    IMPLICIT NONE
-    INTEGER, INTENT(OUT) :: hdferr       ! Error code
-
-    INTEGER, EXTERNAL :: h5fd_dsm_dump_c
-    hdferr = h5fd_dsm_dump_c()
-  END SUBROUTINE h5fd_dsm_dump_f
 
 END MODULE H5FDDSM_STEERING
