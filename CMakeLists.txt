@@ -119,6 +119,14 @@ if(H5FD_DSM_BUILD_STEERING)
 endif(H5FD_DSM_BUILD_STEERING)
 
 #-----------------------------------------------------------------------------
+# Choose to build steering API or not.
+#-----------------------------------------------------------------------------
+option(H5FD_DSM_BUILD_TOOLS "Build H5FDdsm tools." OFF)
+if(H5FD_DSM_BUILD_TOOLS)
+  set(H5FD_DSM_HAVE_TOOLS TRUE)
+endif(H5FD_DSM_BUILD_TOOLS)
+
+#-----------------------------------------------------------------------------
 # Choose to build CRAY DMAPP/UGNI communicators or not.
 #-----------------------------------------------------------------------------
 option(H5FD_DSM_USE_CRAY_DMAPP "Use Cray DMAPP inter-communicator." OFF)
@@ -312,17 +320,6 @@ endmacro(set_fortran_link_options)
 #-----------------------------------------------------------------------------
 # Specify project source files
 #-----------------------------------------------------------------------------
-SET(H5FDdsmToolsSources
-  tools/h5dump.cxx
-  tools/h5tools.c
-  tools/h5tools_ref.c
-  tools/h5tools_str.c
-  tools/h5tools_type.c
-  tools/h5tools_utils.cxx
-  tools/h5trav.c
-  tools/H5FDdsmTools.cxx
-)
-
 set(H5FDdsmSources
   src/H5FDdsm.c
   src/H5FDdsmDriver.cxx
@@ -364,10 +361,22 @@ if(H5FD_DSM_USE_CRAY_UGNI)
   )
 endif(H5FD_DSM_USE_CRAY_UGNI)
 
+SET(H5FDdsmToolsSources
+  tools/h5dump.cxx
+  tools/h5tools.c
+  tools/h5tools_ref.c
+  tools/h5tools_str.c
+  tools/h5tools_type.c
+  tools/h5tools_utils.cxx
+  tools/h5trav.c
+  tools/H5FDdsmTools.cxx
+)
+
 #-----------------------------------------------------------------------------
 # Create the libraries
 #-----------------------------------------------------------------------------
 add_library(H5FDdsm ${H5FDdsmSources})
+set(H5FD_DSM_EXPORTED_LIBS H5FDdsm)
 
 target_link_libraries(H5FDdsm
   ${H5FD_DSM_LIB_DEPENDENCIES}
@@ -385,16 +394,19 @@ if(H5FD_DSM_ENABLE_COVERAGE)
 endif(H5FD_DSM_ENABLE_COVERAGE)
 
 #-----------------------------------------------------------------------------
-add_library(H5FDdsmTools ${H5FDdsmToolsSources})
+if(H5FD_DSM_BUILD_TOOLS)
+  add_library(H5FDdsmTools ${H5FDdsmToolsSources})
+  set(H5FD_DSM_EXPORTED_LIBS ${H5FD_DSM_EXPORTED_LIBS} H5FDdsmTools)
 
-set_lib_options(H5FDdsmTools "H5FDdsmTools" ${H5FDdsm_LIBTYPE})
-set_target_properties(H5FDdsmTools
-  PROPERTIES
-    COMPILE_FLAGS "-Dhdf5_tools_EXPORTS"
-)
-target_link_libraries(H5FDdsmTools
-  H5FDdsm
-)
+  set_lib_options(H5FDdsmTools "H5FDdsmTools" ${H5FDdsm_LIBTYPE})
+  set_target_properties(H5FDdsmTools
+    PROPERTIES
+      COMPILE_FLAGS "-Dhdf5_tools_EXPORTS"
+  )
+  target_link_libraries(H5FDdsmTools
+    H5FDdsm
+  )
+endif(H5FD_DSM_BUILD_TOOLS)
 
 #-----------------------------------------------------------------------------
 # Option to build Fortran bindings
@@ -410,6 +422,9 @@ endif(H5FD_DSM_BUILD_FORTRAN)
 # Testing
 #-----------------------------------------------------------------------------
 option(BUILD_TESTING "Build H5FDdsm Complete Testing" ON)
+if(NOT H5FD_DSM_BUILD_TOOLS AND BUILD_TESTING)
+  message(FATAL_ERROR "Please turn on H5FD_DSM_BUILD_TOOLS to enable testing.")
+endif(NOT H5FD_DSM_BUILD_TOOLS AND BUILD_TESTING)
 
 if(NOT H5FD_DSM_EXTERNALLY_CONFIGURED AND BUILD_TESTING)
   enable_testing()
@@ -427,7 +442,6 @@ set(H5FDdsmHeaders
   ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmBufferService.h
   ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmObject.h
   ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmComm.h
-  ${CMAKE_CURRENT_SOURCE_DIR}/tools/H5FDdsmTools.h
   ${H5FDdsm_BINARY_DIR}/src/H5FDdsmConfig.h
 )
 
@@ -437,6 +451,13 @@ if(H5FD_DSM_BUILD_STEERING)
     ${H5FDdsmHeaders}
   )
 endif(H5FD_DSM_BUILD_STEERING)
+
+if(H5FD_DSM_BUILD_TOOLS)
+  set(H5FDdsmHeaders
+    ${CMAKE_CURRENT_SOURCE_DIR}/tools/H5FDdsmTools.h
+    ${H5FDdsmHeaders}
+  )
+endif(H5FD_DSM_BUILD_TOOLS)
 
 #-----------------------------------------------------------------------------
 # Add file(s) to CMake Install
@@ -455,7 +476,7 @@ install(
 #-----------------------------------------------------------------------------
 install(
   TARGETS
-    H5FDdsm H5FDdsmTools
+    ${H5FD_DSM_EXPORTED_LIBS}
   EXPORT
     ${H5FD_DSM_EXPORTED_TARGETS}
   LIBRARY DESTINATION ${H5FD_DSM_INSTALL_LIB_DIR}
@@ -481,7 +502,7 @@ install(
 if(NOT H5FD_DSM_EXTERNALLY_CONFIGURED)
 EXPORT (
   TARGETS
-    H5FDdsm H5FDdsmTools
+    ${H5FD_DSM_EXPORTED_LIBS}
   FILE
     h5fddsm-targets.cmake
 )

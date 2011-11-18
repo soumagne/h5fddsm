@@ -33,7 +33,6 @@ include_directories(
 #-----------------------------------------------------------------------------
 set(H5FDdsm_F90_C_STUB_SRCS
   H5FDdsmf.c
-  H5FDdsmToolsf.c
 )
 
 if(H5FD_DSM_BUILD_STEERING)
@@ -43,12 +42,22 @@ if(H5FD_DSM_BUILD_STEERING)
   )
 endif(H5FD_DSM_BUILD_STEERING)
 
+if(H5FD_DSM_BUILD_TOOLS)
+  set(H5FDdsm_F90_C_STUB_SRCS
+    H5FDdsmToolsf.c
+    ${H5FDdsm_F90_C_STUB_SRCS}
+  )
+  set(H5FDdsm_f90CStub_LIB_DEPENDENCIES H5FDdsmTools)
+else(H5FD_DSM_BUILD_TOOLS)
+  set(H5FDdsm_f90CStub_LIB_DEPENDENCIES H5FDdsm)
+endif(H5FD_DSM_BUILD_TOOLS)
+
 add_library(H5FDdsm_f90CStub
   ${H5FDdsm_F90_C_STUB_SRCS}
 )
 
 target_link_libraries(H5FDdsm_f90CStub
-  H5FDdsmTools
+  ${H5FDdsm_f90CStub_LIB_DEPENDENCIES}
   ${MPI_LIBRARY}
 )
 
@@ -66,7 +75,6 @@ endif(WIN32 AND MSVC AND BUILD_SHARED_LIBS)
 set(H5FDdsm_FORTRAN_SRC
   H5FDdsmf90global.f90
   H5FDdsmff.f90
-  H5FDdsmToolsff.f90
 )
 
 if(H5FD_DSM_BUILD_STEERING)
@@ -75,6 +83,13 @@ if(H5FD_DSM_BUILD_STEERING)
     ${H5FDdsm_FORTRAN_SRC}
   )
 endif(H5FD_DSM_BUILD_STEERING)
+
+if(H5FD_DSM_BUILD_TOOLS)
+  set(H5FDdsm_FORTRAN_SRC
+    H5FDdsmToolsff.f90
+    ${H5FDdsm_FORTRAN_SRC}
+  )
+endif(H5FD_DSM_BUILD_TOOLS)
 
 add_library(H5FDdsm_fortran
   ${H5FDdsm_FORTRAN_SRC}
