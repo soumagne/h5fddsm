@@ -42,6 +42,7 @@ int main(int argc, char *argv[])
         break;
       case 3:
         H5FD_dsm_dump();
+        break;
       default:
         break;
       }

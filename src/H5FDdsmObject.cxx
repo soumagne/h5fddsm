@@ -62,7 +62,7 @@ H5FDdsmObject::H5FDdsmObject() {
 H5FDdsmObject::~H5FDdsmObject() {
 }
 
-#ifdef H5FD_DSM_DEBUG_SYNCED
+#ifdef H5FDdsm_DEBUG_SYNCED
 DebugLock DebugLock::GlobalLock;
 
 // Construct a new vtkMutexLock 
@@ -101,4 +101,4 @@ void DebugLock::Unlock()
   pthread_mutex_unlock(&this->MutexLock);
 #endif
 }
-#endif // H5FD_DSM_DEBUG_SYNCED
+#endif // H5FDdsm_DEBUG_SYNCED

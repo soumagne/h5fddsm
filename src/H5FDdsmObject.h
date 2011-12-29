@@ -100,7 +100,7 @@ typedef H5FDdsmUInt64 H5FDdsmAddr;
 //------------------------------------------------------------------------------
 // Below is all missing in non debug build
 //------------------------------------------------------------------------------
-#ifdef H5FD_DSM_DEBUG_SYNCED
+#ifdef H5FDdsm_DEBUG_SYNCED
 #ifdef _WIN32
   #include <winsock2.h>
   #include <windows.h>
@@ -130,13 +130,13 @@ protected:
 public:
   static DebugLock GlobalLock;
 };
-#endif // H5FD_DSM_DEBUG_SYNCED
+#endif // H5FDdsm_DEBUG_SYNCED
 
 //------------------------------------------------------------------------------
 // Error and Debug message Macros
 //------------------------------------------------------------------------------
-#ifdef H5FD_DSM_DEBUG_SYNCED
-#ifdef H5FD_DSM_DEBUG_GLOBAL
+#ifdef H5FDdsm_DEBUG_SYNCED
+#ifdef H5FDdsm_DEBUG_GLOBAL
 #define H5FDdsmDebug(x) \
 { DebugLock::GlobalLock.Lock();   \
   std::cout << "H5FD_DSM Debug : " << x << std::endl; \
@@ -159,7 +159,7 @@ public:
 }
 #else
 
-#ifdef H5FD_DSM_DEBUG_GLOBAL
+#ifdef H5FDdsm_DEBUG_GLOBAL
 #define H5FDdsmDebug(x) \
 { \
   std::cout << "H5FD_DSM Debug : " << x << std::endl; \

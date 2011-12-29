@@ -447,7 +447,7 @@ H5FDdsmBufferService::Service(H5FDdsmInt32 *ReturnOpcode)
   // H5FD_DSM_OPCODE_DONE
   case H5FD_DSM_OPCODE_DONE:
     break;
-#ifdef H5FD_DSM_HAVE_STEERING
+#ifdef H5FDdsm_HAVE_STEERING
   // H5FD_DSM_COMM_SWITCH
   case H5FD_DSM_COMM_SWITCH:
     if (this->Comm->GetCommChannel() == H5FD_DSM_INTRA_COMM) {
@@ -500,7 +500,7 @@ H5FDdsmBufferService::Service(H5FDdsmInt32 *ReturnOpcode)
       this->Comm->SetCommChannel(H5FD_DSM_INTER_COMM);
       this->Comm->WindowSync();
     } else {
-#ifdef H5FD_DSM_HAVE_STEERING
+#ifdef H5FDdsm_HAVE_STEERING
       if (!this->RemoteServiceThreadPtr) this->StartRemoteService();
 #else
       this->Comm->SetCommChannel(H5FD_DSM_INTER_COMM);
@@ -532,7 +532,7 @@ H5FDdsmBufferService::Service(H5FDdsmInt32 *ReturnOpcode)
       // When a notification is found, the server keeps the lock
       // and only releases it when the requested task is over
       this->ReleaseLockOnClose = H5FD_DSM_FALSE;
-#ifdef H5FD_DSM_HAVE_STEERING
+#ifdef H5FDdsm_HAVE_STEERING
       if (this->Comm->GetUseOneSidedComm()) this->IsLocked = H5FD_DSM_TRUE;
 #else
       this->IsLocked = H5FD_DSM_TRUE;
@@ -812,7 +812,7 @@ H5FDdsmBufferService::RequestLockAcquire()
       if (this->IsSyncRequired) this->Comm->WindowSync();
       this->IsSyncRequired = H5FD_DSM_FALSE;
     } else {
-#ifdef H5FD_DSM_HAVE_STEERING
+#ifdef H5FDdsm_HAVE_STEERING
       for (H5FDdsmInt32 who = this->StartServerId ; who <= this->EndServerId ; who++) {
         H5FDdsmDebug("Send request LOCK acquire to " << who);
         status = this->SendCommandHeader(H5FD_DSM_LOCK_ACQUIRE, who, 0, 0);
@@ -856,7 +856,7 @@ H5FDdsmBufferService::RequestLockRelease()
       if (this->Comm->GetUseOneSidedComm()) {
         this->RequestAccept();
       } else {
-#ifdef H5FD_DSM_HAVE_STEERING
+#ifdef H5FDdsm_HAVE_STEERING
         if (!this->RemoteServiceThreadPtr) this->StartRemoteService();
 #else
         this->RequestAccept();
@@ -867,7 +867,7 @@ H5FDdsmBufferService::RequestLockRelease()
     if (this->Comm->GetUseOneSidedComm()) {
       // Nothing for now
     } else {
-#ifdef H5FD_DSM_HAVE_STEERING
+#ifdef H5FDdsm_HAVE_STEERING
       for (H5FDdsmInt32 who = this->StartServerId ; who <= this->EndServerId ; who++) {
         H5FDdsmDebug("Send request LOCK release to " << who);
         status = this->SendCommandHeader(H5FD_DSM_LOCK_RELEASE, who, 0, 0);
@@ -918,7 +918,7 @@ H5FDdsmBufferService::RequestNotification()
   H5FDdsmInt32 who, status = H5FD_DSM_SUCCESS;
 
   // On next lock acquire, a synchronization is required
-#ifdef H5FD_DSM_HAVE_STEERING
+#ifdef H5FDdsm_HAVE_STEERING
   if (this->Comm->GetUseOneSidedComm()) this->IsSyncRequired = H5FD_DSM_TRUE;
 #else
   this->IsSyncRequired = H5FD_DSM_TRUE;

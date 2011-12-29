@@ -32,7 +32,7 @@
 #include "H5FDdsmBufferService.h"
 #include "H5FDdsmComm.h"
 
-#ifdef H5FD_DSM_HAVE_STEERING
+#ifdef H5FDdsm_HAVE_STEERING
 class H5FDdsmSteerer;
 #endif
 struct H5FDdsmManagerInternals;
@@ -187,7 +187,7 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
 
     static MPI_Comm GetGlobalMPICommunicator();
 
-#ifdef H5FD_DSM_HAVE_STEERING
+#ifdef H5FDdsm_HAVE_STEERING
     inline H5FDdsmSteerer *GetSteerer() { return(Steerer); }
 
     H5FDdsmInt32 WriteSteeredData();
@@ -240,7 +240,7 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     //
     H5FDdsmString   XMLStringSend;
     //
-#ifdef H5FD_DSM_HAVE_STEERING
+#ifdef H5FDdsm_HAVE_STEERING
     H5FDdsmSteerer *Steerer;
 #endif
     //

@@ -29,17 +29,17 @@
 #include "H5FDdsmCommMpiRma.h"
 //
 #ifdef __CRAYXT_COMPUTE_LINUX_TARGET
-  #ifdef H5FD_DSM_HAVE_DMAPP
+  #ifdef H5FDdsm_HAVE_DMAPP
     #include "H5FDdsmCommDmapp.h"
   #endif
-  #ifdef H5FD_DSM_HAVE_UGNI
+  #ifdef H5FDdsm_HAVE_UGNI
     #include "H5FDdsmCommUGni.h"
   #endif
 #endif
 //
 #include "H5FDdsmIniFile.h"
 //
-#ifdef H5FD_DSM_HAVE_STEERING
+#ifdef H5FDdsm_HAVE_STEERING
   #include "H5FDdsmSteerer.h"
 #endif
 //
@@ -54,7 +54,7 @@
 
 struct H5FDdsmManagerInternals
 {
-#ifdef H5FD_DSM_HAVE_STEERING
+#ifdef H5FDdsm_HAVE_STEERING
   struct SteeringEntryInt
   {
     SteeringEntryInt(std::string text, int nelements, int *values) : Text(text),
@@ -102,7 +102,7 @@ H5FDdsmManager::H5FDdsmManager()
   this->ServerHostName          = NULL;
   this->ServerPort              = 0;
   this->XMLStringSend           = NULL;
-#ifdef H5FD_DSM_HAVE_STEERING
+#ifdef H5FDdsm_HAVE_STEERING
   // Initialize steerer
   this->Steerer                 = new H5FDdsmSteerer(this);
 #endif
@@ -115,7 +115,7 @@ H5FDdsmManager::~H5FDdsmManager()
   this->Destroy();
 
   this->SetXMLStringSend(NULL);
-#ifdef H5FD_DSM_HAVE_STEERING
+#ifdef H5FDdsm_HAVE_STEERING
   if (this->Steerer) delete this->Steerer;
 #endif
   delete this->ManagerInternals;
@@ -256,13 +256,13 @@ H5FDdsmInt32 H5FDdsmManager::Create()
     H5FDdsmDebug("Using Socket Intercomm...");
     break;
 #ifdef __CRAYXT_COMPUTE_LINUX_TARGET
-#ifdef H5FD_DSM_HAVE_DMAPP
+#ifdef H5FDdsm_HAVE_DMAPP
   case H5FD_DSM_COMM_DMAPP:
     this->DsmComm = new H5FDdsmCommDmapp();
     H5FDdsmDebug("Using DMAPP Intercomm...");
     break;
 #endif
-#ifdef H5FD_DSM_HAVE_UGNI
+#ifdef H5FDdsm_HAVE_UGNI
   case H5FD_DSM_COMM_UGNI:
     this->DsmComm = new H5FDdsmCommUGni();
     H5FDdsmDebug("Using UGNI Intercomm...");
@@ -611,7 +611,7 @@ H5FDdsmInt32 H5FDdsmManager::ReadConfigFile()
 }
 
 //----------------------------------------------------------------------------
-#ifdef H5FD_DSM_HAVE_STEERING
+#ifdef H5FDdsm_HAVE_STEERING
 H5FDdsmInt32 H5FDdsmManager::WriteSteeredData()
 {
   if (this->ManagerInternals->SteeringValuesInt.size() ||

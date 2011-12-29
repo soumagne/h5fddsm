@@ -36,9 +36,9 @@ target_link_libraries(H5FDdsmTestDriver H5FDdsm_sys)
 #-----------------------------------------------
 # Set up test options and macros
 #-----------------------------------------------
-option(H5FD_DSM_TESTING_DYNAMIC "Run H5FDdsm dynamic tests" ON)
-set(H5FD_DSM_TESTING_LENGTH "18" CACHE STRING "DSM total length (in MBytes) used for testing")
-set(H5FD_DSM_TESTING_BLOCK_LENGTH "2097152" CACHE STRING "DSM block length (in Bytes) used for testing")
+option(H5FDdsm_TESTING_DYNAMIC "Run H5FDdsm dynamic tests" ON)
+set(H5FDdsm_TESTING_LENGTH "18" CACHE STRING "DSM total length (in MBytes) used for testing")
+set(H5FDdsm_TESTING_BLOCK_LENGTH "2097152" CACHE STRING "DSM block length (in Bytes) used for testing")
 
 macro(add_h5fd_dsm_parallel_test full_test_name test_prog)
   add_test(NAME "${full_test_name}"
@@ -53,7 +53,7 @@ function(add_h5fd_dsm_dynamic_test full_test_name server client)
       ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/H5FDdsmTestDriver
       --server ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${server}
       --client ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${client}
-      ${H5FD_DSM_TESTING_LENGTH} ${comm}
+      ${H5FDdsm_TESTING_LENGTH} ${comm}
     )
   endforeach(comm)
 endfunction(add_h5fd_dsm_dynamic_test)
@@ -63,7 +63,7 @@ macro(add_h5fd_dsm_static_test full_test_name server client)
     add_test(NAME "${full_test_name}_${comm}_static"
       COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${MPIEXEC_MAX_NUMPROCS}
       ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${server}>
-      ${H5FD_DSM_TESTING_LENGTH} ${comm} "Static" : ${MPIEXEC_NUMPROC_FLAG}
+      ${H5FDdsm_TESTING_LENGTH} ${comm} "Static" : ${MPIEXEC_NUMPROC_FLAG}
       ${MPIEXEC_MAX_NUMPROCS} ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${client}> 0 ${comm} "Static"
     )
   endforeach(comm)
@@ -75,8 +75,8 @@ function(add_h5fd_dsm_dynamic_block_test full_test_name blocktype server client)
       ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/H5FDdsmTestDriver
       --server ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${server}
       --client ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${client}
-      ${H5FD_DSM_TESTING_LENGTH} ${comm} "Dynamic" ${blocktype}
-      ${H5FD_DSM_TESTING_BLOCK_LENGTH}
+      ${H5FDdsm_TESTING_LENGTH} ${comm} "Dynamic" ${blocktype}
+      ${H5FDdsm_TESTING_BLOCK_LENGTH}
     )
   endforeach(comm)
 endfunction(add_h5fd_dsm_dynamic_block_test)
@@ -86,8 +86,8 @@ macro(add_h5fd_dsm_static_block_test full_test_name blocktype server client)
     add_test(NAME "${full_test_name}_${comm}_static_${blocktype}"
       COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${MPIEXEC_MAX_NUMPROCS}
       ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${server}>
-      ${H5FD_DSM_TESTING_LENGTH} ${comm} "Static" ${blocktype}
-      ${H5FD_DSM_TESTING_BLOCK_LENGTH} : ${MPIEXEC_NUMPROC_FLAG}
+      ${H5FDdsm_TESTING_LENGTH} ${comm} "Static" ${blocktype}
+      ${H5FDdsm_TESTING_BLOCK_LENGTH} : ${MPIEXEC_NUMPROC_FLAG}
       ${MPIEXEC_MAX_NUMPROCS} ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${client}> 0 ${comm} "Static"
     )
   endforeach(comm)
@@ -112,9 +112,9 @@ target_link_libraries(H5FDdsmTesting
   H5FDdsmTools
 )
 set_lib_options(H5FDdsmTesting "H5FDdsmTesting" STATIC)
-if(H5FD_DSM_ENABLE_COVERAGE)
+if(H5FDdsm_ENABLE_COVERAGE)
   set_coverage_flags(H5FDdsmTesting)
-endif(H5FD_DSM_ENABLE_COVERAGE)
+endif(H5FDdsm_ENABLE_COVERAGE)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmStandAlone : Simple parallel write/read test to a DSM (not connected)
@@ -125,9 +125,9 @@ add_executable(H5FDdsmStandAlone
 target_link_libraries(H5FDdsmStandAlone
   H5FDdsmTesting
 )
-if(H5FD_DSM_ENABLE_COVERAGE)
+if(H5FDdsm_ENABLE_COVERAGE)
   set_coverage_flags(H5FDdsmStandAlone)
-endif(H5FD_DSM_ENABLE_COVERAGE)
+endif(H5FDdsm_ENABLE_COVERAGE)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmAbortPublish : Simple parallel write/read test to abort DSM publish
@@ -139,9 +139,9 @@ add_executable(H5FDdsmAbortPublish
 target_link_libraries(H5FDdsmAbortPublish
   H5FDdsmTesting
 )
-if(H5FD_DSM_ENABLE_COVERAGE)
+if(H5FDdsm_ENABLE_COVERAGE)
   set_coverage_flags(H5FDdsmAbortPublish)
-endif(H5FD_DSM_ENABLE_COVERAGE)
+endif(H5FDdsm_ENABLE_COVERAGE)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmSender_cwrite_auto : Automatically create a DSM object and send data
@@ -152,9 +152,9 @@ add_executable(H5FDdsmSender_cwrite_auto
 target_link_libraries(H5FDdsmSender_cwrite_auto
   H5FDdsmTesting
 )
-if(H5FD_DSM_ENABLE_COVERAGE)
+if(H5FDdsm_ENABLE_COVERAGE)
   set_coverage_flags(H5FDdsmSender_cwrite_auto)
-endif(H5FD_DSM_ENABLE_COVERAGE)
+endif(H5FDdsm_ENABLE_COVERAGE)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmReceiver_cwrite_auto : Allocate DSM and dump reveived data
@@ -165,9 +165,9 @@ add_executable(H5FDdsmReceiver_cwrite_auto
 target_link_libraries(H5FDdsmReceiver_cwrite_auto
   H5FDdsmTesting
 )
-if(H5FD_DSM_ENABLE_COVERAGE)
+if(H5FDdsm_ENABLE_COVERAGE)
   set_coverage_flags(H5FDdsmReceiver_cwrite_auto)
-endif(H5FD_DSM_ENABLE_COVERAGE)
+endif(H5FDdsm_ENABLE_COVERAGE)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmSender_cwrite_nohdf_bw : Bandwidth test of DSM write operations
@@ -188,9 +188,9 @@ add_executable(H5FDdsmSender_cwrite_bw
 target_link_libraries(H5FDdsmSender_cwrite_bw
   H5FDdsmTesting
 )
-if(H5FD_DSM_ENABLE_COVERAGE)
+if(H5FDdsm_ENABLE_COVERAGE)
   set_coverage_flags(H5FDdsmSender_cwrite_bw)
-endif(H5FD_DSM_ENABLE_COVERAGE)
+endif(H5FDdsm_ENABLE_COVERAGE)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmReceiver_cwrite_bw : Bandwidth test receiver (does not do anything except hosting data)
@@ -201,9 +201,9 @@ add_executable(H5FDdsmReceiver_cwrite_bw
 target_link_libraries(H5FDdsmReceiver_cwrite_bw
   H5FDdsmTesting
 )
-if(H5FD_DSM_ENABLE_COVERAGE)
+if(H5FDdsm_ENABLE_COVERAGE)
   set_coverage_flags(H5FDdsmReceiver_cwrite_bw)
-endif(H5FD_DSM_ENABLE_COVERAGE)
+endif(H5FDdsm_ENABLE_COVERAGE)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmSender_cwrite_sread_bw : Data validity test of DSM write operations
@@ -214,9 +214,9 @@ add_executable(H5FDdsmSender_cwrite_sread_bw
 target_link_libraries(H5FDdsmSender_cwrite_sread_bw
   H5FDdsmTesting
 )
-if(H5FD_DSM_ENABLE_COVERAGE)
+if(H5FDdsm_ENABLE_COVERAGE)
   set_coverage_flags(H5FDdsmSender_cwrite_sread_bw)
-endif(H5FD_DSM_ENABLE_COVERAGE)
+endif(H5FDdsm_ENABLE_COVERAGE)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmReceiver_cwrite_sread_bw : Data validity test receiver - Checks received data
@@ -227,9 +227,9 @@ add_executable(H5FDdsmReceiver_cwrite_sread_bw
 target_link_libraries(H5FDdsmReceiver_cwrite_sread_bw
   H5FDdsmTesting
 )
-if(H5FD_DSM_ENABLE_COVERAGE)
+if(H5FDdsm_ENABLE_COVERAGE)
   set_coverage_flags(H5FDdsmReceiver_cwrite_sread_bw)
-endif(H5FD_DSM_ENABLE_COVERAGE)
+endif(H5FDdsm_ENABLE_COVERAGE)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmSender_cwrite_cread : Send data as a client and test RDONLY mode
@@ -240,9 +240,9 @@ add_executable(H5FDdsmSender_cwrite_cread
 target_link_libraries(H5FDdsmSender_cwrite_cread
   H5FDdsmTesting
 )
-if(H5FD_DSM_ENABLE_COVERAGE)
+if(H5FDdsm_ENABLE_COVERAGE)
   set_coverage_flags(H5FDdsmSender_cwrite_cread)
-endif(H5FD_DSM_ENABLE_COVERAGE)
+endif(H5FDdsm_ENABLE_COVERAGE)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmReceiver_cwrite_cread : Receive data as a server and dump the data
@@ -253,9 +253,9 @@ add_executable(H5FDdsmReceiver_cwrite_cread
 target_link_libraries(H5FDdsmReceiver_cwrite_cread
   H5FDdsmTesting
 )
-if(H5FD_DSM_ENABLE_COVERAGE)
+if(H5FDdsm_ENABLE_COVERAGE)
   set_coverage_flags(H5FDdsmReceiver_cwrite_cread)
-endif(H5FD_DSM_ENABLE_COVERAGE)
+endif(H5FDdsm_ENABLE_COVERAGE)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmSender_cwrite_sread_cwrite : Send data as a client and test RDWR mode
@@ -266,9 +266,9 @@ add_executable(H5FDdsmSender_cwrite_sread_cwrite
 target_link_libraries(H5FDdsmSender_cwrite_sread_cwrite
   H5FDdsmTesting
 )
-if(H5FD_DSM_ENABLE_COVERAGE)
+if(H5FDdsm_ENABLE_COVERAGE)
   set_coverage_flags(H5FDdsmSender_cwrite_sread_cwrite)
-endif(H5FD_DSM_ENABLE_COVERAGE)
+endif(H5FDdsm_ENABLE_COVERAGE)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmReceiver_cwrite_sread_cwrite : Receive data as a server and dump the data
@@ -279,9 +279,9 @@ add_executable(H5FDdsmReceiver_cwrite_sread_cwrite
 target_link_libraries(H5FDdsmReceiver_cwrite_sread_cwrite
   H5FDdsmTesting
 )
-if(H5FD_DSM_ENABLE_COVERAGE)
+if(H5FDdsm_ENABLE_COVERAGE)
   set_coverage_flags(H5FDdsmReceiver_cwrite_sread_cwrite)
-endif(H5FD_DSM_ENABLE_COVERAGE)
+endif(H5FDdsm_ENABLE_COVERAGE)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmSender_cwrite_swrite_cread : Send data as a client, wait for the server to give
@@ -293,9 +293,9 @@ add_executable(H5FDdsmSender_cwrite_swrite_cread
 target_link_libraries(H5FDdsmSender_cwrite_swrite_cread
   H5FDdsmTesting
 )
-if(H5FD_DSM_ENABLE_COVERAGE)
+if(H5FDdsm_ENABLE_COVERAGE)
   set_coverage_flags(H5FDdsmSender_cwrite_swrite_cread)
-endif(H5FD_DSM_ENABLE_COVERAGE)
+endif(H5FDdsm_ENABLE_COVERAGE)
 
 #-----------------------------------------------------------------------------
 # H5FDdsmReceiver_cwrite_swrite_cread : Receive data as a server, dump the data, write back
@@ -307,11 +307,11 @@ add_executable(H5FDdsmReceiver_cwrite_swrite_cread
 target_link_libraries(H5FDdsmReceiver_cwrite_swrite_cread
   H5FDdsmTesting
 )
-if(H5FD_DSM_ENABLE_COVERAGE)
+if(H5FDdsm_ENABLE_COVERAGE)
   set_coverage_flags(H5FDdsmReceiver_cwrite_swrite_cread)
-endif(H5FD_DSM_ENABLE_COVERAGE)
+endif(H5FDdsm_ENABLE_COVERAGE)
 
-if(H5FD_DSM_BUILD_STEERING)
+if(H5FDdsm_BUILD_STEERING)
   #-----------------------------------------------------------------------------
   # H5FDdsmSender_steer : Query steering update, Send data, wait for the server
   #                      to give hand back and dump the data
@@ -322,9 +322,9 @@ if(H5FD_DSM_BUILD_STEERING)
   target_link_libraries(H5FDdsmSender_steer
     H5FDdsmTesting
   )
-  if(H5FD_DSM_ENABLE_COVERAGE)
+  if(H5FDdsm_ENABLE_COVERAGE)
     set_coverage_flags(H5FDdsmSender_steer)
-  endif(H5FD_DSM_ENABLE_COVERAGE)
+  endif(H5FDdsm_ENABLE_COVERAGE)
 
   #-----------------------------------------------------------------------------
   # H5FDdsmReceiver_steer : Receive data as a server, dump the data, 
@@ -336,12 +336,12 @@ if(H5FD_DSM_BUILD_STEERING)
   target_link_libraries(H5FDdsmReceiver_steer
     H5FDdsmTesting
   )
-  if(H5FD_DSM_ENABLE_COVERAGE)
+  if(H5FDdsm_ENABLE_COVERAGE)
     set_coverage_flags(H5FDdsmReceiver_steer)
-  endif(H5FD_DSM_ENABLE_COVERAGE)
+  endif(H5FDdsm_ENABLE_COVERAGE)
 
   #-----------------------------------------------------------------------------
-endif(H5FD_DSM_BUILD_STEERING)
+endif(H5FDdsm_BUILD_STEERING)
 
 if(MPIEXEC)
   set(H5FDdsm_tests
@@ -352,20 +352,20 @@ if(MPIEXEC)
     cwrite_sread_cwrite
     cwrite_swrite_cread
   )
-  if(H5FD_DSM_BUILD_STEERING)
+  if(H5FDdsm_BUILD_STEERING)
     set(H5FDdsm_tests ${H5FDdsm_tests} steer)
-  endif(H5FD_DSM_BUILD_STEERING)
+  endif(H5FDdsm_BUILD_STEERING)
   add_h5fd_dsm_parallel_test(H5FDdsm_StandAlone H5FDdsmStandAlone)
   add_h5fd_dsm_parallel_test(H5FDdsm_AbortPublish H5FDdsmAbortPublish)
   foreach(H5FDdsm_test ${H5FDdsm_tests})
-    if(H5FD_DSM_TESTING_DYNAMIC)
+    if(H5FDdsm_TESTING_DYNAMIC)
       add_h5fd_dsm_dynamic_test(H5FDdsm_${H5FDdsm_test}
         H5FDdsmReceiver_${H5FDdsm_test} H5FDdsmSender_${H5FDdsm_test})
       add_h5fd_dsm_dynamic_block_test(H5FDdsm_${H5FDdsm_test}
         Block  H5FDdsmReceiver_${H5FDdsm_test} H5FDdsmSender_${H5FDdsm_test})
       add_h5fd_dsm_dynamic_block_test(H5FDdsm_${H5FDdsm_test}
         RBlock H5FDdsmReceiver_${H5FDdsm_test} H5FDdsmSender_${H5FDdsm_test})
-    endif(H5FD_DSM_TESTING_DYNAMIC)
+    endif(H5FDdsm_TESTING_DYNAMIC)
     add_h5fd_dsm_static_test(H5FDdsm_${H5FDdsm_test}
       H5FDdsmReceiver_${H5FDdsm_test} H5FDdsmSender_${H5FDdsm_test})
     add_h5fd_dsm_static_block_test(H5FDdsm_${H5FDdsm_test}

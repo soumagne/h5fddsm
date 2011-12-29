@@ -35,22 +35,22 @@ set(H5FDdsm_F90_C_STUB_SRCS
   H5FDdsmf.c
 )
 
-if(H5FD_DSM_BUILD_STEERING)
+if(H5FDdsm_BUILD_STEERING)
   set(H5FDdsm_F90_C_STUB_SRCS
     H5FDdsmSteeringf.c
     ${H5FDdsm_F90_C_STUB_SRCS}
   )
-endif(H5FD_DSM_BUILD_STEERING)
+endif(H5FDdsm_BUILD_STEERING)
 
-if(H5FD_DSM_BUILD_TOOLS)
+if(H5FDdsm_BUILD_TOOLS)
   set(H5FDdsm_F90_C_STUB_SRCS
     H5FDdsmToolsf.c
     ${H5FDdsm_F90_C_STUB_SRCS}
   )
   set(H5FDdsm_f90CStub_LIB_DEPENDENCIES H5FDdsmTools)
-else(H5FD_DSM_BUILD_TOOLS)
+else(H5FDdsm_BUILD_TOOLS)
   set(H5FDdsm_f90CStub_LIB_DEPENDENCIES H5FDdsm)
-endif(H5FD_DSM_BUILD_TOOLS)
+endif(H5FDdsm_BUILD_TOOLS)
 
 add_library(H5FDdsm_f90CStub
   ${H5FDdsm_F90_C_STUB_SRCS}
@@ -77,19 +77,19 @@ set(H5FDdsm_FORTRAN_SRC
   H5FDdsmff.f90
 )
 
-if(H5FD_DSM_BUILD_STEERING)
+if(H5FDdsm_BUILD_STEERING)
   set(H5FDdsm_FORTRAN_SRC
     H5FDdsmSteeringff.f90
     ${H5FDdsm_FORTRAN_SRC}
   )
-endif(H5FD_DSM_BUILD_STEERING)
+endif(H5FDdsm_BUILD_STEERING)
 
-if(H5FD_DSM_BUILD_TOOLS)
+if(H5FDdsm_BUILD_TOOLS)
   set(H5FDdsm_FORTRAN_SRC
     H5FDdsmToolsff.f90
     ${H5FDdsm_FORTRAN_SRC}
   )
-endif(H5FD_DSM_BUILD_TOOLS)
+endif(H5FDdsm_BUILD_TOOLS)
 
 add_library(H5FDdsm_fortran
   ${H5FDdsm_FORTRAN_SRC}
@@ -113,11 +113,11 @@ if(WIN32 AND MSVC)
   if(BUILD_SHARED_LIBS)
     set_property(TARGET H5FDdsm_fortran
       APPEND PROPERTY COMPILE_DEFINITIONS
-      BUILD_H5FD_DSM_DLL)
+      BUILD_H5FDdsm_DLL)
   endif(BUILD_SHARED_LIBS)
   set_property(TARGET H5FDdsm_fortran
     APPEND PROPERTY COMPILE_DEFINITIONS
-    H5FD_DSM_F90_WIN32)
+    H5FDdsm_F90_WIN32)
 endif(WIN32 AND MSVC)
 
 set_target_properties(H5FDdsm_fortran
@@ -152,10 +152,10 @@ install(
     H5FDdsm_fortran
     H5FDdsm_f90CStub
   EXPORT
-    ${H5FD_DSM_EXPORTED_TARGETS}
-  LIBRARY DESTINATION ${H5FD_DSM_INSTALL_LIB_DIR} COMPONENT fortlibraries
-  ARCHIVE DESTINATION ${H5FD_DSM_INSTALL_LIB_DIR} COMPONENT fortlibraries
-  RUNTIME DESTINATION ${H5FD_DSM_INSTALL_BIN_DIR} COMPONENT fortlibraries
+    ${H5FDdsm_EXPORTED_TARGETS}
+  LIBRARY DESTINATION ${H5FDdsm_INSTALL_LIB_DIR} COMPONENT fortlibraries
+  ARCHIVE DESTINATION ${H5FDdsm_INSTALL_LIB_DIR} COMPONENT fortlibraries
+  RUNTIME DESTINATION ${H5FDdsm_INSTALL_BIN_DIR} COMPONENT fortlibraries
 )
 
 #-----------------------------------------------------------------------------
@@ -165,12 +165,12 @@ set(H5FDdsmFortranHeaders
   ${CMAKE_CURRENT_SOURCE_DIR}/H5f90dsmproto.h
 )
 
-if(H5FD_DSM_BUILD_STEERING)
+if(H5FDdsm_BUILD_STEERING)
   set(H5FDdsmFortranHeaders
     ${CMAKE_CURRENT_SOURCE_DIR}/H5f90dsmSteeringproto.h
     ${H5FDdsmFortranHeaders}
   )
-endif(H5FD_DSM_BUILD_STEERING)
+endif(H5FDdsm_BUILD_STEERING)
 
 #-----------------------------------------------------------------------------
 # Add file(s) to CMake Install
@@ -179,7 +179,7 @@ install(
   FILES
     ${H5FDdsmFortranHeaders}
   DESTINATION
-    ${H5FD_DSM_INSTALL_INCLUDE_DIR}/fortran
+    ${H5FDdsm_INSTALL_INCLUDE_DIR}/fortran
   COMPONENT
     fortheaders
 )
@@ -188,7 +188,7 @@ install(
   DIRECTORY
     ${CMAKE_Fortran_MODULE_DIRECTORY}/\${BUILD_TYPE}/
   DESTINATION
-    ${H5FD_DSM_INSTALL_INCLUDE_DIR}/fortran
+    ${H5FDdsm_INSTALL_INCLUDE_DIR}/fortran
   COMPONENT
     fortheaders
 )

@@ -21,14 +21,14 @@
 
 #define H5_HAVE_DSM
 
-#cmakedefine H5FD_DSM_HAVE_STEERING
-#cmakedefine H5FD_DSM_HAVE_TOOLS
+#cmakedefine H5FDdsm_HAVE_STEERING
+#cmakedefine H5FDdsm_HAVE_TOOLS
 
-#cmakedefine H5FD_DSM_HAVE_DMAPP
-#cmakedefine H5FD_DSM_HAVE_UGNI
+#cmakedefine H5FDdsm_HAVE_DMAPP
+#cmakedefine H5FDdsm_HAVE_UGNI
 
-#cmakedefine H5FD_DSM_DEBUG_SYNCED
-#cmakedefine H5FD_DSM_DEBUG_GLOBAL
+#cmakedefine H5FDdsm_DEBUG_SYNCED
+#cmakedefine H5FDdsm_DEBUG_GLOBAL
 
 #cmakedefine H5FDdsm_BUILD_SHARED_LIBS
 
@@ -42,4 +42,4 @@
   #define H5FDdsm_EXPORT
 #endif
 
-#endif /* __H5FDConfig_h */
+#endif // __H5FDdsmConfig_h

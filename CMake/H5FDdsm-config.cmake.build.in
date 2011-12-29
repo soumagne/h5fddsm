@@ -6,30 +6,30 @@ get_filename_component(SELF_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
 #-----------------------------------------------------------------------------
 # User Options
 #-----------------------------------------------------------------------------
-set(H5FD_DSM_BUILD_FORTRAN @H5FD_DSM_BUILD_FORTRAN@)
+set(H5FDdsm_BUILD_FORTRAN @H5FDdsm_BUILD_FORTRAN@)
 
 #-----------------------------------------------------------------------------
 # Directories
 #-----------------------------------------------------------------------------
-set(H5FD_DSM_INCLUDE_DIR "@H5FD_DSM_INCLUDES_BUILD_TIME@")
+set(H5FDdsm_INCLUDE_DIR "@H5FDdsm_INCLUDES_BUILD_TIME@")
 
-if(H5FD_DSM_BUILD_FORTRAN)
-  set(H5FD_DSM_INCLUDE_DIR_FORTRAN "@H5FD_DSM_INCLUDES_BUILD_TIME@")
-endif(H5FD_DSM_BUILD_FORTRAN)
+if(H5FDdsm_BUILD_FORTRAN)
+  set(H5FDdsm_INCLUDE_DIR_FORTRAN "@H5FDdsm_INCLUDES_BUILD_TIME@")
+endif(H5FDdsm_BUILD_FORTRAN)
 
 #-----------------------------------------------------------------------------
 # Version Strings
 #-----------------------------------------------------------------------------
-set(H5FD_DSM_VERSION_STRING  @H5FDdsm_PACKAGE_VERSION@)
-set(H5FD_DSM_VERSION_MAJOR   @H5FDdsm_VERS_MAJOR@)
-set(H5FD_DSM_VERSION_MINOR   @H5FDdsm_VERS_MINOR@)
-set(H5FD_DSM_VERSION_RELEASE @H5FDdsm_VERS_RELEASE@)
+set(H5FDdsm_VERSION_STRING  @H5FDdsm_PACKAGE_VERSION@)
+set(H5FDdsm_VERSION_MAJOR   @H5FDdsm_VERS_MAJOR@)
+set(H5FDdsm_VERSION_MINOR   @H5FDdsm_VERS_MINOR@)
+set(H5FDdsm_VERSION_RELEASE @H5FDdsm_VERS_RELEASE@)
 
 #-----------------------------------------------------------------------------
 # Don't include targets if this file is being picked up by another
 # project which has already build H5FDdsm as a subproject
 #-----------------------------------------------------------------------------
-if(NOT TARGET "H5FDdsm" AND NOT H5FD_DSM_INSTALL_SKIP_TARGETS)
+if(NOT TARGET "H5FDdsm" AND NOT H5FDdsm_INSTALL_SKIP_TARGETS)
   include(${SELF_DIR}/h5fddsm-targets.cmake)
-endif(NOT TARGET "H5FDdsm" AND NOT H5FD_DSM_INSTALL_SKIP_TARGETS)
+endif(NOT TARGET "H5FDdsm" AND NOT H5FDdsm_INSTALL_SKIP_TARGETS)
 
