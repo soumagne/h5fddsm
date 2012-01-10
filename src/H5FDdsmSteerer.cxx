@@ -354,6 +354,7 @@ H5FDdsmInt32 H5FDdsmSteerer::IsObjectPresent(H5FDdsmConstString name, H5FDdsmBoo
 }
 
 //----------------------------------------------------------------------------
+/*
 H5FDdsmInt32 H5FDdsmSteerer::GetScalar(H5FDdsmConstString name, H5FDdsmInt32 memType, void *data)
 {
   H5FDdsmInt32 ret = H5FD_DSM_SUCCESS;
@@ -416,7 +417,7 @@ H5FDdsmInt32 H5FDdsmSteerer::SetScalar(H5FDdsmConstString name, H5FDdsmInt32 mem
   }
   return(ret);
 }
-
+*/
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmSteerer::GetVector(H5FDdsmConstString name, H5FDdsmInt32 memType, hsize_t numberOfElements, void *data)
 {
@@ -517,12 +518,8 @@ H5FDdsmInt32 H5FDdsmSteerer::WriteInteractions(H5FDdsmConstString name, hsize_t 
 {
   H5FDdsmInt32 ret = H5FD_DSM_FAIL;
 
-  if (numberOfElements > 1) {
+  if (numberOfElements) {
     ret = this->SetVector(name, H5T_NATIVE_INT, numberOfElements, data);
-  } else {
-    if (numberOfElements) {
-    ret = this->SetScalar(name, H5T_NATIVE_INT, data);
-    }
   }
   return(ret);
 }
@@ -532,12 +529,8 @@ H5FDdsmInt32 H5FDdsmSteerer::WriteInteractions(H5FDdsmConstString name, hsize_t 
 {
   H5FDdsmInt32 ret = H5FD_DSM_FAIL;
 
-  if (numberOfElements > 1) {
+  if (numberOfElements) {
     ret = this->SetVector(name, H5T_NATIVE_DOUBLE, numberOfElements, data);
-  } else {
-    if (numberOfElements) {
-    ret = this->SetScalar(name, H5T_NATIVE_DOUBLE, data);
-    }
   }
   return(ret);
 }
@@ -547,12 +540,8 @@ H5FDdsmInt32 H5FDdsmSteerer::ReadInteractions(H5FDdsmConstString name, hsize_t n
 {
   H5FDdsmInt32 ret = H5FD_DSM_FAIL;
 
-  if (numberOfElements > 1) {
+  if (numberOfElements) {
     ret = this->GetVector(name, H5T_NATIVE_INT, numberOfElements, data);
-  } else {
-    if (numberOfElements) {
-    ret = this->GetScalar(name, H5T_NATIVE_INT, data);
-    }
   }
   return(ret);
 }
@@ -562,12 +551,8 @@ H5FDdsmInt32 H5FDdsmSteerer::ReadInteractions(H5FDdsmConstString name, hsize_t n
 {
   H5FDdsmInt32 ret = H5FD_DSM_FAIL;
 
-  if (numberOfElements > 1) {
+  if (numberOfElements) {
     ret = this->GetVector(name, H5T_NATIVE_DOUBLE, numberOfElements, data);
-  } else {
-    if (numberOfElements) {
-    ret = this->GetScalar(name, H5T_NATIVE_DOUBLE, data);
-    }
   }
   return(ret);
 }

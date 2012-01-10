@@ -378,7 +378,7 @@ herr_t H5FD_dsm_steering_scalar_get(const char *name, hid_t mem_type, void *data
   if (!H5Tequal(mem_type, H5T_NATIVE_INT) && !H5Tequal(mem_type, H5T_NATIVE_DOUBLE))
     DSM_STEERING_GOTO_ERROR("Type not supported, please use H5T_NATIVE_INT or H5T_NATIVE_DOUBLE", FAIL);
 
-  if (dsmManager->GetSteerer()->GetScalar(name, mem_type, data) != H5FD_DSM_SUCCESS)
+  if (dsmManager->GetSteerer()->GetVector(name, mem_type, 1, data) != H5FD_DSM_SUCCESS)
     DSM_STEERING_GOTO_ERROR("Cannot get scalar", FAIL);
 
 done:
@@ -413,7 +413,7 @@ herr_t H5FD_dsm_steering_scalar_set(const char *name, hid_t mem_type, void *data
   if (!H5Tequal(mem_type, H5T_NATIVE_INT) && !H5Tequal(mem_type, H5T_NATIVE_DOUBLE))
     DSM_STEERING_GOTO_ERROR("Type not supported, please use H5T_NATIVE_INT or H5T_NATIVE_DOUBLE", FAIL);
 
-  if (dsmManager->GetSteerer()->SetScalar(name, mem_type, data) != H5FD_DSM_SUCCESS)
+  if (dsmManager->GetSteerer()->SetVector(name, mem_type, 1, data) != H5FD_DSM_SUCCESS)
     DSM_STEERING_GOTO_ERROR("Cannot set scalar", FAIL);
 
 done:

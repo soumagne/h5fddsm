@@ -54,32 +54,31 @@ int main(int argc, char **argv)
   H5FD_dsm_steering_begin_query();
 
   // Step 2: steered values are retrieved
-  if (dsmManager->GetUpdatePiece() == 0) H5FD_dsm_steering_is_set("IntScalarTest", &intScalarSet);
-  MPI_Bcast(&intScalarSet, 1, MPI_INT, 0, comm);
-  assert(intScalarSet);
-  if (intScalarSet) {
-    H5FDdsmBoolean intScalar;
-    H5FD_dsm_steering_scalar_get("IntScalarTest", H5T_NATIVE_INT, &intScalar);
-    if (dsmManager->GetUpdatePiece() == 0) {
-      std::cout << "Got scalar value IntScalarTest: " << intScalar << std::endl;
-    }
-    assert(intScalar);
-  }
-
-  if (dsmManager->GetUpdatePiece() == 0) H5FD_dsm_steering_is_set("DoubleScalarTest", &doubleScalarSet);
-  MPI_Bcast(&doubleScalarSet, 1, MPI_INT, 0, comm);
-  assert(doubleScalarSet);
-  if (doubleScalarSet) {
-    H5FDdsmFloat64 doubleScalar;
-    H5FD_dsm_steering_scalar_get("DoubleScalarTest", H5T_NATIVE_DOUBLE, &doubleScalar);
-    if (dsmManager->GetUpdatePiece() == 0) {
-      std::cout << "Got scalar value DoubleScalarTest: " << doubleScalar << std::endl;
-    }
-    assert(doubleScalar==3.14);
-  }
-
   // Must not be collective, requires to use H5FD_dsm_steering_begin_query first
   if (dsmManager->GetUpdatePiece() == 0) {
+    // IntScalarTest
+    H5FD_dsm_steering_is_set("IntScalarTest", &intScalarSet);
+    assert(intScalarSet);
+    if (intScalarSet) {
+      H5FDdsmBoolean intScalar;
+      H5FD_dsm_steering_scalar_get("IntScalarTest", H5T_NATIVE_INT, &intScalar);
+      if (dsmManager->GetUpdatePiece() == 0) {
+        std::cout << "Got scalar value IntScalarTest: " << intScalar << std::endl;
+      }
+      assert(intScalar);
+    }
+    // DoubleScalarTest
+    H5FD_dsm_steering_is_set("DoubleScalarTest", &doubleScalarSet);
+    assert(doubleScalarSet);
+    if (doubleScalarSet) {
+      H5FDdsmFloat64 doubleScalar;
+      H5FD_dsm_steering_scalar_get("DoubleScalarTest", H5T_NATIVE_DOUBLE, &doubleScalar);
+      if (dsmManager->GetUpdatePiece() == 0) {
+        std::cout << "Got scalar value DoubleScalarTest: " << doubleScalar << std::endl;
+      }
+      assert(doubleScalar==3.14);
+    }
+    // IntVectorTest
     H5FD_dsm_steering_is_set("IntVectorTest", &intVectorSet);
     assert(intVectorSet);
     if (intVectorSet) {
@@ -91,7 +90,7 @@ int main(int argc, char **argv)
 
       for (int i = 0; i < 3; i++) assert(intVector[i] == (i + 1));
     }
-
+    // DoubleVectorTest
     H5FD_dsm_steering_is_set("DoubleVectorTest", &doubleVectorSet);
     assert(doubleVectorSet);
     if (doubleVectorSet) {
