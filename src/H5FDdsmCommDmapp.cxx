@@ -27,7 +27,7 @@
 #include "H5FDdsmMsg.h"
 
 #include <cstring>
-#include <vector>
+#include <cstdlib>
 #include <dmapp.h>
 
 #define DMAPP_DQW_SIZE 16 // DMAPP_DQW
@@ -322,7 +322,7 @@ H5FDdsmCommDmapp::Disconnect()
     }
   }
   //
-  return(H5FD_DSM_SUCCESS);
+  return(ret);
 }
 
 //----------------------------------------------------------------------------
