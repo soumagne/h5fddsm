@@ -28,8 +28,6 @@
 
 #include "H5FDdsmCommMpi.h"
 
-#include <dmapp.h>
-
 struct H5FDdsmCommDmappInternals;
 
 class H5FDdsm_EXPORT H5FDdsmCommDmapp : public H5FDdsmCommMpi {
@@ -48,12 +46,12 @@ public:
   H5FDdsmInt32   Connect();
   H5FDdsmInt32   Disconnect();
 
+  H5FDdsmInt32   GatherIntraInstIds();
+
 protected:
   H5FDdsmCommDmappInternals *CommDmappInternals;
   H5FDdsmBoolean   IsDmappInitialized;
-  H5FDdsmInt32     DmappRank;
-  dmapp_seg_desc_t StorageSegDesc;
-  H5FDdsmBoolean   IsStorageSegRegistered;
+  H5FDdsmBoolean   UseBlockingComm;
 };
 
 #endif // __H5FDdsmCommDmapp_h

@@ -28,27 +28,45 @@
 
 #include <cstring>
 #include <vector>
+#include <dmapp.h>
 
 #define DMAPP_DQW_SIZE 16 // DMAPP_DQW
 
+typedef struct DmappMdhEntry_
+{
+  H5FDdsmAddr      addr;
+  dmapp_seg_desc_t mdh;
+} DmappMdhEntry;
+//
 struct H5FDdsmCommDmappInternals
 {
-  struct DmappSegEntry
+  H5FDdsmCommDmappInternals()
   {
-    DmappSegEntry(H5FDdsmAddr addr, dmapp_seg_desc_t seg, H5FDdsmInt32 pe) : Addr(addr),
-        PE(pe)
-    {
-      memcpy(&SegDesc, &seg, sizeof(dmapp_seg_desc_t));
-    }
-    H5FDdsmAddr Addr;
-    dmapp_seg_desc_t SegDesc;
-    H5FDdsmInt32 PE;
-  };
-
-  typedef std::vector<DmappSegEntry> DmappSegEntries;
-
-  DmappSegEntries DmappSegTable;
+    this->remote_inst_ids = NULL;
+    this->local_inst_ids  = NULL;
+    //
+    this->remote_mdh_entries   = NULL;
+    this->IsLocalMemRegistered = H5FD_DSM_FALSE;
+  }
+  ~H5FDdsmCommDmappInternals()
+  {
+    if (this->remote_inst_ids) free(this->remote_inst_ids);
+    this->remote_inst_ids = NULL;
+    if(this->local_inst_ids) free(this->local_inst_ids);
+    this->local_inst_ids = NULL;
+    //
+    if (this->remote_mdh_entries) free(this->remote_mdh_entries);
+    this->remote_mdh_entries = NULL;
+  }
+  //
+  H5FDdsmInt32     *remote_inst_ids; // Remote instance IDs
+  H5FDdsmInt32     *local_inst_ids;  // Local instance IDs
+  //
+  DmappMdhEntry  *remote_mdh_entries; // Server memory descriptor handles
+  DmappMdhEntry   local_mdh_entry;    // Local storage memory descriptor handle
+  H5FDdsmBoolean  IsLocalMemRegistered;
 };
+
 //----------------------------------------------------------------------------
 H5FDdsmCommDmapp::H5FDdsmCommDmapp()
 {
@@ -56,8 +74,7 @@ H5FDdsmCommDmapp::H5FDdsmCommDmapp()
   this->UseOneSidedComm = H5FD_DSM_TRUE;
   this->CommDmappInternals = new H5FDdsmCommDmappInternals;
   this->IsDmappInitialized = H5FD_DSM_FALSE;
-  this->DmappRank = 0;
-  this->IsStorageSegRegistered = H5FD_DSM_FALSE;
+  this->UseBlockingComm = H5FD_DSM_TRUE;
 }
 
 //----------------------------------------------------------------------------
@@ -76,7 +93,6 @@ H5FDdsmCommDmapp::Init()
 {
   dmapp_return_t status;
   dmapp_rma_attrs_ext_t actual_args = {0}, rma_args = {0};
-  dmapp_jobinfo_t job;
 
   if (H5FDdsmCommMpi::Init() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
@@ -95,15 +111,6 @@ H5FDdsmCommDmapp::Init()
     return(H5FD_DSM_FAIL);
   }
 
-  // Get job related information
-  status = dmapp_get_jobinfo(&job);
-  if (status != DMAPP_RC_SUCCESS) {
-    H5FDdsmError("Id = " << this->Id << " dmapp_get_jobinfo failed: " << status);
-    return(H5FD_DSM_FAIL);
-  }
-
-  this->DmappRank = job.pe;
-
   this->IsDmappInitialized = H5FD_DSM_TRUE;
   H5FDdsmDebug("CommDmapp initialized");
   return(H5FD_DSM_SUCCESS);
@@ -115,9 +122,9 @@ H5FDdsmCommDmapp::Put(H5FDdsmMsg *DataMsg)
 {
   dmapp_return_t status;
   H5FDdsmByte *targetPtr = (H5FDdsmByte *)
-      (this->CommDmappInternals->DmappSegTable[DataMsg->Dest].Addr + DataMsg->Address);
-  dmapp_seg_desc_t *targetSeg = &this->CommDmappInternals->DmappSegTable[DataMsg->Dest].SegDesc;
-  H5FDdsmInt32 targetPE = this->CommDmappInternals->DmappSegTable[DataMsg->Dest].PE;
+      (this->CommDmappInternals->remote_mdh_entries[DataMsg->Dest].addr + DataMsg->Address);
+  dmapp_seg_desc_t targetSeg = this->CommDmappInternals->remote_mdh_entries[DataMsg->Dest].mdh;
+  H5FDdsmInt32 targetPE = this->CommDmappInternals->remote_inst_ids[DataMsg->Dest];
   H5FDdsmInt32 numberOfDQW;
 
   if (H5FDdsmCommMpi::Put(DataMsg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
@@ -128,8 +135,12 @@ H5FDdsmCommDmapp::Put(H5FDdsmMsg *DataMsg)
   numberOfDQW = DataMsg->Length / DMAPP_DQW_SIZE;
   if (numberOfDQW > 0) {
     H5FDdsmInt32 numberOfLeftBytes = DataMsg->Length - numberOfDQW * DMAPP_DQW_SIZE;
-
-    status = dmapp_put(targetPtr, targetSeg, targetPE, DataMsg->Data, numberOfDQW, DMAPP_DQW);
+    if (this->UseBlockingComm) {
+      status = dmapp_put(targetPtr, &targetSeg, targetPE, DataMsg->Data, numberOfDQW, DMAPP_DQW);
+    } else {
+      status = dmapp_put_nbi(targetPtr, &targetSeg, targetPE, DataMsg->Data, numberOfDQW, DMAPP_DQW);
+    }
+    //
     if (status != DMAPP_RC_SUCCESS) {
       H5FDdsmError("Id = " << this->Id << " dmapp_put failed to put "
           << DataMsg->Length << " Bytes to " << DataMsg->Dest << " (PE " << targetPE << ")");
@@ -137,8 +148,14 @@ H5FDdsmCommDmapp::Put(H5FDdsmMsg *DataMsg)
     }
     //
     if (numberOfLeftBytes > 0) {
-      status = dmapp_put(targetPtr + DataMsg->Length - numberOfLeftBytes, targetSeg, targetPE,
-          DataMsg->Data + DataMsg->Length - numberOfLeftBytes, numberOfLeftBytes, DMAPP_BYTE);
+      if (this->UseBlockingComm) {
+        status = dmapp_put(targetPtr + DataMsg->Length - numberOfLeftBytes, &targetSeg, targetPE,
+            DataMsg->Data + DataMsg->Length - numberOfLeftBytes, numberOfLeftBytes, DMAPP_BYTE);
+      } else {
+        status = dmapp_put_nbi(targetPtr + DataMsg->Length - numberOfLeftBytes, &targetSeg, targetPE,
+            DataMsg->Data + DataMsg->Length - numberOfLeftBytes, numberOfLeftBytes, DMAPP_BYTE);
+      }
+      //
       if (status != DMAPP_RC_SUCCESS) {
         H5FDdsmError("Id = " << this->Id << " dmapp_put failed to put "
             << DataMsg->Length << " Bytes to " << DataMsg->Dest << " (PE " << targetPE << ")");
@@ -146,14 +163,18 @@ H5FDdsmCommDmapp::Put(H5FDdsmMsg *DataMsg)
       }
     }
   } else {
-    status = dmapp_put(targetPtr, targetSeg, targetPE, DataMsg->Data, DataMsg->Length, DMAPP_BYTE);
+    if (this->UseBlockingComm) {
+      status = dmapp_put(targetPtr, &targetSeg, targetPE, DataMsg->Data, DataMsg->Length, DMAPP_BYTE);
+    } else {
+      status = dmapp_put_nbi(targetPtr, &targetSeg, targetPE, DataMsg->Data, DataMsg->Length, DMAPP_BYTE);
+    }
     if (status != DMAPP_RC_SUCCESS) {
       H5FDdsmError("Id = " << this->Id << " dmapp_put failed to put "
           << DataMsg->Length << " Bytes to " << DataMsg->Dest << " (PE " << targetPE << ")");
       return(H5FD_DSM_FAIL);
     }
   }
-
+  //
   return(H5FD_DSM_SUCCESS);
 }
 
@@ -163,22 +184,22 @@ H5FDdsmCommDmapp::Get(H5FDdsmMsg *DataMsg)
 {
   dmapp_return_t status;
   H5FDdsmByte *sourcePtr = (H5FDdsmByte *)
-      (this->CommDmappInternals->DmappSegTable[DataMsg->Source].Addr + DataMsg->Address);
-  dmapp_seg_desc_t *sourceSeg = &this->CommDmappInternals->DmappSegTable[DataMsg->Source].SegDesc;
-  H5FDdsmInt32 sourcePE = this->CommDmappInternals->DmappSegTable[DataMsg->Source].PE;
-
+      (this->CommDmappInternals->remote_mdh_entries[DataMsg->Source].addr + DataMsg->Address);
+  dmapp_seg_desc_t sourceSeg = this->CommDmappInternals->remote_mdh_entries[DataMsg->Source].mdh;
+  H5FDdsmInt32 sourcePE = this->CommDmappInternals->remote_inst_ids[DataMsg->Source];
+  //
   if (H5FDdsmCommMpi::Get(DataMsg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
-
+  //
   H5FDdsmDebug("Getting " << DataMsg->Length << " Bytes from Address "
       << DataMsg->Address << " from Id = " << DataMsg->Source);
-  status = dmapp_get(DataMsg->Data, sourcePtr, sourceSeg, sourcePE,
+  status = dmapp_get(DataMsg->Data, sourcePtr, &sourceSeg, sourcePE,
       DataMsg->Length, DMAPP_BYTE);
   if (status != DMAPP_RC_SUCCESS) {
     H5FDdsmError("Id = " << this->Id << " dmapp_get failed to get "
         << DataMsg->Length << " Bytes from " << DataMsg->Source << " (PE " << sourcePE << ")");
     return(H5FD_DSM_FAIL);
   }
-
+  //
   return(H5FD_DSM_SUCCESS);
 }
 
@@ -188,6 +209,9 @@ H5FDdsmCommDmapp::WindowSync()
 {
   if (H5FDdsmCommMpi::WindowSync() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
+  if (!this->UseBlockingComm) {
+    dmapp_gsync_wait();
+  }
   MPI_Barrier(this->InterComm);
 
   return(H5FD_DSM_SUCCESS);
@@ -197,37 +221,44 @@ H5FDdsmCommDmapp::WindowSync()
 H5FDdsmInt32
 H5FDdsmCommDmapp::Accept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize)
 {
-  dmapp_return_t status;
+  dmapp_return_t dmapp_status;
+  H5FDdsmInt32 status;
 
   // Create an MPI InterComm
   if (H5FDdsmCommMpi::Accept(storagePointer, storageSize) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
-
-  // Register memory segments
-  status = dmapp_mem_register(storagePointer, storageSize, &this->StorageSegDesc);
-  if (status != DMAPP_RC_SUCCESS) {
-    H5FDdsmError("dmapp_mem_register failed: " << status);
+  //
+  status = this->GatherIntraInstIds();
+  if (status != H5FD_DSM_SUCCESS) {
+    H5FDdsmError("Id = " << this->Id << " GatherIntraInstIds failed");
     return(H5FD_DSM_FAIL);
   }
-  this->IsStorageSegRegistered = 1;
-
-  // Send now memory segment information
-  H5FDdsmAddr storageAddr = (H5FDdsmAddr) storagePointer;
+  //
   for (H5FDdsmInt32 i = 0; i < this->InterSize; i++) {
-    if (MPI_Send(&storageAddr, sizeof(storageAddr), MPI_UNSIGNED_CHAR, i,
-        H5FD_DSM_EXCHANGE_TAG, this->InterComm)!= MPI_SUCCESS) {
-      H5FDdsmError("Id = " << this->Id << " MPI_Send of Storage Address failed");
+    status = MPI_Send(this->CommDmappInternals->local_inst_ids, this->IntraSize, MPI_INT32_T,
+        i, H5FD_DSM_EXCHANGE_TAG, this->InterComm);
+    if (status != MPI_SUCCESS) {
+      H5FDdsmError("Id = " << this->Id << " MPI_Send of local instance IDs failed");
       return(H5FD_DSM_FAIL);
-    };
-    if (MPI_Send(&this->StorageSegDesc, sizeof(this->StorageSegDesc), MPI_UNSIGNED_CHAR,
-        i, H5FD_DSM_EXCHANGE_TAG, this->InterComm)!= MPI_SUCCESS) {
-      H5FDdsmError("Id = " << this->Id << " MPI_Send of Storage Segment Descriptor failed");
+    }
+  }
+
+  // Register memory segments
+  this->CommDmappInternals->local_mdh_entry.addr = (H5FDdsmAddr) storagePointer;
+  dmapp_status = dmapp_mem_register(storagePointer, storageSize, &this->CommDmappInternals->local_mdh_entry.mdh);
+  if (dmapp_status != DMAPP_RC_SUCCESS) {
+    H5FDdsmError("dmapp_mem_register failed: " << dmapp_status);
+    return(H5FD_DSM_FAIL);
+  }
+  this->CommDmappInternals->IsLocalMemRegistered = H5FD_DSM_TRUE;
+
+  // Send MDH entry to each remote PE
+  for (H5FDdsmInt32 i = 0; i < this->InterSize; i++) {
+    status = MPI_Send(&this->CommDmappInternals->local_mdh_entry, sizeof(DmappMdhEntry), MPI_UNSIGNED_CHAR,
+        i, H5FD_DSM_EXCHANGE_TAG, this->InterComm);
+    if (status != MPI_SUCCESS) {
+      H5FDdsmError("Id = " << this->Id << " MPI_Send of MDH entry failed");
       return(H5FD_DSM_FAIL);
-    };
-    if (MPI_Send(&this->DmappRank, sizeof(this->DmappRank), MPI_UNSIGNED_CHAR, i,
-        H5FD_DSM_EXCHANGE_TAG, this->InterComm)!= MPI_SUCCESS) {
-      H5FDdsmError("Id = " << this->Id << " MPI_Send of DMAPP PE rank failed");
-      return(H5FD_DSM_FAIL);
-    };
+    }
   }
 
   return(H5FD_DSM_SUCCESS);
@@ -237,33 +268,38 @@ H5FDdsmCommDmapp::Accept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSiz
 H5FDdsmInt32
 H5FDdsmCommDmapp::Connect()
 {
-  MPI_Status recvStatus;
+  MPI_Status mpi_status;
+  H5FDdsmInt32 status;
 
   if (H5FDdsmCommMpi::Connect() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+  //
+  // Get remote instance IDs
+  H5FDdsmDebug("Get remote instance IDs");
+  if (this->CommDmappInternals->remote_inst_ids) free(this->CommDmappInternals->remote_inst_ids);
+  this->CommDmappInternals->remote_inst_ids = (H5FDdsmInt32*) malloc(this->InterSize * sizeof(H5FDdsmInt32));
 
-  // Receive now remote memory segment information
   for (H5FDdsmInt32 i = 0; i < this->InterSize; i++) {
-    H5FDdsmAddr storageAddr;
-    dmapp_seg_desc_t segDesc;
-    H5FDdsmInt32 dmappRank;
-    if (MPI_Recv(&storageAddr, sizeof(storageAddr), MPI_UNSIGNED_CHAR, i, H5FD_DSM_EXCHANGE_TAG,
-        this->InterComm, &recvStatus) != MPI_SUCCESS) {
-      H5FDdsmError("Id = " << this->Id << " MPI_Recv of Storage Address failed");
+    status = MPI_Recv(this->CommDmappInternals->remote_inst_ids, this->InterSize, MPI_INT32_T,
+        i, H5FD_DSM_EXCHANGE_TAG, this->InterComm, &mpi_status);
+    if (status != MPI_SUCCESS) {
+      H5FDdsmError("Id = " << this->Id << " MPI_Recv of local instance IDs failed");
       return(H5FD_DSM_FAIL);
     }
-    if (MPI_Recv(&segDesc, sizeof(segDesc), MPI_UNSIGNED_CHAR, i, H5FD_DSM_EXCHANGE_TAG,
-        this->InterComm, &recvStatus) != MPI_SUCCESS) {
-      H5FDdsmError("Id = " << this->Id << " MPI_Recv of Storage Segment Descriptor failed");
-      return(H5FD_DSM_FAIL);
-    }
-    if (MPI_Recv(&dmappRank, sizeof(dmappRank), MPI_UNSIGNED_CHAR, i, H5FD_DSM_EXCHANGE_TAG,
-        this->InterComm, &recvStatus) != MPI_SUCCESS) {
-      H5FDdsmError("Id = " << this->Id << " MPI_Recv of of DMAPP PE rank failed");
-      return(H5FD_DSM_FAIL);
-    }
-    this->CommDmappInternals->DmappSegTable.push_back(
-        H5FDdsmCommDmappInternals::DmappSegEntry(storageAddr, segDesc, dmappRank));
   }
+  //
+  // Get remote MDH entries
+  H5FDdsmDebug("Get remote MDH entries");
+  if (this->CommDmappInternals->remote_mdh_entries) free(this->CommDmappInternals->remote_mdh_entries);
+  this->CommDmappInternals->remote_mdh_entries = (DmappMdhEntry*) malloc(this->InterSize * sizeof(DmappMdhEntry));
+  for (H5FDdsmInt32 i = 0; i < this->InterSize; i++) {
+    status = MPI_Recv(&this->CommDmappInternals->remote_mdh_entries[i], sizeof(DmappMdhEntry), MPI_UNSIGNED_CHAR,
+        i, H5FD_DSM_EXCHANGE_TAG, this->InterComm, &mpi_status);
+    if (status != MPI_SUCCESS) {
+      H5FDdsmError("Id = " << this->Id << " MPI_Recv of MDH entry failed");
+      return(H5FD_DSM_FAIL);
+    }
+  }
+  //
   return(H5FD_DSM_SUCCESS);
 }
 
@@ -271,12 +307,52 @@ H5FDdsmCommDmapp::Connect()
 H5FDdsmInt32
 H5FDdsmCommDmapp::Disconnect()
 {
+  dmapp_return_t status;
+  H5FDdsmInt32 ret = H5FD_DSM_SUCCESS;
+  //
   if (H5FDdsmCommMpi::Disconnect() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
-
-  if (this->IsStorageSegRegistered) {
-    dmapp_mem_unregister(&this->StorageSegDesc);
-    this->IsStorageSegRegistered = H5FD_DSM_FALSE;
+  //
+  if (this->CommDmappInternals->IsLocalMemRegistered) {
+    status = dmapp_mem_unregister(&this->CommDmappInternals->local_mdh_entry.mdh);
+    if (status != DMAPP_RC_SUCCESS) {
+      H5FDdsmError("Id = " << this->Id << " dmapp_mem_unregister failed: " << status);
+      ret = H5FD_DSM_FAIL;
+    } else {
+      this->CommDmappInternals->IsLocalMemRegistered = H5FD_DSM_FALSE;
+    }
   }
+  //
+  return(H5FD_DSM_SUCCESS);
+}
 
+//----------------------------------------------------------------------------
+H5FDdsmInt32
+H5FDdsmCommDmapp::GatherIntraInstIds()
+{
+  dmapp_jobinfo_t job;
+  H5FDdsmInt32 local_id;
+  H5FDdsmInt32 status;
+  //
+  // Get job related information
+  status = dmapp_get_jobinfo(&job);
+  if (status != DMAPP_RC_SUCCESS) {
+    H5FDdsmError("Id = " << this->Id << " dmapp_get_jobinfo failed: " << status);
+    return(H5FD_DSM_FAIL);
+  }
+  //
+  local_id = job.pe;
+  //
+  // Allocate a buffer to hold the instance IDs from all of the other ranks.
+  if (this->CommDmappInternals->local_inst_ids) free(this->CommDmappInternals->local_inst_ids);
+  this->CommDmappInternals->local_inst_ids = (H5FDdsmInt32 *) malloc(sizeof(H5FDdsmInt32) * this->IntraSize);
+
+  status = MPI_Allgather(&local_id, 1, MPI_INT32_T,
+      this->CommDmappInternals->local_inst_ids, 1, MPI_INT32_T,
+      this->IntraComm);
+  if (status != MPI_SUCCESS) {
+    H5FDdsmError("Id = " << this->Id << " MPI_Gather of instance IDs failed");
+    return(H5FD_DSM_FAIL);
+  }
+  //
   return(H5FD_DSM_SUCCESS);
 }

@@ -69,10 +69,14 @@ struct H5FDdsmCommUGniInternals
     this->remote_nic_addresses = NULL;
     if (this->local_nic_addresses) free(this->local_nic_addresses);
     this->local_nic_addresses = NULL;
+    //
     if (this->remote_inst_ids) free(this->remote_inst_ids);
     this->remote_inst_ids = NULL;
     if(this->local_inst_ids) free(this->local_inst_ids);
     this->local_inst_ids = NULL;
+    //
+    if (this->remote_mdh_entries) free(this->remote_mdh_entries);
+    this->remote_mdh_entries = NULL;
   }
   //
   gni_nic_handle_t  nic_handle; // NIC handle used for the communication
@@ -305,13 +309,13 @@ H5FDdsmCommUGni::Accept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize
     if (status != MPI_SUCCESS) {
       H5FDdsmError("Id = " << this->Id << " MPI_Send of local NIC addresses failed");
       return(H5FD_DSM_FAIL);
-    };
+    }
     status = MPI_Send(this->CommUGniInternals->local_inst_ids, this->IntraSize, MPI_INT32_T,
         i, H5FD_DSM_EXCHANGE_TAG, this->InterComm);
     if (status != MPI_SUCCESS) {
       H5FDdsmError("Id = " << this->Id << " MPI_Send of local instance IDs failed");
       return(H5FD_DSM_FAIL);
-    };
+    }
   }
   //
   // Create local MDH entry
@@ -333,7 +337,7 @@ H5FDdsmCommUGni::Accept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize
     if (status != MPI_SUCCESS) {
       H5FDdsmError("Id = " << this->Id << " MPI_Send of MDH entry failed");
       return(H5FD_DSM_FAIL);
-    };
+    }
   }
   //
   return(H5FD_DSM_SUCCESS);
@@ -363,13 +367,13 @@ H5FDdsmCommUGni::Connect()
     if (status != MPI_SUCCESS) {
       H5FDdsmError("Id = " << this->Id << " MPI_Send of local NIC addresses failed");
       return(H5FD_DSM_FAIL);
-    };
+    }
     status = MPI_Recv(this->CommUGniInternals->remote_inst_ids, this->InterSize, MPI_INT32_T,
         i, H5FD_DSM_EXCHANGE_TAG, this->InterComm, &mpi_status);
     if (status != MPI_SUCCESS) {
       H5FDdsmError("Id = " << this->Id << " MPI_Recv of local instance IDs failed");
       return(H5FD_DSM_FAIL);
-    };
+    }
   }
   //
   // Get remote MDH entries
@@ -382,7 +386,7 @@ H5FDdsmCommUGni::Connect()
     if (status != MPI_SUCCESS) {
       H5FDdsmError("Id = " << this->Id << " MPI_Recv of MDH entry failed");
       return(H5FD_DSM_FAIL);
-    };
+    }
   }
   //
   // Create end points with remote pairs
@@ -429,6 +433,8 @@ H5FDdsmCommUGni::Disconnect()
     if (status != GNI_RC_SUCCESS) {
       H5FDdsmError("Id = " << this->Id << " GNI_MemDeregister failed: " << status);
       ret = H5FD_DSM_FAIL;
+    } else {
+      this->CommUGniInternals->IsLocalMemRegistered = H5FD_DSM_FALSE;
     }
   }
   //
