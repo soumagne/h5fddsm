@@ -45,7 +45,6 @@ public:
 
   H5FDdsmInt32   Put(H5FDdsmMsg *DataMsg);
   H5FDdsmInt32   Get(H5FDdsmMsg *DataMsg);
-  H5FDdsmInt32   WindowSync();
 
   H5FDdsmInt32   Accept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize);
   H5FDdsmInt32   Connect();

@@ -498,6 +498,7 @@ H5FDdsmBufferService::Service(H5FDdsmInt32 *ReturnOpcode)
     }
     if (this->Comm->GetUseOneSidedComm()) {
       this->Comm->SetCommChannel(H5FD_DSM_INTER_COMM);
+      this->Comm->RemoteBarrier();
       this->Comm->WindowSync();
     } else {
 #ifdef H5FDdsm_HAVE_STEERING
@@ -809,7 +810,7 @@ H5FDdsmBufferService::RequestLockAcquire()
   } else {
     if (this->Comm->GetUseOneSidedComm()) {
       // After possible RMA put, need to sync windows before further operations
-      if (this->IsSyncRequired) this->Comm->WindowSync();
+      if (this->IsSyncRequired) this->Comm->RemoteBarrier();
       this->IsSyncRequired = H5FD_DSM_FALSE;
     } else {
 #ifdef H5FDdsm_HAVE_STEERING
@@ -865,7 +866,7 @@ H5FDdsmBufferService::RequestLockRelease()
     }
   } else {
     if (this->Comm->GetUseOneSidedComm()) {
-      // Nothing for now
+      this->Comm->WindowSync();
     } else {
 #ifdef H5FDdsm_HAVE_STEERING
       for (H5FDdsmInt32 who = this->StartServerId ; who <= this->EndServerId ; who++) {
@@ -923,6 +924,9 @@ H5FDdsmBufferService::RequestNotification()
 #else
   this->IsSyncRequired = H5FD_DSM_TRUE;
 #endif
+
+  // If there were ongoing transactions, finish them
+  if (this->Comm->GetUseOneSidedComm()) this->Comm->WindowSync();
 
   // No mutex here, only informal since it's the client
   if (!this->IsLocked) {

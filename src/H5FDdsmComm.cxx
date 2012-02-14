@@ -275,6 +275,13 @@ H5FDdsmComm::Disconnect()
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
+H5FDdsmComm::RemoteBarrier()
+{
+  return(H5FD_DSM_SUCCESS);
+}
+
+//----------------------------------------------------------------------------
+H5FDdsmInt32
 H5FDdsmComm::RecvReady()
 {
   return(H5FD_DSM_SUCCESS);

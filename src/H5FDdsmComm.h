@@ -137,6 +137,7 @@ public:
   virtual H5FDdsmInt32   Accept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize);
   virtual H5FDdsmInt32   Connect();
   virtual H5FDdsmInt32   Disconnect();
+  virtual H5FDdsmInt32   RemoteBarrier();
 
   virtual H5FDdsmInt32   RecvReady();
   virtual H5FDdsmInt32   SendReady();

@@ -269,17 +269,6 @@ H5FDdsmCommUGni::Get(H5FDdsmMsg *DataMsg)
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmCommUGni::WindowSync()
-{
-  if (H5FDdsmCommMpi::WindowSync() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
-  //
-  MPI_Barrier(this->InterComm);
-  //
-  return(H5FD_DSM_SUCCESS);
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32
 H5FDdsmCommUGni::Accept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize)
 {
   gni_return_t gni_status;

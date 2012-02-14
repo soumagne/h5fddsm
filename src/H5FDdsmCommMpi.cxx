@@ -325,6 +325,16 @@ H5FDdsmCommMpi::Disconnect()
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
+H5FDdsmCommMpi::RemoteBarrier()
+{
+  if (H5FDdsmComm::RemoteBarrier() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+
+  if (this->InterComm != MPI_COMM_NULL) MPI_Barrier(this->InterComm);
+  return(H5FD_DSM_SUCCESS);
+}
+
+//----------------------------------------------------------------------------
+H5FDdsmInt32
 H5FDdsmCommMpi::RecvReady()
 {
   H5FDdsmByte ready[6];

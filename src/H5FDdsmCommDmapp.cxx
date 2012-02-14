@@ -74,7 +74,7 @@ H5FDdsmCommDmapp::H5FDdsmCommDmapp()
   this->UseOneSidedComm = H5FD_DSM_TRUE;
   this->CommDmappInternals = new H5FDdsmCommDmappInternals;
   this->IsDmappInitialized = H5FD_DSM_FALSE;
-  this->UseBlockingComm = H5FD_DSM_TRUE;
+  this->UseBlockingComm = H5FD_DSM_FALSE;
 }
 
 //----------------------------------------------------------------------------
@@ -97,7 +97,7 @@ H5FDdsmCommDmapp::Init()
   if (H5FDdsmCommMpi::Init() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
   // Set the RMA parameters
-  rma_args.max_outstanding_nb   = DMAPP_MIN_OUTSTANDING_NB;
+  rma_args.max_outstanding_nb   = DMAPP_DEF_OUTSTANDING_NB;
   rma_args.offload_threshold    = DMAPP_OFFLOAD_THRESHOLD;
   rma_args.put_relaxed_ordering = DMAPP_ROUTING_ADAPTIVE;
   rma_args.get_relaxed_ordering = DMAPP_ROUTING_ADAPTIVE;
@@ -173,16 +173,17 @@ H5FDdsmCommDmapp::Get(H5FDdsmMsg *DataMsg)
 H5FDdsmInt32
 H5FDdsmCommDmapp::WindowSync()
 {
+  dmapp_return_t status;
+
   if (H5FDdsmCommMpi::WindowSync() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
   //
   if (!this->UseBlockingComm) {
-    int flag = 0;
-    //printf("dmapp_gsync_wait\n");
-    dmapp_gsync_wait();
-    dmapp_gsync_test(&flag);
-    if (!flag) H5FDdsmError("dmapp_gsync_test returned " << flag);
+    status = dmapp_gsync_wait();
+    if (status != DMAPP_RC_SUCCESS) {
+      H5FDdsmError("Id = " << this->Id << " dmapp_gsync_wait failed: " << status);
+      return(H5FD_DSM_FAIL);
+    }
   }
-  MPI_Barrier(this->InterComm);
   //
   return(H5FD_DSM_SUCCESS);
 }
