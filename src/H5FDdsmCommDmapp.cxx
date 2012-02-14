@@ -125,54 +125,20 @@ H5FDdsmCommDmapp::Put(H5FDdsmMsg *DataMsg)
           (this->CommDmappInternals->remote_mdh_entries[DataMsg->Dest].addr + DataMsg->Address);
   dmapp_seg_desc_t targetSeg = this->CommDmappInternals->remote_mdh_entries[DataMsg->Dest].mdh;
   H5FDdsmInt32 targetPE = this->CommDmappInternals->remote_inst_ids[DataMsg->Dest];
-  H5FDdsmInt32 numberOfDQW;
-
+  //
   if (H5FDdsmCommMpi::Put(DataMsg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
-
+  //
   H5FDdsmDebug("Putting " << DataMsg->Length << " Bytes to Address "
       << DataMsg->Address << " to Id = " << DataMsg->Dest);
-
-  numberOfDQW = DataMsg->Length / DMAPP_DQW_SIZE;
-  if (numberOfDQW > 0) {
-    H5FDdsmInt32 numberOfLeftBytes = DataMsg->Length - numberOfDQW * DMAPP_DQW_SIZE;
-    if (this->UseBlockingComm) {
-      status = dmapp_put(targetPtr, &targetSeg, targetPE, DataMsg->Data, numberOfDQW, DMAPP_DQW);
-    } else {
-      status = dmapp_put_nbi(targetPtr, &targetSeg, targetPE, DataMsg->Data, numberOfDQW, DMAPP_DQW);
-    }
-    //
-    if (status != DMAPP_RC_SUCCESS) {
-      H5FDdsmError("Id = " << this->Id << " dmapp_put failed to put "
-          << DataMsg->Length << " Bytes to " << DataMsg->Dest << " (PE " << targetPE << ")");
-      return(H5FD_DSM_FAIL);
-    }
-    //
-    if (numberOfLeftBytes > 0) {
-      if (this->UseBlockingComm) {
-        status = dmapp_put(targetPtr + DataMsg->Length - numberOfLeftBytes, &targetSeg, targetPE,
-            DataMsg->Data + DataMsg->Length - numberOfLeftBytes, numberOfLeftBytes, DMAPP_BYTE);
-      } else {
-        status = dmapp_put_nbi(targetPtr + DataMsg->Length - numberOfLeftBytes, &targetSeg, targetPE,
-            DataMsg->Data + DataMsg->Length - numberOfLeftBytes, numberOfLeftBytes, DMAPP_BYTE);
-      }
-      //
-      if (status != DMAPP_RC_SUCCESS) {
-        H5FDdsmError("Id = " << this->Id << " dmapp_put failed to put "
-            << DataMsg->Length << " Bytes to " << DataMsg->Dest << " (PE " << targetPE << ")");
-        return(H5FD_DSM_FAIL);
-      }
-    }
+  if (this->UseBlockingComm) {
+    status = dmapp_put(targetPtr, &targetSeg, targetPE, DataMsg->Data, DataMsg->Length, DMAPP_BYTE);
   } else {
-    if (this->UseBlockingComm) {
-      status = dmapp_put(targetPtr, &targetSeg, targetPE, DataMsg->Data, DataMsg->Length, DMAPP_BYTE);
-    } else {
-      status = dmapp_put_nbi(targetPtr, &targetSeg, targetPE, DataMsg->Data, DataMsg->Length, DMAPP_BYTE);
-    }
-    if (status != DMAPP_RC_SUCCESS) {
-      H5FDdsmError("Id = " << this->Id << " dmapp_put failed to put "
-          << DataMsg->Length << " Bytes to " << DataMsg->Dest << " (PE " << targetPE << ")");
-      return(H5FD_DSM_FAIL);
-    }
+    status = dmapp_put_nbi(targetPtr, &targetSeg, targetPE, DataMsg->Data, DataMsg->Length, DMAPP_BYTE);
+  }
+  if (status != DMAPP_RC_SUCCESS) {
+    H5FDdsmError("Id = " << this->Id << " dmapp_put failed to put "
+        << DataMsg->Length << " Bytes to " << DataMsg->Dest << " (PE " << targetPE << ")");
+    return(H5FD_DSM_FAIL);
   }
   //
   return(H5FD_DSM_SUCCESS);
@@ -227,7 +193,6 @@ H5FDdsmCommDmapp::Accept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSiz
 {
   dmapp_return_t dmapp_status;
   H5FDdsmInt32 status;
-  MPI_Status mpi_status;
 
   // Create an MPI InterComm
   if (H5FDdsmCommMpi::Accept(storagePointer, storageSize) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
