@@ -74,7 +74,7 @@ H5FDdsmCommDmapp::H5FDdsmCommDmapp()
   this->UseOneSidedComm = H5FD_DSM_TRUE;
   this->CommDmappInternals = new H5FDdsmCommDmappInternals;
   this->IsDmappInitialized = H5FD_DSM_FALSE;
-  this->UseBlockingComm = H5FD_DSM_FALSE;
+  this->UseBlockingComm = H5FD_DSM_TRUE;
 }
 
 //----------------------------------------------------------------------------
@@ -122,7 +122,7 @@ H5FDdsmCommDmapp::Put(H5FDdsmMsg *DataMsg)
 {
   dmapp_return_t status;
   H5FDdsmByte *targetPtr = (H5FDdsmByte *)
-      (this->CommDmappInternals->remote_mdh_entries[DataMsg->Dest].addr + DataMsg->Address);
+          (this->CommDmappInternals->remote_mdh_entries[DataMsg->Dest].addr + DataMsg->Address);
   dmapp_seg_desc_t targetSeg = this->CommDmappInternals->remote_mdh_entries[DataMsg->Dest].mdh;
   H5FDdsmInt32 targetPE = this->CommDmappInternals->remote_inst_ids[DataMsg->Dest];
   H5FDdsmInt32 numberOfDQW;
@@ -184,7 +184,7 @@ H5FDdsmCommDmapp::Get(H5FDdsmMsg *DataMsg)
 {
   dmapp_return_t status;
   H5FDdsmByte *sourcePtr = (H5FDdsmByte *)
-      (this->CommDmappInternals->remote_mdh_entries[DataMsg->Source].addr + DataMsg->Address);
+          (this->CommDmappInternals->remote_mdh_entries[DataMsg->Source].addr + DataMsg->Address);
   dmapp_seg_desc_t sourceSeg = this->CommDmappInternals->remote_mdh_entries[DataMsg->Source].mdh;
   H5FDdsmInt32 sourcePE = this->CommDmappInternals->remote_inst_ids[DataMsg->Source];
   //
@@ -208,7 +208,7 @@ H5FDdsmInt32
 H5FDdsmCommDmapp::WindowSync()
 {
   if (H5FDdsmCommMpi::WindowSync() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
-
+  //
   if (!this->UseBlockingComm) {
     int flag = 0;
     //printf("dmapp_gsync_wait\n");
@@ -217,7 +217,7 @@ H5FDdsmCommDmapp::WindowSync()
     if (!flag) H5FDdsmError("dmapp_gsync_test returned " << flag);
   }
   MPI_Barrier(this->InterComm);
-
+  //
   return(H5FD_DSM_SUCCESS);
 }
 
@@ -238,17 +238,18 @@ H5FDdsmCommDmapp::Accept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSiz
     return(H5FD_DSM_FAIL);
   }
   //
-  if (this->Id == 0)
-  for (H5FDdsmInt32 i = 0; i < this->InterSize; i++) {
-    status = MPI_Send(this->CommDmappInternals->local_inst_ids, this->IntraSize, MPI_INT32_T,
-        i, H5FD_DSM_EXCHANGE_TAG, this->InterComm);
-    if (status != MPI_SUCCESS) {
-      H5FDdsmError("Id = " << this->Id << " MPI_Send of local instance IDs failed");
-      return(H5FD_DSM_FAIL);
+  if (this->Id == 0) {
+    for (H5FDdsmInt32 i = 0; i < this->InterSize; i++) {
+      status = MPI_Send(this->CommDmappInternals->local_inst_ids, this->IntraSize, MPI_INT32_T,
+          i, H5FD_DSM_EXCHANGE_TAG, this->InterComm);
+      if (status != MPI_SUCCESS) {
+        H5FDdsmError("Id = " << this->Id << " MPI_Send of local instance IDs failed");
+        return(H5FD_DSM_FAIL);
+      }
     }
   }
   this->Barrier();
-
+  //
   // Register memory segments
   this->CommDmappInternals->local_mdh_entry.addr = (H5FDdsmAddr) storagePointer;
   dmapp_status = dmapp_mem_register(storagePointer, storageSize, &this->CommDmappInternals->local_mdh_entry.mdh);
@@ -257,7 +258,13 @@ H5FDdsmCommDmapp::Accept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSiz
     return(H5FD_DSM_FAIL);
   }
   this->CommDmappInternals->IsLocalMemRegistered = H5FD_DSM_TRUE;
-
+  //
+  status = this->GatherIntraMdhEntries();
+  if (status != H5FD_DSM_SUCCESS) {
+    H5FDdsmError("Id = " << this->Id << " GatherIntraMdhEntries failed");
+    return(H5FD_DSM_FAIL);
+  }
+  //
   // Send MDH entry to each remote PE
   for (H5FDdsmInt32 i = 0; i < this->InterSize; i++) {
     status = MPI_Send(&this->CommDmappInternals->local_mdh_entry, sizeof(DmappMdhEntry), MPI_UNSIGNED_CHAR,
@@ -267,20 +274,7 @@ H5FDdsmCommDmapp::Accept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSiz
       return(H5FD_DSM_FAIL);
     }
   }
-  // Remote MDH/instance entries are local entries
-  if (this->CommDmappInternals->remote_inst_ids) free(this->CommDmappInternals->remote_inst_ids);
-  this->CommDmappInternals->remote_inst_ids = (H5FDdsmInt32*) malloc(this->IntraSize * sizeof(H5FDdsmInt32));
-  memcpy(this->CommDmappInternals->remote_inst_ids, this->CommDmappInternals->local_inst_ids, this->IntraSize * sizeof(H5FDdsmInt32));
-  if (this->CommDmappInternals->remote_mdh_entries) free(this->CommDmappInternals->remote_mdh_entries);
-  this->CommDmappInternals->remote_mdh_entries = (DmappMdhEntry*) malloc(this->IntraSize * sizeof(DmappMdhEntry));
-  status = MPI_Recv(this->CommDmappInternals->remote_mdh_entries, 
-      sizeof(DmappMdhEntry) * this->IntraSize, MPI_UNSIGNED_CHAR, 0,
-      H5FD_DSM_EXCHANGE_TAG, this->InterComm, &mpi_status);
-  if (status != MPI_SUCCESS) {
-    H5FDdsmError("Id = " << this->Id << " MPI_Recv of MDH entry failed");
-    return(H5FD_DSM_FAIL);
-  }
-
+  //
   return(H5FD_DSM_SUCCESS);
 }
 
@@ -297,15 +291,13 @@ H5FDdsmCommDmapp::Connect()
   H5FDdsmDebug("Get remote instance IDs");
   if (this->CommDmappInternals->remote_inst_ids) free(this->CommDmappInternals->remote_inst_ids);
   this->CommDmappInternals->remote_inst_ids = (H5FDdsmInt32*) malloc(this->InterSize * sizeof(H5FDdsmInt32));
-
-  //for (H5FDdsmInt32 i = 0; i < this->InterSize; i++) {
-    status = MPI_Recv(this->CommDmappInternals->remote_inst_ids, this->InterSize, MPI_INT32_T,
-        0, H5FD_DSM_EXCHANGE_TAG, this->InterComm, &mpi_status);
-    if (status != MPI_SUCCESS) {
-      H5FDdsmError("Id = " << this->Id << " MPI_Recv of local instance IDs failed");
-      return(H5FD_DSM_FAIL);
-    }
-  //}
+  //
+  status = MPI_Recv(this->CommDmappInternals->remote_inst_ids, this->InterSize, MPI_INT32_T,
+      0, H5FD_DSM_EXCHANGE_TAG, this->InterComm, &mpi_status);
+  if (status != MPI_SUCCESS) {
+    H5FDdsmError("Id = " << this->Id << " MPI_Recv of local instance IDs failed");
+    return(H5FD_DSM_FAIL);
+  }
   //
   // Get remote MDH entries
   H5FDdsmDebug("Get remote MDH entries");
@@ -319,20 +311,6 @@ H5FDdsmCommDmapp::Connect()
       return(H5FD_DSM_FAIL);
     }
   }
-  //
-  if (this->Id == 0) {
-    for (H5FDdsmInt32 i = 0; i < this->InterSize; i++) {
-      status = MPI_Send(this->CommDmappInternals->remote_mdh_entries,
-	  sizeof(DmappMdhEntry) * this->InterSize, MPI_UNSIGNED_CHAR,
-	  i, H5FD_DSM_EXCHANGE_TAG, this->InterComm);
-      if (status != MPI_SUCCESS) {
-	H5FDdsmError("Id = " << this->Id << " MPI_Send of MDH entry failed");
-	return(H5FD_DSM_FAIL);
-      }
-    }
-  }
-  this->Barrier();
-
   //
   return(H5FD_DSM_SUCCESS);
 }
@@ -385,6 +363,32 @@ H5FDdsmCommDmapp::GatherIntraInstIds()
       this->IntraComm);
   if (status != MPI_SUCCESS) {
     H5FDdsmError("Id = " << this->Id << " MPI_Gather of instance IDs failed");
+    return(H5FD_DSM_FAIL);
+  }
+  //
+  // Remote instance IDs are local IDs for the server.
+  if (this->CommDmappInternals->remote_inst_ids) free(this->CommDmappInternals->remote_inst_ids);
+  this->CommDmappInternals->remote_inst_ids = (H5FDdsmInt32*) malloc(this->IntraSize * sizeof(H5FDdsmInt32));
+  memcpy(this->CommDmappInternals->remote_inst_ids, this->CommDmappInternals->local_inst_ids, this->IntraSize * sizeof(H5FDdsmInt32));
+  return(H5FD_DSM_SUCCESS);
+}
+
+//----------------------------------------------------------------------------
+H5FDdsmInt32
+H5FDdsmCommDmapp::GatherIntraMdhEntries()
+{
+  H5FDdsmInt32 status;
+  //
+  // Allocate a buffer to hold the MDH entries from all of the other ranks.
+  // Remote MDH entries are local entries for the server.
+  if (this->CommDmappInternals->remote_mdh_entries) free(this->CommDmappInternals->remote_mdh_entries);
+  this->CommDmappInternals->remote_mdh_entries = (DmappMdhEntry*) malloc(this->IntraSize * sizeof(DmappMdhEntry));
+
+  status = MPI_Allgather(&this->CommDmappInternals->local_mdh_entry, sizeof(DmappMdhEntry), MPI_UNSIGNED_CHAR,
+      this->CommDmappInternals->remote_mdh_entries, sizeof(DmappMdhEntry), MPI_UNSIGNED_CHAR,
+      this->IntraComm);
+  if (status != MPI_SUCCESS) {
+    H5FDdsmError("Id = " << this->Id << " MPI_Gather of MDH entries failed");
     return(H5FD_DSM_FAIL);
   }
   //

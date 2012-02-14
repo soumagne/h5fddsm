@@ -47,6 +47,7 @@ public:
   H5FDdsmInt32   Disconnect();
 
   H5FDdsmInt32   GatherIntraInstIds();
+  H5FDdsmInt32   GatherIntraMdhEntries();
 
 protected:
   H5FDdsmCommDmappInternals *CommDmappInternals;
