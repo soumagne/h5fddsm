@@ -28,8 +28,9 @@
 
 #include "H5f90.h"
 #include "H5public.h"
+#include "H5FDdsmF90Config.h"
 
 #define nh5fd_dsm_dump_c H5_FC_FUNC_(h5fd_dsm_dump_c, H5FD_DSM_DUMP_C)
-H5_FCDLL int_f nh5fd_dsm_dump_c();
+H5FDdsmF90_EXPORT int_f nh5fd_dsm_dump_c();
 
 #endif /* __H5f90dsmToolsproto_h */

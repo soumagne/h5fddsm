@@ -28,44 +28,45 @@
 
 #include "H5f90.h"
 #include "H5public.h"
+#include "H5FDdsmF90Config.h"
 
 #define nh5fd_dsm_steering_init_c H5_FC_FUNC_(h5fd_dsm_steering_init_c, H5FD_DSM_STEERING_INIT_C)
-H5_FCDLL int_f nh5fd_dsm_steering_init_c(int_f* comm);
+H5FDdsmF90_EXPORT int_f nh5fd_dsm_steering_init_c(int_f* comm);
 
 #define nh5fd_dsm_steering_update_c H5_FC_FUNC_(h5fd_dsm_steering_update_c, H5FD_DSM_STEERING_UPDATE_C)
-H5_FCDLL int_f nh5fd_dsm_steering_update_c();
+H5FDdsmF90_EXPORT int_f nh5fd_dsm_steering_update_c();
 
 #define nh5fd_dsm_steering_is_enabled_c H5_FC_FUNC_(h5fd_dsm_steering_is_enabled_c, H5FD_DSM_STEERING_IS_ENABLED_C)
-H5_FCDLL int_f nh5fd_dsm_steering_is_enabled_c(_fcd name, int_f* namelen);
+H5FDdsmF90_EXPORT int_f nh5fd_dsm_steering_is_enabled_c(_fcd name, int_f* namelen);
 
 #define nh5fd_dsm_steering_wait_c H5_FC_FUNC_(h5fd_dsm_steering_wait_c, H5FD_DSM_STEERING_WAIT_C)
-H5_FCDLL int_f nh5fd_dsm_steering_wait_c();
+H5FDdsmF90_EXPORT int_f nh5fd_dsm_steering_wait_c();
 
 #define nh5fd_dsm_steering_begin_query_c H5_FC_FUNC_(h5fd_dsm_steering_begin_query_c, H5FD_DSM_STEERING_BEGIN_QUERY_C)
-H5_FCDLL int_f nh5fd_dsm_steering_begin_query_c();
+H5FDdsmF90_EXPORT int_f nh5fd_dsm_steering_begin_query_c();
 
 #define nh5fd_dsm_steering_end_query_c H5_FC_FUNC_(h5fd_dsm_steering_end_query_c, H5FD_DSM_STEERING_END_QUERY_C)
-H5_FCDLL int_f nh5fd_dsm_steering_end_query_c();
+H5FDdsmF90_EXPORT int_f nh5fd_dsm_steering_end_query_c();
 
 #define nh5fd_dsm_steering_get_handle_c H5_FC_FUNC_(h5fd_dsm_steering_get_handle_c, H5FD_DSM_STEERING_GET_HANDLE_C)
-H5_FCDLL int_f nh5fd_dsm_steering_get_handle_c(_fcd name, int_f* namelen, int_f* handle);
+H5FDdsmF90_EXPORT int_f nh5fd_dsm_steering_get_handle_c(_fcd name, int_f* namelen, int_f* handle);
 
 #define nh5fd_dsm_steering_free_handle_c H5_FC_FUNC_(h5fd_dsm_steering_free_handle_c, H5FD_DSM_STEERING_FREE_HANDLE_C)
-H5_FCDLL int_f nh5fd_dsm_steering_free_handle_c(int_f* handle);
+H5FDdsmF90_EXPORT int_f nh5fd_dsm_steering_free_handle_c(int_f* handle);
 
 #define nh5fd_dsm_steering_is_set_c H5_FC_FUNC_(h5fd_dsm_steering_is_set_c, H5FD_DSM_STEERING_IS_SET_C)
-H5_FCDLL int_f nh5fd_dsm_steering_is_set_c(_fcd name, int_f* namelen, int_f* set);
+H5FDdsmF90_EXPORT int_f nh5fd_dsm_steering_is_set_c(_fcd name, int_f* namelen, int_f* set);
 
 #define nh5fd_dsm_steering_scalar_get_c H5_FC_FUNC_(h5fd_dsm_steering_scalar_get_c, H5FD_DSM_STEERING_SCALAR_GET_C)
-H5_FCDLL int_f nh5fd_dsm_steering_scalar_get_c(_fcd name, int_f* namelen, hid_t_f* mem_type_id, _fcd buf);
+H5FDdsmF90_EXPORT int_f nh5fd_dsm_steering_scalar_get_c(_fcd name, int_f* namelen, hid_t_f* mem_type_id, _fcd buf);
 
 #define nh5fd_dsm_steering_scalar_set_c H5_FC_FUNC_(h5fd_dsm_steering_scalar_set_c, H5FD_DSM_STEERING_SCALAR_SET_C)
-H5_FCDLL int_f nh5fd_dsm_steering_scalar_set_c(_fcd name, int_f* namelen, hid_t_f* mem_type_id, _fcd buf);
+H5FDdsmF90_EXPORT int_f nh5fd_dsm_steering_scalar_set_c(_fcd name, int_f* namelen, hid_t_f* mem_type_id, _fcd buf);
 
 #define nh5fd_dsm_steering_vector_get_c H5_FC_FUNC_(h5fd_dsm_steering_vector_get_c, H5FD_DSM_STEERING_VECTOR_GET_C)
-H5_FCDLL int_f nh5fd_dsm_steering_vector_get_c(_fcd name, int_f* namelen, hid_t_f* mem_type_id, hsize_t_f* num_elem, _fcd buf);
+H5FDdsmF90_EXPORT int_f nh5fd_dsm_steering_vector_get_c(_fcd name, int_f* namelen, hid_t_f* mem_type_id, hsize_t_f* num_elem, _fcd buf);
 
 #define nh5fd_dsm_steering_vector_set_c H5_FC_FUNC_(h5fd_dsm_steering_vector_set_c, H5FD_DSM_STEERING_VECTOR_SET_C)
-H5_FCDLL int_f nh5fd_dsm_steering_vector_set_c(_fcd name, int_f* namelen, hid_t_f* mem_type_id, hsize_t_f* num_elem, _fcd buf);
+H5FDdsmF90_EXPORT int_f nh5fd_dsm_steering_vector_set_c(_fcd name, int_f* namelen, hid_t_f* mem_type_id, hsize_t_f* num_elem, _fcd buf);
 
 #endif /* __H5f90dsmSteeringproto_h */

@@ -447,6 +447,7 @@ set(H5FDdsmHeaders
   ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmObject.h
   ${CMAKE_CURRENT_SOURCE_DIR}/src/H5FDdsmComm.h
   ${H5FDdsm_BINARY_DIR}/src/H5FDdsmConfig.h
+  ${H5FDdsm_BINARY_DIR}/src/H5FDdsmToolsConfig.h
 )
 
 if(H5FDdsm_BUILD_STEERING)

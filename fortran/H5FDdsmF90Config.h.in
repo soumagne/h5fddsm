@@ -1,0 +1,35 @@
+//------------------------------------------------------------------------------
+// Standard setup for module imports/exports 
+//------------------------------------------------------------------------------
+
+#ifndef __H5FDdsmF90Config_h
+#define __H5FDdsmF90Config_h
+
+// The tools lib can only be built at the same time as the main DSM lib
+#include "H5FDdsmConfig.h"
+
+#ifdef _WIN32
+  #define H5FDdsmF90_ABI_IMPORT __declspec(dllimport)
+  #define H5FDdsmF90_ABI_EXPORT __declspec(dllexport)
+  #define H5FDdsmF90_ABI_HIDDEN
+#elif __GNUC__ >= 4
+  #define H5FDdsmF90_ABI_IMPORT __attribute__ ((visibility("default")))
+  #define H5FDdsmF90_ABI_EXPORT __attribute__ ((visibility("default")))
+  #define H5FDdsmF90_ABI_HIDDEN __attribute__ ((visibility("hidden")))
+#else
+  #define H5FDdsmF90_ABI_IMPORT
+  #define H5FDdsmF90_ABI_EXPORT
+  #define H5FDdsmF90_ABI_HIDDEN
+#endif
+
+#ifdef H5FDdsm_BUILD_SHARED_LIBS
+  #ifdef hdf5_f90cstub_EXPORTS 
+    #define H5FDdsmF90_EXPORT H5FDdsmF90_ABI_EXPORT 
+  #else
+    #define H5FDdsmF90_EXPORT H5FDdsmF90_ABI_IMPORT 
+  #endif
+#else
+  #define H5FDdsmF90_EXPORT
+#endif
+
+#endif /* __H5FDdsmF90Config_h */

@@ -28,20 +28,21 @@
 
 #include "H5f90.h"
 #include "H5public.h"
+#include "H5FDdsmF90Config.h"
 
 #define nh5fd_dsm_init_flags_c H5_FC_FUNC_(h5fd_dsm_init_flags_c, H5FD_DSM_INIT_FLAGS_C)
-H5_FCDLL int_f nh5fd_dsm_init_flags_c(int_f *h5fd_dsm_flags);
+H5FDdsmF90_EXPORT int_f nh5fd_dsm_init_flags_c(int_f *h5fd_dsm_flags);
 
 #define nh5pset_fapl_dsm_c H5_FC_FUNC_(h5pset_fapl_dsm_c, H5PSET_FAPL_DSM_C)
-H5_FCDLL int_f nh5pset_fapl_dsm_c(hid_t_f *prp_id, int_f* comm);
+H5FDdsmF90_EXPORT int_f nh5pset_fapl_dsm_c(hid_t_f *prp_id, int_f* comm);
 
 #define nh5pget_fapl_dsm_c H5_FC_FUNC_(h5pget_fapl_dsm_c, H5PGET_FAPL_DSM_C)
-H5_FCDLL int_f nh5pget_fapl_dsm_c(hid_t_f *prp_id, int_f* comm);
+H5FDdsmF90_EXPORT int_f nh5pget_fapl_dsm_c(hid_t_f *prp_id, int_f* comm);
 
 #define nh5fd_dsm_set_options_c H5_FC_FUNC_(h5fd_dsm_set_options_c, H5FD_DSM_SET_OPTIONS_C)
-H5_FCDLL int_f nh5fd_dsm_set_options_c(int_f* options);
+H5FDdsmF90_EXPORT int_f nh5fd_dsm_set_options_c(int_f* options);
 
 #define nh5fd_dsm_notify_c H5_FC_FUNC_(h5fd_dsm_notify_c, H5FD_DSM_NOTIFY_C)
-H5_FCDLL int_f nh5fd_dsm_notify_c(int_f* notifications);
+H5FDdsmF90_EXPORT int_f nh5fd_dsm_notify_c(int_f* notifications);
 
 #endif /* __H5f90dsmproto_h */

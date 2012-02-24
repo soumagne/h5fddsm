@@ -126,6 +126,14 @@ set_target_properties(H5FDdsm_fortran
 )
 
 #-----------------------------------------------------------------------------
+# Configure our module header files
+#-----------------------------------------------------------------------------
+configure_file(
+  ${H5FDdsm_F90_SOURCE_DIR}/H5FDdsmF90Config.h.in 
+  ${H5FDdsm_F90_BINARY_DIR}/H5FDdsmF90Config.h
+)
+
+#-----------------------------------------------------------------------------
 # Build the Fortran Tests
 #-----------------------------------------------------------------------------
 if(BUILD_TESTING)
@@ -168,6 +176,7 @@ set(H5FDdsmFortranHeaders
 if(H5FDdsm_BUILD_STEERING)
   set(H5FDdsmFortranHeaders
     ${CMAKE_CURRENT_SOURCE_DIR}/H5f90dsmSteeringproto.h
+    ${H5FDdsm_F90_BINARY_DIR}/H5FDdsmF90Config.h
     ${H5FDdsmFortranHeaders}
   )
 endif(H5FDdsm_BUILD_STEERING)

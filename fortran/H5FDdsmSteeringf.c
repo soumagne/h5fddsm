@@ -24,7 +24,11 @@
 =========================================================================*/
 
 #include "H5f90dsmSteeringproto.h"
+#include "H5FDdsmF90Config.h"
 #include "H5FDdsmSteering.h"
+
+H5FDdsmF90_EXPORT char *HD5f2cstringDSM(_fcd fdesc, size_t len);
+
 
 /*---------------------------------------------------------------------------
  * Name:              h5fd_dsm_steering_init_c
@@ -86,7 +90,7 @@ int_f nh5fd_dsm_steering_is_enabled_c(_fcd name, int_f* namelen)
       * Convert FORTRAN name to C name
       */
      c_namelen = *namelen;
-     c_name = (char *)HD5f2cstring(name, (size_t)c_namelen);
+     c_name = (char *)HD5f2cstringDSM(name, (size_t)c_namelen);
      if (c_name == NULL) return ret_value;
 
      /*
@@ -117,7 +121,7 @@ int_f nh5fd_dsm_steering_is_set_c(_fcd name, int_f* namelen, int_f* set)
       * Convert FORTRAN name to C name
       */
      c_namelen = *namelen;
-     c_name = (char *)HD5f2cstring(name, (size_t)c_namelen);
+     c_name = (char *)HD5f2cstringDSM(name, (size_t)c_namelen);
      if (c_name == NULL) return ret_value;
 
      /*
@@ -194,7 +198,7 @@ int_f nh5fd_dsm_steering_get_handle_c(_fcd name, int_f* namelen, int_f* handle)
   * Convert FORTRAN name to C name
   */
   c_namelen = *namelen;
-  c_name = (char *)HD5f2cstring(name, (size_t)c_namelen);
+  c_name = (char *)HD5f2cstringDSM(name, (size_t)c_namelen);
   if (c_name == NULL) return -1;
 
  /*
@@ -248,7 +252,7 @@ int_f nh5fd_dsm_steering_scalar_get_c(_fcd name, int_f* namelen,
       */
      c_namelen = *namelen;
      c_mem_type_id = (hid_t)*mem_type_id;
-     c_name = (char *)HD5f2cstring(name, (size_t)c_namelen);
+     c_name = (char *)HD5f2cstringDSM(name, (size_t)c_namelen);
      if (c_name == NULL) return ret_value;
 
      /*
@@ -284,7 +288,7 @@ int_f nh5fd_dsm_steering_scalar_set_c(_fcd name, int_f* namelen,
       */
      c_namelen = *namelen;
      c_mem_type_id = (hid_t)*mem_type_id;
-     c_name = (char *)HD5f2cstring(name, (size_t)c_namelen);
+     c_name = (char *)HD5f2cstringDSM(name, (size_t)c_namelen);
      if (c_name == NULL) return ret_value;
 
      /*
@@ -323,7 +327,7 @@ int_f nh5fd_dsm_steering_vector_get_c(_fcd name, int_f* namelen,
      c_namelen = *namelen;
      c_mem_type_id = (hid_t)*mem_type_id;
      c_num_elem = (hsize_t)*num_elem;
-     c_name = (char *)HD5f2cstring(name, (size_t)c_namelen);
+     c_name = (char *)HD5f2cstringDSM(name, (size_t)c_namelen);
      if (c_name == NULL) return ret_value;
 
      /*
@@ -363,7 +367,7 @@ int_f nh5fd_dsm_steering_vector_set_c(_fcd name, int_f* namelen,
      c_namelen = *namelen;
      c_mem_type_id = (hid_t)*mem_type_id;
      c_num_elem = (hsize_t)*num_elem;
-     c_name = (char *)HD5f2cstring(name, (size_t)c_namelen);
+     c_name = (char *)HD5f2cstringDSM(name, (size_t)c_namelen);
      if (c_name == NULL) return ret_value;
 
      /*
@@ -375,3 +379,44 @@ int_f nh5fd_dsm_steering_vector_set_c(_fcd name, int_f* namelen,
      if (ret < 0) return ret_value;
      return 0;
 }
+
+/*
+ * NAME
+ *   HD5f2cstring -- convert a Fortran string to a C string
+ *   char * HDf2cstring(fdesc, len)
+ * INPUTS
+ *   _fcd  fdesc;    IN: Fortran string descriptor
+ *   int  len;       IN: length of Fortran string
+ * RETURNS
+ *   Pointer to the C string if success, else NULL
+ * PURPOSE
+ *   Chop off trailing blanks off of a Fortran string and
+ *   move it into a newly allocated C string.  It is up
+ *   to the user to free this string.
+ * SOURCE
+ */
+char *
+HD5f2cstringDSM(_fcd fdesc, size_t len)
+{
+    char       *cstr;   /* C string to return */
+    char       *str;    /* Pointer to FORTRAN string */
+    int         i;      /* Local index variable */
+
+    /* Search for the end of the string */
+    str = _fcdtocp(fdesc);
+    for(i = (int)len - 1; i >= 0 && !HDisgraph((int)str[i]); i--)
+        /*EMPTY*/;
+
+    /* Allocate C string */
+    if(NULL == (cstr = (char *)HDmalloc((size_t)(i + 2))))
+        return NULL;
+
+    /* Copy text from FORTRAN to C string */
+    HDmemcpy(cstr, str, (size_t)(i + 1));
+
+    /* Terminate C string */
+    cstr[i + 1] = '\0';
+
+    return cstr;
+}   /* HD5f2cstring */
+
