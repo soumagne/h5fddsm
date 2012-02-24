@@ -27,6 +27,7 @@
 #define __H5FDdsmTools_h
 
 #include "H5Ipublic.h"
+#include "H5FDdsmToolsConfig.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,8 +35,8 @@ extern "C" {
   /* Description:
    * Display the content of the DSM (Debug only).
    */
-  H5TOOLS_DLL herr_t H5FD_dsm_dump();
-  
+  H5FDdsmTools_EXPORT herr_t H5FD_dsm_dump();
+
 #ifdef __cplusplus
 }
 #endif

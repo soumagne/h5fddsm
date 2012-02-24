@@ -279,14 +279,6 @@ include_directories(${MPI_INCLUDE_PATH})
 set(H5FDdsm_LIB_DEPENDENCIES ${H5FDdsm_LIB_DEPENDENCIES} ${MPI_CXX_LIBRARIES})
 
 #-----------------------------------------------------------------------------
-# Configure our module header file
-#-----------------------------------------------------------------------------
-configure_file(
-  ${H5FDdsm_SOURCE_DIR}/src/H5FDdsmConfig.h.in 
-  ${H5FDdsm_BINARY_DIR}/src/H5FDdsmConfig.h
-)
-
-#-----------------------------------------------------------------------------
 # Include all directories used by this source
 #-----------------------------------------------------------------------------
 include_directories(${H5FDdsm_SOURCE_DIR}/src)
@@ -412,9 +404,23 @@ endif(H5FDdsm_BUILD_TOOLS)
 #-----------------------------------------------------------------------------
 option(H5FDdsm_BUILD_FORTRAN "Build FORTRAN bindings." OFF)
 if(H5FDdsm_BUILD_FORTRAN)
+  set(H5FDdsm_HAVE_FORTRAN TRUE)
   include_directories(${HDF5_INCLUDE_DIR_FORTRAN})
   add_subdirectory(${H5FDdsm_SOURCE_DIR}/fortran ${PROJECT_BINARY_DIR}/fortran)
 endif(H5FDdsm_BUILD_FORTRAN)
+
+#-----------------------------------------------------------------------------
+# Configure our module header files
+#-----------------------------------------------------------------------------
+configure_file(
+  ${H5FDdsm_SOURCE_DIR}/src/H5FDdsmConfig.h.in 
+  ${H5FDdsm_BINARY_DIR}/src/H5FDdsmConfig.h
+)
+
+configure_file(
+  ${H5FDdsm_SOURCE_DIR}/src/H5FDdsmToolsConfig.h.in 
+  ${H5FDdsm_BINARY_DIR}/src/H5FDdsmToolsConfig.h
+)
 
 #-----------------------------------------------------------------------------
 # Testing

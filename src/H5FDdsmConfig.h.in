@@ -23,6 +23,7 @@
 
 #cmakedefine H5FDdsm_HAVE_STEERING
 #cmakedefine H5FDdsm_HAVE_TOOLS
+#cmakedefine H5FDdsm_HAVE_FORTRAN
 
 #cmakedefine H5FDdsm_HAVE_DMAPP
 #cmakedefine H5FDdsm_HAVE_UGNI
