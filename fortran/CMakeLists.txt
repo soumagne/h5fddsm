@@ -91,7 +91,7 @@ if(H5FDdsm_BUILD_TOOLS)
   )
 endif(H5FDdsm_BUILD_TOOLS)
 
-add_library(H5FDdsm_fortran
+add_library(H5FDdsm_fortran STATIC
   ${H5FDdsm_FORTRAN_SRC}
 )
 
