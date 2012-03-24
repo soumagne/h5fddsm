@@ -48,7 +48,7 @@ MODULE H5FDDSM
 !
 !----------------------------------------------------------------------
   SUBROUTINE h5pset_fapl_dsm_f(prp_id, comm, hdferr)
-    !DEC$if defined(BUILD_H5FD_DSM_DLL)
+    !DEC$if defined(BUILD_H5FDdsm_DLL)
     !DEC$ ATTRIBUTES DLLEXPORT :: h5pset_fapl_dsm_f
     !DEC$endif
     IMPLICIT NONE
@@ -87,7 +87,7 @@ MODULE H5FDDSM
 !
 !----------------------------------------------------------------------
   SUBROUTINE h5pget_fapl_dsm_f(prp_id, comm, hdferr)
-    !DEC$if defined(BUILD_H5FD_DSM_DLL)
+    !DEC$if defined(BUILD_H5FDdsm_DLL)
     !DEC$ ATTRIBUTES DLLEXPORT :: h5pget_fapl_dsm_f
     !DEC$endif
     IMPLICIT NONE
@@ -127,7 +127,7 @@ MODULE H5FDDSM
 !
 !----------------------------------------------------------------------
   SUBROUTINE h5fd_dsm_set_options_f(options, hdferr)
-    !DEC$if defined(BUILD_H5FD_DSM_DLL)
+    !DEC$if defined(BUILD_H5FDdsm_DLL)
     !DEC$ ATTRIBUTES DLLEXPORT :: h5fd_dsm_set_options_f
     !DEC$endif
     IMPLICIT NONE
@@ -175,7 +175,7 @@ MODULE H5FDDSM
 !
 !----------------------------------------------------------------------
   SUBROUTINE h5fd_dsm_notify_f(notifications, hdferr)
-    !DEC$if defined(BUILD_H5FD_DSM_DLL)
+    !DEC$if defined(BUILD_H5FDdsm_DLL)
     !DEC$ ATTRIBUTES DLLEXPORT :: h5fd_dsm_notify_f
     !DEC$endif
     IMPLICIT NONE

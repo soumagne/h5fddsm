@@ -72,7 +72,7 @@ MODULE H5FDDSM_STEERING
 !
 !----------------------------------------------------------------------
   SUBROUTINE h5fd_dsm_steering_init_f(comm, hdferr)
-    !DEC$if defined(BUILD_H5FD_DSM_DLL)
+    !DEC$if defined(BUILD_H5FDdsm_DLL)
     !DEC$ ATTRIBUTES DLLEXPORT :: h5fd_dsm_steering_init_f
     !DEC$endif
     IMPLICIT NONE
@@ -99,7 +99,7 @@ MODULE H5FDDSM_STEERING
 !
 !----------------------------------------------------------------------
   SUBROUTINE h5fd_dsm_steering_update_f(hdferr)
-    !DEC$if defined(BUILD_H5FD_DSM_DLL)
+    !DEC$if defined(BUILD_H5FDdsm_DLL)
     !DEC$ ATTRIBUTES DLLEXPORT :: h5fd_dsm_steering_update_f
     !DEC$endif
     IMPLICIT NONE
@@ -125,7 +125,7 @@ MODULE H5FDDSM_STEERING
 !
 !----------------------------------------------------------------------
   SUBROUTINE h5fd_dsm_steering_is_enabled_f(name, hdferr)
-    !DEC$if defined(BUILD_H5FD_DSM_DLL)
+    !DEC$if defined(BUILD_H5FDdsm_DLL)
     !DEC$ ATTRIBUTES DLLEXPORT :: h5fd_dsm_steering_is_enabled_f
     !DEC$endif
     IMPLICIT NONE
@@ -155,7 +155,7 @@ MODULE H5FDDSM_STEERING
 !
 !----------------------------------------------------------------------
   SUBROUTINE h5fd_dsm_steering_wait_f(hdferr)
-    !DEC$if defined(BUILD_H5FD_DSM_DLL)
+    !DEC$if defined(BUILD_H5FDdsm_DLL)
     !DEC$ ATTRIBUTES DLLEXPORT :: h5fd_dsm_steering_wait_f
     !DEC$endif
     IMPLICIT NONE
@@ -181,7 +181,7 @@ MODULE H5FDDSM_STEERING
 !
 !----------------------------------------------------------------------
   SUBROUTINE h5fd_dsm_steering_begin_query_f(hdferr)
-    !DEC$if defined(BUILD_H5FD_DSM_DLL)
+    !DEC$if defined(BUILD_H5FDdsm_DLL)
     !DEC$ ATTRIBUTES DLLEXPORT :: h5fd_dsm_steering_begin_query_f
     !DEC$endif
     IMPLICIT NONE
@@ -207,7 +207,7 @@ MODULE H5FDDSM_STEERING
 !
 !----------------------------------------------------------------------
   SUBROUTINE h5fd_dsm_steering_end_query_f(hdferr)
-    !DEC$if defined(BUILD_H5FD_DSM_DLL)
+    !DEC$if defined(BUILD_H5FDdsm_DLL)
     !DEC$ ATTRIBUTES DLLEXPORT :: h5fd_dsm_steering_end_query_f
     !DEC$endif
     IMPLICIT NONE
@@ -234,7 +234,7 @@ MODULE H5FDDSM_STEERING
 !
 !----------------------------------------------------------------------
   SUBROUTINE h5fd_dsm_steering_get_handle_f(name, handle, hdferr)
-    !DEC$if defined(BUILD_H5FD_DSM_DLL)
+    !DEC$if defined(BUILD_H5FDdsm_DLL)
     !DEC$ ATTRIBUTES DLLEXPORT :: h5fd_dsm_steering_get_handle_f
     !DEC$endif
     IMPLICIT NONE
@@ -264,7 +264,7 @@ MODULE H5FDDSM_STEERING
 !
 !----------------------------------------------------------------------
   SUBROUTINE h5fd_dsm_steering_free_handle_f(handle, hdferr)
-    !DEC$if defined(BUILD_H5FD_DSM_DLL)
+    !DEC$if defined(BUILD_H5FDdsm_DLL)
     !DEC$ ATTRIBUTES DLLEXPORT :: h5fd_dsm_steering_free_handle_f
     !DEC$endif
     IMPLICIT NONE
@@ -294,7 +294,7 @@ MODULE H5FDDSM_STEERING
 !
 !----------------------------------------------------------------------
   SUBROUTINE h5fd_dsm_steering_is_set_f(name, set, hdferr)
-    !DEC$if defined(BUILD_H5FD_DSM_DLL)
+    !DEC$if defined(BUILD_H5FDdsm_DLL)
     !DEC$ ATTRIBUTES DLLEXPORT :: h5fd_dsm_steering_is_set_f
     !DEC$endif
     IMPLICIT NONE
@@ -327,7 +327,7 @@ MODULE H5FDDSM_STEERING
 !----------------------------------------------------------------------
   SUBROUTINE h5fd_dsm_steering_scalar_get_integer_f(name, mem_type_id, buf, &
                hdferr)
-    !DEC$if defined(BUILD_H5FD_DSM_DLL)
+    !DEC$if defined(BUILD_H5FDdsm_DLL)
     !DEC$ ATTRIBUTES DLLEXPORT :: h5fd_dsm_steering_scalar_get_integer_f
     !DEC$endif
     IMPLICIT NONE
@@ -344,7 +344,7 @@ MODULE H5FDDSM_STEERING
 
   SUBROUTINE h5fd_dsm_steering_scalar_get_real_f(name, mem_type_id, buf, &
                hdferr)
-    !DEC$if defined(BUILD_H5FD_DSM_DLL)
+    !DEC$if defined(BUILD_H5FDdsm_DLL)
     !DEC$ ATTRIBUTES DLLEXPORT :: h5fd_dsm_steering_scalar_get_real_f
     !DEC$endif
     IMPLICIT NONE
@@ -361,7 +361,7 @@ MODULE H5FDDSM_STEERING
 
   SUBROUTINE h5fd_dsm_steering_scalar_get_real8_f(name, mem_type_id, buf, &
                hdferr)
-    !DEC$if defined(BUILD_H5FD_DSM_DLL)
+    !DEC$if defined(BUILD_H5FDdsm_DLL)
     !DEC$ ATTRIBUTES DLLEXPORT :: h5fd_dsm_steering_scalar_get_real8_f
     !DEC$endif
     IMPLICIT NONE
@@ -395,7 +395,7 @@ MODULE H5FDDSM_STEERING
 !----------------------------------------------------------------------
   SUBROUTINE h5fd_dsm_steering_scalar_set_integer_f(name, mem_type_id, buf, &
              hdferr)
-    !DEC$if defined(BUILD_H5FD_DSM_DLL)
+    !DEC$if defined(BUILD_H5FDdsm_DLL)
     !DEC$ ATTRIBUTES DLLEXPORT :: h5fd_dsm_steering_scalar_set_integer_f
     !DEC$endif
     IMPLICIT NONE
@@ -412,7 +412,7 @@ MODULE H5FDDSM_STEERING
 
   SUBROUTINE h5fd_dsm_steering_scalar_set_real_f(name, mem_type_id, buf, &
                hdferr)
-    !DEC$if defined(BUILD_H5FD_DSM_DLL)
+    !DEC$if defined(BUILD_H5FDdsm_DLL)
     !DEC$ ATTRIBUTES DLLEXPORT :: h5fd_dsm_steering_scalar_set_real_f
     !DEC$endif
     IMPLICIT NONE
@@ -429,7 +429,7 @@ MODULE H5FDDSM_STEERING
 
   SUBROUTINE h5fd_dsm_steering_scalar_set_real8_f(name, mem_type_id, buf, &
                hdferr)
-    !DEC$if defined(BUILD_H5FD_DSM_DLL)
+    !DEC$if defined(BUILD_H5FDdsm_DLL)
     !DEC$ ATTRIBUTES DLLEXPORT :: h5fd_dsm_steering_scalar_set_real8_f
     !DEC$endif
     IMPLICIT NONE
@@ -464,7 +464,7 @@ MODULE H5FDDSM_STEERING
 !----------------------------------------------------------------------
   SUBROUTINE h5fd_dsm_steering_vector_get_integer_f(name, mem_type_id, num_elem, &
                buf, hdferr)
-    !DEC$if defined(BUILD_H5FD_DSM_DLL)
+    !DEC$if defined(BUILD_H5FDdsm_DLL)
     !DEC$ ATTRIBUTES DLLEXPORT :: h5fd_dsm_steering_vector_get_integer_f
     !DEC$endif
     IMPLICIT NONE
@@ -483,7 +483,7 @@ MODULE H5FDDSM_STEERING
 
   SUBROUTINE h5fd_dsm_steering_vector_get_real_f(name, mem_type_id, num_elem, &
                buf, hdferr)
-    !DEC$if defined(BUILD_H5FD_DSM_DLL)
+    !DEC$if defined(BUILD_H5FDdsm_DLL)
     !DEC$ ATTRIBUTES DLLEXPORT :: h5fd_dsm_steering_vector_get_real_f
     !DEC$endif
     IMPLICIT NONE
@@ -502,7 +502,7 @@ MODULE H5FDDSM_STEERING
 
   SUBROUTINE h5fd_dsm_steering_vector_get_real8_f(name, mem_type_id, num_elem, &
                buf, hdferr)
-    !DEC$if defined(BUILD_H5FD_DSM_DLL)
+    !DEC$if defined(BUILD_H5FDdsm_DLL)
     !DEC$ ATTRIBUTES DLLEXPORT :: h5fd_dsm_steering_vector_get_real8_f
     !DEC$endif
     IMPLICIT NONE
@@ -539,7 +539,7 @@ MODULE H5FDDSM_STEERING
 !----------------------------------------------------------------------
   SUBROUTINE h5fd_dsm_steering_vector_set_integer_f(name, mem_type_id, num_elem, &
                buf, hdferr)
-    !DEC$if defined(BUILD_H5FD_DSM_DLL)
+    !DEC$if defined(BUILD_H5FDdsm_DLL)
     !DEC$ ATTRIBUTES DLLEXPORT :: h5fd_dsm_steering_vector_set_integer_f
     !DEC$endif
     IMPLICIT NONE
@@ -558,7 +558,7 @@ MODULE H5FDDSM_STEERING
 
   SUBROUTINE h5fd_dsm_steering_vector_set_real_f(name, mem_type_id, num_elem, &
                buf, hdferr)
-    !DEC$if defined(BUILD_H5FD_DSM_DLL)
+    !DEC$if defined(BUILD_H5FDdsm_DLL)
     !DEC$ ATTRIBUTES DLLEXPORT :: h5fd_dsm_steering_vector_set_real_f
     !DEC$endif
     IMPLICIT NONE
@@ -577,7 +577,7 @@ MODULE H5FDDSM_STEERING
 
   SUBROUTINE h5fd_dsm_steering_vector_set_real8_f(name, mem_type_id, num_elem, &
                buf, hdferr)
-    !DEC$if defined(BUILD_H5FD_DSM_DLL)
+    !DEC$if defined(BUILD_H5FDdsm_DLL)
     !DEC$ ATTRIBUTES DLLEXPORT :: h5fd_dsm_steering_vector_set_real8_f
     !DEC$endif
     IMPLICIT NONE

@@ -48,7 +48,7 @@ MODULE H5FDDSM_TOOLS
 !
 !----------------------------------------------------------------------
   SUBROUTINE h5fd_dsm_dump_f(hdferr)
-    !DEC$if defined(BUILD_H5FD_DSM_DLL)
+    !DEC$if defined(BUILD_H5FDdsm_DLL)
     !DEC$ ATTRIBUTES DLLEXPORT :: h5fd_dsm_dump_f
     !DEC$endif
     IMPLICIT NONE
