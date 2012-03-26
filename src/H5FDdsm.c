@@ -711,7 +711,7 @@ H5FD_dsm_open(const char *name, unsigned flags, hid_t fapl_id, haddr_t maxaddr)
   if (SUCCEED != dsm_lock())
     HGOTO_ERROR(H5E_VFL, H5E_CANTLOCK, NULL, "cannot lock DSM");
 
-  if ((file->intra_rank == 0) && (SUCCEED != dsm_get_entry(&file->start, &file->end)))
+  if (((file->intra_rank == 0) || dsm_is_driver_serial()) && (SUCCEED != dsm_get_entry(&file->start, &file->end)))
     dsm_code = FAIL;
   if (!dsm_is_driver_serial()) {
     /* Wait for the DSM entry to be updated */
@@ -793,7 +793,7 @@ H5FD_dsm_close(H5FD_t *_file)
   if (!file->read_only) {
     file->end = MAX((file->start + file->eof), file->end);
 
-    if ((file->intra_rank == 0) && (SUCCEED != dsm_update_entry(file->start, file->end)))
+    if (((file->intra_rank == 0) || dsm_is_driver_serial()) && (SUCCEED != dsm_update_entry(file->start, file->end)))
       dsm_code = FAIL;
     if (!dsm_is_driver_serial()) {
       /* Wait for the DSM entry to be updated */
@@ -944,7 +944,7 @@ H5FD_dsm_set_eoa(H5FD_t *_file, H5FD_mem_t UNUSED type, haddr_t addr)
   file->end = MAX((file->start + file->eoa), file->end);
   file->eof = file->end - file->start;
   if (!file->read_only) {
-    if ((file->intra_rank == 0) && (SUCCEED != dsm_update_entry(file->start, file->end)))
+    if (((file->intra_rank == 0) || dsm_is_driver_serial()) && (SUCCEED != dsm_update_entry(file->start, file->end)))
       dsm_code = FAIL;
     if (!dsm_is_driver_serial()) {
       /* Wait for the DSM entry to be updated */
