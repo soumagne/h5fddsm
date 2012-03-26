@@ -250,6 +250,9 @@ dsm_set_options(unsigned long flags)
     case H5FD_DSM_MODE_SERIAL:
       dsmManager->SetIsDriverSerial(H5FD_DSM_TRUE);
       break;
+    case H5FD_DSM_MODE_PARALLEL:
+      dsmManager->SetIsDriverSerial(H5FD_DSM_FALSE);
+      break;
     default:
       PRINT_DSM_DRIVER_INFO(dsmBufferService->GetComm()->GetId(), "Not implemented option");
       break;

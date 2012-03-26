@@ -86,10 +86,13 @@
  * - H5FD_DSM_DONT_RELEASE prevents the DSM to automatically release the file on a close
  * - H5FD_DSM_DONT_NOTIFY prevents the DSM server to be automatically notified on a close
  * - H5FD_DSM_MODE_SERIAL enables the driver to be used serially
+ * - H5FD_DSM_MODE_PARALELL enables the driver to be used in parallel (default)
+ *   this should only be used when H5FD_DSM_MODE_SERIAL has been previously called
  */
 #define H5FD_DSM_DONT_RELEASE     0x20
 #define H5FD_DSM_DONT_NOTIFY      0x21
 #define H5FD_DSM_MODE_SERIAL      0x22
+#define H5FD_DSM_MODE_PARALLEL    0x23
 
 /*
  * Notification information:
