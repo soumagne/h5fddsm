@@ -42,6 +42,7 @@ extern "C" {
   H5FDdsm_EXPORT herr_t  dsm_free();
 
   H5FDdsm_EXPORT hbool_t dsm_is_server();
+  H5FDdsm_EXPORT hbool_t dsm_is_driver_serial();
   H5FDdsm_EXPORT herr_t  dsm_set_options(unsigned long flags);
 
   H5FDdsm_EXPORT hbool_t dsm_is_connected();

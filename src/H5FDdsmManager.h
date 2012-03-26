@@ -73,6 +73,11 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     H5FDdsmGetValueMacro(IsServer, H5FDdsmBoolean);
 
     // Description:
+    // Set/Get IsDriverSerial info
+    H5FDdsmSetValueMacro(IsDriverSerial, H5FDdsmBoolean);
+    H5FDdsmGetValueMacro(IsDriverSerial, H5FDdsmBoolean);
+
+    // Description:
     // Set/Get the interprocess communication subsystem
     // Valid values are H5FD_DSM_TYPE_UNIFORM, H5FD_DSM_TYPE_BLOCK_CYCLIC
     H5FDdsmSetValueMacro(DsmType, H5FDdsmInt32);
@@ -231,6 +236,7 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     //
     H5FDdsmBoolean  IsAutoAllocated;
     H5FDdsmBoolean  IsServer;
+    H5FDdsmBoolean  IsDriverSerial;
     H5FDdsmInt32    DsmType;
     H5FDdsmUInt64   BlockLength;
     H5FDdsmInt32    InterCommType;

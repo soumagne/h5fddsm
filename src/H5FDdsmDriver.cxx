@@ -203,6 +203,27 @@ done:
 }
 
 //--------------------------------------------------------------------------
+hbool_t
+dsm_is_driver_serial()
+{
+  herr_t ret_value = TRUE;
+
+  FUNC_ENTER_NOAPI(dsm_is_driver_serial, FAIL)
+
+  if (!dsmManager)
+    DSM_DRIVER_GOTO_ERROR("No DSM manager found", FAIL);
+
+  ret_value = (dsmManager->GetIsDriverSerial() == H5FD_DSM_TRUE) ? TRUE : FALSE;
+
+done:
+  if (err_occurred) {
+    /* Nothing */
+  }
+
+  FUNC_LEAVE_NOAPI(ret_value);
+}
+
+//--------------------------------------------------------------------------
 herr_t
 dsm_set_options(unsigned long flags)
 {
@@ -225,6 +246,9 @@ dsm_set_options(unsigned long flags)
       /* If we don't release the file, we don't send notifications as well */
     case H5FD_DSM_DONT_NOTIFY:
       dsmBufferService->SetNotificationOnClose(H5FD_DSM_FALSE);
+      break;
+    case H5FD_DSM_MODE_SERIAL:
+      dsmManager->SetIsDriverSerial(H5FD_DSM_TRUE);
       break;
     default:
       PRINT_DSM_DRIVER_INFO(dsmBufferService->GetComm()->GetId(), "Not implemented option");

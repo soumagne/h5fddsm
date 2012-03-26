@@ -576,14 +576,18 @@ H5FD_dsm_fapl_copy(const void *_old_fa)
 
   /* Duplicate communicator. */
   new_fa->intra_comm = MPI_COMM_NULL;
-  if (MPI_SUCCESS != (mpi_code = MPI_Comm_dup(old_fa->intra_comm, &new_fa->intra_comm)))
-    HMPI_GOTO_ERROR(NULL, "MPI_Comm_dup failed", mpi_code);
+  if (!dsm_is_driver_serial()) {
+    if (MPI_SUCCESS != (mpi_code = MPI_Comm_dup(old_fa->intra_comm, &new_fa->intra_comm)))
+      HMPI_GOTO_ERROR(NULL, "MPI_Comm_dup failed", mpi_code);
+  } else {
+    new_fa->intra_comm = old_fa->intra_comm;
+  }
   ret_value = new_fa;
 
 done:
   if ((NULL == ret_value) && err_occurred) {
     /* cleanup */
-    if (new_fa && (MPI_COMM_NULL != new_fa->intra_comm))
+    if (!dsm_is_driver_serial() && new_fa && (MPI_COMM_NULL != new_fa->intra_comm))
       MPI_Comm_free(&new_fa->intra_comm);
     if (new_fa) free(new_fa);
   }
@@ -611,9 +615,11 @@ H5FD_dsm_fapl_free(void *_fa)
   FUNC_ENTER_NOAPI(H5FD_dsm_fapl_free, FAIL)
   assert(fa);
 
-  /* Free the internal communicator */
-  assert(MPI_COMM_NULL != fa->intra_comm);
-  MPI_Comm_free(&fa->intra_comm);
+  if (!dsm_is_driver_serial()) {
+    /* Free the internal communicator */
+    assert(MPI_COMM_NULL != fa->intra_comm);
+    MPI_Comm_free(&fa->intra_comm);
+  }
   free(fa);
 
 done:
@@ -667,21 +673,27 @@ H5FD_dsm_open(const char *name, unsigned flags, hid_t fapl_id, haddr_t maxaddr)
     assert(fa);
   }
 
-  /* Duplicate communicator. */
-  if (MPI_SUCCESS != (mpi_code = MPI_Comm_dup(fa->intra_comm, &intra_comm_dup)))
-    HMPI_GOTO_ERROR(NULL, "MPI_Comm_dup failed", mpi_code);
+  if (!dsm_is_driver_serial()) {
+    /* Duplicate communicator. */
+    if (MPI_SUCCESS != (mpi_code = MPI_Comm_dup(fa->intra_comm, &intra_comm_dup)))
+      HMPI_GOTO_ERROR(NULL, "MPI_Comm_dup failed", mpi_code);
+  }
 
   /* Get the MPI rank of this process and the total number of processes */
-  if (MPI_SUCCESS != (mpi_code = MPI_Comm_rank (intra_comm_dup, &mpi_rank)))
+  if (MPI_SUCCESS != (mpi_code = MPI_Comm_rank (fa->intra_comm, &mpi_rank)))
     HMPI_GOTO_ERROR(NULL, "MPI_Comm_rank failed", mpi_code);
-  if (MPI_SUCCESS != (mpi_code = MPI_Comm_size (intra_comm_dup, &mpi_size)))
+  if (MPI_SUCCESS != (mpi_code = MPI_Comm_size (fa->intra_comm, &mpi_size)))
     HMPI_GOTO_ERROR(NULL, "MPI_Comm_size failed", mpi_code);
 
   /* Build the return value and initialize it */
   if (NULL == (file = (H5FD_dsm_t *) calloc((size_t)1, sizeof(H5FD_dsm_t))))
     HGOTO_ERROR(H5E_RESOURCE, H5E_NOSPACE, NULL, "memory allocation failed");
 
-  file->intra_comm = intra_comm_dup;
+  if (!dsm_is_driver_serial()) {
+    file->intra_comm = intra_comm_dup;
+  } else {
+    file->intra_comm = fa->intra_comm;
+  }
   file->intra_rank = mpi_rank;
   file->intra_size = mpi_size;
 
@@ -701,19 +713,23 @@ H5FD_dsm_open(const char *name, unsigned flags, hid_t fapl_id, haddr_t maxaddr)
 
   if ((file->intra_rank == 0) && (SUCCEED != dsm_get_entry(&file->start, &file->end)))
     dsm_code = FAIL;
-  /* Wait for the DSM entry to be updated */
-  if (MPI_SUCCESS != (mpi_code = MPI_Bcast(&dsm_code, sizeof(herr_t),
-      MPI_UNSIGNED_CHAR, 0, file->intra_comm)))
-    HMPI_GOTO_ERROR(NULL, "MPI_Bcast failed", mpi_code);
+  if (!dsm_is_driver_serial()) {
+    /* Wait for the DSM entry to be updated */
+    if (MPI_SUCCESS != (mpi_code = MPI_Bcast(&dsm_code, sizeof(herr_t),
+        MPI_UNSIGNED_CHAR, 0, file->intra_comm)))
+      HMPI_GOTO_ERROR(NULL, "MPI_Bcast failed", mpi_code);
+  }
   if (SUCCEED != dsm_code)
     HGOTO_ERROR(H5E_VFL, H5E_CANTRESTORE, NULL, "cannot restore DSM entries");
 
-  if (MPI_SUCCESS != (mpi_code = MPI_Bcast(&file->start, sizeof(haddr_t),
-      MPI_UNSIGNED_CHAR, 0, file->intra_comm)))
-    HMPI_GOTO_ERROR(NULL, "MPI_Bcast failed", mpi_code);
-  if (MPI_SUCCESS != (mpi_code = MPI_Bcast(&file->end, sizeof(haddr_t),
-      MPI_UNSIGNED_CHAR, 0, file->intra_comm)))
-    HMPI_GOTO_ERROR(NULL, "MPI_Bcast failed", mpi_code);
+  if (!dsm_is_driver_serial()) {
+    if (MPI_SUCCESS != (mpi_code = MPI_Bcast(&file->start, sizeof(haddr_t),
+        MPI_UNSIGNED_CHAR, 0, file->intra_comm)))
+      HMPI_GOTO_ERROR(NULL, "MPI_Bcast failed", mpi_code);
+    if (MPI_SUCCESS != (mpi_code = MPI_Bcast(&file->end, sizeof(haddr_t),
+        MPI_UNSIGNED_CHAR, 0, file->intra_comm)))
+      HMPI_GOTO_ERROR(NULL, "MPI_Bcast failed", mpi_code);
+  }
 
   if (H5F_ACC_RDWR & flags) {
     file->read_only = FALSE;
@@ -731,7 +747,7 @@ H5FD_dsm_open(const char *name, unsigned flags, hid_t fapl_id, haddr_t maxaddr)
   }
 
   /* Don't let any proc return until all have created the file. */
-  if (H5F_ACC_CREAT & flags) {
+  if (!dsm_is_driver_serial() && (H5F_ACC_CREAT & flags)) {
     if (MPI_SUCCESS != (mpi_code = MPI_Barrier(intra_comm_dup)))
       HMPI_GOTO_ERROR(NULL, "MPI_Barrier failed", mpi_code);
   }
@@ -742,7 +758,7 @@ H5FD_dsm_open(const char *name, unsigned flags, hid_t fapl_id, haddr_t maxaddr)
 done:
   if((ret_value == NULL) && err_occurred) {
     if (file && file->name) HDfree(file->name);
-    if (MPI_COMM_NULL != intra_comm_dup) MPI_Comm_free(&intra_comm_dup);
+    if (!dsm_is_driver_serial() && (MPI_COMM_NULL != intra_comm_dup)) MPI_Comm_free(&intra_comm_dup);
     if (file) free(file);
   } /* end if */
 
@@ -779,23 +795,27 @@ H5FD_dsm_close(H5FD_t *_file)
 
     if ((file->intra_rank == 0) && (SUCCEED != dsm_update_entry(file->start, file->end)))
       dsm_code = FAIL;
-    /* Wait for the DSM entry to be updated */
-    if (MPI_SUCCESS != (mpi_code = MPI_Bcast(&dsm_code, sizeof(herr_t),
-        MPI_UNSIGNED_CHAR, 0, file->intra_comm)))
-      HMPI_GOTO_ERROR(FAIL, "MPI_Bcast failed", mpi_code);
+    if (!dsm_is_driver_serial()) {
+      /* Wait for the DSM entry to be updated */
+      if (MPI_SUCCESS != (mpi_code = MPI_Bcast(&dsm_code, sizeof(herr_t),
+          MPI_UNSIGNED_CHAR, 0, file->intra_comm)))
+        HMPI_GOTO_ERROR(FAIL, "MPI_Bcast failed", mpi_code);
+    }
     if (SUCCEED != dsm_code)
       HGOTO_ERROR(H5E_VFL, H5E_CANTUPDATE, FAIL, "cannot update DSM entries");
 
     if (!dsm_is_server() || !dsm_is_connected()) {
-      /*
-       * Be sure that everyone's here before releasing resources (done with
-       * collective op). Gather all the dirty flags because some processes may
-       * not have written yet.
-       */
-      if (MPI_SUCCESS != (mpi_code = MPI_Allreduce(&file->dirty, &is_someone_dirty,
-          sizeof(hbool_t), MPI_UNSIGNED_CHAR, MPI_MAX, file->intra_comm)))
-        HMPI_GOTO_ERROR(FAIL, "MPI_Allreduce failed", mpi_code);
-      if (is_someone_dirty) {
+      if (!dsm_is_driver_serial()) {
+        /*
+         * Be sure that everyone's here before releasing resources (done with
+         * collective op). Gather all the dirty flags because some processes may
+         * not have written yet.
+         */
+        if (MPI_SUCCESS != (mpi_code = MPI_Allreduce(&file->dirty, &is_someone_dirty,
+            sizeof(hbool_t), MPI_UNSIGNED_CHAR, MPI_MAX, file->intra_comm)))
+          HMPI_GOTO_ERROR(FAIL, "MPI_Allreduce failed", mpi_code);
+      }
+      if (is_someone_dirty || file->dirty) {
         if (SUCCEED != dsm_set_modified())
           HGOTO_ERROR(H5E_VFL, H5E_CANTUNLOCK, FAIL, "cannot mark DSM as modified");
       }
@@ -807,7 +827,7 @@ H5FD_dsm_close(H5FD_t *_file)
 
   /* Release resources */
   if (file->name) HDfree(file->name);
-  if (MPI_COMM_NULL != file->intra_comm) MPI_Comm_free(&file->intra_comm);
+  if (!dsm_is_driver_serial() && (MPI_COMM_NULL != file->intra_comm)) MPI_Comm_free(&file->intra_comm);
   HDmemset(file, 0, sizeof(H5FD_dsm_t));
   free(file);
 
@@ -839,7 +859,7 @@ H5FD_dsm_query(const H5FD_t UNUSED *_file, unsigned long *flags /* out */)
   FUNC_ENTER_NOAPI(H5FD_dsm_query, FAIL)
 
   /* Set the VFL feature flags that this driver supports */
-  if (flags) {
+  if (flags && !dsm_is_driver_serial()) {
     *flags = 0;
     *flags |= H5FD_FEAT_AGGREGATE_METADATA;  /* OK to aggregate metadata allocations */
     *flags |= H5FD_FEAT_AGGREGATE_SMALLDATA; /* OK to aggregate "small" raw data allocations */
@@ -926,10 +946,12 @@ H5FD_dsm_set_eoa(H5FD_t *_file, H5FD_mem_t UNUSED type, haddr_t addr)
   if (!file->read_only) {
     if ((file->intra_rank == 0) && (SUCCEED != dsm_update_entry(file->start, file->end)))
       dsm_code = FAIL;
-    /* Wait for the DSM entry to be updated */
-    if (MPI_SUCCESS != (mpi_code = MPI_Bcast(&dsm_code, sizeof(herr_t),
-        MPI_UNSIGNED_CHAR, 0, file->intra_comm)))
-      HMPI_GOTO_ERROR(FAIL, "MPI_Bcast failed", mpi_code);
+    if (!dsm_is_driver_serial()) {
+      /* Wait for the DSM entry to be updated */
+      if (MPI_SUCCESS != (mpi_code = MPI_Bcast(&dsm_code, sizeof(herr_t),
+          MPI_UNSIGNED_CHAR, 0, file->intra_comm)))
+        HMPI_GOTO_ERROR(FAIL, "MPI_Bcast failed", mpi_code);
+    }
     if (SUCCEED != dsm_code)
       HGOTO_ERROR(H5E_VFL, H5E_CANTUPDATE, FAIL, "cannot update DSM entries");
   }

@@ -170,6 +170,33 @@ if(H5FDdsm_ENABLE_COVERAGE)
 endif(H5FDdsm_ENABLE_COVERAGE)
 
 #-----------------------------------------------------------------------------
+# H5FDdsmSender_cwrite_auto_serial : Automatically create a DSM object and
+# send data using DSM in serial mode
+#-----------------------------------------------------------------------------
+add_executable(H5FDdsmSender_cwrite_auto_serial
+  H5FDdsmSender_cwrite_auto_serial.c
+)
+target_link_libraries(H5FDdsmSender_cwrite_auto_serial
+  H5FDdsmTesting
+)
+if(H5FDdsm_ENABLE_COVERAGE)
+  set_coverage_flags(H5FDdsmSender_cwrite_auto_serial)
+endif(H5FDdsm_ENABLE_COVERAGE)
+
+#-----------------------------------------------------------------------------
+# H5FDdsmReceiver_cwrite_auto_serial : Allocate DSM and dump reveived data
+#-----------------------------------------------------------------------------
+add_executable(H5FDdsmReceiver_cwrite_auto_serial
+  H5FDdsmReceiver_cwrite_auto_serial.cxx
+)
+target_link_libraries(H5FDdsmReceiver_cwrite_auto_serial
+  H5FDdsmTesting
+)
+if(H5FDdsm_ENABLE_COVERAGE)
+  set_coverage_flags(H5FDdsmReceiver_cwrite_auto_serial)
+endif(H5FDdsm_ENABLE_COVERAGE)
+
+#-----------------------------------------------------------------------------
 # H5FDdsmSender_cwrite_nohdf_bw : Bandwidth test of DSM write operations
 #-----------------------------------------------------------------------------
 #add_executable(H5FDdsmSender_cwrite_nohdf_bw
@@ -346,6 +373,7 @@ endif(H5FDdsm_BUILD_STEERING)
 if(MPIEXEC)
   set(H5FDdsm_tests
     cwrite_auto
+    cwrite_auto_serial
     cwrite_bw
     cwrite_sread_bw
     cwrite_cread
