@@ -89,11 +89,10 @@ protected:
   H5FDdsmInt32             WriteToDSM;
   H5FDdsmSteererInternals *SteererInternals;
   //
-  hid_t        Cache_fapl;
-  hid_t        Cache_fileId;
-  hid_t        Cache_interactionGroupId;
-  H5E_auto2_t  Cache_errfunc;
-  void        *Cache_errdata;
+  hid_t           Cache_interactionGroupId;
+  H5FDdsmBoolean  Cache_mode;
+  H5E_auto2_t     Cache_errfunc;
+  void           *Cache_errdata;
 };
 
 #endif // __H5FDdsmSteerer_h

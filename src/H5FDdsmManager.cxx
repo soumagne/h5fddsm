@@ -27,6 +27,7 @@
 #include "H5FDdsmCommSocket.h"
 #include "H5FDdsmCommMpi.h"
 #include "H5FDdsmCommMpiRma.h"
+#include <H5FDdsm.h>
 //
 #ifdef __CRAYXT_COMPUTE_LINUX_TARGET
   #ifdef H5FDdsm_HAVE_DMAPP
@@ -103,6 +104,8 @@ H5FDdsmManager::H5FDdsmManager()
   this->ServerHostName          = NULL;
   this->ServerPort              = 0;
   this->XMLStringSend           = NULL;
+  this->Cache_fapl              = H5I_BADID;
+  this->Cache_fileId            = H5I_BADID;
 #ifdef H5FDdsm_HAVE_STEERING
   // Initialize steerer
   this->Steerer                 = new H5FDdsmSteerer(this);
@@ -513,6 +516,47 @@ H5FDdsmInt32 H5FDdsmManager::Unpublish()
   }
   if (this->UpdatePiece == 0) H5FDdsmDebug("Port closed");
   return(H5FD_DSM_SUCCESS);
+}
+
+//----------------------------------------------------------------------------
+int H5FDdsmManager::IsOpenDSM()
+{
+  return (this->Cache_fapl != H5I_BADID);
+}
+//----------------------------------------------------------------------------
+int H5FDdsmManager::OpenDSM(unsigned int mode)
+{
+  H5FDdsmInt32 ret = H5FD_DSM_SUCCESS;
+  //
+  if (this->IsOpenDSM()) return H5FD_DSM_SUCCESS;
+  //
+  this->Cache_fapl = H5Pcreate(H5P_FILE_ACCESS);
+  H5FD_dsm_set_manager(this);
+  H5Pset_fapl_dsm(this->Cache_fapl, this->GetMpiComm(), NULL, 0);
+  this->Cache_fileId = H5Fopen("dsm", mode, this->Cache_fapl);
+  if (this->Cache_fileId < 0) {
+    if (this->Cache_fapl) H5Pclose(this->Cache_fapl);
+    this->Cache_fapl = H5I_BADID;
+    ret = H5FD_DSM_FAIL;
+  } else {
+    ret = H5FD_DSM_SUCCESS;
+  }
+  return ret;
+}
+
+//----------------------------------------------------------------------------
+int H5FDdsmManager::CloseDSM()
+{
+  H5FDdsmInt32 ret = H5FD_DSM_SUCCESS;
+  //
+  if (!this->IsOpenDSM()) return H5FD_DSM_FAIL;
+  //
+  if (H5Pclose(this->Cache_fapl)<0) ret = H5FD_DSM_FAIL;
+  if (H5Fclose(this->Cache_fileId) < 0) ret = H5FD_DSM_FAIL;
+  //
+  this->Cache_fapl   = H5I_BADID;
+  this->Cache_fileId = H5I_BADID;
+  return ret;
 }
 
 //----------------------------------------------------------------------------

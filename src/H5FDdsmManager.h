@@ -29,6 +29,7 @@
 #ifndef __H5FDdsmManager_h
 #define __H5FDdsmManager_h
 
+#include <hdf5.h>
 #include "H5FDdsmBufferService.h"
 #include "H5FDdsmComm.h"
 
@@ -171,6 +172,28 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     H5FDdsmInt32 Unpublish();
 
     // Description:
+    // Open the DSM from all nodes of the parallel application, 
+    // all nodes within a communicator must participate
+    // returns 1 on success, 0 on fail, 
+    // this function must be paired with a matching Close
+    // Use H5F_ACC_RDONLY for queries
+    // Use H5F_ACC_RDWR   for read/write
+    int OpenDSM(unsigned int mode);
+
+    // Description:
+    // Close the DSM from all nodes of the parallel application, 
+    // all nodes within a communicator must participate
+    // returns 1 on success, 0 on fail
+    // this function must be paired with a matching Open
+    int CloseDSM();
+
+    // Description:
+    // Returns 1 if OpenDSM has been called and the fapl and file handles
+    // have been cached. These are released when CloseDSM is called
+    // all nodes within a communicator must participate. Returns 0 otherwise.
+    int IsOpenDSM();
+
+    // Description:
     // (Debug) Send an XML string.
     void SendDSMXML();
 
@@ -229,10 +252,11 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     H5FDdsmInt32    UpdatePiece;
     H5FDdsmInt32    UpdateNumPieces;
     H5FDdsmUInt32   LocalBufferSizeMBytes;
-
+    //
     static MPI_Comm MpiComm;
+    //
     H5FDdsmBufferService *DsmBuffer;
-    H5FDdsmComm    *DsmComm;
+    H5FDdsmComm          *DsmComm;
     //
     H5FDdsmBoolean  IsAutoAllocated;
     H5FDdsmBoolean  IsServer;
@@ -246,13 +270,18 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     //
     H5FDdsmString   XMLStringSend;
     //
+    hid_t           Cache_fapl;
+    hid_t           Cache_fileId;
+    //
 #ifdef H5FDdsm_HAVE_STEERING
     H5FDdsmSteerer *Steerer;
 #endif
     //
     H5FDdsmManagerInternals *ManagerInternals;
-
-
+    //
+    friend class H5FDdsmSteerer;
+    friend class XdmfHDF;
+    //
 private:
     H5FDdsmManager(const H5FDdsmManager&);  // Not implemented.
     void operator=(const H5FDdsmManager&);  // Not implemented.

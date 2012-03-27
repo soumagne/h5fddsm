@@ -49,8 +49,6 @@ H5FDdsmSteerer::H5FDdsmSteerer(H5FDdsmManager *manager)
   this->CurrentCommand            = NULL;
   this->DsmManager                = manager;
   this->SteererInternals          = new H5FDdsmSteererInternals;
-  this->Cache_fapl                = H5I_BADID;
-  this->Cache_fileId              = H5I_BADID;
   this->Cache_interactionGroupId  = H5I_BADID;
   this->SetCurrentCommand("none");
 }
@@ -237,7 +235,7 @@ H5FDdsmBoolean H5FDdsmSteerer::IsObjectEnabled(H5FDdsmConstString name)
 //----------------------------------------------------------------------------
 H5FDdsmBoolean H5FDdsmSteerer::InteractionsCacheActive()
 {
-  return (this->Cache_fapl != H5I_BADID);
+  return (this->Cache_interactionGroupId != H5I_BADID);
 }
 
 //----------------------------------------------------------------------------
@@ -248,34 +246,28 @@ H5FDdsmInt32 H5FDdsmSteerer::BeginInteractionsCache(unsigned int mode)
   H5FDdsmInt32 ret = H5FD_DSM_SUCCESS;
   this->BeginHideHDF5Errors();
   //
-  this->Cache_fapl = H5Pcreate(H5P_FILE_ACCESS);
-  H5FD_dsm_set_manager(this->DsmManager);
-  H5Pset_fapl_dsm(this->Cache_fapl, this->DsmManager->GetMpiComm(), NULL, 0);
-  this->Cache_fileId = H5Fopen("dsm", mode, this->Cache_fapl);
-  if (this->Cache_fileId < 0) {
-    if (this->Cache_fapl) H5Pclose(this->Cache_fapl);
-    this->Cache_fapl = H5I_BADID;
-    ret = H5FD_DSM_FAIL;
-  } else {
+  if (mode == H5F_ACC_RDONLY) {
+    // In read only mode, we default to opening in serial
+    this->Cache_mode = this->DsmManager->IsDriverSerial;
+    this->DsmManager->SetIsDriverSerial(true);
+  }
+  if (this->DsmManager->OpenDSM(mode)) {
     if (mode == H5F_ACC_RDONLY) {
-      this->Cache_interactionGroupId = H5Gopen(this->Cache_fileId, "Interactions", H5P_DEFAULT);
+      this->Cache_interactionGroupId = H5Gopen(this->DsmManager->Cache_fileId, "Interactions", H5P_DEFAULT);
     }
     else if (mode == H5F_ACC_RDWR) {
       // if it does not already exist, create it
-      int exists = H5Lexists(this->Cache_fileId, "Interactions", H5P_DEFAULT);
+      int exists = H5Lexists(this->DsmManager->Cache_fileId, "Interactions", H5P_DEFAULT);
       if (exists != 1) {
-        this->Cache_interactionGroupId = H5Gcreate(this->Cache_fileId, "Interactions",
+        this->Cache_interactionGroupId = H5Gcreate(this->DsmManager->Cache_fileId, "Interactions",
             H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
         if (this->Cache_interactionGroupId < 0) {
-          H5Fclose(this->Cache_fileId);
-          this->Cache_fileId = H5I_BADID;
-          if (this->Cache_fapl) H5Pclose(this->Cache_fapl);
-          this->Cache_fapl = H5I_BADID;
+          this->DsmManager->CloseDSM();
           ret = H5FD_DSM_FAIL;
         }
       }
       else {
-        this->Cache_interactionGroupId = H5Gopen(this->Cache_fileId, "Interactions", H5P_DEFAULT);
+        this->Cache_interactionGroupId = H5Gopen(this->DsmManager->Cache_fileId, "Interactions", H5P_DEFAULT);
       }
     }
   }
@@ -291,14 +283,14 @@ H5FDdsmInt32 H5FDdsmSteerer::EndInteractionsCache()
   //
   if (!this->InteractionsCacheActive()) return ret;
   //
-  if (H5Pclose(this->Cache_fapl)<0) ret = H5FD_DSM_FAIL;
   if ((this->Cache_interactionGroupId != -1) && H5Gclose(this->Cache_interactionGroupId) < 0)
     ret = H5FD_DSM_FAIL;
-  if (H5Fclose(this->Cache_fileId) < 0) ret = H5FD_DSM_FAIL;
+  if (!this->DsmManager->CloseDSM()) ret = H5FD_DSM_FAIL;
   //
-  this->Cache_fapl               = H5I_BADID;
-  this->Cache_fileId             = H5I_BADID;
   this->Cache_interactionGroupId = H5I_BADID;
+  if (this->Cache_mode != this->DsmManager->IsDriverSerial) {
+    this->DsmManager->SetIsDriverSerial(this->Cache_mode);
+  }
   return (ret);
 }
 
