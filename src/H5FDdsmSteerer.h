@@ -91,6 +91,7 @@ protected:
   //
   hid_t           Cache_interactionGroupId;
   H5FDdsmBoolean  Cache_mode;
+  H5FDdsmBoolean  Cache_externally_open;
   H5E_auto2_t     Cache_errfunc;
   void           *Cache_errdata;
 };

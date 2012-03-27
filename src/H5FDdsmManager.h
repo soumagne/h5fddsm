@@ -174,24 +174,22 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     // Description:
     // Open the DSM from all nodes of the parallel application, 
     // all nodes within a communicator must participate
-    // returns 1 on success, 0 on fail, 
     // this function must be paired with a matching Close
     // Use H5F_ACC_RDONLY for queries
     // Use H5F_ACC_RDWR   for read/write
-    int OpenDSM(unsigned int mode);
+    H5FDdsmInt32 OpenDSM(H5FDdsmUInt32 mode);
 
     // Description:
     // Close the DSM from all nodes of the parallel application, 
     // all nodes within a communicator must participate
-    // returns 1 on success, 0 on fail
     // this function must be paired with a matching Open
-    int CloseDSM();
+    H5FDdsmInt32 CloseDSM();
 
     // Description:
     // Returns 1 if OpenDSM has been called and the fapl and file handles
     // have been cached. These are released when CloseDSM is called
     // all nodes within a communicator must participate. Returns 0 otherwise.
-    int IsOpenDSM();
+    H5FDdsmBoolean IsOpenDSM();
 
     // Description:
     // (Debug) Send an XML string.

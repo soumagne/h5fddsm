@@ -246,10 +246,15 @@ H5FDdsmInt32 H5FDdsmSteerer::BeginInteractionsCache(unsigned int mode)
   H5FDdsmInt32 ret = H5FD_DSM_SUCCESS;
   this->BeginHideHDF5Errors();
   //
-  if (mode == H5F_ACC_RDONLY) {
-    // In read only mode, we default to opening in serial
-    this->Cache_mode = this->DsmManager->IsDriverSerial;
-    this->DsmManager->SetIsDriverSerial(true);
+  if (!this->DsmManager->IsOpenDSM()) {
+    this->Cache_externally_open = H5FD_DSM_FALSE;
+    if (mode == H5F_ACC_RDONLY) {
+      // In read only mode, we default to opening in serial
+      this->Cache_mode = this->DsmManager->GetIsDriverSerial();
+      this->DsmManager->SetIsDriverSerial(H5FD_DSM_TRUE);
+    }
+  } else {
+    this->Cache_externally_open = H5FD_DSM_TRUE;
   }
   if (this->DsmManager->OpenDSM(mode)) {
     if (mode == H5F_ACC_RDONLY) {
@@ -285,12 +290,14 @@ H5FDdsmInt32 H5FDdsmSteerer::EndInteractionsCache()
   //
   if ((this->Cache_interactionGroupId != -1) && H5Gclose(this->Cache_interactionGroupId) < 0)
     ret = H5FD_DSM_FAIL;
-  if (!this->DsmManager->CloseDSM()) ret = H5FD_DSM_FAIL;
+  if (!this->Cache_externally_open) {
+    if (!this->DsmManager->CloseDSM()) ret = H5FD_DSM_FAIL;
+    if (this->Cache_mode != this->DsmManager->GetIsDriverSerial()) {
+      this->DsmManager->SetIsDriverSerial(this->Cache_mode);
+    }
+  }
   //
   this->Cache_interactionGroupId = H5I_BADID;
-  if (this->Cache_mode != this->DsmManager->IsDriverSerial) {
-    this->DsmManager->SetIsDriverSerial(this->Cache_mode);
-  }
   return (ret);
 }
 
