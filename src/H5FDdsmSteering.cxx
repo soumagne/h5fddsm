@@ -65,7 +65,7 @@ herr_t H5FD_dsm_steering_init(MPI_Comm intra_comm)
 
   if (dsmManager->GetIsAutoAllocated() && !dsmManager->GetIsConnected()) {
     dsmManager->ReadConfigFile();
-    if (dsmManager->Connect() == H5FD_DSM_FAIL) {
+    if (dsmManager->Connect(H5FD_DSM_TRUE) == H5FD_DSM_FAIL) {
       dsm_free();
       DSM_STEERING_GOTO_ERROR("DSM Connection failed, destroying dsmManager Singleton", FAIL);
     }
