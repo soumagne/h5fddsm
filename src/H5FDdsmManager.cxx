@@ -335,6 +335,7 @@ H5FDdsmInt32 H5FDdsmManager::Destroy()
   if (this->DsmBuffer) {
     delete this->DsmBuffer;
     this->DsmBuffer = NULL;
+    H5FD_dsm_set_manager(NULL);
     H5FDdsmDebug("DSM destroyed on " << this->UpdatePiece);
   }
   if (this->DsmComm) {

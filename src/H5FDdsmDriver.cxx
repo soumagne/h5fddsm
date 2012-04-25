@@ -98,8 +98,8 @@ dsm_set_manager(void *manager)
 
   FUNC_ENTER_NOAPI(dsm_set_manager, FAIL)
 
-  if (!manager)
-    DSM_DRIVER_GOTO_ERROR("Invalid argument", FAIL);
+//  if (!manager)
+//    DSM_DRIVER_GOTO_ERROR("Invalid argument", FAIL);
 
   dsmManager = static_cast <H5FDdsmManager*> (manager);
 
