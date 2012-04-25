@@ -40,6 +40,12 @@ option(H5FDdsm_TESTING_DYNAMIC "Run H5FDdsm dynamic tests" ON)
 set(H5FDdsm_TESTING_LENGTH "18" CACHE STRING "DSM total length (in MBytes) used for testing")
 set(H5FDdsm_TESTING_BLOCK_LENGTH "2097152" CACHE STRING "DSM block length (in Bytes) used for testing")
 
+set(H5FDdsm_dynamic_comm Socket MPI MPI_RMA)
+set(H5FDdsm_static_comm MPI MPI_RMA)
+if(H5FDdsm_USE_CRAY_DMAPP)
+  set(H5FDdsm_static_comm ${H5FDdsm_static_comm} DMAPP)
+endif(H5FDdsm_USE_CRAY_DMAPP)
+
 macro(add_h5fd_dsm_parallel_test full_test_name test_prog)
   add_test(NAME "${full_test_name}"
     COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${MPIEXEC_MAX_NUMPROCS}
@@ -48,7 +54,7 @@ macro(add_h5fd_dsm_parallel_test full_test_name test_prog)
 endmacro(add_h5fd_dsm_parallel_test)
 
 function(add_h5fd_dsm_dynamic_test full_test_name server client)
-  foreach(comm Socket MPI MPI_RMA)
+  foreach(comm ${H5FDdsm_dynamic_comm})
     add_test("${full_test_name}_${comm}_dynamic"
       ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/H5FDdsmTestDriver
       --server ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${server}
@@ -59,7 +65,7 @@ function(add_h5fd_dsm_dynamic_test full_test_name server client)
 endfunction(add_h5fd_dsm_dynamic_test)
 
 macro(add_h5fd_dsm_static_test full_test_name server client)
-  foreach(comm MPI MPI_RMA)
+  foreach(comm ${H5FDdsm_static_comm})
     add_test(NAME "${full_test_name}_${comm}_static"
       COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${MPIEXEC_MAX_NUMPROCS}
       ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${server}>
@@ -70,7 +76,7 @@ macro(add_h5fd_dsm_static_test full_test_name server client)
 endmacro(add_h5fd_dsm_static_test)
 
 function(add_h5fd_dsm_dynamic_block_test full_test_name blocktype server client)
-  foreach(comm Socket MPI MPI_RMA)
+  foreach(comm ${H5FDdsm_dynamic_comm})
     add_test("${full_test_name}_${comm}_dynamic_${blocktype}"
       ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/H5FDdsmTestDriver
       --server ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${server}
@@ -82,7 +88,7 @@ function(add_h5fd_dsm_dynamic_block_test full_test_name blocktype server client)
 endfunction(add_h5fd_dsm_dynamic_block_test)
 
 macro(add_h5fd_dsm_static_block_test full_test_name blocktype server client)
-  foreach(comm MPI MPI_RMA)
+  foreach(comm ${H5FDdsm_static_comm})
     add_test(NAME "${full_test_name}_${comm}_static_${blocktype}"
       COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${MPIEXEC_MAX_NUMPROCS}
       ${MPIEXEC_PREFLAGS} $<TARGET_FILE:${server}>
