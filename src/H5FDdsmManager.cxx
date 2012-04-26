@@ -254,6 +254,9 @@ H5FDdsmInt32 H5FDdsmManager::Create()
   case H5FD_DSM_COMM_MPI_RMA:
     this->DsmComm = new H5FDdsmCommMpiRma();
     H5FDdsmDebug("Using MPI RMA Intercomm...");
+#ifdef __CRAYXT_COMPUTE_LINUX_TARGET
+    this->BlockLength = 32768;
+#endif
     break;
   case H5FD_DSM_COMM_SOCKET:
     this->DsmComm = new H5FDdsmCommSocket();
@@ -264,6 +267,7 @@ H5FDdsmInt32 H5FDdsmManager::Create()
   case H5FD_DSM_COMM_DMAPP:
     this->DsmComm = new H5FDdsmCommDmapp();
     H5FDdsmDebug("Using DMAPP Intercomm...");
+    this->BlockLength = 2048;
     break;
 #endif
 #ifdef H5FDdsm_HAVE_UGNI
