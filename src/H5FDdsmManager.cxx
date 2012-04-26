@@ -579,6 +579,18 @@ H5FDdsmBoolean H5FDdsmManager::IsOpenDSM()
 }
 
 //----------------------------------------------------------------------------
+hid_t H5FDdsmManager::GetCachedFileHandle()
+{
+  return this->Cache_fileId;
+}
+
+//----------------------------------------------------------------------------
+hid_t H5FDdsmManager::GetCachedFileAccessHandle()
+{
+  return this->Cache_fapl;
+}
+
+//----------------------------------------------------------------------------
 void H5FDdsmManager::SendDSMXML()
 {
   this->DsmBuffer->RequestXMLExchange();

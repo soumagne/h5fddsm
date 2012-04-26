@@ -192,6 +192,12 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     H5FDdsmBoolean IsOpenDSM();
 
     // Description:
+    // If the DSM has been opened and handles cached, this returns the cached
+    // handle, otherwise H5I_BADID (-1). Use with great care.
+    hid_t GetCachedFileHandle();
+    hid_t GetCachedFileAccessHandle();
+
+    // Description:
     // (Debug) Send an XML string.
     void SendDSMXML();
 
