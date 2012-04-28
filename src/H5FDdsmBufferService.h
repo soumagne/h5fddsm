@@ -115,6 +115,10 @@ class H5FDdsm_EXPORT H5FDdsmBufferService : public H5FDdsmBuffer {
     H5FDdsmGetStringMacro(XMLDescription);
     H5FDdsmSetStringMacro(XMLDescription);
 
+    // Is the service thread created
+    H5FDdsmInt32 SignalServiceThreadCreated();
+    H5FDdsmInt32 WaitForServiceThreadCreated();
+
     void *         ServiceThread();
     void *         RemoteServiceThread();
 
@@ -144,6 +148,7 @@ class H5FDdsm_EXPORT H5FDdsmBufferService : public H5FDdsmBuffer {
   protected:
     H5FDdsmBoolean          IsServer;
 
+    // Connection event
     H5FDdsmBoolean          IsConnecting;
     H5FDdsmBoolean          IsConnected;
 #ifdef _WIN32
@@ -158,6 +163,7 @@ class H5FDdsm_EXPORT H5FDdsmBufferService : public H5FDdsmBuffer {
     pthread_cond_t          ConnectionCond;
 #endif
 
+    // Notification event
     H5FDdsmBoolean          IsNotified;
 #ifdef _WIN32
 #if (WINVER < H5FD_DSM_CONDVAR_MINVER)
@@ -186,8 +192,20 @@ class H5FDdsm_EXPORT H5FDdsmBufferService : public H5FDdsmBuffer {
 
     H5FDdsmString           XMLDescription;
 
-    H5FDdsmBoolean          ThreadDsmReady;
-    H5FDdsmBoolean          ThreadRemoteDsmReady;
+    // ServiceThreadCreated event
+    H5FDdsmBoolean          IsServiceThreadCreated;
+#ifdef _WIN32
+#if (WINVER < H5FD_DSM_CONDVAR_MINVER)
+    HANDLE                  ServiceThreadCreatedEvent;
+#else
+    CRITICAL_SECTION        ServiceThreadCreatedCritSection;
+    CONDITION_VARIABLE      ServiceThreadCreatedCond;
+#endif
+#else
+    pthread_mutex_t         ServiceThreadCreatedMutex;
+    pthread_cond_t          ServiceThreadCreatedCond;
+#endif
+
 #ifdef _WIN32
     DWORD                   ServiceThreadPtr;
     HANDLE                  ServiceThreadHandle;

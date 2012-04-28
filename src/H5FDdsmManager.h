@@ -74,6 +74,11 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     H5FDdsmGetValueMacro(IsServer, H5FDdsmBoolean);
 
     // Description:
+    // Set/Get IsStandAlone info
+    H5FDdsmSetValueMacro(IsStandAlone, H5FDdsmBoolean);
+    H5FDdsmGetValueMacro(IsStandAlone, H5FDdsmBoolean);
+
+    // Description:
     // Set/Get IsDriverSerial info
     H5FDdsmSetValueMacro(IsDriverSerial, H5FDdsmBoolean);
     H5FDdsmGetValueMacro(IsDriverSerial, H5FDdsmBoolean);
@@ -264,6 +269,7 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     //
     H5FDdsmBoolean  IsAutoAllocated;
     H5FDdsmBoolean  IsServer;
+    H5FDdsmBoolean  IsStandAlone;
     H5FDdsmBoolean  IsDriverSerial;
     H5FDdsmInt32    DsmType;
     H5FDdsmUInt64   BlockLength;

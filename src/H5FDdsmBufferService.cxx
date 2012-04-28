@@ -128,6 +128,7 @@ H5FDdsmBufferService::H5FDdsmBufferService()
 
   this->IsServer        = H5FD_DSM_TRUE;
 
+  // Connection event
   this->IsConnecting    = H5FD_DSM_FALSE;
   this->IsConnected     = H5FD_DSM_FALSE;
 #ifdef _WIN32
@@ -142,6 +143,7 @@ H5FDdsmBufferService::H5FDdsmBufferService()
   pthread_cond_init (&this->ConnectionCond, NULL);
 #endif
 
+  // Notification event
   this->IsNotified      = H5FD_DSM_FALSE;
 #ifdef _WIN32
 #if (WINVER < H5FD_DSM_CONDVAR_MINVER)
@@ -171,8 +173,20 @@ H5FDdsmBufferService::H5FDdsmBufferService()
 
   this->XMLDescription      = NULL;
 
-  this->ThreadDsmReady               = H5FD_DSM_FALSE;
-  this->ThreadRemoteDsmReady         = H5FD_DSM_FALSE;
+  // ServiceThreadCreated event
+  this->IsServiceThreadCreated = H5FD_DSM_FALSE;
+#ifdef _WIN32
+#if (WINVER < H5FD_DSM_CONDVAR_MINVER)
+  this->ServiceThreadCreatedEvent = CreateEvent(NULL, TRUE, FALSE, TEXT("ServiceThreadCreatedEvent"));
+#else
+  InitializeCriticalSection  (&this->ServiceThreadCreatedCritSection);
+  InitializeConditionVariable(&this->ServiceThreadCreatedCond);
+#endif
+#else
+  pthread_mutex_init(&this->ServiceThreadCreatedMutex, NULL);
+  pthread_cond_init (&this->ServiceThreadCreatedCond, NULL);
+#endif
+
   this->ServiceThreadPtr             = 0;
   this->RemoteServiceThreadPtr       = 0;
 #ifdef _WIN32
@@ -190,15 +204,19 @@ H5FDdsmBufferService::~H5FDdsmBufferService()
 #if (WINVER < H5FD_DSM_CONDVAR_MINVER)
   CloseHandle(this->ConnectionEvent);
   CloseHandle(this->NotificationEvent);
+  CloseHandle(this->ServiceThreadCreatedEvent);
 #else
   DeleteCriticalSection(&this->ConnectionCritSection);
   DeleteCriticalSection(&this->NotificationCritSection);
+  DeleteCriticalSection(&this->ServiceThreadCreatedCritSection);
 #endif
 #else
   pthread_mutex_destroy(&this->ConnectionMutex);
   pthread_cond_destroy (&this->ConnectionCond);
   pthread_mutex_destroy(&this->NotificationMutex);
   pthread_cond_destroy (&this->NotificationCond);
+  pthread_mutex_destroy(&this->ServiceThreadCreatedMutex);
+  pthread_cond_destroy (&this->ServiceThreadCreatedCond);
 #endif
 
 #ifdef _WIN32
@@ -346,15 +364,81 @@ H5FDdsmBufferService::WaitForNotification()
 }
 
 //----------------------------------------------------------------------------
+H5FDdsmInt32
+H5FDdsmBufferService::SignalServiceThreadCreated()
+{
+#ifdef _WIN32
+#if (WINVER >= H5FD_DSM_CONDVAR_MINVER)
+  EnterCriticalSection(&this->ServiceThreadCreatedCritSection);
+#endif
+#else
+  pthread_mutex_lock(&this->ServiceThreadCreatedMutex);
+#endif
+  this->IsServiceThreadCreated = H5FD_DSM_TRUE;
+#ifdef _WIN32
+#if (WINVER < H5FD_DSM_CONDVAR_MINVER)
+  SetEvent(this->ServiceThreadCreatedEvent);
+#else
+  WakeConditionVariable(&this->ServiceThreadCreatedCond);
+  LeaveCriticalSection (&this->ServiceThreadCreatedCritSection);
+#endif
+#else
+  pthread_cond_signal(&this->ServiceThreadCreatedCond);
+  H5FDdsmDebug("Sent ServiceThreadCreated condition signal");
+  pthread_mutex_unlock(&this->ServiceThreadCreatedMutex);
+#endif
+  return(H5FD_DSM_SUCCESS);
+}
+
+//----------------------------------------------------------------------------
+H5FDdsmInt32
+H5FDdsmBufferService::WaitForServiceThreadCreated()
+{
+  H5FDdsmInt32 ret = H5FD_DSM_FAIL;
+
+#ifdef _WIN32
+#if (WINVER >= H5FD_DSM_CONDVAR_MINVER)
+  EnterCriticalSection(&this->ServiceThreadCreatedCritSection);
+#endif
+#else
+  pthread_mutex_lock(&this->ServiceThreadCreatedMutex);
+#endif
+  while (!this->IsServiceThreadCreated) {
+    H5FDdsmDebug("Thread going into wait for ServiceThreadCreated...");
+#ifdef _WIN32
+#if (WINVER < H5FD_DSM_CONDVAR_MINVER)
+    WaitForSingleObject(this->ServiceThreadCreatedEvent, INFINITE);
+    ResetEvent(this->ServiceThreadCreatedEvent);
+#else
+    SleepConditionVariableCS(&this->ServiceThreadCreatedCond, &this->ServiceThreadCreatedCritSection, INFINITE);
+#endif
+#else
+    pthread_cond_wait(&this->ServiceThreadCreatedCond, &this->ServiceThreadCreatedMutex);
+#endif
+    H5FDdsmDebug("Thread received ServiceThreadCreated signal");
+  }
+  if (this->IsServiceThreadCreated) {
+    ret = H5FD_DSM_SUCCESS;
+  }
+#ifdef _WIN32
+#if (WINVER >= H5FD_DSM_CONDVAR_MINVER)
+  LeaveCriticalSection(&this->ServiceThreadCreatedCritSection);
+#endif
+#else
+  pthread_mutex_unlock(&this->ServiceThreadCreatedMutex);
+#endif
+  return(ret);
+}
+
+//----------------------------------------------------------------------------
 void *
 H5FDdsmBufferService::ServiceThread()
 {
   H5FDdsmInt32   ReturnOpcode;
 
   H5FDdsmDebug("Starting DSM Service on node " << this->Comm->GetId());
-  this->ThreadDsmReady = H5FD_DSM_TRUE;
+  this->SignalServiceThreadCreated();
   this->ServiceLoop(&ReturnOpcode);
-  this->ThreadDsmReady = H5FD_DSM_FALSE;
 //  H5FDdsmDebug("Ending DSM Service on node " << this->Comm->GetId() << " last op = " << ReturnOpcode);
   return((void *)this);
 }
@@ -366,9 +450,7 @@ H5FDdsmBufferService::RemoteServiceThread()
   H5FDdsmInt32   ReturnOpcode;
 
   H5FDdsmDebug("Starting DSM Remote Service on node " << this->Comm->GetId());
-  this->ThreadRemoteDsmReady = H5FD_DSM_TRUE;
   this->RemoteService(&ReturnOpcode);
-  this->ThreadRemoteDsmReady = H5FD_DSM_FALSE;
   H5FDdsmDebug("Ending DSM Remote Service on node " << this->Comm->GetId() << " last op = " << ReturnOpcode);
   return((void *)this);
 }
@@ -575,10 +657,8 @@ H5FDdsmBufferService::StartService()
   // Start another thread to handle DSM requests from other nodes
   pthread_create(&this->ServiceThreadPtr, NULL, &H5FDdsmBufferServiceThread, (void *) this);
 #endif
-  // Spinning creates deadlocks
-  // while (!this->ThreadDsmReady) {
-  // Spin until service initialized
-  // }
+  this->WaitForServiceThreadCreated();
+  this->Comm->Barrier();
   return(H5FD_DSM_SUCCESS);
 }
 
@@ -613,6 +693,7 @@ H5FDdsmBufferService::EndService()
       pthread_join(this->ServiceThreadPtr, NULL);
     }
 #endif
+    this->IsServiceThreadCreated = H5FD_DSM_FALSE;
     this->ServiceThreadPtr = 0;
   }
   return(H5FD_DSM_SUCCESS);
@@ -682,10 +763,6 @@ H5FDdsmBufferService::StartRemoteService()
   // Start another thread to handle DSM requests from other nodes
   pthread_create(&this->RemoteServiceThreadPtr, NULL, &H5FDdsmBufferRemoteServiceThread, (void *) this);
 #endif
-  // Spinning creates deadlocks
-  // while (!this->ThreadRemoteDsmReady) {
-  // Spin until service initialized
-  // }
   return(H5FD_DSM_SUCCESS);
 }
 

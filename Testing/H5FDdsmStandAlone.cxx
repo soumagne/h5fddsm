@@ -32,6 +32,7 @@ main(int argc, char * argv[])
   H5FDdsmManager *dsmManager = new H5FDdsmManager();
   dsmManager->SetMpiComm(comm);
   dsmManager->SetLocalBufferSizeMBytes(dsmSize / size);
+  dsmManager->SetIsStandAlone(H5FD_DSM_TRUE);
   dsmManager->Create();
   H5FD_dsm_set_manager(dsmManager);
 

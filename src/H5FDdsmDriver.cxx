@@ -96,17 +96,9 @@ dsm_set_manager(void *manager)
 {
   herr_t ret_value = SUCCEED;
 
-  FUNC_ENTER_NOAPI(dsm_set_manager, FAIL)
-
-//  if (!manager)
-//    DSM_DRIVER_GOTO_ERROR("Invalid argument", FAIL);
+  FUNC_ENTER_NOAPI_NOFUNC(dsm_set_manager)
 
   dsmManager = static_cast <H5FDdsmManager*> (manager);
-
-done:
-  if (err_occurred) {
-    /* Nothing */
-  }
 
   FUNC_LEAVE_NOAPI(ret_value);
 }
@@ -159,7 +151,7 @@ dsm_free()
 {
   herr_t ret_value = SUCCEED;
 
-  FUNC_ENTER_NOAPI(dsm_free, FAIL)
+  FUNC_ENTER_NOAPI_NOFUNC(dsm_free)
 
   if (dsmManager) {
     if (dsmManager->GetIsAutoAllocated()) {
@@ -169,13 +161,6 @@ dsm_free()
       delete dsmManager;
       dsmManager = NULL;
     }
-  } else {
-    DSM_DRIVER_GOTO_ERROR("DSM manager not found or already released", FAIL);
-  }
-
-done:
-  if (err_occurred) {
-    /* Nothing */
   }
 
   FUNC_LEAVE_NOAPI(ret_value);

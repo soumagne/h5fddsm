@@ -96,6 +96,7 @@ H5FDdsmManager::H5FDdsmManager()
   this->DsmComm                 = NULL;
   this->IsAutoAllocated         = H5FD_DSM_FALSE;
   this->IsServer                = H5FD_DSM_TRUE;
+  this->IsStandAlone            = H5FD_DSM_FALSE;
   this->IsDriverSerial          = H5FD_DSM_FALSE;
   this->DsmType                 = H5FD_DSM_TYPE_UNIFORM;
   this->BlockLength             = H5FD_DSM_DEFAULT_BLOCK_LENGTH;
@@ -320,8 +321,10 @@ H5FDdsmInt32 H5FDdsmManager::Create()
     //
     // setup service thread
     //
-    this->DsmBuffer->StartService();
-    H5FDdsmDebug("DSM Service Ready on " << this->UpdatePiece);
+    if (this->IsStandAlone) {
+      this->DsmBuffer->StartService();
+      H5FDdsmDebug("DSM Service Ready on " << this->UpdatePiece);
+    }
   }
   else {
     this->DsmBuffer->SetDsmType(this->GetDsmType());
@@ -518,6 +521,8 @@ H5FDdsmInt32 H5FDdsmManager::Publish()
       }
       //
     }
+    this->DsmBuffer->StartService();
+    H5FDdsmDebug("DSM Service Ready on " << this->UpdatePiece);
     this->DsmBuffer->RequestAccept();
   }
   //
