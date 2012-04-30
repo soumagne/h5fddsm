@@ -580,8 +580,8 @@ H5FDdsmBufferService::Service(H5FDdsmInt32 *ReturnOpcode)
     }
     if (this->Comm->GetUseOneSidedComm()) {
       this->Comm->SetCommChannel(H5FD_DSM_INTER_COMM);
-      this->Comm->RemoteBarrier();
       this->Comm->WindowSync();
+      this->Comm->RemoteBarrier();
     } else {
 #ifdef H5FDdsm_HAVE_STEERING
       if (!this->RemoteServiceThreadPtr) this->StartRemoteService();
