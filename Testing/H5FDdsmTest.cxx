@@ -414,15 +414,18 @@ void receiverInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *
     }
     else if (!strcmp(argv[2], "MPI")) {
       commType = H5FD_DSM_COMM_MPI;
+      dsmBlockSize = 32768;
       if (rank == 0) std::cout << "# MPI Inter-Communicator selected" << std::endl;
     }
     else if (!strcmp(argv[2], "MPI_RMA")) {
       commType = H5FD_DSM_COMM_MPI_RMA;
+      dsmBlockSize = 32768;
       if (rank == 0) std::cout << "# MPI_RMA Inter-Communicator selected" << std::endl;
     }
     else if (!strcmp(argv[2], "DMAPP")) {
       commType = H5FD_DSM_COMM_DMAPP;
       staticInterComm = H5FD_DSM_TRUE;
+      dsmBlockSize = 2048;
       if (rank == 0) std::cout << "# DMAPP Inter-Communicator selected" << std::endl;
     }
     else if (!strcmp(argv[2], "UGNI")) {
