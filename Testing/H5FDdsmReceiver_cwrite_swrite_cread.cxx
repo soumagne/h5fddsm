@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
     if (dsmManager->WaitForNotification() > 0) {
       int array[3] = { 1, 2, 3 };
       hsize_t arraySize = 3;
-      // H5Dump
+
       H5FD_dsm_dump();
       // Sync here
       MPI_Barrier(comm);

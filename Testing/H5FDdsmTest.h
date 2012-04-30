@@ -35,6 +35,13 @@
 #define TIME_ATTRIBUTE  "TimeValue"
 #define DATASETNAME     "Position"
 
+#define LOOPS          1
+#define AVERAGE       20
+#define SKIP          10
+#define NUM_DATASETS   1
+#define DIM_DATASETS   3
+#define TYPES          1 // 2 if additional disk output test required
+
 extern "C" {
 
 typedef struct ParticleBuffer {
@@ -49,31 +56,34 @@ typedef void (*FuncPointer)(ParticleBuffer*, H5FDdsmConstString, H5FDdsmUInt64,
     H5FDdsmUInt64, H5FDdsmUInt32, H5FDdsmUInt64, H5FDdsmUInt64, MPI_Comm, H5FDdsmManager*);
 
 void particleWriteHdf(ParticleBuffer *buf, H5FDdsmConstString filename,
-    H5FDdsmUInt64 N, H5FDdsmUInt64 C, H5FDdsmUInt32 numberOfDataSets,
+    H5FDdsmUInt64 ntuples, H5FDdsmUInt64 ncomponents, H5FDdsmUInt32 ndatasets,
     H5FDdsmUInt64 start, H5FDdsmUInt64 total, MPI_Comm comm, H5FDdsmManager *dsmManager);
 
 void particleWriteDsm(ParticleBuffer *buf, H5FDdsmConstString filename,
-    H5FDdsmUInt64 N, H5FDdsmUInt64 C, H5FDdsmUInt32 numberOfDataSets,
+    H5FDdsmUInt64 ntuples, H5FDdsmUInt64 ncomponents, H5FDdsmUInt32 ndatasets,
     H5FDdsmUInt64 start, H5FDdsmUInt64 total, MPI_Comm comm, H5FDdsmManager *dsmManager);
 
 const FuncPointer usingHDF = particleWriteHdf;
 const FuncPointer usingDSM = particleWriteDsm;
 
-void particleReadHdf(ParticleBuffer_t *buf, const char *filename, int rank, H5FDdsmManager *dsmManager);
+void particleReadHdf(ParticleBuffer *buf, H5FDdsmConstString filename,
+    H5FDdsmUInt64 ntuples, H5FDdsmUInt64 ncomponents, H5FDdsmUInt32 ndatasets,
+    H5FDdsmUInt64 start, H5FDdsmUInt64 total, MPI_Comm comm, H5FDdsmManager *dsmManager
+);
 
-H5FDdsmFloat64 TestParticleWrite(
-    H5FDdsmConstString filename, H5FDdsmUInt64 N, H5FDdsmUInt64 C,
-    H5FDdsmUInt32 numberOfDataSets, H5FDdsmInt32 mpiId, H5FDdsmInt32 mpiNum,
-    MPI_Comm dcomm, H5FDdsmManager *dsmManager, FuncPointer pointer);
+H5FDdsmFloat64 TestParticleWrite(H5FDdsmConstString filename, H5FDdsmUInt64 ntuples,
+    H5FDdsmUInt64 ncomponents, H5FDdsmUInt32 ndatasets, H5FDdsmInt32 rank, H5FDdsmInt32 size,
+    MPI_Comm comm, H5FDdsmManager *dsmManager, FuncPointer pointer);
 
-H5FDdsmFloat64 TestParticleRead(
-    H5FDdsmConstString filename, H5FDdsmInt32 rank, H5FDdsmUInt64 N,
+H5FDdsmFloat64 TestParticleRead(H5FDdsmConstString filename, H5FDdsmUInt64 ntuples,
+    H5FDdsmUInt64 ncomponents, H5FDdsmUInt32 ndatasets, H5FDdsmInt32 rank, H5FDdsmInt32 size,
     MPI_Comm comm, H5FDdsmManager *dsmManager);
 
 void receiverInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *comm);
 void receiverFinalize(H5FDdsmManager *dsmManager, MPI_Comm *comm);
 
-void senderInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *comm, H5FDdsmInt32 *dataSizeMB=NULL);
+void senderInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *comm,
+    H5FDdsmInt32 *dataSizeMB=NULL);
 void senderFinalize(H5FDdsmManager *dsmManager, MPI_Comm *comm);
 
 }

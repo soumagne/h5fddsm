@@ -1,5 +1,6 @@
 #include "H5FDdsmTest.h"
 #include "H5FDdsmSteering.h"
+#include "H5FDdsm.h"
 #include "H5FDdsmTools.h"
 
 #include <cstdlib>
@@ -18,18 +19,16 @@ int main(int argc, char *argv[])
       H5FDdsmInt32 intVector[] = {1, 2, 3};
       H5FDdsmFloat64 doubleScalar = 3.14;
       H5FDdsmFloat64 doubleVector[] = {1.001, 2.001, 3.001};
-      // H5Dump
-      // dsmManager->H5DumpLight();
-      // Sync here
+      // H5FD_dsm_dump();
       MPI_Barrier(comm);
       switch (step) {
       case 0:
-        // Position disabled
-        dsmManager->SetDisabledObject("Position");
+        // DATASETNAME disabled
+        dsmManager->SetDisabledObject(DATASETNAME);
         break;
       case 1:
-        // Position re-enabled
-        dsmManager->SetDisabledObject("Position");
+        // DATASETNAME re-enabled
+        dsmManager->SetDisabledObject(DATASETNAME);
         break;
       case 2:
         // Simulate control taken by an arbitrary app, modifies values and

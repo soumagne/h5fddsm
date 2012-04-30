@@ -1,4 +1,6 @@
 #include "H5FDdsmTest.h"
+#include "H5FDdsm.h"
+#include "H5FDdsmTools.h"
 
 #include <cstdlib>
 
@@ -11,8 +13,7 @@ int main(int argc, char *argv[])
 
   while (dsmManager->GetIsConnected()) {
     if (dsmManager->WaitForNotification() > 0) {
-      // H5Dump
-      // dsmManager->H5DumpLight();
+      // H5FD_dsm_dump();
       // Sync here
       MPI_Barrier(comm);
       // Clean up for next step

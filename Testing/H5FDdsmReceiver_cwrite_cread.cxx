@@ -12,7 +12,6 @@ int main(int argc, char *argv[])
 
   while (dsmManager->GetIsConnected()) {
     if (dsmManager->WaitForNotification() > 0) {
-      // H5Dump
       H5FD_dsm_dump();
       // Sync here
       MPI_Barrier(comm);

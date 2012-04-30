@@ -15,8 +15,7 @@ int main(int argc, char *argv[])
 
   while (dsmManager->GetIsConnected()) {
     if (dsmManager->WaitForNotification() > 0) {
-      // H5Dump
-      if (rank == 0) {
+      if (dsmManager->GetUpdatePiece() == 0) {
         H5FD_dsm_set_options(H5FD_DSM_MODE_SERIAL);
         H5FD_dsm_dump();
       }

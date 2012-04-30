@@ -43,25 +43,17 @@ void freeBuffer(ParticleBuffer_t *buffer) {
 }
 
 //----------------------------------------------------------------------------
-/*******************************************************************/
-/* N   = number this process will write                            */
-/* C   = number of components, {vector C=3, x,y,z}                 */
-/* start = start index for this write                              */
-/* total = total to be written by all all processes                */
-/* collective : 1=collective IO, 0=independent (default 0)         */
-/*******************************************************************/
-void particleWriteHdf(
-    ParticleBuffer *buf, H5FDdsmConstString filename,
-    H5FDdsmUInt64 N, H5FDdsmUInt64 C, H5FDdsmUInt32 numberOfDataSets,
+void particleWriteHdf(ParticleBuffer *buf, H5FDdsmConstString filename,
+    H5FDdsmUInt64 ntuples, H5FDdsmUInt64 ncomponents, H5FDdsmUInt32 ndatasets,
     H5FDdsmUInt64 start, H5FDdsmUInt64 total, MPI_Comm comm, H5FDdsmManager *dsmManager)
 {
   hid_t      file_id, group_id, dataset_id, xfer_plist_id;
   hid_t      file_space_id, mem_space_id;
   hid_t      acc_plist_id;
-  hsize_t    count[2]    = {total, C};
+  hsize_t    count[2]    = {total, ncomponents};
   hsize_t    offset[2]   = {start, 0};
-  hsize_t    localdim[2] = {N,     C};
-  int        rank = (C == 1) ? 1 : 2;
+  hsize_t    localdim[2] = {ntuples, ncomponents};
+  int        rank = (ncomponents == 1) ? 1 : 2;
   herr_t     status = 0;
 
   /* Set up file access property list with parallel I/O */
@@ -91,10 +83,10 @@ void particleWriteHdf(
   group_id = H5Gcreate(file_id, GROUPNAME, 0, H5P_DEFAULT, H5P_DEFAULT);
   H5CHECK_ERROR(group_id, "H5Gopen");
 
-  for (H5FDdsmUInt32 dataSetIndex = 0; dataSetIndex < numberOfDataSets; dataSetIndex++) {
+  for (H5FDdsmUInt32 dataSetIndex = 0; dataSetIndex < ndatasets; dataSetIndex++) {
     std::string dataSetName;
 
-    if (numberOfDataSets > 1) {
+    if (ndatasets > 1) {
       char dataSetIndexString[16];
       sprintf(dataSetIndexString, "%d", dataSetIndex);
       dataSetName = std::string(DATASETNAME) + std::string(dataSetIndexString);
@@ -147,16 +139,10 @@ void particleWriteHdf(
   H5CHECK_ERROR(status, "H5Fclose");
 }
 
-/*******************************************************************/
-/* N   = number this process will write                            */
-/* C   = number of components, {vector C=3, x,y,z}                 */
-/* start = start index for this write                              */
-/* total = total to be written by all all processes                */
-/*******************************************************************/
-void particleWriteDsm(
-    ParticleBuffer *buf, H5FDdsmConstString filename,
-    H5FDdsmUInt64 N, H5FDdsmUInt64 C, H5FDdsmUInt32 numberOfDataSets, H5FDdsmUInt64 start,
-    H5FDdsmUInt64 total, MPI_Comm comm, H5FDdsmManager *dsmManager)
+//----------------------------------------------------------------------------
+void particleWriteDsm(ParticleBuffer *buf, H5FDdsmConstString filename,
+    H5FDdsmUInt64 ntuples, H5FDdsmUInt64 ncomponents, H5FDdsmUInt32 ndatasets,
+    H5FDdsmUInt64 start, H5FDdsmUInt64 total, MPI_Comm comm, H5FDdsmManager *dsmManager)
 {
   H5FDdsmEntry entry;
   H5FDdsmBoolean dirty = 0, isSomeoneDirty = 0;
@@ -176,7 +162,8 @@ void particleWriteDsm(
   dsmBufferService->GetComm()->Barrier();
 
   // Simulate write
-  if (dsmBufferService->Put(start*sizeof(H5FDdsmFloat64), N*C*sizeof(H5FDdsmFloat64),
+  if (dsmBufferService->Put(start*sizeof(H5FDdsmFloat64),
+      ntuples * ncomponents * sizeof(H5FDdsmFloat64),
       (void *) (*buf).Ddata) != H5FD_DSM_SUCCESS) {
     std::cerr << "can't write to DSM" << std::endl;
     return;
@@ -198,12 +185,17 @@ void particleWriteDsm(
 }
 
 //----------------------------------------------------------------------------
-void particleReadHdf(
-    ParticleBuffer_t *buf, const char *filename, int rank,
-    H5FDdsmManager *dsmManager)
+void particleReadHdf(ParticleBuffer *buf, H5FDdsmConstString filename,
+    H5FDdsmUInt64 ntuples, H5FDdsmUInt64 ncomponents, H5FDdsmUInt32 ndatasets,
+    H5FDdsmUInt64 start, H5FDdsmUInt64 total, MPI_Comm comm, H5FDdsmManager *dsmManager)
 {
   hid_t      file_id, group_id, dataset_id;
+  hid_t      file_space_id, mem_space_id;
   hid_t      acc_plist_id;
+  hsize_t    count[2]    = {total, ncomponents};
+  hsize_t    offset[2]   = {start, 0};
+  hsize_t    localdim[2] = {ntuples, ncomponents};
+  int        rank = (ncomponents == 1) ? 1 : 2;
   herr_t     status = 0;
 
   // Set up file access property list with parallel I/O
@@ -222,24 +214,51 @@ void particleReadHdf(
   status = H5Pclose(acc_plist_id);
   H5CHECK_ERROR(status, "H5Pclose(acc_plist_id)");
 
+  // Create the file_space_id
+  file_space_id = H5Screate_simple(rank, count, NULL);
+  H5CHECK_ERROR(file_space_id, "H5Screate_simple");
+
   // Open the group
   group_id = H5Gopen(file_id, GROUPNAME, H5P_DEFAULT);
   H5CHECK_ERROR(group_id, "H5Gopen");
 
-  // Open the dataset
-  dataset_id = H5Dopen(group_id, DATASETNAME, H5P_DEFAULT);
-  H5CHECK_ERROR(dataset_id, "H5Dopen");
+  for (H5FDdsmUInt32 dataSetIndex = 0; dataSetIndex < ndatasets; dataSetIndex++) {
+    std::string dataSetName;
 
-  // Read the dataset
-  if (rank == 0) {
-    status = H5Dread(dataset_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL,
+    if (ndatasets > 1) {
+      char dataSetIndexString[16];
+      sprintf(dataSetIndexString, "%d", dataSetIndex);
+      dataSetName = std::string(DATASETNAME) + std::string(dataSetIndexString);
+    } else {
+      dataSetName = DATASETNAME;
+    }
+
+    // Open the dataset
+    dataset_id = H5Dopen(group_id, dataSetName.c_str(), H5P_DEFAULT);
+    H5CHECK_ERROR(dataset_id, "H5Dopen");
+
+    // create a data space for particles local to this process */
+    mem_space_id = H5Screate_simple(rank, localdim, NULL);
+    H5CHECK_ERROR(mem_space_id, "H5Screate_simple");
+
+    // select a hyperslab into the filespace for our local particles */
+    status = H5Sselect_hyperslab(file_space_id, H5S_SELECT_SET, offset,
+        NULL, localdim, NULL );
+    H5CHECK_ERROR(status, "H5Sselect_hyperslab");
+
+    // Read the dataset
+    status = H5Dread(dataset_id, H5T_NATIVE_DOUBLE, mem_space_id, file_space_id,
         H5P_DEFAULT, (*buf).Ddata);
     H5CHECK_ERROR(dataset_id, "H5Dread");
-  }
 
-  // Release resources
-  status = H5Dclose(dataset_id);
-  H5CHECK_ERROR(status, "H5Dclose");
+    // Release resources
+    status = H5Sclose(mem_space_id);
+    H5CHECK_ERROR(status, "H5Sclose");
+    status = H5Dclose(dataset_id);
+    H5CHECK_ERROR(status, "H5Dclose");
+  }
+  status = H5Sclose(file_space_id);
+  H5CHECK_ERROR(status, "H5Sclose");
   status = H5Gclose(group_id);
   H5CHECK_ERROR(status, "H5Gclose");
   status = H5Fclose(file_id);
@@ -247,96 +266,102 @@ void particleReadHdf(
 }
 
 //----------------------------------------------------------------------------
-// Test Particle write 
-// N = numtuples
-// C = numComponents
-//----------------------------------------------------------------------------
-H5FDdsmFloat64 TestParticleWrite(
-    H5FDdsmConstString filename, H5FDdsmUInt64 N, H5FDdsmUInt64 C,
-    H5FDdsmUInt32 numberOfDataSets, H5FDdsmInt32 mpiId, H5FDdsmInt32 mpiNum,
-    MPI_Comm dcomm, H5FDdsmManager *dsmManager, FuncPointer pointer)
+H5FDdsmFloat64 TestParticleWrite(H5FDdsmConstString filename, H5FDdsmUInt64 ntuples,
+    H5FDdsmUInt64 ncomponents, H5FDdsmUInt32 ndatasets, H5FDdsmInt32 rank, H5FDdsmInt32 size,
+    MPI_Comm comm, H5FDdsmManager *dsmManager, FuncPointer pointer)
 {
   ParticleBuffer WriteBuffer;
   H5FDdsmUInt64 start, total;
   H5FDdsmFloat64 *doublearray;
   static H5FDdsmInt32 step_increment = 0;
 
-  start = N*mpiId;
-  total = N*mpiNum;
+  start = ntuples * rank;
+  total = ntuples * size;
   // set all array pointers to zero
   initBuffer(&WriteBuffer);
 
   // create arrays for the test vars we selected above
-  doublearray = (H5FDdsmFloat64*)malloc(sizeof(H5FDdsmFloat64)*C*N);
-  for (H5FDdsmUInt64 i=0; i<N; i++) {
-    for (H5FDdsmUInt64 c=0; c<C; c++) {
-      doublearray[C*i+c] = static_cast<H5FDdsmFloat64>(i + start + step_increment);
+  doublearray = (H5FDdsmFloat64*) malloc(sizeof(H5FDdsmFloat64) * ncomponents * ntuples);
+  for (H5FDdsmUInt64 i = 0; i < ntuples; i++) {
+    for (H5FDdsmUInt64 j = 0; j < ncomponents; j++) {
+      doublearray[ncomponents * i + j] = static_cast<H5FDdsmFloat64>(i + start + step_increment);
     }
   }
   WriteBuffer.Ddata = doublearray;
 
   // call the write routine with our dummy buffer
-  MPI_Barrier(dcomm);
+  MPI_Barrier(comm);
   H5FDdsmFloat64 t1 = MPI_Wtime();
-  pointer(&WriteBuffer, filename, N, C, numberOfDataSets, start, total, dcomm, dsmManager);
-  MPI_Barrier(dcomm);
+  pointer(&WriteBuffer, filename, ntuples, ncomponents, ndatasets, start, total,
+      comm, dsmManager);
+  MPI_Barrier(comm);
   H5FDdsmFloat64 t2 = MPI_Wtime();
 
   // free all array pointers
   freeBuffer(&WriteBuffer);
   step_increment++;
-  return t2-t1;
+  return(t2 - t1);
 };
 
 //----------------------------------------------------------------------------
-H5FDdsmFloat64 TestParticleRead(
-    H5FDdsmConstString filename, H5FDdsmInt32 rank, H5FDdsmUInt64 N,
+H5FDdsmFloat64 TestParticleRead(H5FDdsmConstString filename, H5FDdsmUInt64 ntuples,
+    H5FDdsmUInt64 ncomponents, H5FDdsmUInt32 ndatasets, H5FDdsmInt32 rank, H5FDdsmInt32 size,
     MPI_Comm comm, H5FDdsmManager *dsmManager)
 {
-  H5FDdsmInt32 status = H5FD_DSM_SUCCESS;
   ParticleBuffer_t ReadBuffer;
-  hsize_t   i;
+  H5FDdsmUInt64 start, total;
   H5FDdsmFloat64 *doublearray;
-  H5FDdsmInt32 fail_count = 0;
   static H5FDdsmInt32 step_increment = 0;
+  H5FDdsmInt32 fail_count = 0;
+  // H5FDdsmInt32 status = H5FD_DSM_SUCCESS;
 
+  start = ntuples * rank;
+  total = ntuples * size;
   // set all array pointers to zero
   initBuffer(&ReadBuffer);
 
   // create arrays for the test vars we selected above
-  doublearray = (H5FDdsmFloat64*) malloc(sizeof(H5FDdsmFloat64) * N);
-  for (i = 0; i < N; i++) {
-    doublearray[i] = 0;
+  doublearray = (H5FDdsmFloat64*) malloc(sizeof(H5FDdsmFloat64) * ncomponents * ntuples);
+  for (H5FDdsmUInt64 i = 0; i < ntuples; i++) {
+    for (H5FDdsmUInt64 j = 0; j < ncomponents; j++) {
+      doublearray[ncomponents * i + j] = 0;
+    }
   }
   ReadBuffer.Ddata = doublearray;
 
   // call the write routine with our dummy buffer
   MPI_Barrier(comm);
-  particleReadHdf(&ReadBuffer, filename, rank, dsmManager);
+  H5FDdsmFloat64 t1 = MPI_Wtime();
+  particleReadHdf(&ReadBuffer, filename, ntuples, ncomponents, ndatasets, start,
+      total, comm, dsmManager);
+  MPI_Barrier(comm);
+  H5FDdsmFloat64 t2 = MPI_Wtime();
 
-  if (rank == 0 && step_increment < 5) {
+  if (step_increment < 5) {
     /* Check the results the first times. */
-    for (i=0; i<N; i++) {
-      if((doublearray[i] != (i + step_increment)) && (fail_count < 10)) {
-        fprintf(stderr," doublearray[%llu] is %llu, should be %llu\n", i,
-            (hsize_t) doublearray[i], (i + step_increment));
-        fail_count++;
+    for (H5FDdsmUInt64 i = 0; i < ntuples; i++) {
+      for (H5FDdsmUInt64 j = 0; j < ncomponents; j++) {
+        if ((doublearray[ncomponents * i + j] != static_cast<H5FDdsmFloat64>
+        (i + start + step_increment)) && (fail_count < 10)) {
+          fprintf(stderr," doublearray[%lu] is %lf, should be %lf\n", ncomponents * i + j,
+              doublearray[ncomponents * i + j], static_cast<H5FDdsmFloat64>(i + start + step_increment));
+          fail_count++;
+        }
       }
     }
     if (fail_count == 0) {
       if ((rank == 0) && (step_increment == 0)) printf("# DSM read test PASSED for step 0\n");
-    }
-    else {
+    } else {
       fprintf(stderr,"DSM read test FAILED for PE %d, %d or more wrong values at step %d\n",
           rank, fail_count, step_increment);
     }
   }
-  MPI_Bcast(&fail_count, 1, MPI_INT, 0, comm);
-  if (fail_count > 0) status = H5FD_DSM_FAIL;
+  // MPI_Allreduce(&fail_count, MPI_IN_PLACE, 1, MPI_INT, MPI_SUM, comm);
+  // if (fail_count > 0) status = H5FD_DSM_FAIL;
   // free all array pointers
   freeBuffer(&ReadBuffer);
   step_increment++;
-  return(status);
+  return(t2 - t1);
 };
 
 //----------------------------------------------------------------------------
@@ -500,7 +525,8 @@ void receiverFinalize(H5FDdsmManager *dsmManager, MPI_Comm *comm)
 }
 
 //----------------------------------------------------------------------------
-void senderInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *comm, H5FDdsmInt32 *dataSizeMB)
+void senderInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *comm,
+    H5FDdsmInt32 *dataSizeMB)
 {
   H5FDdsmInt32   nlocalprocs, rank;
   H5FDdsmBoolean staticInterComm = H5FD_DSM_FALSE;
@@ -576,11 +602,11 @@ void senderInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *co
   remoteMB = dsmManager->GetDsmBuffer()->GetTotalLength() / (1024.0 * 1024.0);
   numServers = dsmManager->GetDsmBuffer()->GetEndServerId() - dsmManager->GetDsmBuffer()->GetStartServerId() + 1;
   if (rank == 0) {
-    std::cout << "# DSM server memory size is: " << remoteMB << " MBytes"
-        << " (" << dsmManager->GetDsmBuffer()->GetTotalLength() << " Bytes)" << std::endl;
-    std::cout << "# DSM server process count: " <<  numServers << std::endl;
+    printf("# DSM server memory size is: %lf MBytes (%lu Bytes)\n", remoteMB,
+        dsmManager->GetDsmBuffer()->GetTotalLength());
+    printf("# DSM server process count: %u\n", numServers);
     if (dsmManager->GetDsmBuffer()->GetDsmType() == H5FD_DSM_TYPE_BLOCK_CYCLIC) {
-      std::cout << "# Block size: " <<  dsmManager->GetDsmBuffer()->GetBlockLength() << " Bytes" << std::endl;
+      printf("# Block size: %lu Bytes\n", dsmManager->GetDsmBuffer()->GetBlockLength());
     }
   }
 }

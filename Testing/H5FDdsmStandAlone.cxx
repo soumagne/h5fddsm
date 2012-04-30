@@ -45,16 +45,18 @@ main(int argc, char * argv[])
     std::cout << "# DSM server process count: " <<  numServers << std::endl;
   }
 
-  numParticles = (H5FDdsmUInt64) ((1024 * 1024 * dataMB - H5FD_DSM_ALIGNMENT) /
-      (sizeof(H5FDdsmFloat64) * dsmManager->GetUpdateNumPieces()));
+  numParticles = (H5FDdsmUInt64) ((1024 * 1024 * dataMB - H5FD_DSM_ALIGNMENT * NUM_DATASETS) /
+      (sizeof(H5FDdsmFloat64) * DIM_DATASETS * NUM_DATASETS * dsmManager->GetUpdateNumPieces()));
 
   // Write Data
-  TestParticleWrite(fullname, numParticles, 1, 1, dsmManager->GetUpdatePiece(),
-      dsmManager->GetUpdateNumPieces(), comm, dsmManager, usingHDF);
+  TestParticleWrite(fullname, numParticles, DIM_DATASETS, NUM_DATASETS,
+      dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(), comm,
+      dsmManager, usingHDF);
 
   // Read and Check Data
-  TestParticleRead(fullname, dsmManager->GetUpdatePiece(),
-      dsmManager->GetUpdateNumPieces() * numParticles, comm, dsmManager);
+  TestParticleRead(fullname, numParticles, DIM_DATASETS, NUM_DATASETS,
+      dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(), comm,
+      dsmManager);
 
   delete dsmManager;
 

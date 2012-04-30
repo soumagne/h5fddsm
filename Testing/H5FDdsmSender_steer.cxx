@@ -6,8 +6,6 @@
 #include <cstdlib>
 #include <cassert>
 
-#define NUM_DATASETS  1
-#define DIM_DATASETS  3
 //----------------------------------------------------------------------------
 int main(int argc, char **argv)
 {
@@ -31,8 +29,8 @@ int main(int argc, char **argv)
       (sizeof(H5FDdsmFloat64) * DIM_DATASETS * dsmManager->GetUpdateNumPieces()));
 
   // Step 0: array is enabled and written
-  assert(H5FD_dsm_steering_is_enabled("Position"));
-  if (H5FD_dsm_steering_is_enabled("Position")) {
+  assert(H5FD_dsm_steering_is_enabled(DATASETNAME));
+  if (H5FD_dsm_steering_is_enabled(DATASETNAME)) {
     TestParticleWrite(fullname, numParticles, DIM_DATASETS, NUM_DATASETS, dsmManager->GetUpdatePiece(),
         dsmManager->GetUpdateNumPieces(), comm, dsmManager, usingHDF);
   }
@@ -41,8 +39,8 @@ int main(int argc, char **argv)
   H5FD_dsm_steering_update();
 
   // Step 1: array is set disabled
-  assert(!H5FD_dsm_steering_is_enabled("Position"));
-  if (H5FD_dsm_steering_is_enabled("Position")) {
+  assert(!H5FD_dsm_steering_is_enabled(DATASETNAME));
+  if (H5FD_dsm_steering_is_enabled(DATASETNAME)) {
     TestParticleWrite(fullname, numParticles, DIM_DATASETS, NUM_DATASETS, dsmManager->GetUpdatePiece(),
         dsmManager->GetUpdateNumPieces(), comm, dsmManager, usingHDF);
   }
