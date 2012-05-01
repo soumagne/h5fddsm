@@ -30,6 +30,7 @@
 #include <hdf5.h>
 
 #include "H5FDdsmObject.h"
+#include <stack>
 
 class H5FDdsmManager;
 
@@ -60,7 +61,7 @@ public:
 
   // Use H5F_ACC_RDONLY    for queries
   // Use H5F_ACC_RDWR    for read/write
-  H5FDdsmInt32   BeginInteractionsCache(unsigned int mode);
+  H5FDdsmInt32   BeginInteractionsCache(H5FDdsmUInt32 mode);
   H5FDdsmInt32   EndInteractionsCache();
   H5FDdsmBoolean InteractionsCacheActive();
   void           BeginHideHDF5Errors();
@@ -89,11 +90,11 @@ protected:
   H5FDdsmInt32             WriteToDSM;
   H5FDdsmSteererInternals *SteererInternals;
   //
-  hid_t           Cache_interactionGroupId;
-  H5FDdsmBoolean  Cache_mode;
-  H5FDdsmBoolean  Cache_externally_open;
-  H5E_auto2_t     Cache_errfunc;
-  void           *Cache_errdata;
+  std::stack<H5FDdsmUInt32> Cache_Stack;    
+  hid_t                     Cache_interactionGroupId;
+  H5FDdsmBoolean            Cache_mode;
+  H5E_auto2_t               Cache_errfunc;
+  void                     *Cache_errdata;
 };
 
 #endif // __H5FDdsmSteerer_h

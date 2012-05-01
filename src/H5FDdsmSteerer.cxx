@@ -261,45 +261,51 @@ H5FDdsmBoolean H5FDdsmSteerer::InteractionsCacheActive()
 }
 
 //----------------------------------------------------------------------------
-H5FDdsmInt32 H5FDdsmSteerer::BeginInteractionsCache(unsigned int mode)
+H5FDdsmInt32 H5FDdsmSteerer::BeginInteractionsCache(H5FDdsmUInt32 mode)
 {
-  if (this->InteractionsCacheActive()) return H5FD_DSM_SUCCESS;
-  //
   H5FDdsmInt32 ret = H5FD_DSM_SUCCESS;
-  this->BeginHideHDF5Errors();
-  //
-  if (!this->DsmManager->IsOpenDSM()) {
-    this->Cache_externally_open = H5FD_DSM_FALSE;
-    if (mode == H5F_ACC_RDONLY) {
-      // In read only mode, we default to opening in serial
-      this->Cache_mode = this->DsmManager->GetIsDriverSerial();
-//      this->DsmManager->SetIsDriverSerial(H5FD_DSM_TRUE);
-    }
-  } else {
-    this->Cache_externally_open = H5FD_DSM_TRUE;
+  // DSM handles caching of file and fapl handles for us.
+  // Don't change the serial/parallel mode 
+  if (this->DsmManager->IsOpenDSM()) {
+    this->DsmManager->OpenDSM(mode, this->DsmManager->GetIsDriverSerial());
   }
-  if (this->DsmManager->OpenDSM(mode)) {
+  else {
+    this->DsmManager->OpenDSM(mode);
+  }
+  //
+  if (!this->InteractionsCacheActive()) {
     if (mode == H5F_ACC_RDONLY) {
+      this->BeginHideHDF5Errors();
       this->Cache_interactionGroupId = H5Gopen(this->DsmManager->Cache_fileId, "Interactions", H5P_DEFAULT);
+      this->EndHideHDF5Errors();
     }
     else if (mode == H5F_ACC_RDWR) {
       // if it does not already exist, create it
+      this->BeginHideHDF5Errors();
       int exists = H5Lexists(this->DsmManager->Cache_fileId, "Interactions", H5P_DEFAULT);
-      if (exists != 1) {
-        this->Cache_interactionGroupId = H5Gcreate(this->DsmManager->Cache_fileId, "Interactions",
-            H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
-        if (this->Cache_interactionGroupId < 0) {
-          this->DsmManager->CloseDSM();
-          ret = H5FD_DSM_FAIL;
-        }
+      this->EndHideHDF5Errors();
+      if (exists<=0) {
+        this->Cache_interactionGroupId = H5Gcreate(this->DsmManager->Cache_fileId, "Interactions", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
       }
       else {
         this->Cache_interactionGroupId = H5Gopen(this->DsmManager->Cache_fileId, "Interactions", H5P_DEFAULT);
       }
     }
   }
-  this->EndHideHDF5Errors();
-  //
+  if (this->Cache_interactionGroupId < 0) {
+    ret = H5FD_DSM_FAIL;
+  }
+  else {
+    if (!this->Cache_Stack.empty() && this->Cache_Stack.top()!=mode) {
+//      std::cout << "info : requested Interactions cache mode open " << this->DsmManager->OpenModeString(mode) 
+//        << " but already open in mode " << this->DsmManager->OpenModeString(this->Cache_Stack.top()) << std::endl;
+      if ((mode==H5F_ACC_RDWR) && (this->Cache_Stack.top()==H5F_ACC_RDWR)) {
+        H5FDdsmError("Bad DSM open : switching from readonly to read/write mode not allowed");
+        return H5FD_DSM_FAIL;
+      }
+    }
+    this->Cache_Stack.push(mode);
+  }
   return(ret);
 }
 
@@ -308,18 +314,17 @@ H5FDdsmInt32 H5FDdsmSteerer::EndInteractionsCache()
 {
   H5FDdsmInt32 ret = H5FD_DSM_SUCCESS;
   //
-  if (!this->InteractionsCacheActive()) return ret;
-  //
-  if ((this->Cache_interactionGroupId != -1) && H5Gclose(this->Cache_interactionGroupId) < 0)
-    ret = H5FD_DSM_FAIL;
-  if (!this->Cache_externally_open) {
-    if (!this->DsmManager->CloseDSM()) ret = H5FD_DSM_FAIL;
-    if (this->Cache_mode != this->DsmManager->GetIsDriverSerial()) {
-//      this->DsmManager->SetIsDriverSerial(this->Cache_mode);
+  if (this->InteractionsCacheActive()) {        
+    this->Cache_Stack.pop();
+    if (this->Cache_Stack.empty()) {
+      if (H5Gclose(this->Cache_interactionGroupId)<0) {
+        ret = H5FD_DSM_FAIL;
+      }
+      this->Cache_interactionGroupId = H5I_BADID;
     }
   }
+  this->DsmManager->CloseDSM();
   //
-  this->Cache_interactionGroupId = H5I_BADID;
   return (ret);
 }
 
@@ -343,10 +348,8 @@ void H5FDdsmSteerer::EndHideHDF5Errors()
 H5FDdsmInt32 H5FDdsmSteerer::IsObjectPresent(H5FDdsmConstString name, H5FDdsmBoolean &present)
 {
   H5FDdsmInt32 ret = H5FD_DSM_SUCCESS;
-  H5FDdsmBoolean usecache = this->InteractionsCacheActive();
-  if (!usecache) {
-    if (this->BeginInteractionsCache(H5F_ACC_RDONLY) != H5FD_DSM_SUCCESS) return H5FD_DSM_FAIL;
-  }
+  if (this->BeginInteractionsCache(H5F_ACC_RDONLY) != H5FD_DSM_SUCCESS) return H5FD_DSM_FAIL;
+
   this->BeginHideHDF5Errors();
 
   // Try attribute first
@@ -366,11 +369,9 @@ H5FDdsmInt32 H5FDdsmSteerer::IsObjectPresent(H5FDdsmConstString name, H5FDdsmBoo
     present = H5FD_DSM_TRUE;
     H5Aclose(attributeId);
   }
-  // Clean up
-  if (!usecache) {
-    if (this->EndInteractionsCache() != H5FD_DSM_SUCCESS) ret = H5FD_DSM_FAIL;
-  }
   this->EndHideHDF5Errors();
+  // Clean up
+  if (this->EndInteractionsCache() != H5FD_DSM_SUCCESS) ret = H5FD_DSM_FAIL;
   return(ret);
 }
 
@@ -443,10 +444,8 @@ H5FDdsmInt32 H5FDdsmSteerer::SetScalar(H5FDdsmConstString name, H5FDdsmInt32 mem
 H5FDdsmInt32 H5FDdsmSteerer::GetVector(H5FDdsmConstString name, H5FDdsmInt32 memType, hsize_t numberOfElements, void *data)
 {
   H5FDdsmInt32 ret = H5FD_DSM_SUCCESS;
-  H5FDdsmBoolean usecache = this->InteractionsCacheActive();
-  if (!usecache) {
-    if (this->BeginInteractionsCache(H5F_ACC_RDONLY) != H5FD_DSM_SUCCESS) return H5FD_DSM_FAIL;
-  }
+  if (this->BeginInteractionsCache(H5F_ACC_RDONLY) != H5FD_DSM_SUCCESS) return H5FD_DSM_FAIL;
+
   this->BeginHideHDF5Errors();
 
   hsize_t arraySize = numberOfElements;
@@ -462,11 +461,9 @@ H5FDdsmInt32 H5FDdsmSteerer::GetVector(H5FDdsmConstString name, H5FDdsmInt32 mem
     H5Dclose(datasetId);
   }
   H5Sclose(memspaceId);
-  // Clean up
-  if (!usecache) {
-    if (this->EndInteractionsCache() != H5FD_DSM_SUCCESS) ret = H5FD_DSM_FAIL;
-  }
   this->EndHideHDF5Errors();
+  // Clean up
+  if (this->EndInteractionsCache() != H5FD_DSM_SUCCESS) ret = H5FD_DSM_FAIL;
   return(ret);
 }
 
@@ -474,10 +471,8 @@ H5FDdsmInt32 H5FDdsmSteerer::GetVector(H5FDdsmConstString name, H5FDdsmInt32 mem
 H5FDdsmInt32 H5FDdsmSteerer::SetVector(H5FDdsmConstString name, H5FDdsmInt32 memType, hsize_t numberOfElements, void *data)
 {
   H5FDdsmInt32 ret = H5FD_DSM_SUCCESS;
-  H5FDdsmBoolean usecache = this->InteractionsCacheActive();
-  if (!usecache) {
-    if (this->BeginInteractionsCache(H5F_ACC_RDWR) != H5FD_DSM_SUCCESS) return H5FD_DSM_FAIL;
-  }
+  if (this->BeginInteractionsCache(H5F_ACC_RDWR) != H5FD_DSM_SUCCESS) return H5FD_DSM_FAIL;
+
   // we don't hide errors when writing, we need to know if something has failed
 
   hsize_t arraySize = numberOfElements;
@@ -495,9 +490,7 @@ H5FDdsmInt32 H5FDdsmSteerer::SetVector(H5FDdsmConstString name, H5FDdsmInt32 mem
   }
   H5Sclose(memspaceId);
   // Clean up
-  if (!usecache) {
-    if (this->EndInteractionsCache() != H5FD_DSM_SUCCESS) ret = H5FD_DSM_FAIL;
-  }
+  if (this->EndInteractionsCache() != H5FD_DSM_SUCCESS) ret = H5FD_DSM_FAIL;
   return(ret);
 }
 

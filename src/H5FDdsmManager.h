@@ -32,6 +32,7 @@
 #include <hdf5.h>
 #include "H5FDdsmBufferService.h"
 #include "H5FDdsmComm.h"
+#include <stack>
 
 #ifdef H5FDdsm_HAVE_STEERING
 class H5FDdsmSteerer;
@@ -169,7 +170,8 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     // this function must be paired with a matching Close
     // Use H5F_ACC_RDONLY for queries
     // Use H5F_ACC_RDWR   for read/write
-    H5FDdsmInt32 OpenDSM(H5FDdsmUInt32 mode);
+    H5FDdsmInt32 OpenDSM(H5FDdsmUInt32 mode, bool serial=false);
+    H5FDdsmInt32 OpenDSMSerial(H5FDdsmUInt32 mode);
 
     // Description:
     // Close the DSM from all nodes of the parallel application, 
@@ -229,6 +231,11 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     void SetDisabledObject(H5FDdsmConstString objectName);
 #endif
 
+    // Description:
+    // A convenience function used only for debugging, returns a string
+    // from an open mode flag.
+    static const char *OpenModeString(H5FDdsmUInt32 mode);
+
   protected:
     //
     // Internal Variables
@@ -253,8 +260,9 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     H5FDdsmString   ServerHostName;
     H5FDdsmInt32    ServerPort;
     //
-    hid_t           Cache_fapl;
-    hid_t           Cache_fileId;
+    std::stack<H5FDdsmUInt32> Cache_Stack;      
+    hid_t                     Cache_fapl;
+    hid_t                     Cache_fileId;
     //
 #ifdef H5FDdsm_HAVE_STEERING
     H5FDdsmSteerer *Steerer;

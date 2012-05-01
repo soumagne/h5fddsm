@@ -53,6 +53,7 @@
 #include <unistd.h>
 #endif
 //
+#include <exception>
 #include <vector>
 #include <string>
 
@@ -522,13 +523,44 @@ H5FDdsmInt32 H5FDdsmManager::Unpublish()
 }
 
 //----------------------------------------------------------------------------
-H5FDdsmInt32 H5FDdsmManager::OpenDSM(H5FDdsmUInt32 mode)
+const char *H5FDdsmManager::OpenModeString(H5FDdsmUInt32 mode)
+{
+  // #define H5F_ACC_RDONLY	(H5CHECK 0x0000u)	
+  // #define H5F_ACC_RDWR	(H5CHECK 0x0001u)	
+  if (mode==H5F_ACC_RDONLY) return "Read-Only";
+  if (mode==H5F_ACC_RDWR) return "Read-Write";
+  return "Unknown";
+}
+//----------------------------------------------------------------------------
+H5FDdsmInt32 H5FDdsmManager::OpenDSMSerial(H5FDdsmUInt32 mode)
+{
+  return this->OpenDSM(mode, true);
+}
+//----------------------------------------------------------------------------
+H5FDdsmInt32 H5FDdsmManager::OpenDSM(H5FDdsmUInt32 mode, bool serial)
 {
   H5FDdsmInt32 ret = H5FD_DSM_SUCCESS;
   //
+  if (this->IsOpenDSM() && this->GetIsDriverSerial()!=serial) {
+    if (serial) {
+      H5FDdsmError("DSM cannot be switched from parallel to serial whilst open");
+    }
+    else {
+      H5FDdsmError("DSM cannot be switched from serial to parallel whilst open");
+    }
+    return H5FD_DSM_FAIL;
+  }
   if (!this->IsOpenDSM()) {
     this->Cache_fapl = H5Pcreate(H5P_FILE_ACCESS);
     H5FD_dsm_set_manager(this);
+    if (serial) {
+//      std::cout << "info : DSM opened in serial" << std::endl;
+      this->SetIsDriverSerial(H5FD_DSM_TRUE);
+    }
+    else {
+//      std::cout << "info : DSM opened in parallel" << std::endl;
+      this->SetIsDriverSerial(H5FD_DSM_FALSE);
+    }
     H5Pset_fapl_dsm(this->Cache_fapl, this->GetMpiComm(), NULL, 0);
     this->Cache_fileId = H5Fopen("dsm", mode, this->Cache_fapl);
     if (this->Cache_fileId < 0) {
@@ -539,6 +571,16 @@ H5FDdsmInt32 H5FDdsmManager::OpenDSM(H5FDdsmUInt32 mode)
       ret = H5FD_DSM_SUCCESS;
     }
   }
+  if (!this->Cache_Stack.empty() && this->Cache_Stack.top()!=mode) {
+//    std::cout << "info : requested File cache mode open " << this->OpenModeString(mode) 
+//      << " but already open in mode " << this->OpenModeString(this->Cache_Stack.top()) << std::endl;
+    if ((mode==H5F_ACC_RDWR) && (this->Cache_Stack.top()==H5F_ACC_RDWR)) {
+      H5FDdsmError("Bad DSM open : switching from readonly to read/write mode not allowed");
+      return H5FD_DSM_FAIL;
+    }
+  }
+  this->Cache_Stack.push(mode);
+  //
   return(ret);
 }
 
@@ -548,18 +590,23 @@ H5FDdsmInt32 H5FDdsmManager::CloseDSM()
   H5FDdsmInt32 ret = H5FD_DSM_SUCCESS;
   //
   if (this->IsOpenDSM()) {
-    if (H5Pclose(this->Cache_fapl) < 0) ret = H5FD_DSM_FAIL;
-    if (H5Fclose(this->Cache_fileId) < 0) ret = H5FD_DSM_FAIL;
+    this->Cache_Stack.pop();
+    if (this->Cache_Stack.empty()) {
+      if (H5Pclose(this->Cache_fapl) < 0) ret = H5FD_DSM_FAIL;
+      if (H5Fclose(this->Cache_fileId) < 0) ret = H5FD_DSM_FAIL;
+      this->Cache_fapl   = H5I_BADID;
+      this->Cache_fileId = H5I_BADID;
+    }
   }
-  //
-  this->Cache_fapl   = H5I_BADID;
-  this->Cache_fileId = H5I_BADID;
+  else {
+    H5FDdsmError("Mismatched CloseDSM on " << this->UpdatePiece);
+  }   
   return(ret);
 }
 
 //----------------------------------------------------------------------------
 H5FDdsmBoolean H5FDdsmManager::IsOpenDSM()
-{
+{  
   return (this->Cache_fapl != H5I_BADID);
 }
 
