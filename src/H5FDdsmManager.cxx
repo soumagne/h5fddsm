@@ -594,6 +594,7 @@ H5FDdsmInt32 H5FDdsmManager::CloseDSM()
     if (this->Cache_Stack.empty()) {
       if (H5Pclose(this->Cache_fapl) < 0) ret = H5FD_DSM_FAIL;
       if (H5Fclose(this->Cache_fileId) < 0) ret = H5FD_DSM_FAIL;
+      this->SetIsDriverSerial(H5FD_DSM_FALSE);
       this->Cache_fapl   = H5I_BADID;
       this->Cache_fileId = H5I_BADID;
     }
