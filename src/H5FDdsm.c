@@ -781,7 +781,6 @@ H5FD_dsm_close(H5FD_t *_file)
 {
   H5FD_dsm_t *file = (H5FD_dsm_t*) _file;
   herr_t ret_value = SUCCEED; /* Return value */
-  hbool_t is_someone_dirty = FALSE;
   int mpi_code;
   herr_t dsm_code = SUCCEED;
 
@@ -811,11 +810,11 @@ H5FD_dsm_close(H5FD_t *_file)
          * collective op). Gather all the dirty flags because some processes may
          * not have written yet.
          */
-        if (MPI_SUCCESS != (mpi_code = MPI_Allreduce(&file->dirty, &is_someone_dirty,
+        if (MPI_SUCCESS != (mpi_code = MPI_Allreduce(MPI_IN_PLACE, &file->dirty,
             sizeof(hbool_t), MPI_UNSIGNED_CHAR, MPI_MAX, file->intra_comm)))
           HMPI_GOTO_ERROR(FAIL, "MPI_Allreduce failed", mpi_code);
       }
-      if (is_someone_dirty || file->dirty) {
+      if (file->dirty) {
         if (SUCCEED != dsm_set_modified())
           HGOTO_ERROR(H5E_VFL, H5E_CANTUNLOCK, FAIL, "cannot mark DSM as modified");
       }

@@ -931,15 +931,7 @@ H5FDdsmBufferService::RequestLockRelease()
     pthread_mutex_unlock(&this->Lock);
 #endif
     if (this->IsConnected) {
-      if (this->Comm->GetUseOneSidedComm()) {
-        this->RequestAccept();
-      } else {
-#ifdef H5FDdsm_HAVE_STEERING
-        if (!this->RemoteServiceThreadPtr) this->StartRemoteService();
-#else
-        this->RequestAccept();
-#endif
-      }
+      this->RequestAccept();
     }
   } else {
     if (this->Comm->GetUseOneSidedComm()) {
