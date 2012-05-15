@@ -30,11 +30,18 @@
 #include "H5Eprivate.h" // Error handling
 #include "h5dump.h"
 
-#define DSM_TOOLS_GOTO_ERROR(x, ret_val)                                \
-{                                                                          \
-   fprintf(stderr, "Error at %s %s:%d %s\n", __FILE__, FUNC, __LINE__, x); \
-   err_occurred = TRUE;                                                    \
-   if (err_occurred) { HGOTO_DONE(ret_val) }                               \
+#define DSM_TOOLS_ERROR(x) \
+{                          \
+   H5FDdsmError(x);        \
+   return(FAIL);           \
+}
+
+#define DSM_TOOLS_INIT(manager)                                \
+{                                                              \
+  if (!dsm_get_manager())                                      \
+    DSM_TOOLS_ERROR("DSM buffer not initialized")              \
+                                                               \
+  manager = static_cast<H5FDdsmManager *> (dsm_get_manager()); \
 }
 
 //----------------------------------------------------------------------------
@@ -48,26 +55,15 @@
 //----------------------------------------------------------------------------
 herr_t H5FD_dsm_dump()
 {
-  herr_t ret_value = SUCCEED;
   const char *argv[5]={"./h5dump", "-f", "dsm", "-H", "dsm.h5"};
   std::ostringstream stream;
   H5FDdsmManager *dsmManager;
 
-  FUNC_ENTER_NOAPI(H5FD_dsm_dump, FAIL)
-
-  if (!dsm_get_manager())
-    DSM_TOOLS_GOTO_ERROR("DSM buffer not initialized", FAIL);
-
-  dsmManager = static_cast<H5FDdsmManager *> (dsm_get_manager());
+  DSM_TOOLS_INIT(dsmManager)
 
   H5dump(5, (const char**) argv, stream);
 
   if (dsmManager->GetUpdatePiece() == 0) std::cout << stream.str() << std::endl;
 
-done:
-  if (err_occurred) {
-    /* Nothing */
-  }
-
-  FUNC_LEAVE_NOAPI(ret_value);
+  return(SUCCEED);
 }

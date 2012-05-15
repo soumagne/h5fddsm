@@ -119,7 +119,7 @@ extern "C" {
    * Shut down the driver.
    * Users should never need to call it manually.
    */
-#ifdef HDF_NEW_VFD
+#if H5_VERSION_GE(1,9,0)
   H5FDdsm_EXPORT herr_t H5FD_dsm_term(void);
 #else
   H5FDdsm_EXPORT void   H5FD_dsm_term(void);

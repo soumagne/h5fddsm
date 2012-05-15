@@ -261,14 +261,6 @@ if(NOT HDF5_ENABLE_PARALLEL)
 endif(NOT HDF5_ENABLE_PARALLEL)
   
 include_directories(${HDF5_INCLUDE_DIR})
-if(HDF5_VERSION_MAJOR)
-#  MESSAGE ("HDF5 version number reports as ${HDF5_VERSION_MAJOR}.${HDF5_VERSION_MINOR}")
-  if(HDF5_VERSION_MAJOR GREATER 1.8)
-    set(HDF5_GREATER_1_8 TRUE)
-    add_definitions(-DHDF_NEW_VFD)
-  endif(HDF5_VERSION_MAJOR GREATER 1.8)
-endif(HDF5_VERSION_MAJOR)
-
 
 #-----------------------------------------------------------------------------
 # Find MPI
