@@ -36,7 +36,7 @@ extern "C" {
   H5FDdsm_EXPORT void   *dsm_get_manager();
   H5FDdsm_EXPORT herr_t  dsm_get_properties(MPI_Comm *intra_comm,
       void **buf_ptr_ptr, size_t *buf_len_ptr);
-  H5FDdsm_EXPORT herr_t  dsm_set_manager(void *manager);
+  H5FDdsm_EXPORT void    dsm_set_manager(void *manager);
 
   H5FDdsm_EXPORT herr_t  dsm_alloc(MPI_Comm intra_comm, void *buf_ptr, size_t buf_len);
   H5FDdsm_EXPORT herr_t  dsm_free();

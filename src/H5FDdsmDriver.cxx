@@ -33,11 +33,21 @@
 // pointer to internal DSM manager reference
 H5FDdsmManager *dsmManager = NULL;
 
-#define DSM_DRIVER_GOTO_ERROR(x, ret_val)                                  \
-{                                                                          \
-   fprintf(stderr, "Error at %s %s:%d %s\n", __FILE__, FUNC, __LINE__, x); \
-   err_occurred = TRUE;                                                    \
-   if (err_occurred) { HGOTO_DONE(ret_val) }                               \
+#define DSM_DRIVER_ERROR(x) \
+{                           \
+   H5FDdsmError(x);         \
+   return(FAIL);            \
+}
+
+#define DSM_DRIVER_INIT(buf)                   \
+{                                              \
+  if (dsmManager) {                            \
+    buf = dsmManager->GetDsmBuffer();          \
+    if (!buf)                                  \
+      DSM_DRIVER_ERROR("No DSM buffer found")  \
+  } else {                                     \
+    DSM_DRIVER_ERROR("No DSM manager found")   \
+  }                                            \
 }
 
 //#define H5FD_DSM_DRIVER_DEBUG
@@ -52,24 +62,15 @@ void*
 dsm_get_manager()
 {
   void *ret_value = NULL;
-
-  FUNC_ENTER_NOAPI_NOFUNC(dsm_get_manager)
-
   if (dsmManager) ret_value = static_cast <void*> (dsmManager);
-
-  FUNC_LEAVE_NOAPI(ret_value);
+  return(ret_value);
 }
 
 //--------------------------------------------------------------------------
 herr_t
 dsm_get_properties(MPI_Comm *intra_comm, void **buf_ptr_ptr, size_t *buf_len_ptr)
 {
-  herr_t ret_value = SUCCEED;
-
-  FUNC_ENTER_NOAPI(dsm_get_properties, FAIL)
-
-  if (!dsmManager)
-    DSM_DRIVER_GOTO_ERROR("No DSM manager found", FAIL);
+  if (!dsmManager) DSM_DRIVER_ERROR("No DSM manager found")
 
   if (intra_comm) *intra_comm = dsmManager->GetMpiComm();
   if (dsmManager->GetIsServer()) {
@@ -82,42 +83,24 @@ dsm_get_properties(MPI_Comm *intra_comm, void **buf_ptr_ptr, size_t *buf_len_ptr
     if (buf_len_ptr) *buf_len_ptr = 0;
   }
 
-done:
-  if (err_occurred) {
-    /* Nothing */
-  }
-
-  FUNC_LEAVE_NOAPI(ret_value);
+  return(SUCCEED);
 }
 
 //--------------------------------------------------------------------------
-herr_t
+void
 dsm_set_manager(void *manager)
 {
-  herr_t ret_value = SUCCEED;
-
-  FUNC_ENTER_NOAPI_NOFUNC(dsm_set_manager)
-
   dsmManager = static_cast <H5FDdsmManager*> (manager);
-
-  FUNC_LEAVE_NOAPI(ret_value);
 }
 
 //--------------------------------------------------------------------------
 herr_t
 dsm_alloc(MPI_Comm intra_comm, void *buf_ptr, size_t buf_len)
 {
-  herr_t ret_value = SUCCEED;
-
-  FUNC_ENTER_NOAPI(dsm_alloc, FAIL)
-
   // Check arguments
-  if (dsmManager)
-    DSM_DRIVER_GOTO_ERROR("DSM manager already allocated", FAIL);
-  if (intra_comm == MPI_COMM_NULL)
-    DSM_DRIVER_GOTO_ERROR("invalid intra comm argument", FAIL);
-  if (buf_ptr && !buf_len)
-    DSM_DRIVER_GOTO_ERROR("invalid buffer length argument", FAIL);
+  if (dsmManager) DSM_DRIVER_ERROR("DSM manager already allocated")
+  if (intra_comm == MPI_COMM_NULL) DSM_DRIVER_ERROR("invalid intra comm argument")
+  if (buf_ptr && !buf_len) DSM_DRIVER_ERROR("invalid buffer length argument")
 
   dsmManager = new H5FDdsmManager();
   dsmManager->ReadConfigFile();
@@ -127,7 +110,7 @@ dsm_alloc(MPI_Comm intra_comm, void *buf_ptr, size_t buf_len)
     // TODO initialize DSM from given buffer
   }
   if (dsmManager->Create() != H5FD_DSM_SUCCESS)
-    DSM_DRIVER_GOTO_ERROR("Cannot create DSM manager", FAIL);
+    DSM_DRIVER_ERROR("Cannot create DSM manager")
 
   // if (dsmManager->GetIsServer()) {
     // TODO Leave the auto publish here for now
@@ -137,22 +120,13 @@ dsm_alloc(MPI_Comm intra_comm, void *buf_ptr, size_t buf_len)
     // }
   // }
 
-done:
-  if (err_occurred) {
-    /* Nothing */
-  }
-
-  FUNC_LEAVE_NOAPI(ret_value);
+  return(SUCCEED);
 }
 
 //--------------------------------------------------------------------------
 herr_t
 dsm_free()
 {
-  herr_t ret_value = SUCCEED;
-
-  FUNC_ENTER_NOAPI_NOFUNC(dsm_free)
-
   if (dsmManager) {
     if (dsmManager->GetIsAutoAllocated()) {
       if (dsmManager->GetIsConnected()) dsmManager->Disconnect();
@@ -163,7 +137,7 @@ dsm_free()
     }
   }
 
-  FUNC_LEAVE_NOAPI(ret_value);
+  return(SUCCEED);
 }
 
 //--------------------------------------------------------------------------
@@ -172,19 +146,11 @@ dsm_is_server()
 {
   herr_t ret_value = TRUE;
 
-  FUNC_ENTER_NOAPI(dsm_is_server, FAIL)
-
-  if (!dsmManager)
-    DSM_DRIVER_GOTO_ERROR("No DSM manager found", FAIL);
+  if (!dsmManager) DSM_DRIVER_ERROR("No DSM manager found")
 
   ret_value = (dsmManager->GetIsServer() == H5FD_DSM_TRUE) ? TRUE : FALSE;
 
-done:
-  if (err_occurred) {
-    /* Nothing */
-  }
-
-  FUNC_LEAVE_NOAPI(ret_value);
+  return(ret_value);
 }
 
 //--------------------------------------------------------------------------
@@ -193,37 +159,20 @@ dsm_is_driver_serial()
 {
   herr_t ret_value = TRUE;
 
-  FUNC_ENTER_NOAPI(dsm_is_driver_serial, FAIL)
-
-  if (!dsmManager)
-    DSM_DRIVER_GOTO_ERROR("No DSM manager found", FAIL);
+  if (!dsmManager) DSM_DRIVER_ERROR("No DSM manager found")
 
   ret_value = (dsmManager->GetIsDriverSerial() == H5FD_DSM_TRUE) ? TRUE : FALSE;
 
-done:
-  if (err_occurred) {
-    /* Nothing */
-  }
-
-  FUNC_LEAVE_NOAPI(ret_value);
+  return(ret_value);
 }
 
 //--------------------------------------------------------------------------
 herr_t
 dsm_set_options(unsigned long flags)
 {
-  herr_t ret_value = SUCCEED;
   H5FDdsmBufferService *dsmBufferService = NULL;
 
-  FUNC_ENTER_NOAPI(dsm_set_options, FAIL)
-
-  if (dsmManager) {
-    dsmBufferService = dsmManager->GetDsmBuffer();
-    if (!dsmBufferService)
-      DSM_DRIVER_GOTO_ERROR("No DSM buffer found", FAIL);
-  } else {
-    DSM_DRIVER_GOTO_ERROR("No DSM manager found", FAIL);
-  }
+  DSM_DRIVER_INIT(dsmBufferService)
 
   switch(flags) {
     case H5FD_DSM_DONT_RELEASE:
@@ -239,16 +188,12 @@ dsm_set_options(unsigned long flags)
       dsmManager->SetIsDriverSerial(H5FD_DSM_FALSE);
       break;
     default:
-      PRINT_DSM_DRIVER_INFO(dsmBufferService->GetComm()->GetId(), "Not implemented option");
+      PRINT_DSM_DRIVER_INFO(dsmBufferService->GetComm()->GetId(),
+          "Not implemented option")
       break;
   }
 
-done:
-  if (err_occurred) {
-    /* Nothing */
-  }
-
-  FUNC_LEAVE_NOAPI(ret_value);
+  return(SUCCEED);
 }
 
 //--------------------------------------------------------------------------
@@ -257,294 +202,168 @@ dsm_is_connected()
 {
   herr_t ret_value = TRUE;
 
-  FUNC_ENTER_NOAPI(dsm_is_connected, FAIL)
-
-  if (!dsmManager)
-    DSM_DRIVER_GOTO_ERROR("No DSM manager found", FAIL);
+  if (!dsmManager) DSM_DRIVER_ERROR("No DSM manager found")
 
   ret_value = (dsmManager->GetIsConnected() == H5FD_DSM_TRUE) ? TRUE : FALSE;
 
-done:
-  if (err_occurred) {
-    /* Nothing */
-  }
-
-  FUNC_LEAVE_NOAPI(ret_value);
+  return(ret_value);
 }
 
 //--------------------------------------------------------------------------
 herr_t
 dsm_connect()
 {
-  herr_t ret_value = SUCCEED;
-
-  FUNC_ENTER_NOAPI(dsm_connect, FAIL)
-
-  if (!dsmManager)
-    DSM_DRIVER_GOTO_ERROR("No DSM manager found", FAIL);
+  if (!dsmManager) DSM_DRIVER_ERROR("No DSM manager found")
 
   // Initialize the connection if it has not been done already
-  if (dsmManager->GetIsConnected())
-    DSM_DRIVER_GOTO_ERROR("Already connected", FAIL);
+  if (dsmManager->GetIsConnected()) DSM_DRIVER_ERROR("Already connected")
 
   if (dsmManager->Connect() == H5FD_DSM_SUCCESS) {
-    PRINT_DSM_DRIVER_INFO(dsmManager->GetUpdatePiece(), "Connected!");
+    PRINT_DSM_DRIVER_INFO(dsmManager->GetUpdatePiece(), "Connected!")
   } else {
-    DSM_DRIVER_GOTO_ERROR("Cannot connect", FAIL);
+    DSM_DRIVER_ERROR("Cannot connect")
   }
 
-done:
-  if (err_occurred) {
-    /* Nothing */
-  }
-
-  FUNC_LEAVE_NOAPI(ret_value);
+  return(SUCCEED);
 }
 
 //--------------------------------------------------------------------------
 herr_t
 dsm_update_entry(haddr_t start, haddr_t end)
 {
-  herr_t ret_value = SUCCEED;
   H5FDdsmAddr addr;
   H5FDdsmEntry entry;
   H5FDdsmBufferService *dsmBufferService = NULL;
 
-  FUNC_ENTER_NOAPI(dsm_update_entry, FAIL)
-
-  if (dsmManager) {
-    dsmBufferService = dsmManager->GetDsmBuffer();
-    if (!dsmBufferService)
-      DSM_DRIVER_GOTO_ERROR("No DSM buffer found", FAIL);
-  } else {
-    DSM_DRIVER_GOTO_ERROR("No DSM manager found", FAIL);
-  }
+  DSM_DRIVER_INIT(dsmBufferService)
 
   entry.start = start;
   entry.end   = end;
   addr = (H5FDdsmAddr) (dsmBufferService->GetTotalLength() - sizeof(H5FDdsmMetaData));
 
   PRINT_DSM_DRIVER_INFO(dsmManager->GetUpdatePiece(),
-      "dsm_update_entry start " << start << " end " << end << " addr " << addr);
+      "dsm_update_entry start " << start << " end " << end << " addr " << addr)
 
   // Do not send anything if the end of the file is 0
   if (entry.end > 0) {
     if (dsmBufferService->Put(addr, sizeof(entry), &entry) != H5FD_DSM_SUCCESS)
-      DSM_DRIVER_GOTO_ERROR("Cannot put entry", FAIL);
+      DSM_DRIVER_ERROR("Cannot put entry")
   } else {
-    PRINT_DSM_DRIVER_INFO(dsmManager->GetUpdatePiece(), "end entry is " << entry.end);
+    PRINT_DSM_DRIVER_INFO(dsmManager->GetUpdatePiece(), "end entry is " << entry.end)
   }
 
-done:
-  if (err_occurred) {
-    /* Nothing */
-  }
-
-  FUNC_LEAVE_NOAPI(ret_value);
+  return(SUCCEED);
 }
 
 //--------------------------------------------------------------------------
 herr_t
 dsm_get_entry(haddr_t *start_ptr, haddr_t *end_ptr)
 {
-  herr_t ret_value = SUCCEED;
   H5FDdsmAddr addr;
   H5FDdsmEntry entry;
   H5FDdsmBufferService *dsmBufferService = NULL;
 
-  FUNC_ENTER_NOAPI(dsm_get_entry, FAIL)
-
-  if (dsmManager) {
-    dsmBufferService = dsmManager->GetDsmBuffer();
-    if (!dsmBufferService)
-      DSM_DRIVER_GOTO_ERROR("No DSM buffer found", FAIL);
-  } else {
-    DSM_DRIVER_GOTO_ERROR("No DSM manager found", FAIL);
-  }
+  DSM_DRIVER_INIT(dsmBufferService)
 
   addr = (H5FDdsmAddr) (dsmBufferService->GetTotalLength() - sizeof(H5FDdsmMetaData));
 
   if (dsmBufferService->Get(addr, sizeof(entry), &entry) != H5FD_DSM_SUCCESS)
-    DSM_DRIVER_GOTO_ERROR("Cannot get entry", FAIL);
+    DSM_DRIVER_ERROR("Cannot get entry")
 
   *start_ptr = entry.start;
   *end_ptr   = entry.end;
 
   PRINT_DSM_DRIVER_INFO(dsmManager->GetUpdatePiece(), "dsm_get_entry start " <<
-      *start_ptr << " end " << *end_ptr << " addr " << addr);
+      *start_ptr << " end " << *end_ptr << " addr " << addr)
 
-done:
-  if (err_occurred) {
-    /* Nothing */
-  }
-
-  FUNC_LEAVE_NOAPI(ret_value);
+  return(SUCCEED);
 }
 
 //--------------------------------------------------------------------------
 herr_t
 dsm_lock()
 {
-  herr_t ret_value = SUCCEED;
   H5FDdsmBufferService *dsmBufferService = NULL;
 
-  FUNC_ENTER_NOAPI(dsm_lock, FAIL)
-
-  if (dsmManager) {
-    dsmBufferService = dsmManager->GetDsmBuffer();
-    if (!dsmBufferService)
-      DSM_DRIVER_GOTO_ERROR("No DSM buffer found", FAIL);
-  } else {
-    DSM_DRIVER_GOTO_ERROR("No DSM manager found", FAIL);
-  }
+  DSM_DRIVER_INIT(dsmBufferService)
 
   if (!dsmBufferService->GetIsLocked()) {
     if (dsmBufferService->RequestLockAcquire() != H5FD_DSM_SUCCESS)
-      DSM_DRIVER_GOTO_ERROR("Cannot request lock acquisition", FAIL);
+      DSM_DRIVER_ERROR("Cannot request lock acquisition")
   }
 
-done:
-  if (err_occurred) {
-    /* Nothing */
-  }
-
-  FUNC_LEAVE_NOAPI(ret_value);
+  return(SUCCEED);
 }
 
 //--------------------------------------------------------------------------
 herr_t
 dsm_unlock()
 {
-  herr_t ret_value = SUCCEED;
   H5FDdsmBufferService *dsmBufferService;
 
-  FUNC_ENTER_NOAPI(dsm_unlock, FAIL)
-
-  if (dsmManager) {
-    dsmBufferService = dsmManager->GetDsmBuffer();
-    if (!dsmBufferService)
-      DSM_DRIVER_GOTO_ERROR("No DSM buffer found", FAIL);
-  } else {
-    DSM_DRIVER_GOTO_ERROR("No DSM manager found", FAIL);
-  }
+  DSM_DRIVER_INIT(dsmBufferService)
 
   if (dsmBufferService->GetIsLocked() && dsmBufferService->GetReleaseLockOnClose()) {
     if (dsmBufferService->RequestLockRelease() != H5FD_DSM_SUCCESS)
-      DSM_DRIVER_GOTO_ERROR("Cannot request lock release", FAIL);
+      DSM_DRIVER_ERROR("Cannot request lock release")
   }
 
-done:
-  if (err_occurred) {
-    /* Nothing */
-  }
-
-  FUNC_LEAVE_NOAPI(ret_value);
+  return(SUCCEED);
 }
 
 //--------------------------------------------------------------------------
 herr_t
 dsm_read(haddr_t addr, size_t len, void *buf_ptr)
 {
-  herr_t ret_value = SUCCEED;
   H5FDdsmBufferService *dsmBufferService;
 
-  FUNC_ENTER_NOAPI(dsm_read, FAIL)
-
-  if (dsmManager) {
-    dsmBufferService = dsmManager->GetDsmBuffer();
-    if (!dsmBufferService)
-      DSM_DRIVER_GOTO_ERROR("No DSM buffer found", FAIL);
-  } else {
-    DSM_DRIVER_GOTO_ERROR("No DSM manager found", FAIL);
-  }
+  DSM_DRIVER_INIT(dsmBufferService)
 
   if (dsmBufferService->Get((H5FDdsmAddr) addr, (H5FDdsmUInt64) len,
       (H5FDdsmPointer) buf_ptr) != H5FD_DSM_SUCCESS)
-    DSM_DRIVER_GOTO_ERROR("Cannot get data", FAIL);
+    DSM_DRIVER_ERROR("Cannot get data")
 
-done:
-  if (err_occurred) {
-    /* Nothing */
-  }
-
-  FUNC_LEAVE_NOAPI(ret_value);
+  return(SUCCEED);
 }
 
 //--------------------------------------------------------------------------
 herr_t
 dsm_write(haddr_t addr, size_t len, const void *buf_ptr)
 {
-  herr_t ret_value = SUCCEED;
   H5FDdsmBufferService *dsmBufferService;
 
-  FUNC_ENTER_NOAPI(dsm_write, FAIL)
-
-  if (dsmManager) {
-    dsmBufferService = dsmManager->GetDsmBuffer();
-    if (!dsmBufferService)
-      DSM_DRIVER_GOTO_ERROR("No DSM buffer found", FAIL);
-  } else {
-    DSM_DRIVER_GOTO_ERROR("No DSM manager found", FAIL);
-  }
+  DSM_DRIVER_INIT(dsmBufferService)
 
   if (dsmBufferService->Put((H5FDdsmAddr) addr, (H5FDdsmUInt64) len,
       (H5FDdsmPointer) buf_ptr) != H5FD_DSM_SUCCESS)
-    DSM_DRIVER_GOTO_ERROR("Cannot put data", FAIL);
+    DSM_DRIVER_ERROR("Cannot put data")
 
-done:
-  if (err_occurred) {
-    /* Nothing */
-  }
-
-  FUNC_LEAVE_NOAPI(ret_value);
+  return(SUCCEED);
 }
 //--------------------------------------------------------------------------
 herr_t
 dsm_set_modified()
 {
-  herr_t ret_value = SUCCEED;
   H5FDdsmBufferService *dsmBufferService;
 
-  FUNC_ENTER_NOAPI(dsm_set_modified, FAIL)
-
-  if (dsmManager) {
-    dsmBufferService = dsmManager->GetDsmBuffer();
-    if (!dsmBufferService)
-      DSM_DRIVER_GOTO_ERROR("No DSM buffer found", FAIL);
-  } else {
-    DSM_DRIVER_GOTO_ERROR("No DSM manager found", FAIL);
-  }
+  DSM_DRIVER_INIT(dsmBufferService)
 
   dsmBufferService->SetIsDataModified(H5FD_DSM_TRUE);
   if (dsmBufferService->GetNotificationOnClose()) {
     if (SUCCEED != dsm_notify(H5FD_DSM_NEW_DATA))
-      DSM_DRIVER_GOTO_ERROR("cannot notify DSM", FAIL);
+      DSM_DRIVER_ERROR("cannot notify DSM")
   }
 
-done:
-  if (err_occurred) {
-    /* Nothing */
-  }
-
-  FUNC_LEAVE_NOAPI(ret_value);
+  return(SUCCEED);
 }
 
 //--------------------------------------------------------------------------
 herr_t
 dsm_notify(unsigned long flags)
 {
-  herr_t ret_value = SUCCEED;
   H5FDdsmBufferService *dsmBufferService;
 
-  FUNC_ENTER_NOAPI(dsm_notify, FAIL)
-
-  if (dsmManager) {
-    dsmBufferService = dsmManager->GetDsmBuffer();
-    if (!dsmBufferService)
-      DSM_DRIVER_GOTO_ERROR("No DSM buffer found", FAIL);
-  } else {
-    DSM_DRIVER_GOTO_ERROR("No DSM manager found", FAIL);
-  }
+  DSM_DRIVER_INIT(dsmBufferService)
 
   switch(flags) {
     case H5FD_DSM_NEW_INFORMATION:
@@ -552,27 +371,22 @@ dsm_notify(unsigned long flags)
       dsmBufferService->SetNotification(flags);
       break;
     default:
-      PRINT_DSM_DRIVER_INFO(dsmManager->GetUpdatePiece(), "Not implemented notification");
+      PRINT_DSM_DRIVER_INFO(dsmManager->GetUpdatePiece(), "Not implemented notification")
       break;
   }
 
   if (!dsmBufferService->GetIsLocked()) {
     if (dsmBufferService->RequestLockAcquire() != H5FD_DSM_SUCCESS)
-      DSM_DRIVER_GOTO_ERROR("Cannot request lock acquisition", FAIL);
+      DSM_DRIVER_ERROR("Cannot request lock acquisition")
   }
 
   if (!dsmBufferService->GetIsServer()) {
     if (dsmBufferService->RequestNotification() != H5FD_DSM_SUCCESS)
-      DSM_DRIVER_GOTO_ERROR("Cannot request notification", FAIL);
+      DSM_DRIVER_ERROR("Cannot request notification")
   } else {
     if (dsmBufferService->SignalNotification() != H5FD_DSM_SUCCESS)
-      DSM_DRIVER_GOTO_ERROR("Cannot signal notification", FAIL);
+      DSM_DRIVER_ERROR("Cannot signal notification")
   }
 
-done:
-  if (err_occurred) {
-    /* Nothing */
-  }
-
-  FUNC_LEAVE_NOAPI(ret_value);
+  return(SUCCEED);
 }

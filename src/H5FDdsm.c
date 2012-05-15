@@ -388,7 +388,7 @@ H5FD_dsm_set_manager(void *manager)
 
   FUNC_ENTER_NOAPI(H5FD_dsm_set_manager, FAIL)
 
-  ret_value = dsm_set_manager(manager);
+  dsm_set_manager(manager);
 
 done:
   if (err_occurred) {
@@ -518,7 +518,7 @@ H5FD_dsm_fapl_get(H5FD_t *_file)
   void *ret_value = NULL;
   int mpi_code;
 
-  FUNC_ENTER_NOAPI(H5FD_dsm_fapl_get, NULL)
+  FUNC_ENTER_NOAPI_NOINIT(H5FD_dsm_fapl_get)
 
   HDassert(file);
   HDassert(H5FD_DSM == file->pub.driver_id);
@@ -566,7 +566,7 @@ H5FD_dsm_fapl_copy(const void *_old_fa)
   H5FD_dsm_fapl_t *new_fa = NULL;
   int mpi_code;
 
-  FUNC_ENTER_NOAPI(H5FD_dsm_fapl_copy, NULL)
+  FUNC_ENTER_NOAPI_NOINIT(H5FD_dsm_fapl_copy)
 
   if(NULL == (new_fa = (H5FD_dsm_fapl_t *) calloc((size_t)1, sizeof(H5FD_dsm_fapl_t))))
     HGOTO_ERROR(H5E_RESOURCE, H5E_NOSPACE, NULL, "memory allocation failed");
@@ -612,7 +612,7 @@ H5FD_dsm_fapl_free(void *_fa)
   herr_t ret_value = SUCCEED;
   H5FD_dsm_fapl_t *fa = (H5FD_dsm_fapl_t*)_fa;
 
-  FUNC_ENTER_NOAPI(H5FD_dsm_fapl_free, FAIL)
+  FUNC_ENTER_NOAPI_NOINIT_NOFUNC(H5FD_dsm_fapl_free)
   assert(fa);
 
   if (!dsm_is_driver_serial()) {
@@ -621,11 +621,6 @@ H5FD_dsm_fapl_free(void *_fa)
     MPI_Comm_free(&fa->intra_comm);
   }
   free(fa);
-
-done:
-  if (err_occurred) {
-    /* Nothing */
-  }
 
   FUNC_LEAVE_NOAPI(ret_value)
 } /* end H5FD_dsm_fapl_free() */
@@ -656,7 +651,7 @@ H5FD_dsm_open(const char *name, unsigned flags, hid_t fapl_id, haddr_t maxaddr)
   H5FD_t *ret_value = NULL;
   herr_t dsm_code = SUCCEED;
 
-  FUNC_ENTER_NOAPI(H5FD_dsm_open, NULL)
+  FUNC_ENTER_NOAPI_NOINIT(H5FD_dsm_open)
 
   /* Check arguments */
   if(!name || !*name)
@@ -784,7 +779,7 @@ H5FD_dsm_close(H5FD_t *_file)
   int mpi_code;
   herr_t dsm_code = SUCCEED;
 
-  FUNC_ENTER_NOAPI(H5FD_dsm_close, FAIL)
+  FUNC_ENTER_NOAPI_NOINIT(H5FD_dsm_close)
 
   assert(file);
   assert(H5FD_DSM == file->pub.driver_id);
@@ -850,12 +845,10 @@ done:
  *
  *-------------------------------------------------------------------------
  */
-herr_t
+static herr_t
 H5FD_dsm_query(const H5FD_t UNUSED *_file, unsigned long *flags /* out */)
 {
-  herr_t ret_value = SUCCEED;
-
-  FUNC_ENTER_NOAPI(H5FD_dsm_query, FAIL)
+  FUNC_ENTER_NOAPI_NOINIT_NOFUNC(H5FD_dsm_query)
 
   /* Set the VFL feature flags that this driver supports */
   if (flags && !dsm_is_driver_serial()) {
@@ -866,12 +859,7 @@ H5FD_dsm_query(const H5FD_t UNUSED *_file, unsigned long *flags /* out */)
     *flags |= H5FD_FEAT_ALLOCATE_EARLY;      /* Allocate space early instead of late */
   } /* end if */
 
-done:
-  if (err_occurred) {
-    /* Nothing */
-  }
-
-  FUNC_LEAVE_NOAPI(ret_value)
+  FUNC_LEAVE_NOAPI(SUCCEED)
 } /* end H5FD_dsm_query() */
 
 /*-------------------------------------------------------------------------
@@ -890,23 +878,14 @@ done:
 static haddr_t
 H5FD_dsm_get_eoa(const H5FD_t *_file, H5FD_mem_t UNUSED type)
 {
-  haddr_t ret_value; /* Return value */
-  H5FD_dsm_t *file = (H5FD_dsm_t*) _file;
+  const H5FD_dsm_t *file = (const H5FD_dsm_t*) _file;
 
-  FUNC_ENTER_NOAPI(H5FD_dsm_get_eoa, HADDR_UNDEF)
+  FUNC_ENTER_NOAPI_NOINIT_NOFUNC(H5FD_dsm_get_eoa)
 
   assert(file);
   assert(H5FD_DSM == file->pub.driver_id);
 
-  /* Set return value */
-  ret_value = file->eoa;
-
-done:
-  if (err_occurred) {
-    /* Nothing */
-  }
-
-  FUNC_LEAVE_NOAPI(ret_value)
+  FUNC_LEAVE_NOAPI(file->eoa)
 } /* end H5FD_dsm_get_eoa() */
 
 /*-------------------------------------------------------------------------
@@ -930,7 +909,7 @@ H5FD_dsm_set_eoa(H5FD_t *_file, H5FD_mem_t UNUSED type, haddr_t addr)
   int mpi_code;
   herr_t dsm_code = SUCCEED;
 
-  FUNC_ENTER_NOAPI(H5FD_dsm_set_eoa, FAIL)
+  FUNC_ENTER_NOAPI_NOINIT(H5FD_dsm_set_eoa)
 
   assert(file);
   assert(H5FD_DSM == file->pub.driver_id);
@@ -980,24 +959,14 @@ done:
 static haddr_t
 H5FD_dsm_get_eof(const H5FD_t *_file)
 {
-  haddr_t ret_value; /* Return value */
+  const H5FD_dsm_t *file = (const H5FD_dsm_t*) _file;
 
-  H5FD_dsm_t *file = (H5FD_dsm_t*) _file;
-
-  FUNC_ENTER_NOAPI(H5FD_dsm_get_eof, HADDR_UNDEF)
+  FUNC_ENTER_NOAPI_NOINIT_NOFUNC(H5FD_dsm_get_eof)
 
   assert(file);
   assert(H5FD_DSM == file->pub.driver_id);
 
-  /* Set return value */
-  ret_value = MAX(file->eof, file->eoa);
-
-done:
-  if (err_occurred) {
-    /* Nothing */
-  }
-
-  FUNC_LEAVE_NOAPI(ret_value)
+  FUNC_LEAVE_NOAPI(MAX(file->eof, file->eoa))
 } /* end H5FD_dsm_get_eof() */
 
 /*-------------------------------------------------------------------------
@@ -1020,7 +989,7 @@ H5FD_dsm_read(H5FD_t *_file, H5FD_mem_t UNUSED type, hid_t UNUSED dxpl_id,
   H5FD_dsm_t *file = (H5FD_dsm_t*) _file;
   herr_t ret_value = SUCCEED; /* Return value */
 
-  FUNC_ENTER_NOAPI(H5FD_dsm_read, FAIL)
+  FUNC_ENTER_NOAPI_NOINIT(H5FD_dsm_read)
 
   assert(file);
   assert(H5FD_DSM == file->pub.driver_id);
@@ -1082,7 +1051,7 @@ H5FD_dsm_write(H5FD_t *_file, H5FD_mem_t UNUSED type, hid_t UNUSED dxpl_id,
   H5FD_dsm_t *file = (H5FD_dsm_t*) _file;
   herr_t ret_value = SUCCEED; /* Return value */
 
-  FUNC_ENTER_NOAPI(H5FD_dsm_write, FAIL)
+  FUNC_ENTER_NOAPI_NOINIT(H5FD_dsm_write)
 
   assert(file);
   assert(H5FD_DSM == file->pub.driver_id);
@@ -1135,7 +1104,7 @@ H5FD_dsm_flush(H5FD_t *_file, hid_t UNUSED dxpl_id, unsigned UNUSED closing)
   /* H5FD_dsm_t *file = (H5FD_dsm_t*) _file; */
   herr_t ret_value = SUCCEED; /* Return value */
 
-  FUNC_ENTER_NOAPI(H5FD_dsm_flush, FAIL)
+  FUNC_ENTER_NOAPI_NOINIT_NOFUNC(H5FD_dsm_flush)
 
   /* Write to backing store */
   /*
@@ -1164,11 +1133,6 @@ H5FD_dsm_flush(H5FD_t *_file, hid_t UNUSED dxpl_id, unsigned UNUSED closing)
   }
   */
 
-done:
-  if (err_occurred) {
-    /* Nothing */
-  }
-
   FUNC_LEAVE_NOAPI(ret_value)
 } /* end H5FD_dsm_flush() */
 
@@ -1186,22 +1150,13 @@ static int
 H5FD_dsm_mpi_rank(const H5FD_t *_file)
 {
   const H5FD_dsm_t *file = (const H5FD_dsm_t*) _file;
-  int ret_value; /* Return value */
 
-  FUNC_ENTER_NOAPI(H5FD_dsm_mpi_rank, FAIL)
+  FUNC_ENTER_NOAPI_NOINIT_NOFUNC(H5FD_dsm_mpi_rank)
 
   assert(file);
   assert(H5FD_DSM == file->pub.driver_id);
 
-  /* Set return value */
-  ret_value = file->intra_rank;
-
-done:
-  if (err_occurred) {
-    /* Nothing */
-  }
-
-  FUNC_LEAVE_NOAPI(ret_value)
+  FUNC_LEAVE_NOAPI(file->intra_rank)
 } /* end H5FD_dsm_mpi_rank() */
 
 /*-------------------------------------------------------------------------
@@ -1218,22 +1173,13 @@ static int
 H5FD_dsm_mpi_size(const H5FD_t *_file)
 {
   const H5FD_dsm_t *file = (const H5FD_dsm_t*) _file;
-  int ret_value; /* Return value */
 
-  FUNC_ENTER_NOAPI(H5FD_dsm_mpi_size, FAIL)
+  FUNC_ENTER_NOAPI_NOINIT_NOFUNC(H5FD_dsm_mpi_size)
 
   assert(file);
   assert(H5FD_DSM == file->pub.driver_id);
 
-  /* Set return value */
-  ret_value = file->intra_size;
-
-done:
-  if (err_occurred) {
-    /* Nothing */
-  }
-
-  FUNC_LEAVE_NOAPI(ret_value)
+  FUNC_LEAVE_NOAPI(file->intra_size)
 } /* end H5FD_dsm_mpi_size() */
 
 /*-------------------------------------------------------------------------
@@ -1251,22 +1197,13 @@ static MPI_Comm
 H5FD_dsm_communicator(const H5FD_t *_file)
 {
   const H5FD_dsm_t *file = (const H5FD_dsm_t*) _file;
-  MPI_Comm ret_value = MPI_COMM_NULL; /* Return value */
 
-  FUNC_ENTER_NOAPI(H5FD_dsm_communicator, MPI_COMM_NULL)
+  FUNC_ENTER_NOAPI_NOINIT_NOFUNC(H5FD_dsm_communicator)
 
   assert(file);
   assert(H5FD_DSM == file->pub.driver_id);
 
-  /* Set return value */
-  ret_value = file->intra_comm;
-
-done:
-  if (err_occurred) {
-    /* Nothing */
-  }
-
-  FUNC_LEAVE_NOAPI(ret_value)
+  FUNC_LEAVE_NOAPI(file->intra_comm)
 } /* end H5FD_mpi_posix_communicator() */
 
 #endif /* H5_HAVE_PARALLEL */
