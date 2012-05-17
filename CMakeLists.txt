@@ -319,6 +319,9 @@ set(H5FDdsmSources
   src/H5FDdsmStorageMpi.cxx
   src/H5FDdsmManager.cxx
   src/H5FDdsmAddressMapper.cxx
+  src/H5FDdsmMutex.cxx
+  src/H5FDdsmCondition.cxx
+  src/H5FDdsmThread.cxx
 )
 
 if(H5FDdsm_BUILD_STEERING)

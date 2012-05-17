@@ -54,14 +54,6 @@
 
 #include "H5FDdsmBuffer.h"
 
-#ifdef _WIN32
-  #include <winsock2.h>
-  #include <windows.h>
-  #define H5FD_DSM_CONDVAR_MINVER _WIN32_WINNT_LONGHORN
-#else
-  #include <pthread.h>
-#endif
-
 //! Base comm object for Distributed Shared Memory implementation
 /*!
 */
@@ -115,10 +107,6 @@ class H5FDdsm_EXPORT H5FDdsmBufferService : public H5FDdsmBuffer {
     H5FDdsmGetStringMacro(XMLDescription);
     H5FDdsmSetStringMacro(XMLDescription);
 
-    // Is the service thread created
-    H5FDdsmInt32 SignalServiceThreadCreated();
-    H5FDdsmInt32 WaitForServiceThreadCreated();
-
     void *         ServiceThread();
     void *         RemoteServiceThread();
 
@@ -147,74 +135,21 @@ class H5FDdsm_EXPORT H5FDdsmBufferService : public H5FDdsmBuffer {
 
   protected:
     H5FDdsmBoolean          IsServer;
-
-    // Connection event
-    H5FDdsmBoolean          IsConnecting;
     H5FDdsmBoolean          IsConnected;
-#ifdef _WIN32
-#if (WINVER < H5FD_DSM_CONDVAR_MINVER)
-    HANDLE                  ConnectionEvent;
-#else
-    CRITICAL_SECTION        ConnectionCritSection;
-    CONDITION_VARIABLE      ConnectionCond;
-#endif
-#else
-    pthread_mutex_t         ConnectionMutex;
-    pthread_cond_t          ConnectionCond;
-#endif
-
-    // Notification event
+    //
     H5FDdsmBoolean          IsNotified;
-#ifdef _WIN32
-#if (WINVER < H5FD_DSM_CONDVAR_MINVER)
-    HANDLE                  NotificationEvent;
-#else
-    CRITICAL_SECTION        NotificationCritSection;
-    CONDITION_VARIABLE      NotificationCond;
-#endif
-#else
-    pthread_mutex_t         NotificationMutex;
-    pthread_cond_t          NotificationCond;
-#endif
-
     H5FDdsmInt32            Notification;
     H5FDdsmBoolean          NotificationOnClose;
     H5FDdsmBoolean          IsDataModified;
-
+    //
     H5FDdsmBoolean          IsLocked;
-#ifdef _WIN32
-    HANDLE                  Lock;
-#else
-    pthread_mutex_t         Lock;
-#endif
     H5FDdsmBoolean          ReleaseLockOnClose;
     H5FDdsmBoolean          IsSyncRequired;
-
+    //
     H5FDdsmString           XMLDescription;
-
-    // ServiceThreadCreated event
-    H5FDdsmBoolean          IsServiceThreadCreated;
-#ifdef _WIN32
-#if (WINVER < H5FD_DSM_CONDVAR_MINVER)
-    HANDLE                  ServiceThreadCreatedEvent;
-#else
-    CRITICAL_SECTION        ServiceThreadCreatedCritSection;
-    CONDITION_VARIABLE      ServiceThreadCreatedCond;
-#endif
-#else
-    pthread_mutex_t         ServiceThreadCreatedMutex;
-    pthread_cond_t          ServiceThreadCreatedCond;
-#endif
-
-#ifdef _WIN32
-    DWORD                   ServiceThreadPtr;
-    HANDLE                  ServiceThreadHandle;
-    DWORD                   RemoteServiceThreadPtr;
-    HANDLE                  RemoteServiceThreadHandle;
-#else
-    pthread_t               ServiceThreadPtr;
-    pthread_t               RemoteServiceThreadPtr;
-#endif
+    //
+    struct H5FDdsmBufferServiceInternals;
+    H5FDdsmBufferServiceInternals *BufferServiceInternals;
 };
 
 #endif // __H5FDdsmBufferService_h
