@@ -92,15 +92,15 @@
 }
 
 //----------------------------------------------------------------------------
-H5FDdsm_EXPORT H5FDdsmThreadReturnType H5FDdsmBufferServiceThread(void *DsmObj)
+H5FDdsm_EXPORT H5FDdsmThreadReturnType WINAPI H5FDdsmBufferServiceThread(void *DsmObj)
 {
   H5FDdsmBufferService *Dsm = (H5FDdsmBufferService *)DsmObj;
-  Dsm->ServiceThread();
+  Dsm->BufferServiceThread();
   return(0);
 }
 
 //----------------------------------------------------------------------------
-H5FDdsm_EXPORT H5FDdsmThreadReturnType H5FDdsmBufferRemoteServiceThread(void *DsmObj)
+H5FDdsm_EXPORT H5FDdsmThreadReturnType WINAPI H5FDdsmBufferRemoteServiceThread(void *DsmObj)
 {
   H5FDdsmBufferService *Dsm = (H5FDdsmBufferService *)DsmObj;
   Dsm->RemoteServiceThread();
@@ -198,7 +198,7 @@ H5FDdsmBufferService::H5FDdsmBufferService()
 //----------------------------------------------------------------------------
 H5FDdsmBufferService::~H5FDdsmBufferService()
 {
-  if (this->IsServer) this->EndService();
+  if (this->IsServer) this->EndBufferService();
   if (this->XMLDescription) delete[] this->XMLDescription;
   this->XMLDescription = NULL;
   if (this->BufferServiceInternals) delete this->BufferServiceInternals;
@@ -280,13 +280,13 @@ H5FDdsmBufferService::WaitForNotification()
 
 //----------------------------------------------------------------------------
 void *
-H5FDdsmBufferService::ServiceThread()
+H5FDdsmBufferService::BufferServiceThread()
 {
   H5FDdsmInt32   ReturnOpcode;
 
   H5FDdsmDebug("Starting DSM Service on node " << this->Comm->GetId());
   this->BufferServiceInternals->SignalServiceThreadCreated();
-  this->ServiceLoop(&ReturnOpcode);
+  this->BufferServiceLoop(&ReturnOpcode);
   H5FDdsmDebug("Ending DSM Service on node " << this->Comm->GetId() << " last op = " << ReturnOpcode);
   return((void *)this);
 }
@@ -306,12 +306,12 @@ H5FDdsmBufferService::RemoteServiceThread()
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBufferService::ServiceLoop(H5FDdsmInt32 *ReturnOpcode)
+H5FDdsmBufferService::BufferServiceLoop(H5FDdsmInt32 *ReturnOpcode)
 {
   H5FDdsmInt32   op, status = H5FD_DSM_SUCCESS;
 
   while(status == H5FD_DSM_SUCCESS) {
-    status = this->Service(&op);
+    status = this->BufferService(&op);
     if (status != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
     if (ReturnOpcode) *ReturnOpcode = op;
     if (op == H5FD_DSM_OPCODE_DONE) return(H5FD_DSM_SUCCESS);
@@ -321,7 +321,7 @@ H5FDdsmBufferService::ServiceLoop(H5FDdsmInt32 *ReturnOpcode)
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBufferService::Service(H5FDdsmInt32 *ReturnOpcode)
+H5FDdsmBufferService::BufferService(H5FDdsmInt32 *ReturnOpcode)
 {
   H5FDdsmInt32        Opcode, who, status = H5FD_DSM_FAIL;
   H5FDdsmInt32        aLength;
@@ -495,7 +495,7 @@ H5FDdsmBufferService::Service(H5FDdsmInt32 *ReturnOpcode)
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBufferService::StartService()
+H5FDdsmBufferService::StartBufferService()
 {
   H5FDdsmDebug("Creating service thread...");
   this->BufferServiceInternals->ServiceThread.SpawnThread(
@@ -507,7 +507,7 @@ H5FDdsmBufferService::StartService()
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBufferService::EndService()
+H5FDdsmBufferService::EndBufferService()
 {
   if (this->BufferServiceInternals->IsServiceThreadCreated) {
     if (this->BufferServiceInternals->IsConnecting && !this->IsConnected) {

@@ -45,6 +45,7 @@
 #endif
 //
 #ifdef _WIN32
+#include <windows.h>
 #include <io.h>
   #define access _access
   #define atoll _atoi64 
@@ -318,7 +319,7 @@ H5FDdsmInt32 H5FDdsmManager::Create()
     // setup service thread
     //
     if (this->IsStandAlone) {
-      this->DsmBuffer->StartService();
+      this->DsmBuffer->StartBufferService();
       H5FDdsmDebug("DSM Service Ready on " << this->UpdatePiece);
     }
   }
@@ -517,7 +518,7 @@ H5FDdsmInt32 H5FDdsmManager::Publish()
       }
       //
     }
-    this->DsmBuffer->StartService();
+    this->DsmBuffer->StartBufferService();
     H5FDdsmDebug("DSM Service Ready on " << this->UpdatePiece);
     this->DsmBuffer->RequestAccept();
   }

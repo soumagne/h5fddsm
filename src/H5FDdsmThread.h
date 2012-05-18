@@ -32,7 +32,7 @@
   #include <windows.h>
   typedef LPTHREAD_START_ROUTINE H5FDdsmThreadFunctionType;
   typedef HANDLE H5FDdsmThreadIDType;
-  typedef DWORD WINAPI H5FDdsmThreadReturnType;
+  typedef DWORD H5FDdsmThreadReturnType;
 #else
   #include <pthread.h>
   typedef pthread_t H5FDdsmThreadIDType;

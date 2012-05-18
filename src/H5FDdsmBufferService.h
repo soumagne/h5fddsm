@@ -107,13 +107,13 @@ class H5FDdsm_EXPORT H5FDdsmBufferService : public H5FDdsmBuffer {
     H5FDdsmGetStringMacro(XMLDescription);
     H5FDdsmSetStringMacro(XMLDescription);
 
-    void *         ServiceThread();
+    void *         BufferServiceThread();
     void *         RemoteServiceThread();
 
-    H5FDdsmInt32   ServiceLoop(H5FDdsmInt32 *ReturnOpcode=0);
-    H5FDdsmInt32   Service(H5FDdsmInt32 *ReturnOpcode=0);
-    H5FDdsmInt32   StartService();
-    H5FDdsmInt32   EndService();
+    H5FDdsmInt32   BufferServiceLoop(H5FDdsmInt32 *ReturnOpcode=0);
+    H5FDdsmInt32   BufferService(H5FDdsmInt32 *ReturnOpcode=0);
+    H5FDdsmInt32   StartBufferService();
+    H5FDdsmInt32   EndBufferService();
 
     H5FDdsmInt32   RemoteService(H5FDdsmInt32 *ReturnOpcode=0);
     H5FDdsmInt32   StartRemoteService();
