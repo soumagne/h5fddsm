@@ -92,7 +92,7 @@
 }
 
 //----------------------------------------------------------------------------
-H5FDdsm_EXPORT H5FDdsmThreadReturnType WINAPI H5FDdsmBufferServiceThread(void *DsmObj)
+H5FDdsm_EXPORT H5FDdsm_THREAD_RETURN_TYPE H5FDdsmBufferServiceThread(void *DsmObj)
 {
   H5FDdsmBufferService *Dsm = (H5FDdsmBufferService *)DsmObj;
   Dsm->BufferServiceThread();
@@ -100,7 +100,7 @@ H5FDdsm_EXPORT H5FDdsmThreadReturnType WINAPI H5FDdsmBufferServiceThread(void *D
 }
 
 //----------------------------------------------------------------------------
-H5FDdsm_EXPORT H5FDdsmThreadReturnType WINAPI H5FDdsmBufferRemoteServiceThread(void *DsmObj)
+H5FDdsm_EXPORT H5FDdsm_THREAD_RETURN_TYPE H5FDdsmBufferRemoteServiceThread(void *DsmObj)
 {
   H5FDdsmBufferService *Dsm = (H5FDdsmBufferService *)DsmObj;
   Dsm->RemoteServiceThread();
