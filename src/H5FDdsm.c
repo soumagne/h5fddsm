@@ -312,6 +312,10 @@ H5FD_dsm_term(void)
 
 #if H5_VERSION_GE(1,9,0)
 done:
+  if (err_occurred) {
+    /* Nothing */
+  }
+
   FUNC_LEAVE_NOAPI(ret_value)
 #else
   FUNC_LEAVE_NOAPI_VOID
