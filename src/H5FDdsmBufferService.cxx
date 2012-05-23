@@ -641,7 +641,7 @@ H5FDdsmBufferService::Put(H5FDdsmAddr address, H5FDdsmUInt64 length, H5FDdsmPoin
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBufferService::Get(H5FDdsmAddr address, H5FDdsmUInt64 length, H5FDdsmPointer data)
+H5FDdsmBufferService::Get(H5FDdsmAddr address, H5FDdsmUInt64 length, H5FDdsmPointer data, H5FDdsmBoolean Blocking)
 {
   H5FDdsmInt32 myId = this->Comm->GetId();
   std::vector<H5FDdsmMsg> getRequests;
@@ -675,6 +675,9 @@ H5FDdsmBufferService::Get(H5FDdsmAddr address, H5FDdsmUInt64 length, H5FDdsmPoin
       if (status == H5FD_DSM_FAIL) {
         H5FDdsmError("Failed to receive " << getRequest.Length << " bytes of data from " << getRequest.Dest);
         return(H5FD_DSM_FAIL);
+      }
+      if (Blocking && this->Comm->GetUseOneSidedComm()) {
+        this->Comm->WindowSync();
       }
     }
     getRequests.pop_back();

@@ -38,7 +38,7 @@
 #define LOOPS          1
 #define AVERAGE       20
 #define SKIP          10
-#define NUM_DATASETS   1
+#define NUM_DATASETS  10
 #define DIM_DATASETS   3
 #define TYPES          1 // 2 if additional disk output test required
 

@@ -120,7 +120,7 @@ class H5FDdsm_EXPORT H5FDdsmBufferService : public H5FDdsmBuffer {
     H5FDdsmInt32   EndRemoteService();
 
     H5FDdsmInt32   Put(H5FDdsmAddr Address, H5FDdsmUInt64 Length, H5FDdsmPointer Data);
-    H5FDdsmInt32   Get(H5FDdsmAddr Address, H5FDdsmUInt64 Length, H5FDdsmPointer Data);
+    H5FDdsmInt32   Get(H5FDdsmAddr Address, H5FDdsmUInt64 Length, H5FDdsmPointer Data, H5FDdsmBoolean Blocking=H5FD_DSM_TRUE);
 
     H5FDdsmInt32   RequestLockAcquire();
     H5FDdsmInt32   RequestLockRelease();

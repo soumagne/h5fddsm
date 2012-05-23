@@ -158,8 +158,13 @@ H5FDdsmCommDmapp::Get(H5FDdsmMsg *DataMsg)
   //
   H5FDdsmDebug("Getting " << DataMsg->Length << " Bytes from Address "
       << DataMsg->Address << " from Id = " << DataMsg->Source);
-  status = dmapp_get(DataMsg->Data, sourcePtr, &sourceSeg, sourcePE,
-      DataMsg->Length, DMAPP_BYTE);
+  if (this->UseBlockingComm) {
+    status = dmapp_get(DataMsg->Data, sourcePtr, &sourceSeg, sourcePE,
+        DataMsg->Length, DMAPP_BYTE);
+  } else {
+    status = dmapp_get_nbi(DataMsg->Data, sourcePtr, &sourceSeg, sourcePE,
+        DataMsg->Length, DMAPP_BYTE);
+  }
   if (status != DMAPP_RC_SUCCESS) {
     H5FDdsmError("Id = " << this->Id << " dmapp_get failed to get "
         << DataMsg->Length << " Bytes from " << DataMsg->Source << " (PE " << sourcePE << ")");
