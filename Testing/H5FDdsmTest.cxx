@@ -306,7 +306,7 @@ H5FDdsmFloat64 TestParticleWrite(H5FDdsmConstString filename, H5FDdsmUInt64 ntup
 //----------------------------------------------------------------------------
 H5FDdsmFloat64 TestParticleRead(H5FDdsmConstString filename, H5FDdsmUInt64 ntuples,
     H5FDdsmUInt64 ncomponents, H5FDdsmUInt32 ndatasets, H5FDdsmInt32 rank, H5FDdsmInt32 size,
-    MPI_Comm comm, H5FDdsmManager *dsmManager)
+    MPI_Comm comm, H5FDdsmManager *dsmManager, bool checkresults)
 {
   ParticleBuffer_t ReadBuffer;
   H5FDdsmUInt64 start, total;
@@ -337,7 +337,7 @@ H5FDdsmFloat64 TestParticleRead(H5FDdsmConstString filename, H5FDdsmUInt64 ntupl
   MPI_Barrier(comm);
   H5FDdsmFloat64 t2 = MPI_Wtime();
 
-  if (step_increment < 5) {
+  if (checkresults && step_increment < 5) {
     /* Check the results the first times. */
     for (H5FDdsmUInt64 i = 0; i < ntuples; i++) {
       for (H5FDdsmUInt64 j = 0; j < ncomponents; j++) {

@@ -77,7 +77,7 @@ H5FDdsmFloat64 TestParticleWrite(H5FDdsmConstString filename, H5FDdsmUInt64 ntup
 
 H5FDdsmFloat64 TestParticleRead(H5FDdsmConstString filename, H5FDdsmUInt64 ntuples,
     H5FDdsmUInt64 ncomponents, H5FDdsmUInt32 ndatasets, H5FDdsmInt32 rank, H5FDdsmInt32 size,
-    MPI_Comm comm, H5FDdsmManager *dsmManager);
+    MPI_Comm comm, H5FDdsmManager *dsmManager, bool checkresults=true);
 
 void receiverInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *comm);
 void receiverFinalize(H5FDdsmManager *dsmManager, MPI_Comm *comm);
