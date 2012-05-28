@@ -406,7 +406,7 @@ PartitionedAddressMapper::Translate(
       H5FDdsmMsg newRequest;
       newRequest.Dest    = static_cast<H5FDdsmInt32> (it->Address / this->PartitionSize);
       newRequest.Address = it->Address % this->PartitionSize;
-      newRequest.Length  = static_cast<H5FDdsmInt32> min(this->PartitionSize - newRequest.Address, it->Length);
+      newRequest.Length  = static_cast<H5FDdsmInt32> min(this->PartitionSize - newRequest.Address, static_cast<H5FDdsmUInt32> (it->Length));
       newRequest.Data    = datap;
       outRequests.push_back(newRequest);
       //

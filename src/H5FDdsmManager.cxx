@@ -49,6 +49,8 @@
 #include <io.h>
   #define access _access
   #define atoll _atoi64 
+#else
+#include <unistd.h>
 #endif
 //
 #include <vector>

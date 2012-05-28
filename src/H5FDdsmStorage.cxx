@@ -28,6 +28,10 @@
 #include <cstdlib>
 #include <cstdio>
 
+#ifndef _WIN32
+#include <unistd.h>
+#endif
+
 //----------------------------------------------------------------------------
 H5FDdsmStorage::H5FDdsmStorage()
 {
