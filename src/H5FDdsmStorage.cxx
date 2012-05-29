@@ -36,6 +36,7 @@
 H5FDdsmStorage::H5FDdsmStorage()
 {
   this->DataPointer = NULL;
+  this->Length = 0;
 }
 
 //----------------------------------------------------------------------------

@@ -112,6 +112,8 @@ struct H5FDdsmBufferService::H5FDdsmBufferServiceInternals
 {
   H5FDdsmBufferServiceInternals() {
     this->IsConnecting    = H5FD_DSM_FALSE;
+    this->IsServiceThreadCreated = H5FD_DSM_FALSE;
+    this->IsRemoteServiceThreadCreated = H5FD_DSM_FALSE;
   }
 
   ~H5FDdsmBufferServiceInternals() {
