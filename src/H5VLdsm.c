@@ -23,11 +23,11 @@
 
 =========================================================================*/
 
-#define H5D_PACKAGE		/*suppress error about including H5Dpkg	  */
-#define H5F_PACKAGE		/*suppress error about including H5Fpkg	  */
-#define H5G_PACKAGE		/*suppress error about including H5Gpkg   */
-#define H5O_PACKAGE		/*suppress error about including H5Opkg	  */
-#define H5T_PACKAGE		/*suppress error about including H5Tpkg	  */
+#define H5D_PACKAGE		/* suppress error about including H5Dpkg	  */
+#define H5F_PACKAGE		/* suppress error about including H5Fpkg	  */
+#define H5G_PACKAGE		/* suppress error about including H5Gpkg      */
+#define H5O_PACKAGE		/* suppress error about including H5Opkg	  */
+#define H5T_PACKAGE		/* suppress error about including H5Tpkg	  */
 
 /* Interface initialization */
 #define H5_INTERFACE_INIT_FUNC	H5VL_dsm_init_interface
@@ -65,14 +65,14 @@ static herr_t H5VL_dsm_file_close(hid_t file_id, hid_t req);
 H5VL_class_t H5VL_dsm_g = {
     "dsm",					/* name */
     0,                                          /* nrefs */
-    H5VL_dsm_term,                              /*terminate */
+    H5VL_dsm_term,                              /* terminate */
     {                                           /* attribute_cls */
         NULL,                                   /* create */
         NULL,                                   /* open */
         NULL,                                   /* read */
         NULL,                                   /* write */
-        NULL,                                   /* delete */
-        NULL,                                   /* delete */
+        NULL,                                   /* get */
+        NULL,                                   /* remove */
         NULL                                    /* close */
     },
     {                                           /* datatype_cls */
@@ -83,38 +83,42 @@ H5VL_class_t H5VL_dsm_g = {
     {                                           /* dataset_cls */
         NULL,                                   /* create */
         NULL,                                   /* open */
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        NULL
+        NULL,                                   /* read */
+        NULL,                                   /* write */
+        NULL,                                   /* set extent */
+        NULL,                                   /* get */
+        NULL                                    /* close */
     },
     {                                           /* file_cls */
-        H5VL_dsm_file_create,                 /* create */
-        H5VL_dsm_file_open,                   /* open */
-        NULL,
-        NULL,
-        NULL,
-        H5VL_dsm_file_close                   /* close */
+        H5VL_dsm_file_create,                   /* create */
+        H5VL_dsm_file_open,                     /* open */
+        NULL,                                   /* flush */
+        NULL,                                   /* get */
+        NULL,                                   /* misc */
+        NULL,                                   /* optional */
+        H5VL_dsm_file_close                     /* close */
     },
     {                                           /* group_cls */
-        NULL,
-        NULL,
-        NULL,
-        NULL
+        NULL,                                   /* create */
+        NULL,                                   /* move */
+        NULL,                                   /* get */
+        NULL                                    /* remove */
     },
     {                                           /* link_cls */
         NULL,                                   /* create */
-        NULL,                                   /* delete */
         NULL,                                   /* move */
-        NULL
+        NULL,                                   /* get */
+        NULL                                    /* remove */
     },
     {                                           /* object_cls */
-        NULL,
+        NULL,                                   /* open */
         NULL,                                   /* copy */
-        NULL,
-        NULL,
-        NULL
+        NULL,                                   /* lookup */
+        NULL,                                   /* free location */
+        NULL,                                   /* get */
+        NULL,                                   /* misc */
+        NULL,                                   /* optional */
+        NULL                                    /* close */
     }
 };
 
@@ -148,8 +152,8 @@ H5VL_dsm_init_interface(void)
  * Return:	Success:	The ID for the dsm plugin.
  *		Failure:	Negative.
  *
- * Programmer:	Mohamad Chaarawi
- *              January, 2012
+ * Programmer:	Jerome Soumagne
+ *              May, 2012
  *
  *-------------------------------------------------------------------------
  */
@@ -174,8 +178,8 @@ H5VL_dsm_init(void)
  *
  * Returns:     Non-negative on success or negative on failure
  *
- * Programmer:  Mohamad Chaarawi
- *              January, 2012
+ * Programmer:  Jerome Soumagne
+ *              May, 2012
  *
  *---------------------------------------------------------------------------
  */
@@ -199,8 +203,8 @@ H5VL_dsm_term(void)
  *
  * Return:	Non-negative on success/Negative on failure
  *
- * Programmer:  Mohamad Chaarawi
- *              January, 2012
+ * Programmer:  Jerome Soumagne
+ *              May, 2012
  *
  *-------------------------------------------------------------------------
  */
@@ -230,8 +234,8 @@ H5Pset_fapl_dsm_vol(hid_t fapl_id)
  * Return:  Success:  A pointer to a new file data structure.
  *    Failure:  NULL
  *
- * Programmer:  Mohamad Chaarawi
- *              January, 2012
+ * Programmer:  Jerome Soumagne
+ *              May, 2012
  *
  *-------------------------------------------------------------------------
  */
@@ -253,8 +257,8 @@ H5VL_dsm_file_create(const char *name, unsigned flags, hid_t fcpl_id, hid_t fapl
  * Return:	Success:	A pointer to a new file data structure. 
  *		Failure:	NULL
  *
- * Programmer:  Mohamad Chaarawi
- *              January, 2012
+ * Programmer:  Jerome Soumagne
+ *              May, 2012
  *
  *-------------------------------------------------------------------------
  */
@@ -276,8 +280,8 @@ H5VL_dsm_file_open(const char *name, unsigned flags, hid_t fapl_id, hid_t UNUSED
  * Return:	Success:	0
  *		Failure:	-1, file not closed.
  *
- * Programmer:  Mohamad Chaarawi
- *              January, 2012
+ * Programmer:  Jerome Soumagne
+ *              May, 2012
  *
  *-------------------------------------------------------------------------
  */

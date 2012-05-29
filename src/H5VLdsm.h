@@ -26,6 +26,10 @@
 #ifndef __H5VLdsm_h
 #define __H5VLdsm_h
 
+/* HDF5 */
+#include "H5Ipublic.h"
+#include "H5VLpublic.h"
+
 /* H5FDdsm */
 #include "H5FDdsmConfig.h"
 
