@@ -1,5 +1,4 @@
 #include "H5FDdsmTest.h"
-#include "H5FDdsm.h"
 //
 #include <cstdlib>
 #include <string>
