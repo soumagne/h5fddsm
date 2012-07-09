@@ -40,7 +40,12 @@ extern "C" {
   H5FDdsm_EXPORT herr_t H5FD_dsm_steering_init(MPI_Comm intra_comm);
 
   /* Description:
-   * Update the steering orders and get from the GUI newly modified parameters.
+   * Refresh and update the state of raw steering commands such as pause/resume
+   * and datasets that have been enabled/disabled through the GUI. Any
+   * simulation code that needs to check for these commands should make use of
+   * this call. In case of a pause command being sent in, the simulation waits
+   * for a resume command at this control point. Note that creating a new HDF
+   * file does not reset these values.
    */
   H5FDdsm_EXPORT herr_t H5FD_dsm_steering_update();
 
