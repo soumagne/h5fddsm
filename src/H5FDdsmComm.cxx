@@ -106,7 +106,7 @@ H5FDdsmComm::ChannelSynced(H5FDdsmInt32 who, H5FDdsmInt32 *syncId)
   if (this->SyncChannels == this->InterSize) {
     H5FDdsmDebug("Channels cleared: " << this->SyncChannels << "/" << this->InterSize);
     this->SyncChannels = 0;
-    if (!this->UseOneSidedComm) {
+//    if (!this->UseOneSidedComm) {
       if (!syncQueue.empty()) {
         H5FDdsmDebug("(" << this->Id << ") " << "pop sync queue from " << who);
         if (syncQueue.front() != who) {
@@ -117,11 +117,11 @@ H5FDdsmComm::ChannelSynced(H5FDdsmInt32 who, H5FDdsmInt32 *syncId)
           H5FDdsmError("(" << this->Id << ") " << "Sync queue should be empty!! " << syncQueue.front());
         }
       }
-    }
+//    }
     *syncId = -1;
     ret = H5FD_DSM_TRUE;
   } else {
-    if (!this->UseOneSidedComm) {
+//    if (!this->UseOneSidedComm) {
       if (syncQueue.empty()) {
         H5FDdsmDebug("(" << this->Id << ") " << "filling sync queue from " << who);
         for (int i=0; i<this->InterSize; i++) {
@@ -135,7 +135,7 @@ H5FDdsmComm::ChannelSynced(H5FDdsmInt32 who, H5FDdsmInt32 *syncId)
         syncQueue.pop();
       }
       *syncId = syncQueue.front();
-    }
+//    }
   }
   return(ret);
 }

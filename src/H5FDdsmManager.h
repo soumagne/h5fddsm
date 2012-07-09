@@ -203,18 +203,6 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     hid_t GetCachedFileAccessHandle();
 
     // Description:
-    // (Debug) Send an XML string.
-    void SendDSMXML();
-
-    // Description:
-    // (Debug) When sending, the writer can SetXMLDescriptionSend and it will be transmitted
-    // to the receiver. When receiving, GetXMLDescriptionReceive queries the internal DSMBuffer
-    // object to see if a string is present.
-    H5FDdsmSetStringMacro(XMLStringSend);
-    H5FDdsmConstString GetXMLStringReceive();
-    void ClearXMLStringReceive();
-
-    // Description:
     // If the .dsm_config file exists in the standard location
     // $ENV{H5FD_DSM_CONFIG_PATH}/.dsm_config then the server/port/mode
     // information can be read. This is for use the by a DSM client.
@@ -277,8 +265,6 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     H5FDdsmBoolean  UseStaticInterComm;
     H5FDdsmString   ServerHostName;
     H5FDdsmInt32    ServerPort;
-    //
-    H5FDdsmString   XMLStringSend;
     //
     hid_t           Cache_fapl;
     hid_t           Cache_fileId;

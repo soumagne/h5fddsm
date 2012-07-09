@@ -252,7 +252,7 @@ H5FDdsmBuffer::ReceiveCommandHeader(H5FDdsmInt32 *opcode, H5FDdsmInt32 *source,
 
   H5FDdsmMsg msg;
 
-  msg.Source = (remoteSource>=0) ? remoteSource : H5FD_DSM_ANY_SOURCE;
+  msg.Source = (remoteSource >= 0) ? remoteSource : H5FD_DSM_ANY_SOURCE;
   msg.SetLength(sizeof(cmd));
   msg.SetTag(H5FD_DSM_COMMAND_TAG);
   msg.SetData(&cmd);

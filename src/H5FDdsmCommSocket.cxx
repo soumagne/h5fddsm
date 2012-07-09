@@ -77,7 +77,6 @@ H5FDdsmInt32
 H5FDdsmCommSocket::Send(H5FDdsmMsg *msg)
 {
   H5FDdsmInt32   status;
-  MPI_Comm       comm;
 
   if (H5FDdsmComm::Send(msg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 

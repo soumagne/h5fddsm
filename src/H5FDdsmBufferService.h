@@ -59,17 +59,15 @@
 #define H5FD_DSM_OPCODE_GET          0x02
 
 #define H5FD_DSM_LOCK_ACQUIRE        0x03
-#define H5FD_DSM_LOCK_ACQUIRED       0x04
-#define H5FD_DSM_LOCK_RELEASE        0x05
+#define H5FD_DSM_LOCK_RELEASE        0x04
+#define H5FD_DSM_NOTIFICATION        0x05
 
 #define H5FD_DSM_ACCEPT              0x06
 #define H5FD_DSM_DISCONNECT          0x07
 
 #define H5FD_DSM_COMM_SWITCH         0x08
-#define H5FD_DSM_NOTIFICATION        0x09
 
-#define H5FD_DSM_XML_EXCHANGE        0x10
-#define H5FD_DSM_CLEAR_STORAGE       0x11
+#define H5FD_DSM_CLEAR_STORAGE       0x09
 
 #define H5FD_DSM_DATA_MODIFIED       0x100
 
@@ -116,10 +114,6 @@ class H5FDdsm_EXPORT H5FDdsmBufferService : public H5FDdsmBuffer {
     H5FDdsmGetValueMacro(ReleaseLockOnClose, H5FDdsmBoolean);
     H5FDdsmSetValueMacro(ReleaseLockOnClose, H5FDdsmBoolean);
 
-    // Is synchronization required
-    H5FDdsmGetValueMacro(IsSyncRequired, H5FDdsmBoolean);
-    H5FDdsmSetValueMacro(IsSyncRequired, H5FDdsmBoolean);
-
     // Debug: add ability to send xml string
     H5FDdsmGetStringMacro(XMLDescription);
     H5FDdsmSetStringMacro(XMLDescription);
@@ -127,12 +121,12 @@ class H5FDdsm_EXPORT H5FDdsmBufferService : public H5FDdsmBuffer {
     void *         BufferServiceThread();
     void *         RemoteServiceThread();
 
-    H5FDdsmInt32   BufferServiceLoop(H5FDdsmInt32 *ReturnOpcode=0);
-    H5FDdsmInt32   BufferService(H5FDdsmInt32 *ReturnOpcode=0);
+    H5FDdsmInt32   BufferServiceLoop(H5FDdsmInt32 *returnOpcode=0);
+    H5FDdsmInt32   BufferService(H5FDdsmInt32 *returnOpcode=0);
     H5FDdsmInt32   StartBufferService();
     H5FDdsmInt32   EndBufferService();
 
-    H5FDdsmInt32   RemoteService(H5FDdsmInt32 *ReturnOpcode=0);
+    H5FDdsmInt32   RemoteService(H5FDdsmInt32 *returnOpcode=0);
     H5FDdsmInt32   StartRemoteService();
     H5FDdsmInt32   EndRemoteService();
 
@@ -143,16 +137,16 @@ class H5FDdsm_EXPORT H5FDdsmBufferService : public H5FDdsmBuffer {
     H5FDdsmInt32   SendDone();
 
     // Put/Get Data of size Lenght at address Address
-    H5FDdsmInt32   Put(H5FDdsmAddr Address, H5FDdsmUInt64 Length, H5FDdsmPointer Data);
-    H5FDdsmInt32   Get(H5FDdsmAddr Address, H5FDdsmUInt64 Length, H5FDdsmPointer Data, H5FDdsmBoolean Blocking=H5FD_DSM_TRUE);
+    H5FDdsmInt32   Put(H5FDdsmAddr address, H5FDdsmUInt64 length, H5FDdsmPointer data);
+    H5FDdsmInt32   Get(H5FDdsmAddr address, H5FDdsmUInt64 length, H5FDdsmPointer data, H5FDdsmBoolean blocking=H5FD_DSM_TRUE);
 
     H5FDdsmInt32   RequestLockAcquire();
     H5FDdsmInt32   WaitForLockAcquisition();
     H5FDdsmInt32   RequestLockRelease();
 
-    H5FDdsmInt32   RequestDisconnect();
-
     H5FDdsmInt32   RequestNotification();
+
+    H5FDdsmInt32   RequestDisconnect();
 
   protected:
     H5FDdsmInt32            CommChannel;
@@ -165,7 +159,6 @@ class H5FDdsm_EXPORT H5FDdsmBufferService : public H5FDdsmBuffer {
     //
     H5FDdsmBoolean          IsLocked;
     H5FDdsmBoolean          ReleaseLockOnClose;
-    H5FDdsmBoolean          IsSyncRequired;
     //
     H5FDdsmString           XMLDescription;
     //

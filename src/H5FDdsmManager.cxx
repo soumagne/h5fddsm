@@ -107,7 +107,6 @@ H5FDdsmManager::H5FDdsmManager()
   this->UseStaticInterComm      = H5FD_DSM_FALSE;
   this->ServerHostName          = NULL;
   this->ServerPort              = 0;
-  this->XMLStringSend           = NULL;
   this->Cache_fapl              = H5I_BADID;
   this->Cache_fileId            = H5I_BADID;
 #ifdef H5FDdsm_HAVE_STEERING
@@ -122,7 +121,6 @@ H5FDdsmManager::~H5FDdsmManager()
 { 
   this->Destroy();
 
-  this->SetXMLStringSend(NULL);
 #ifdef H5FDdsm_HAVE_STEERING
   if (this->Steerer) delete this->Steerer;
 #endif
@@ -522,7 +520,7 @@ H5FDdsmInt32 H5FDdsmManager::Publish()
     }
     this->DsmBuffer->StartBufferService();
     H5FDdsmDebug("DSM Service Ready on " << this->UpdatePiece);
-    if (this->UpdatePiece == 0) this->DsmBuffer->SendAccept();
+    this->DsmBuffer->SendAccept();
   }
   //
   return(H5FD_DSM_SUCCESS);
@@ -596,32 +594,6 @@ hid_t H5FDdsmManager::GetCachedFileHandle()
 hid_t H5FDdsmManager::GetCachedFileAccessHandle()
 {
   return this->Cache_fapl;
-}
-
-//----------------------------------------------------------------------------
-void H5FDdsmManager::SendDSMXML()
-{
-  this->DsmBuffer->RequestXMLExchange();
-  if (this->XMLStringSend != NULL) {
-    int commServerSize = this->DsmBuffer->GetEndServerId() - this->DsmBuffer->GetStartServerId() + 1;
-    for (int i=0; i<commServerSize; i++) {
-      this->DsmBuffer->GetComm()->SendXML(this->XMLStringSend, i);
-    }
-  }
-  this->DsmBuffer->GetComm()->Barrier();
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmConstString H5FDdsmManager::GetXMLStringReceive()
-{
-  if (this->DsmBuffer) return this->DsmBuffer->GetXMLDescription();
-  return(NULL);
-}
-
-//----------------------------------------------------------------------------
-void H5FDdsmManager::ClearXMLStringReceive()
-{
-  this->DsmBuffer->SetXMLDescription(NULL);
 }
 
 //----------------------------------------------------------------------------
