@@ -62,7 +62,6 @@ H5FDdsmComm::H5FDdsmComm()
   this->IntraSize          = -1;
   this->InterCommType      = -1;
   this->InterSize          = -1;
-  this->CommChannel        = H5FD_DSM_INTRA_COMM;
   this->UseOneSidedComm    = H5FD_DSM_FALSE;
   this->UseStaticInterComm = H5FD_DSM_FALSE;
   this->SyncChannels       = 0;
@@ -173,7 +172,7 @@ H5FDdsmComm::Send(H5FDdsmMsg *Msg)
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmComm::Receive(H5FDdsmMsg *Msg, H5FDdsmInt32 Channel)
+H5FDdsmComm::Receive(H5FDdsmMsg *Msg)
 {
   if (Msg->Tag <= 0) Msg->Tag = H5FD_DSM_DEFAULT_TAG;
   if (Msg->Length <= 0 ) {
@@ -184,14 +183,6 @@ H5FDdsmComm::Receive(H5FDdsmMsg *Msg, H5FDdsmInt32 Channel)
     H5FDdsmError("Cannot Receive Message into Data Buffer = " << Msg->Length);
     return(H5FD_DSM_FAIL);
   }
-  return(H5FD_DSM_SUCCESS);
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmComm::Probe(H5FDdsmMsg *Msg)
-{
-  if (Msg->Tag <= 0) Msg->Tag = H5FD_DSM_DEFAULT_TAG;
   return(H5FD_DSM_SUCCESS);
 }
 
@@ -304,20 +295,6 @@ H5FDdsmComm::RecvInfo(H5FDdsmInfo *dsmInfo)
 //----------------------------------------------------------------------------
 H5FDdsmInt32
 H5FDdsmComm::SendInfo(H5FDdsmInfo *dsmInfo)
-{
-  return(H5FD_DSM_SUCCESS);
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmComm::SendXML(H5FDdsmString file, H5FDdsmInt32 dest)
-{
-  return(H5FD_DSM_SUCCESS);
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmComm::RecvXML(H5FDdsmString *file)
 {
   return(H5FD_DSM_SUCCESS);
 }

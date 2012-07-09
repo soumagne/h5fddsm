@@ -56,23 +56,6 @@
 #include "H5FDdsmThread.h"
 #include "H5FDdsmCondition.h"
 
-#define H5FD_DSM_OPCODE_PUT          0x01
-#define H5FD_DSM_OPCODE_GET          0x02
-
-#define H5FD_DSM_LOCK_ACQUIRE        0x03
-#define H5FD_DSM_LOCK_RELEASE        0x04
-
-#define H5FD_DSM_ACCEPT              0x05
-#define H5FD_DSM_DISCONNECT          0x06
-
-#define H5FD_DSM_COMM_SWITCH         0x07
-#define H5FD_DSM_NOTIFICATION        0x08
-
-#define H5FD_DSM_XML_EXCHANGE        0x09
-#define H5FD_DSM_CLEAR_STORAGE       0x10
-
-#define H5FD_DSM_DATA_MODIFIED       0x100
-
 #define H5FDdsmLockDebug(x) \
 { \
   if (this->IsServer) { \
@@ -178,10 +161,10 @@ struct H5FDdsmBufferService::H5FDdsmBufferServiceInternals
 //----------------------------------------------------------------------------
 H5FDdsmBufferService::H5FDdsmBufferService()
 {
-  this->DataPointer     = NULL;
+  this->DataPointer        = NULL;
   //
-  this->IsServer        = H5FD_DSM_TRUE;
-  this->IsConnected     = H5FD_DSM_FALSE;
+  this->CommChannel         = H5FD_DSM_INTRA_COMM;
+  this->IsConnected         = H5FD_DSM_FALSE;
   //
   this->IsNotified          = H5FD_DSM_FALSE;
   this->Notification        = 0;
@@ -380,7 +363,6 @@ H5FDdsmBufferService::BufferService(H5FDdsmInt32 *ReturnOpcode)
   // H5FD_DSM_OPCODE_DONE
   case H5FD_DSM_OPCODE_DONE:
     break;
-#ifdef H5FDdsm_HAVE_STEERING
   // H5FD_DSM_COMM_SWITCH
   case H5FD_DSM_COMM_SWITCH:
     if (this->Comm->GetCommChannel() == H5FD_DSM_INTRA_COMM) {
@@ -397,12 +379,6 @@ H5FDdsmBufferService::BufferService(H5FDdsmInt32 *ReturnOpcode)
   case H5FD_DSM_LOCK_RELEASE:
     if (this->Comm->ChannelSynced(who, &syncId) || !this->IsConnected) {
       this->Comm->SetCommChannel(H5FD_DSM_INTRA_COMM);
-      if (!this->IsLocked) {
-        H5FDdsmLockError("already released");
-      } else {
-        this->IsLocked = H5FD_DSM_FALSE;
-        H5FDdsmLockDebug("released");
-      }
       this->BufferServiceInternals->Lock.Unlock();
       this->Comm->Barrier();
       if (this->IsConnected) {
@@ -411,7 +387,6 @@ H5FDdsmBufferService::BufferService(H5FDdsmInt32 *ReturnOpcode)
       }
     }
     break;
-#endif
   // H5FD_DSM_ACCEPT
   case H5FD_DSM_ACCEPT:
     if (!this->IsConnected) {
@@ -431,13 +406,8 @@ H5FDdsmBufferService::BufferService(H5FDdsmInt32 *ReturnOpcode)
       this->Comm->WindowSync();
       this->Comm->RemoteBarrier();
     } else {
-#ifdef H5FDdsm_HAVE_STEERING
       if (!this->BufferServiceInternals->IsRemoteServiceThreadCreated)
         this->StartRemoteService();
-#else
-      this->Comm->SetCommChannel(H5FD_DSM_INTER_COMM);
-      this->Comm->Barrier();
-#endif
     }
     break;
   // H5FD_DSM_DISCONNECT
@@ -464,11 +434,7 @@ H5FDdsmBufferService::BufferService(H5FDdsmInt32 *ReturnOpcode)
       // When a notification is found, the server keeps the lock
       // and only releases it when the requested task is over
       this->ReleaseLockOnClose = H5FD_DSM_FALSE;
-#ifdef H5FDdsm_HAVE_STEERING
       if (this->Comm->GetUseOneSidedComm()) this->IsLocked = H5FD_DSM_TRUE;
-#else
-      this->IsLocked = H5FD_DSM_TRUE;
-#endif
       H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "Notification " <<
           this->Notification << ", Switched to Local channel");
       this->Comm->Barrier();
@@ -539,8 +505,7 @@ H5FDdsmBufferService::RemoteService(H5FDdsmInt32 *ReturnOpcode)
 
   for (H5FDdsmInt32 i = 0; i < this->Comm->GetInterSize(); i++) {
     // This receive always gets data from the inter-communicator
-    H5FDdsmInt32 useInterCommunicator = 1;
-    status = this->ReceiveCommandHeader(&Opcode, &who, &Address, &aLength, useInterCommunicator, i);
+    status = this->ReceiveCommandHeader(&Opcode, &who, &Address, &aLength, H5FD_DSM_INTER_COMM, i);
 
     if (status == H5FD_DSM_FAIL) {
       H5FDdsmError("Error Receiving Command Header");
@@ -551,16 +516,10 @@ H5FDdsmBufferService::RemoteService(H5FDdsmInt32 *ReturnOpcode)
     case H5FD_DSM_LOCK_ACQUIRE:
       if (this->Comm->ChannelSynced(who, &syncId)) {
         this->BufferServiceInternals->Lock.Lock();
-        if (this->IsLocked) {
-          H5FDdsmLockError("already acquired");
-        } else {
-          this->IsLocked = H5FD_DSM_TRUE;
-          H5FDdsmLockDebug("acquired");
-        }
         who = this->Comm->GetId();
         status = H5FD_DSM_SUCCESS;
         H5FDdsmDebug("Send request communicator switch to " << who);
-        status = this->SendCommandHeader(H5FD_DSM_COMM_SWITCH, who, 0, 0);
+        status = this->SendCommandHeader(H5FD_DSM_COMM_SWITCH, who, 0, 0, H5FD_DSM_INTRA_COMM);
         if (status == H5FD_DSM_FAIL) {
           H5FDdsmError("Error Sending Command Header");
           return(H5FD_DSM_FAIL);
@@ -601,7 +560,42 @@ H5FDdsmBufferService::EndRemoteService()
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBufferService::Put(H5FDdsmAddr address, H5FDdsmUInt64 length, H5FDdsmPointer data)
+H5FDdsmBufferService::SendAccept()
+{
+  H5FDdsmInt32 who, status = H5FD_DSM_SUCCESS;
+
+  if (!this->IsConnected) this->BufferServiceInternals->IsConnecting = H5FD_DSM_TRUE;
+
+  for(who = this->StartServerId ; who <= this->EndServerId ; who++) {
+    status = this->SendCommandHeader(H5FD_DSM_ACCEPT, who, 0, 0, H5FD_DSM_INTRA_COMM);
+    if (status != H5FD_DSM_SUCCESS) {
+      H5FDdsmError("Cannot send accept command to DSM process " << who);
+      return(status);
+    }
+  }
+  return(status);
+}
+
+//----------------------------------------------------------------------------
+H5FDdsmInt32
+H5FDdsmBufferService::SendDone()
+{
+  H5FDdsmInt32   who, status = H5FD_DSM_SUCCESS;
+
+  for(who = this->StartServerId ; who <= this->EndServerId ; who++) {
+    status = this->SendCommandHeader(H5FD_DSM_OPCODE_DONE, who, 0, 0, H5FD_DSM_INTRA_COMM);
+    if (status != H5FD_DSM_SUCCESS) {
+      H5FDdsmError("Cannot send termination command to DSM process " << who);
+      return(status);
+    }
+  }
+  return(status);
+}
+
+//----------------------------------------------------------------------------
+H5FDdsmInt32
+H5FDdsmBufferService::Put(H5FDdsmAddr address, H5FDdsmUInt64 length,
+    H5FDdsmPointer data)
 {
   H5FDdsmInt32 myId = this->Comm->GetId();
   std::vector<H5FDdsmMsg> putRequests;
@@ -624,7 +618,8 @@ H5FDdsmBufferService::Put(H5FDdsmAddr address, H5FDdsmUInt64 length, H5FDdsmPoin
         return(H5FD_DSM_FAIL);
       }
       if (!this->Comm->GetUseOneSidedComm()) {
-        status = this->SendCommandHeader(H5FD_DSM_OPCODE_PUT, putRequest.Dest, putRequest.Address, putRequest.Length);
+        H5FDdsmInt32 comm = (this->IsServer) ? H5FD_DSM_INTRA_COMM : H5FD_DSM_INTER_COMM;
+        status = this->SendCommandHeader(H5FD_DSM_OPCODE_PUT, putRequest.Dest, putRequest.Address, putRequest.Length, comm);
         if (status == H5FD_DSM_FAIL) {
           H5FDdsmError("Failed to send PUT Header to " << putRequest.Dest);
           return(H5FD_DSM_FAIL);
@@ -643,7 +638,8 @@ H5FDdsmBufferService::Put(H5FDdsmAddr address, H5FDdsmUInt64 length, H5FDdsmPoin
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBufferService::Get(H5FDdsmAddr address, H5FDdsmUInt64 length, H5FDdsmPointer data, H5FDdsmBoolean Blocking)
+H5FDdsmBufferService::Get(H5FDdsmAddr address, H5FDdsmUInt64 length, H5FDdsmPointer data,
+    H5FDdsmBoolean Blocking)
 {
   H5FDdsmInt32 myId = this->Comm->GetId();
   std::vector<H5FDdsmMsg> getRequests;
@@ -667,7 +663,8 @@ H5FDdsmBufferService::Get(H5FDdsmAddr address, H5FDdsmUInt64 length, H5FDdsmPoin
         return(H5FD_DSM_FAIL);
       }
       if (!this->Comm->GetUseOneSidedComm()) {
-        status = this->SendCommandHeader(H5FD_DSM_OPCODE_GET, getRequest.Dest, getRequest.Address, getRequest.Length);
+        H5FDdsmInt32 comm = (this->IsServer) ? H5FD_DSM_INTRA_COMM : H5FD_DSM_INTER_COMM;
+        status = this->SendCommandHeader(H5FD_DSM_OPCODE_GET, getRequest.Dest, getRequest.Address, getRequest.Length, comm);
         if (status == H5FD_DSM_FAIL) {
           H5FDdsmError("Failed to send GET Header to " << getRequest.Dest);
           return(H5FD_DSM_FAIL);
@@ -693,32 +690,35 @@ H5FDdsmBufferService::RequestLockAcquire()
 {
   H5FDdsmInt32 status = H5FD_DSM_SUCCESS;
 
-  if (this->IsServer) {
-    this->BufferServiceInternals->Lock.Lock();
-  } else {
-    if (this->Comm->GetUseOneSidedComm()) {
-      // After possible RMA put, need to sync windows before further operations
-      if (this->IsSyncRequired) this->Comm->RemoteBarrier();
-      this->IsSyncRequired = H5FD_DSM_FALSE;
-    } else {
-#ifdef H5FDdsm_HAVE_STEERING
-      for (H5FDdsmInt32 who = this->StartServerId ; who <= this->EndServerId ; who++) {
-        H5FDdsmDebug("Send request LOCK acquire to " << who);
-        status = this->SendCommandHeader(H5FD_DSM_LOCK_ACQUIRE, who, 0, 0);
-      }
-#else
-      this->IsSyncRequired = H5FD_DSM_FALSE;
-#endif
-    }
-  }
-
   if (this->IsLocked) {
     H5FDdsmLockError("already acquired");
-  } else {
-    this->IsLocked = H5FD_DSM_TRUE;
-    H5FDdsmLockDebug("acquired");
+    return(H5FD_DSM_FALSE);
   }
 
+  if (this->IsServer) {
+    // On server, when the mutex is locked, the server is locked
+    this->BufferServiceInternals->Lock.Lock();
+  } else {
+    // On client, we need to check the status of the remote server lock
+    for (H5FDdsmInt32 who = this->StartServerId ; who <= this->EndServerId ; who++) {
+      H5FDdsmDebug("Send request LOCK acquire to " << who);
+      status = this->SendCommandHeader(H5FD_DSM_LOCK_ACQUIRE, who, 0, 0, H5FD_DSM_INTER_COMM);
+    }
+    status = this->WaitForLockAcquisition();
+  }
+
+  this->IsLocked = H5FD_DSM_TRUE;
+  H5FDdsmLockDebug("acquired");
+  return(status);
+}
+
+//----------------------------------------------------------------------------
+H5FDdsmInt32
+H5FDdsmBufferService::WaitForLockAcquisition()
+{
+  H5FDdsmInt32 status = H5FD_DSM_SUCCESS;
+
+//  this->Receive()
   return(status);
 }
 
@@ -730,43 +730,24 @@ H5FDdsmBufferService::RequestLockRelease()
 
   if (!this->IsLocked) {
     H5FDdsmLockError("already released");
-  } else {
-    this->IsLocked = H5FD_DSM_FALSE;
-    H5FDdsmLockDebug("released");
+    return(H5FD_DSM_FALSE);
   }
+
+  this->IsLocked = H5FD_DSM_FALSE;
+
+  // Complete RMA operations when the file is unlocked
+  this->Comm->WindowSync();
 
   if (this->IsServer) {
     this->BufferServiceInternals->Lock.Unlock();
-    if (this->IsConnected) {
-      this->RequestAccept();
-    }
   } else {
-    if (this->Comm->GetUseOneSidedComm()) {
-      this->Comm->WindowSync();
-    } else {
-#ifdef H5FDdsm_HAVE_STEERING
-      for (H5FDdsmInt32 who = this->StartServerId ; who <= this->EndServerId ; who++) {
-        H5FDdsmDebug("Send request LOCK release to " << who);
-        status = this->SendCommandHeader(H5FD_DSM_LOCK_RELEASE, who, 0, 0);
-      }
-#endif
+    for (H5FDdsmInt32 who = this->StartServerId ; who <= this->EndServerId ; who++) {
+      H5FDdsmDebug("Send request LOCK release to " << who);
+      status = this->SendCommandHeader(H5FD_DSM_LOCK_RELEASE, who, 0, 0, H5FD_DSM_INTER_COMM);
     }
   }
 
-  return(status);
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmBufferService::RequestAccept()
-{
-  H5FDdsmInt32 who, status = H5FD_DSM_SUCCESS;
-
-  who = this->Comm->GetId();
-  H5FDdsmDebug("Send request accept to " << who);
-  if (!this->IsConnected) this->BufferServiceInternals->IsConnecting = H5FD_DSM_TRUE;
-  status = this->SendCommandHeader(H5FD_DSM_ACCEPT, who, 0, 0);
-
+  H5FDdsmLockDebug("released");
   return(status);
 }
 
@@ -780,7 +761,7 @@ H5FDdsmBufferService::RequestDisconnect()
 
   for (who = this->StartServerId ; who <= this->EndServerId ; who++) {
     H5FDdsmDebug("Send disconnection request to " << who);
-    status = this->SendCommandHeader(H5FD_DSM_DISCONNECT, who, 0, 0);
+    status = this->SendCommandHeader(H5FD_DSM_DISCONNECT, who, 0, 0, H5FD_DSM_INTER_COMM);
   }
   status = this->Comm->Disconnect();
   this->IsConnected = H5FD_DSM_FALSE;
@@ -795,11 +776,7 @@ H5FDdsmBufferService::RequestNotification()
   H5FDdsmInt32 who, status = H5FD_DSM_SUCCESS;
 
   // On next lock acquire, a synchronization is required
-#ifdef H5FDdsm_HAVE_STEERING
   if (this->Comm->GetUseOneSidedComm()) this->IsSyncRequired = H5FD_DSM_TRUE;
-#else
-  this->IsSyncRequired = H5FD_DSM_TRUE;
-#endif
 
   // If there were ongoing transactions, finish them
   if (this->Comm->GetUseOneSidedComm()) this->Comm->WindowSync();
@@ -818,38 +795,10 @@ H5FDdsmBufferService::RequestNotification()
     // for convenience
     if (this->IsDataModified) localFlag = H5FD_DSM_DATA_MODIFIED;
     localFlag |= this->Notification;
-    status = this->SendCommandHeader(H5FD_DSM_NOTIFICATION, who, localFlag, 0);
+    status = this->SendCommandHeader(H5FD_DSM_NOTIFICATION, who, localFlag, 0, H5FD_DSM_INTER_COMM);
   }
   if (this->IsDataModified) this->IsDataModified = H5FD_DSM_FALSE;
   if (!this->Notification) this->Notification = 0;
 
-  return(status);
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmBufferService::RequestClearStorage()
-{
-  H5FDdsmInt32 who, status = H5FD_DSM_SUCCESS;
-
-  for (who = this->StartServerId ; who <= this->EndServerId ; who++) {
-    H5FDdsmDebug("Send request clear storage to " << who);
-    status = this->SendCommandHeader(H5FD_DSM_CLEAR_STORAGE, who, 0, 0);
-  }
-  return(status);
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmBufferService::RequestXMLExchange()
-{
-  H5FDdsmInt32 who, status = H5FD_DSM_SUCCESS;
-
-  if (this->Comm->GetId() == 0) {
-    for (who = this->StartServerId ; who <= this->EndServerId ; who++) {
-      H5FDdsmDebug("Send request xml channel to " << who);
-      status = this->SendCommandHeader(H5FD_DSM_XML_EXCHANGE, who, 0, 0);
-    }
-  }
   return(status);
 }

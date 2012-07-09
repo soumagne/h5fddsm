@@ -105,10 +105,6 @@ public:
   H5FDdsmGetValueMacro(InterSize, H5FDdsmInt32);
   H5FDdsmSetValueMacro(InterSize, H5FDdsmInt32);
 
-  //! CommChannel
-  H5FDdsmGetValueMacro(CommChannel, H5FDdsmInt32);
-  H5FDdsmSetValueMacro(CommChannel, H5FDdsmInt32);
-
   // If set to true, use one sided comm
   H5FDdsmSetValueMacro(UseOneSidedComm, H5FDdsmBoolean);
   H5FDdsmGetValueMacro(UseOneSidedComm, H5FDdsmBoolean);
@@ -124,8 +120,7 @@ public:
   virtual H5FDdsmInt32   Init();
 
   virtual H5FDdsmInt32   Send(H5FDdsmMsg *Msg);
-  virtual H5FDdsmInt32   Receive(H5FDdsmMsg *Msg, H5FDdsmInt32 Channel=0);
-  virtual H5FDdsmInt32   Probe(H5FDdsmMsg *Msg);
+  virtual H5FDdsmInt32   Receive(H5FDdsmMsg *Msg);
 
   // Additional methods for one sided communications
   virtual H5FDdsmInt32   Put(H5FDdsmMsg *DataMsg);
@@ -145,16 +140,12 @@ public:
   virtual H5FDdsmInt32   RecvInfo(H5FDdsmInfo *dsmInfo);
   virtual H5FDdsmInt32   SendInfo(H5FDdsmInfo *dsmInfo);
 
-  virtual H5FDdsmInt32   SendXML(H5FDdsmString file, H5FDdsmInt32 dest);
-  virtual H5FDdsmInt32   RecvXML(H5FDdsmString *file);
-
 protected:
   MPI_Comm           IntraComm;
   H5FDdsmInt32       Id;
   H5FDdsmInt32       IntraSize;
   H5FDdsmInt32       InterCommType;
   H5FDdsmInt32       InterSize;
-  H5FDdsmInt32       CommChannel;
 
   H5FDdsmBoolean     UseOneSidedComm;
   H5FDdsmBoolean     UseStaticInterComm;

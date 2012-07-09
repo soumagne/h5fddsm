@@ -54,6 +54,27 @@
 
 #include "H5FDdsmBuffer.h"
 
+// Buffer service opcodes
+#define H5FD_DSM_OPCODE_PUT          0x01
+#define H5FD_DSM_OPCODE_GET          0x02
+
+#define H5FD_DSM_LOCK_ACQUIRE        0x03
+#define H5FD_DSM_LOCK_ACQUIRED       0x04
+#define H5FD_DSM_LOCK_RELEASE        0x05
+
+#define H5FD_DSM_ACCEPT              0x06
+#define H5FD_DSM_DISCONNECT          0x07
+
+#define H5FD_DSM_COMM_SWITCH         0x08
+#define H5FD_DSM_NOTIFICATION        0x09
+
+#define H5FD_DSM_XML_EXCHANGE        0x10
+#define H5FD_DSM_CLEAR_STORAGE       0x11
+
+#define H5FD_DSM_DATA_MODIFIED       0x100
+
+#define H5FD_DSM_OPCODE_DONE         0xFF
+
 //! Base comm object for Distributed Shared Memory implementation
 /*!
 */
@@ -62,10 +83,6 @@ class H5FDdsm_EXPORT H5FDdsmBufferService : public H5FDdsmBuffer {
   public:
     H5FDdsmBufferService();
     virtual ~H5FDdsmBufferService();
-
-    // Is the DSMBuffer in server or client mode
-    H5FDdsmGetValueMacro(IsServer, H5FDdsmBoolean);
-    H5FDdsmSetValueMacro(IsServer, H5FDdsmBoolean);
 
     // Is the DSMBuffer connected
     H5FDdsmGetValueMacro(IsConnected, H5FDdsmBoolean);
@@ -119,22 +136,26 @@ class H5FDdsm_EXPORT H5FDdsmBufferService : public H5FDdsmBuffer {
     H5FDdsmInt32   StartRemoteService();
     H5FDdsmInt32   EndRemoteService();
 
+    // Set the Service thread in listening mode for new connections
+    H5FDdsmInt32   SendAccept();
+
+    // End the Service thread
+    H5FDdsmInt32   SendDone();
+
+    // Put/Get Data of size Lenght at address Address
     H5FDdsmInt32   Put(H5FDdsmAddr Address, H5FDdsmUInt64 Length, H5FDdsmPointer Data);
     H5FDdsmInt32   Get(H5FDdsmAddr Address, H5FDdsmUInt64 Length, H5FDdsmPointer Data, H5FDdsmBoolean Blocking=H5FD_DSM_TRUE);
 
     H5FDdsmInt32   RequestLockAcquire();
+    H5FDdsmInt32   WaitForLockAcquisition();
     H5FDdsmInt32   RequestLockRelease();
 
-    H5FDdsmInt32   RequestAccept();
     H5FDdsmInt32   RequestDisconnect();
 
     H5FDdsmInt32   RequestNotification();
 
-    H5FDdsmInt32   RequestClearStorage();
-    H5FDdsmInt32   RequestXMLExchange();
-
   protected:
-    H5FDdsmBoolean          IsServer;
+    H5FDdsmInt32            CommChannel;
     H5FDdsmBoolean          IsConnected;
     //
     H5FDdsmBoolean          IsNotified;

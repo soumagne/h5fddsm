@@ -66,8 +66,7 @@ public:
   virtual H5FDdsmInt32   Init();
 
   H5FDdsmInt32           Send(H5FDdsmMsg *Msg);
-  H5FDdsmInt32           Receive(H5FDdsmMsg *Msg, H5FDdsmInt32 Channel=0);
-  H5FDdsmInt32           Probe(H5FDdsmMsg *Msg);
+  H5FDdsmInt32           Receive(H5FDdsmMsg *Msg);
 
   // Additional methods for one sided communications
   virtual H5FDdsmInt32   Put(H5FDdsmMsg *DataMsg);
@@ -86,9 +85,6 @@ public:
 
   H5FDdsmInt32           RecvInfo(H5FDdsmInfo *dsmInfo);
   H5FDdsmInt32           SendInfo(H5FDdsmInfo *dsmInfo);
-
-  H5FDdsmInt32           SendXML(H5FDdsmString file, H5FDdsmInt32 dest);
-  H5FDdsmInt32           RecvXML(H5FDdsmString *file);
 
 protected:
   MPI_Comm       InterComm;

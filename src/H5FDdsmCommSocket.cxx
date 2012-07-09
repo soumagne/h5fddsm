@@ -74,52 +74,58 @@ H5FDdsmCommSocket::Init()
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmCommSocket::Send(H5FDdsmMsg *Msg)
+H5FDdsmCommSocket::Send(H5FDdsmMsg *msg)
 {
   H5FDdsmInt32   status;
+  MPI_Comm       comm;
 
-  if (H5FDdsmComm::Send(Msg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+  if (H5FDdsmComm::Send(msg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
-  if (this->CommChannel == H5FD_DSM_INTER_COMM) {
-    H5FDdsmDebug("(" << this->Id << ") Sending to remote DSM " << Msg->Length << " bytes to " << Msg->Dest << " Tag = " << H5FDdsmTagToString(Msg->Tag));
-    if (this->InterComm[Msg->Dest]->Send(Msg->Data, Msg->Length) < 0) {
-      H5FDdsmError("Id = " << this->Id << " failed to send " << Msg->Length << " bytes to " << Msg->Dest);
+  if (msg->Communicator == H5FD_DSM_INTER_COMM) {
+    H5FDdsmDebug("(" << this->Id << ") Sending to remote DSM " << msg->Length <<
+        " bytes to " << msg->Dest << " Tag = " << H5FDdsmTagToString(msg->Tag));
+
+    if (this->InterComm[msg->Dest]->Send(msg->Data, msg->Length) < 0) {
+      H5FDdsmError("Id = " << this->Id << " failed to send " << msg->Length <<
+          " bytes to " << msg->Dest);
       return(H5FD_DSM_FAIL);
     }
   } else {
-    H5FDdsmDebug("(" << this->Id << ") Sending " << Msg->Length << " bytes to " << Msg->Dest << " Tag = " << H5FDdsmTagToString(Msg->Tag));
-    status = MPI_Send(Msg->Data, Msg->Length, MPI_UNSIGNED_CHAR, Msg->Dest, Msg->Tag, this->IntraComm);
+    H5FDdsmDebug("(" << this->Id << ") Sending " << msg->Length << " bytes to "
+        << msg->Dest << " Tag = " << H5FDdsmTagToString(msg->Tag));
+    status = MPI_Send(msg->Data, msg->Length, MPI_UNSIGNED_CHAR, msg->Dest,
+        msg->Tag, this->IntraComm);
     if (status != MPI_SUCCESS) {
-      H5FDdsmError("Id = " << this->Id << " MPI_Send failed to send " << Msg->Length << " bytes to " << Msg->Dest);
+      H5FDdsmError("Id = " << this->Id << " MPI_Send failed to send " <<
+          msg->Length << " bytes to " << msg->Dest);
       return(H5FD_DSM_FAIL);
     }
   }
 
-  H5FDdsmDebug("(" << this->Id << ") Sent " << Msg->Length << " bytes to " << Msg->Dest);
+  H5FDdsmDebug("(" << this->Id << ") Sent " << msg->Length << " bytes to " << msg->Dest);
 
   return(H5FD_DSM_SUCCESS);
 }
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmCommSocket::Receive(H5FDdsmMsg *Msg, H5FDdsmInt32 Channel)
+H5FDdsmCommSocket::Receive(H5FDdsmMsg *msg)
 {
-  int            MessageLength;
+  int            message_length;
   H5FDdsmInt32   status;
   H5FDdsmInt32   source = MPI_ANY_SOURCE;
-  H5FDdsmInt32   receiveChannel = Channel;
-  MPI_Status  SendRecvStatus;
+  MPI_Status     mpi_status;
 
-  if (H5FDdsmComm::Receive(Msg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
-  if (Msg->Source >= 0) source = Msg->Source;
+  if (H5FDdsmComm::Receive(msg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+  if (msg->Source >= 0) source = msg->Source;
 
-  if (!receiveChannel) receiveChannel = this->CommChannel;
-
-  if (receiveChannel == H5FD_DSM_INTER_COMM) {
-    H5FDdsmDebug("(" << this->Id << ") Receiving from remote DSM " << Msg->Length << " bytes from " << source << " Tag = " << H5FDdsmTagToString(Msg->Tag));
+  if (msg->Communicator == H5FD_DSM_INTER_COMM) {
+    H5FDdsmDebug("(" << this->Id << ") Receiving from remote DSM " <<
+        msg->Length << " bytes from " << source << " Tag = " << H5FDdsmTagToString(msg->Tag));
     if (source >= 0) {
-      if (this->InterComm[source]->Receive(Msg->Data, Msg->Length) < 0) {
-        H5FDdsmError("Id = " << this->Id << " failed to receive " << Msg->Length << " bytes from " << Msg->Dest);
+      if (this->InterComm[source]->Receive(msg->Data, msg->Length) < 0) {
+        H5FDdsmError("Id = " << this->Id << " failed to receive " << msg->Length
+            << " bytes from " << msg->Dest);
         return(H5FD_DSM_FAIL);
       }
     } else {
@@ -128,50 +134,35 @@ H5FDdsmCommSocket::Receive(H5FDdsmMsg *Msg, H5FDdsmInt32 Channel)
       int selectedIndex;
       // if ANY_SOURCE use select on the whole list of sockets descriptors
       this->InterComm[0]->SelectSockets(this->InterCommSockets, this->InterSize, 0, &selectedIndex);
-      if (this->InterComm[selectedIndex]->Receive(Msg->Data, Msg->Length) < 0) {
-        H5FDdsmError("Id = " << this->Id << " failed to receive " << Msg->Length << " bytes from " << Msg->Dest);
+      if (this->InterComm[selectedIndex]->Receive(msg->Data, msg->Length) < 0) {
+        H5FDdsmError("Id = " << this->Id << " failed to receive " << msg->Length
+            << " bytes from " << msg->Dest);
         return(H5FD_DSM_FAIL);
       }
     }
   } else {
-    H5FDdsmDebug("(" << this->Id << ") Receiving " << Msg->Length << " bytes from " << source << " Tag = " << H5FDdsmTagToString(Msg->Tag));
-    status = MPI_Recv(Msg->Data, Msg->Length, MPI_UNSIGNED_CHAR, source, Msg->Tag, this->IntraComm, &SendRecvStatus);
+    H5FDdsmDebug("(" << this->Id << ") Receiving " << msg->Length << " bytes from "
+        << source << " Tag = " << H5FDdsmTagToString(msg->Tag));
+    status = MPI_Recv(msg->Data, msg->Length, MPI_UNSIGNED_CHAR, source, msg->Tag,
+        this->IntraComm, &mpi_status);
 
     if (status != MPI_SUCCESS) {
-      H5FDdsmError("Id = " << this->Id << " MPI_Recv failed to receive " << Msg->Length << " bytes from " << Msg->Source);
-      H5FDdsmError("MPI Error Code = " << SendRecvStatus.MPI_ERROR);
+      H5FDdsmError("Id = " << this->Id << " MPI_Recv failed to receive " <<
+          msg->Length << " bytes from " << msg->Source);
+      H5FDdsmError("MPI Error Code = " << mpi_status.MPI_ERROR);
       return(H5FD_DSM_FAIL);
     }
-    status = MPI_Get_count(&SendRecvStatus, MPI_UNSIGNED_CHAR, &MessageLength);
-    H5FDdsmDebug("(" << this->Id << ") Received " << MessageLength << " bytes from " << SendRecvStatus.MPI_SOURCE);
+    status = MPI_Get_count(&mpi_status, MPI_UNSIGNED_CHAR, &message_length);
+    H5FDdsmDebug("(" << this->Id << ") Received " << message_length << " bytes from " << mpi_status.MPI_SOURCE);
 
-    Msg->SetSource(SendRecvStatus.MPI_SOURCE);
-    Msg->SetLength(MessageLength);
+    msg->SetSource(mpi_status.MPI_SOURCE);
+    msg->SetLength(message_length);
     if (status != MPI_SUCCESS) {
       H5FDdsmError("MPI_Get_count failed ");
       return(H5FD_DSM_FAIL);
     }
   }
   return(H5FD_DSM_SUCCESS);
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmCommSocket::Probe(H5FDdsmMsg *Msg)
-{
-  int         nid, flag=0;
-  MPI_Status  Status;
-
-  if (H5FDdsmComm::Probe(Msg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
-  if (this->CommChannel == H5FD_DSM_INTRA_COMM) {
-    MPI_Iprobe(MPI_ANY_SOURCE, Msg->Tag, this->IntraComm, &flag, &Status);
-    if (flag) {
-      nid = Status.MPI_SOURCE;
-      Msg->SetSource(nid);
-      return(H5FD_DSM_SUCCESS);
-    }
-  }
-  return(H5FD_DSM_FAIL);
 }
 
 //----------------------------------------------------------------------------
@@ -302,7 +293,6 @@ H5FDdsmCommSocket::Connect()
       return(H5FD_DSM_FAIL);
     }
 
-    this->CommChannel = H5FD_DSM_INTER_COMM;
     return(H5FD_DSM_SUCCESS);
   } else {
     return(H5FD_DSM_FAIL);
@@ -325,7 +315,6 @@ H5FDdsmCommSocket::Disconnect()
     if (this->InterComm[i]) delete this->InterComm[i];
     this->InterComm[i] = NULL;
   }
-  this->CommChannel = H5FD_DSM_INTRA_COMM;
   return(H5FD_DSM_SUCCESS);
 }
 
@@ -407,64 +396,6 @@ H5FDdsmCommSocket::SendInfo(H5FDdsmInfo *dsmInfo)
     H5FDdsmDebug("Send DSM Info Completed");
   }
   this->Barrier();
-  return(H5FD_DSM_SUCCESS);
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmCommSocket::SendXML(H5FDdsmString file, H5FDdsmInt32 dest)
-{
-  if (H5FDdsmComm::SendXML(file, dest) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
-  //
-  if (this->Id == 0) {
-    H5FDdsmInt32 length = (H5FDdsmInt32)strlen(file) + 1;
-    H5FDdsmDebug("Send XML to DSM Buffer object: Length=" << length << "\n" << file);
-
-    if (this->CommChannel == H5FD_DSM_INTER_COMM) {
-      if (this->InterComm[dest]->Send(&length, sizeof(H5FDdsmInt32)) < 0) {
-        H5FDdsmError("Id = " << this->Id << " failed to send XML length");
-        return(H5FD_DSM_FAIL);
-      }
-      if (this->InterComm[dest]->Send(file, sizeof(H5FDdsmByte)*length) < 0) {
-        H5FDdsmError("Id = " << this->Id << " failed to send XML file");
-        return(H5FD_DSM_FAIL);
-      }
-    }
-    else {
-      if (MPI_Send(file, length, MPI_CHAR, dest, H5FD_DSM_XML_TAG, this->IntraComm) != MPI_SUCCESS) {
-        H5FDdsmError("Id = " << this->Id << " MPI_Send of XML file failed");
-        return(H5FD_DSM_FAIL);
-      }
-    }
-  }
-  H5FDdsmDebug("Send DSM XML Completed");
-  return(H5FD_DSM_SUCCESS);
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmCommSocket::RecvXML(H5FDdsmString *file)
-{
-  H5FDdsmInt32 length; // string is null terminated on send
-  //
-  if (H5FDdsmComm::RecvXML(file) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
-  //
-  if (this->CommChannel == H5FD_DSM_INTER_COMM) {
-    this->InterComm[0]->Receive(&length, sizeof(H5FDdsmInt32));
-    *file = new char[length];
-    this->InterComm[0]->Receive(*file, sizeof(H5FDdsmByte)*length);
-  }
-  else {
-    MPI_Status status;
-    MPI_Probe(0, H5FD_DSM_XML_TAG, this->IntraComm, &status);
-    MPI_Get_count(&status, MPI_CHAR, &length);
-    *file = new char[length];
-    if (MPI_Recv(*file, length, MPI_CHAR, 0, H5FD_DSM_XML_TAG, this->IntraComm, &status) != MPI_SUCCESS) {
-      H5FDdsmError("Id = " << this->Id << " MPI_Recv of XML file failed");
-      return(H5FD_DSM_FAIL);
-    }
-  }
-  H5FDdsmDebug("Recv DSM XML: " << *file);
   return(H5FD_DSM_SUCCESS);
 }
 

@@ -101,6 +101,9 @@ struct H5FDdsm_EXPORT H5FDdsmMsg : public H5FDdsmObject {
     H5FDdsmSetValueMacro(Data, H5FDdsmPointer);
     H5FDdsmGetValueMacro(Data, H5FDdsmPointer);
 
+    H5FDdsmSetValueMacro(Communicator, H5FDdsmInt32);
+    H5FDdsmGetValueMacro(Communicator, H5FDdsmInt32);
+
     H5FDdsmInt32   Source;
     H5FDdsmInt32   Dest;
     H5FDdsmInt32   Tag;
@@ -108,6 +111,7 @@ struct H5FDdsm_EXPORT H5FDdsmMsg : public H5FDdsmObject {
     H5FDdsmInt32   Length;
     H5FDdsmUInt64  Length64;
     H5FDdsmPointer Data;
+    H5FDdsmInt32   Communicator;
 };
 
 #endif // __H5FDdsmMsg_h

@@ -522,7 +522,7 @@ H5FDdsmInt32 H5FDdsmManager::Publish()
     }
     this->DsmBuffer->StartBufferService();
     H5FDdsmDebug("DSM Service Ready on " << this->UpdatePiece);
-    this->DsmBuffer->RequestAccept();
+    if (this->UpdatePiece == 0) this->DsmBuffer->SendAccept();
   }
   //
   return(H5FD_DSM_SUCCESS);

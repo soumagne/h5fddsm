@@ -54,8 +54,6 @@
 
 #include "H5FDdsmObject.h"
 
-#define H5FD_DSM_OPCODE_DONE    0xFF
-
 //! Base comm object for Distributed Shared Memory implementation
 /*!
 */
@@ -107,6 +105,10 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmObject {
     H5FDdsmInt32 GetDsmType();
     void SetDsmType(H5FDdsmInt32 DsmType);
 
+    // Is the DSMBuffer in server or client mode
+    H5FDdsmGetValueMacro(IsServer, H5FDdsmBoolean);
+    H5FDdsmSetValueMacro(IsServer, H5FDdsmBoolean);
+
     // End Address
     H5FDdsmGetValueMacro(EndAddress, H5FDdsmAddr);
 
@@ -143,30 +145,40 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmObject {
     H5FDdsmSetValueMacro(Comm, H5FDdsmComm *);
 
     // Configure the system. Set the Comm and ServerIds
-    H5FDdsmInt32   ConfigureUniform(H5FDdsmComm *Comm, H5FDdsmUInt64 Length, H5FDdsmInt32 StartId=-1, H5FDdsmInt32 EndId=-1, 
+    H5FDdsmInt32   ConfigureUniform(H5FDdsmComm *Comm, H5FDdsmUInt64 Length,
+        H5FDdsmInt32 StartId=-1, H5FDdsmInt32 EndId=-1,
       H5FDdsmUInt64 aBlockLength=0, H5FDdsmBoolean random=H5FD_DSM_FALSE);
 
-    H5FDdsmInt32   ProbeCommandHeader(H5FDdsmInt32 *Source);
-    H5FDdsmInt32   SendCommandHeader(H5FDdsmInt32 Opcode, H5FDdsmInt32 Dest, H5FDdsmAddr Address, H5FDdsmInt32 Length);
-    H5FDdsmInt32   ReceiveCommandHeader(H5FDdsmInt32 *Opcode, H5FDdsmInt32 *Source, H5FDdsmAddr *Address, H5FDdsmInt32 *Length, H5FDdsmInt32 IsRemoteService=0, H5FDdsmInt32 RemoteSource=-1);
+    H5FDdsmInt32   SendCommandHeader(H5FDdsmInt32 opcode, H5FDdsmInt32 dest,
+        H5FDdsmAddr address, H5FDdsmInt32 length, H5FDdsmInt32 comm);
+    H5FDdsmInt32   ReceiveCommandHeader(H5FDdsmInt32 *opcode, H5FDdsmInt32 *source,
+        H5FDdsmAddr *address, H5FDdsmInt32 *length, H5FDdsmInt32 comm, H5FDdsmInt32 remoteSource=-1);
+
+    // Send/Recv Methods for point-to-point comm
+    H5FDdsmInt32   SendData(H5FDdsmInt32 dest, H5FDdsmPointer data, H5FDdsmInt32 length,
+        H5FDdsmInt32 tag, H5FDdsmAddr address, H5FDdsmInt32 comm);
+    H5FDdsmInt32   ReceiveData(H5FDdsmInt32 source, H5FDdsmPointer data, H5FDdsmInt32 length,
+        H5FDdsmInt32 tag, H5FDdsmAddr address, H5FDdsmInt32 comm);
+
+    // Send/Receive Acknowledgment
+    H5FDdsmInt32   SendAcknowledgment(H5FDdsmInt32 dest, H5FDdsmInt32 comm);
+    H5FDdsmInt32   ReceiveAcknowledgment(H5FDdsmInt32 source, H5FDdsmInt32 comm);
 
     // Send/Recv Methods for point-to-point exchange of DSM information between
     // two different jobs/applications
+    // NB. Always on inter-communicator
     H5FDdsmInt32   SendInfo();
     H5FDdsmInt32   ReceiveInfo();
 
     // Send/Recv Mask length (used with H5FD_DSM_TYPE_DYNAMIC_MASK)
+    // NB. Always on inter-communicator
     H5FDdsmInt32   SendMaskLength();
     H5FDdsmInt32   ReceiveMaskLength();
 
-    // Send/Recv Methods for point-to-point comm
-    H5FDdsmInt32   SendData(H5FDdsmInt32 Dest,H5FDdsmPointer Data, H5FDdsmInt32 Length, H5FDdsmInt32 Tag, H5FDdsmAddr Address=0);
-    H5FDdsmInt32   ReceiveData(H5FDdsmInt32 Source, H5FDdsmPointer Data, H5FDdsmInt32 Length, H5FDdsmInt32 Tag, H5FDdsmAddr Address=0);
-
-    H5FDdsmInt32   SendDone();
-
   protected:
-    H5FDdsmInt32   SetLength(H5FDdsmUInt64 Length, H5FDdsmBoolean AllowAllocate=1);
+    H5FDdsmInt32   SetLength(H5FDdsmUInt64 length, H5FDdsmBoolean allowAllocate=1);
+
+    H5FDdsmBoolean  IsServer;
 
     H5FDdsmAddr     EndAddress;
     H5FDdsmAddr     StartAddress;

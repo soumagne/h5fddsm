@@ -50,6 +50,7 @@
 /*                                                                 */
 /*******************************************************************/
 #include "H5FDdsmBuffer.h"
+#include "H5FDdsmBufferService.h"
 #include "H5FDdsmComm.h"
 #include "H5FDdsmMsg.h"
 #include "H5FDdsmStorage.h"
@@ -58,49 +59,50 @@
 
 // Align
 typedef struct {
-    H5FDdsmInt32 Opcode;
-    H5FDdsmInt32 Source;
-    H5FDdsmInt32 Target;
-    H5FDdsmAddr  Address;
-    H5FDdsmInt32 Length;
-    H5FDdsmInt64 Parameters[10];
+  H5FDdsmInt32 Opcode;
+  H5FDdsmInt32 Source;
+  H5FDdsmInt32 Target;
+  H5FDdsmAddr  Address;
+  H5FDdsmInt32 Length;
+  H5FDdsmInt64 Parameters[10];
 } H5FDdsmCommand;
 
 //----------------------------------------------------------------------------
 H5FDdsmBuffer::H5FDdsmBuffer()
 {
-    this->StartAddress = this->EndAddress = 0;
-    this->StartServerId = this->EndServerId = -1;
-    // For Alignment
-    this->Length = 0;
-    this->TotalLength = 0;
-    this->BlockLength = 0;
-    this->MaskLength  = 0;
-    this->Storage = NULL;
-    this->Comm = NULL;
-    this->DataPointer = NULL;
-    this->AddressMapper = new H5FDdsmAddressMapper(this);
+  this->IsServer      = H5FD_DSM_TRUE;
+  this->StartAddress  = this->EndAddress = 0;
+  this->StartServerId = this->EndServerId = -1;
+  // For Alignment
+  this->Length = 0;
+  this->TotalLength = 0;
+  this->BlockLength = 0;
+  this->MaskLength  = 0;
+  this->Storage = NULL;
+  this->Comm = NULL;
+  this->DataPointer = NULL;
+  this->AddressMapper = new H5FDdsmAddressMapper(this);
 }
 
 //----------------------------------------------------------------------------
 H5FDdsmBuffer::~H5FDdsmBuffer()
 {
-    if (this->Storage) delete this->Storage;
-    this->Storage = NULL;
-    delete this->AddressMapper;
+  if (this->Storage) delete this->Storage;
+  this->Storage = NULL;
+  delete this->AddressMapper;
 }
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
 H5FDdsmBuffer::GetDsmType()
 {
-    return((this->AddressMapper) ? this->AddressMapper->GetDsmType() : H5FD_DSM_FAIL);
+  return((this->AddressMapper) ? this->AddressMapper->GetDsmType() : H5FD_DSM_FAIL);
 }
 //----------------------------------------------------------------------------
 void
-H5FDdsmBuffer::SetDsmType(H5FDdsmInt32 DsmType)
+H5FDdsmBuffer::SetDsmType(H5FDdsmInt32 dsmType)
 {
-  this->AddressMapper->SetDsmType(DsmType);
+  this->AddressMapper->SetDsmType(dsmType);
 }
 //----------------------------------------------------------------------------
 H5FDdsmInt32
@@ -118,10 +120,10 @@ H5FDdsmBuffer::SetMaskLength(H5FDdsmUInt64 dataSize)
 H5FDdsmInt32
 H5FDdsmBuffer::SetStorage(H5FDdsmStorage *aStorage)
 {
-    if (this->Storage) delete this->Storage;
-    this->Storage = aStorage;
-    this->DataPointer = (H5FDdsmByte *)this->Storage->GetDataPointer();
-    return(H5FD_DSM_SUCCESS);
+  if (this->Storage) delete this->Storage;
+  this->Storage = aStorage;
+  this->DataPointer = (H5FDdsmByte *)this->Storage->GetDataPointer();
+  return(H5FD_DSM_SUCCESS);
 }
 
 //----------------------------------------------------------------------------
@@ -140,83 +142,68 @@ H5FDdsmBuffer::ClearStorage()
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBuffer::ConfigureUniform(H5FDdsmComm *aComm, H5FDdsmUInt64 aLength, H5FDdsmInt32 StartId, H5FDdsmInt32 EndId,
-  H5FDdsmUInt64 aBlockLength, H5FDdsmBoolean random)
+H5FDdsmBuffer::ConfigureUniform(H5FDdsmComm *aComm, H5FDdsmUInt64 aLength,
+    H5FDdsmInt32 startId, H5FDdsmInt32 endId, H5FDdsmUInt64 aBlockLength,
+    H5FDdsmBoolean random)
 {
-    if (StartId < 0) StartId = 0;
-    if (EndId < 0) EndId = aComm->GetIntraSize() - 1;
-    this->SetDsmType(H5FD_DSM_TYPE_UNIFORM_RANGE);
-    if ((StartId == 0) && (EndId == aComm->GetIntraSize() - 1)) {
-        this->SetDsmType(H5FD_DSM_TYPE_UNIFORM);
-    }
-    if (aBlockLength) {
-      if (!random) {
-        this->SetDsmType(H5FD_DSM_TYPE_BLOCK_CYCLIC);
-      } else {
-        this->SetDsmType(H5FD_DSM_TYPE_BLOCK_RANDOM);
-      }
-      this->SetBlockLength(aBlockLength);
-    }
-    this->StartServerId = StartId;
-    this->EndServerId = EndId;
-    this->SetComm(aComm);
-    if ((aComm->GetId() >= StartId) && (aComm->GetId() <= EndId)) {
-        if (aBlockLength) {
-          // For optimization we make the DSM length fit to a multiple of block size
-          this->SetLength((H5FDdsmUInt64(aLength / aBlockLength)) * aBlockLength, 1);
-        } else {
-          this->SetLength(aLength, 1);
-        }
-        this->StartAddress = (aComm->GetId() - StartId) * aLength;
-        this->EndAddress = this->StartAddress + aLength - 1;
+  if (startId < 0) startId = 0;
+  if (endId < 0) endId = aComm->GetIntraSize() - 1;
+  this->SetDsmType(H5FD_DSM_TYPE_UNIFORM_RANGE);
+  if ((startId == 0) && (endId == aComm->GetIntraSize() - 1)) {
+    this->SetDsmType(H5FD_DSM_TYPE_UNIFORM);
+  }
+  if (aBlockLength) {
+    if (!random) {
+      this->SetDsmType(H5FD_DSM_TYPE_BLOCK_CYCLIC);
     } else {
-      if (aBlockLength) {
-        this->Length = (H5FDdsmUInt64(aLength / aBlockLength)) * aBlockLength;
-      } else {
-        this->Length = aLength;
-      }
+      this->SetDsmType(H5FD_DSM_TYPE_BLOCK_RANDOM);
     }
-    this->TotalLength = this->GetLength() * (EndId - StartId + 1);
-    return(H5FD_DSM_SUCCESS);
+    this->SetBlockLength(aBlockLength);
+  }
+  this->StartServerId = startId;
+  this->EndServerId = endId;
+  this->SetComm(aComm);
+  if ((aComm->GetId() >= startId) && (aComm->GetId() <= endId)) {
+    if (aBlockLength) {
+      // For optimization we make the DSM length fit to a multiple of block size
+      this->SetLength((H5FDdsmUInt64(aLength / aBlockLength)) * aBlockLength, 1);
+    } else {
+      this->SetLength(aLength, 1);
+    }
+    this->StartAddress = (aComm->GetId() - startId) * aLength;
+    this->EndAddress = this->StartAddress + aLength - 1;
+  } else {
+    if (aBlockLength) {
+      this->Length = (H5FDdsmUInt64(aLength / aBlockLength)) * aBlockLength;
+    } else {
+      this->Length = aLength;
+    }
+  }
+  this->TotalLength = this->GetLength() * (endId - startId + 1);
+  return(H5FD_DSM_SUCCESS);
 }
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBuffer::SendDone()
-{
-    H5FDdsmInt32   who, status = H5FD_DSM_SUCCESS;
-
-    for(who = this->StartServerId ; who <= this->EndServerId ; who++) {
-      status = this->SendCommandHeader(H5FD_DSM_OPCODE_DONE, who, 0, 0);
-      if (status != H5FD_DSM_SUCCESS) {
-        H5FDdsmError("Cannot send termination command to DSM process " << who);
-        return(status);
-      }
-    }
-    return(status);
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmBuffer::SetLength(H5FDdsmUInt64 aLength, H5FDdsmBoolean AllowAllocate)
+H5FDdsmBuffer::SetLength(H5FDdsmUInt64 aLength, H5FDdsmBoolean allowAllocate)
 {
   if (!this->Storage) {
     if (this->Comm) {
       switch (this->Comm->GetInterCommType()) {
-	case H5FD_DSM_COMM_MPI_RMA:
-	  this->Storage = new H5FDdsmStorageMpi;
-	  H5FDdsmDebug("Using MPI Storage...");
-	  break;
-	default:
-	  this->Storage = new H5FDdsmStorage;
-	  break;
+        case H5FD_DSM_COMM_MPI_RMA:
+          this->Storage = new H5FDdsmStorageMpi;
+          H5FDdsmDebug("Using MPI Storage...");
+          break;
+        default:
+          this->Storage = new H5FDdsmStorage;
+          break;
       }
     } else {
       H5FDdsmError("DSM communicator has not been initialized");
       return(H5FD_DSM_FAIL);
     }
   }
-  if (this->Storage->SetLength(aLength, AllowAllocate) != H5FD_DSM_SUCCESS) {
+  if (this->Storage->SetLength(aLength, allowAllocate) != H5FD_DSM_SUCCESS) {
     H5FDdsmError("Cannot set DSM Length to " << Length);
     return(H5FD_DSM_FAIL);
   }
@@ -227,81 +214,147 @@ H5FDdsmBuffer::SetLength(H5FDdsmUInt64 aLength, H5FDdsmBoolean AllowAllocate)
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBuffer::ProbeCommandHeader(H5FDdsmInt32 *Source)
+H5FDdsmBuffer::SendCommandHeader(H5FDdsmInt32 opcode, H5FDdsmInt32 dest,
+    H5FDdsmAddr address, H5FDdsmInt32 aLength, H5FDdsmInt32 comm)
 {
-  H5FDdsmInt32 status = H5FD_DSM_FAIL;
-  H5FDdsmMsg Msg;
+  H5FDdsmCommand  cmd;
+  H5FDdsmInt32 status;
 
-  Msg.SetTag(H5FD_DSM_COMMAND_TAG);
-  status = this->Comm->Probe(&Msg);
-  if (status != H5FD_DSM_FAIL) *Source = Msg.Source;
+  H5FDdsmMsg msg;
+
+  memset(&cmd, 0, sizeof(cmd));
+  cmd.Opcode = opcode;
+  cmd.Source = this->Comm->GetId();
+  cmd.Target = dest;
+  cmd.Address = address;
+  cmd.Length = aLength;
+
+  msg.SetSource(this->Comm->GetId());
+  msg.SetDest(dest);
+  msg.SetTag(H5FD_DSM_COMMAND_TAG);
+  msg.SetLength(sizeof(cmd));
+  msg.SetData(&cmd);
+  msg.SetCommunicator(comm);
+
+  status = this->Comm->Send(&msg);
+  H5FDdsmDebug("(" << this->Comm->GetId() << ") sent opcode " << cmd.Opcode);
   return(status);
 }
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBuffer::SendCommandHeader(H5FDdsmInt32 Opcode, H5FDdsmInt32 Dest, H5FDdsmAddr Address, H5FDdsmInt32 aLength)
+H5FDdsmBuffer::ReceiveCommandHeader(H5FDdsmInt32 *opcode, H5FDdsmInt32 *source,
+    H5FDdsmAddr *address, H5FDdsmInt32 *aLength, H5FDdsmInt32 comm,
+    H5FDdsmInt32 remoteSource)
 {
-    H5FDdsmCommand  Cmd;
-    H5FDdsmInt32 Status;
-
-    H5FDdsmMsg Msg;
-
-    memset(&Cmd, 0, sizeof(Cmd));
-    Cmd.Opcode = Opcode;
-    Cmd.Source = this->Comm->GetId();
-    Cmd.Target = Dest;
-    Cmd.Address = Address;
-    Cmd.Length = aLength;
-
-    Msg.SetSource(this->Comm->GetId());
-    Msg.SetDest(Dest);
-    Msg.SetTag(H5FD_DSM_COMMAND_TAG);
-    Msg.SetLength(sizeof(Cmd));
-    Msg.SetData(&Cmd);
-
-    Status = this->Comm->Send(&Msg);
-    H5FDdsmDebug("(" << this->Comm->GetId() << ") sent opcode " << Cmd.Opcode);
-    return(Status);
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmBuffer::ReceiveCommandHeader(H5FDdsmInt32 *Opcode, H5FDdsmInt32 *Source,
-    H5FDdsmAddr *Address, H5FDdsmInt32 *aLength, H5FDdsmInt32 IsRemoteService, H5FDdsmInt32 RemoteSource)
-{
-  H5FDdsmCommand  Cmd;
+  H5FDdsmCommand  cmd;
   H5FDdsmInt32    status = H5FD_DSM_FAIL;
 
-  H5FDdsmMsg Msg;
+  H5FDdsmMsg msg;
 
-  Msg.Source = (RemoteSource>=0) ? RemoteSource : H5FD_DSM_ANY_SOURCE;
-  Msg.SetLength(sizeof(Cmd));
-  Msg.SetTag(H5FD_DSM_COMMAND_TAG);
-  Msg.SetData(&Cmd);
+  msg.Source = (remoteSource>=0) ? remoteSource : H5FD_DSM_ANY_SOURCE;
+  msg.SetLength(sizeof(cmd));
+  msg.SetTag(H5FD_DSM_COMMAND_TAG);
+  msg.SetData(&cmd);
+  msg.SetCommunicator(comm);
 
-  memset(&Cmd, 0, sizeof(H5FDdsmCommand));
+  memset(&cmd, 0, sizeof(H5FDdsmCommand));
 
-  if (IsRemoteService) {
-    status  = this->Comm->Receive(&Msg, H5FD_DSM_INTER_COMM);
-  } else {
-    status  = this->Comm->Receive(&Msg);
-  }
+  status  = this->Comm->Receive(&msg);
+
   if (status == H5FD_DSM_FAIL) {
     H5FDdsmError("Communicator Receive Failed");
     return(H5FD_DSM_FAIL);
   } else {
-    *Opcode = Cmd.Opcode;
-    *Source = Cmd.Source;
-    *Address = Cmd.Address;
-    *aLength = Cmd.Length;
+    *opcode  = cmd.Opcode;
+    *source  = cmd.Source;
+    *address = cmd.Address;
+    *aLength = cmd.Length;
     status = H5FD_DSM_SUCCESS;
-    if (IsRemoteService) {
-      H5FDdsmDebug("(Remote Service Server " << this->Comm->GetId() << ") got opcode " << Cmd.Opcode);
-    } else {
-      H5FDdsmDebug("(Server " << this->Comm->GetId() << ") got opcode " << Cmd.Opcode);
-    }
+
+    H5FDdsmDebug("(Server " << this->Comm->GetId() << ") got opcode " << cmd.Opcode);
   }
+  return(status);
+}
+
+//----------------------------------------------------------------------------
+H5FDdsmInt32
+H5FDdsmBuffer::SendData(H5FDdsmInt32 dest, H5FDdsmPointer data,
+    H5FDdsmInt32 aLength, H5FDdsmInt32 tag, H5FDdsmAddr aAddress, H5FDdsmInt32 comm)
+{
+  H5FDdsmMsg msg;
+
+  msg.SetSource(this->Comm->GetId());
+  msg.SetDest(dest);
+  msg.SetLength(aLength);
+  msg.SetTag(tag);
+  msg.SetAddress(aAddress);
+  msg.SetData(data);
+  msg.SetCommunicator(comm);
+  if (this->Comm->GetUseOneSidedComm()) {
+    return(this->Comm->Put(&msg));
+  }
+  else {
+    return(this->Comm->Send(&msg));
+  }
+}
+
+//----------------------------------------------------------------------------
+H5FDdsmInt32
+H5FDdsmBuffer::ReceiveData(H5FDdsmInt32 source, H5FDdsmPointer data,
+    H5FDdsmInt32 aLength, H5FDdsmInt32 tag, H5FDdsmAddr aAddress, H5FDdsmInt32 comm)
+{
+  H5FDdsmMsg msg;
+
+  msg.SetSource(source);
+  msg.SetLength(aLength);
+  msg.SetTag(tag);
+  msg.SetAddress(aAddress);
+  msg.SetData(data);
+  msg.SetCommunicator(comm);
+  if (this->Comm->GetUseOneSidedComm()) {
+    return(this->Comm->Get(&msg));
+  }
+  else {
+    return(this->Comm->Receive(&msg));
+  }
+}
+
+//----------------------------------------------------------------------------
+H5FDdsmInt32
+H5FDdsmBuffer::SendAcknowledgment(H5FDdsmInt32 dest, H5FDdsmInt32 comm)
+{
+  H5FDdsmInt32 status;
+  H5FDdsmInt32 data = 1;
+  H5FDdsmMsg   msg;
+
+  msg.SetDest(dest);
+  msg.SetLength(sizeof(data));
+  msg.SetTag(H5FD_DSM_RESPONSE_TAG);
+  msg.SetData(&data);
+  msg.SetCommunicator(comm);
+
+  status = this->Comm->Send(&msg);
+  H5FDdsmDebug("(" << this->Comm->GetId() << ") sent ack");
+  return(status);
+}
+
+//----------------------------------------------------------------------------
+H5FDdsmInt32
+H5FDdsmBuffer::ReceiveAcknowledgment(H5FDdsmInt32 source, H5FDdsmInt32 comm)
+{
+  H5FDdsmInt32 status;
+  H5FDdsmInt32 data;
+  H5FDdsmMsg   msg;
+
+  msg.SetSource(source);
+  msg.SetLength(sizeof(data));
+  msg.SetTag(H5FD_DSM_RESPONSE_TAG);
+  msg.SetData(&data);
+  msg.SetCommunicator(comm);
+
+  status = this->Comm->Receive(&msg);
+  H5FDdsmDebug("(" << this->Comm->GetId() << ") received ack");
   return(status);
 }
 
@@ -386,43 +439,4 @@ H5FDdsmBuffer::ReceiveMaskLength()
 
   return(H5FD_DSM_SUCCESS);
 }
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmBuffer::SendData(H5FDdsmInt32 Dest, H5FDdsmPointer Data,
-    H5FDdsmInt32 aLength, H5FDdsmInt32 Tag, H5FDdsmAddr aAddress)
-{
-  H5FDdsmMsg Msg;
 
-  Msg.SetSource(this->Comm->GetId());
-  Msg.SetDest(Dest);
-  Msg.SetLength(aLength);
-  Msg.SetTag(Tag);
-  Msg.SetAddress(aAddress);
-  Msg.SetData(Data);
-  if (this->Comm->GetUseOneSidedComm()) {
-    return(this->Comm->Put(&Msg));
-  }
-  else {
-    return(this->Comm->Send(&Msg));
-  }
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmBuffer::ReceiveData(H5FDdsmInt32 Source, H5FDdsmPointer Data,
-    H5FDdsmInt32 aLength, H5FDdsmInt32 Tag, H5FDdsmAddr aAddress)
-{
-  H5FDdsmMsg Msg;
-
-  Msg.SetSource(Source);
-  Msg.SetLength(aLength);
-  Msg.SetTag(Tag);
-  Msg.SetAddress(aAddress);
-  Msg.SetData(Data);
-  if (this->Comm->GetUseOneSidedComm()) {
-    return(this->Comm->Get(&Msg));
-  }
-  else {
-    return(this->Comm->Receive(&Msg));
-  }
-}
