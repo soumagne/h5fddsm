@@ -110,7 +110,7 @@
      !
      ! Create property list for collective dataset write
      !
-     CALL h5pcreate_f(H5P_DATASET_XFER_F, plist_id, error)
+     ! CALL h5pcreate_f(H5P_DATASET_XFER_F, plist_id, error)
      ! CALL h5pset_dxpl_mpio_f(plist_id, H5FD_MPIO_COLLECTIVE_F, error)
      !
      ! For independent write use
@@ -120,8 +120,9 @@
      !
      ! Write the dataset collectively.
      !
-     CALL h5dwrite_f(dset_id, H5T_NATIVE_INTEGER, data, dimsfi, error, &
-                      xfer_prp = plist_id)
+     CALL h5dwrite_f(dset_id, H5T_NATIVE_INTEGER, data, dimsfi, error)
+     ! CALL h5dwrite_f(dset_id, H5T_NATIVE_INTEGER, data, dimsfi, error, &
+     !                 xfer_prp = plist_id)
      !
      ! Deallocate data buffer.
      !
@@ -132,7 +133,7 @@
      !
      CALL h5sclose_f(filespace, error)
      CALL h5dclose_f(dset_id, error)
-     CALL h5pclose_f(plist_id, error)
+     ! CALL h5pclose_f(plist_id, error)
      CALL h5fclose_f(file_id, error)
      ! Attempt to remove the data file.  Remove the line if the compiler
      ! does not support it.
@@ -143,6 +144,7 @@
      !
      CALL h5close_f(error)
 
-     CALL MPI_FINALIZE(mpierror)
+     !call sleep(5)
+     !CALL MPI_FINALIZE(mpierror)
 
      END PROGRAM DATASET
