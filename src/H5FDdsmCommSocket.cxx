@@ -168,22 +168,40 @@ H5FDdsmCommSocket::Receive(H5FDdsmMsg *msg)
 H5FDdsmInt32
 H5FDdsmCommSocket::Probe(H5FDdsmMsg *msg)
 {
-  int         nid, flag=0;
-  MPI_Status  status;
+  int          nid;
+  int          flag = H5FD_DSM_FALSE;
+  MPI_Status   status;
+  H5FDdsmInt32 commTag = H5FD_DSM_INTRA_COMM;
 
   if (H5FDdsmComm::Probe(msg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
-  if (msg->Communicator == H5FD_DSM_INTRA_COMM) {
-    MPI_Iprobe(MPI_ANY_SOURCE, msg->Tag, this->IntraComm, &flag, &status);
-    if (flag) {
-      nid = status.MPI_SOURCE;
-      msg->SetSource(nid);
-      return(H5FD_DSM_SUCCESS);
+  H5FDdsmDebug("MPI_Iprobe " << H5FDdsmTagToString(msg->Tag));
+  while (!flag) {
+    H5FDdsmDebug("MPI_Iprobe " << H5FDdsmTagToString(msg->Tag));
+    if (commTag == H5FD_DSM_INTRA_COMM) {
+      MPI_Iprobe(MPI_ANY_SOURCE, msg->Tag, this->IntraComm, &flag, &status);
+      if (flag) {
+        nid = status.MPI_SOURCE;
+        msg->SetSource(nid);
+        msg->SetCommunicator(commTag);
+        H5FDdsmDebug("MPI_Iprobe found pending messages on comm " << H5FDdsmCommToString(commTag));
+        return(H5FD_DSM_SUCCESS);
+      } else {
+        if (this->InterComm[0] != NULL) commTag = H5FD_DSM_INTER_COMM;
+      }
+    } else {
+      int selectedIndex;
+      // if ANY_SOURCE use select on the whole list of sockets descriptors
+      flag = (this->InterComm[0]->SelectSockets(this->InterCommSockets, this->InterSize, 1, &selectedIndex) == 1);
+      if (flag) {
+        msg->SetSource(selectedIndex);
+        msg->SetCommunicator(commTag);
+        H5FDdsmDebug("MPI_Iprobe found pending messages on comm " << H5FDdsmCommToString(commTag));
+        return(H5FD_DSM_SUCCESS);
+      } else {
+        commTag = H5FD_DSM_INTRA_COMM;
+      }
     }
-  } else {
-    int selectedIndex;
-    // if ANY_SOURCE use select on the whole list of sockets descriptors
-    this->InterComm[0]->SelectSockets(this->InterCommSockets, this->InterSize, 0, &selectedIndex);
   }
   return(H5FD_DSM_FAIL);
 }

@@ -355,7 +355,7 @@ dsm_set_modified()
   DSM_DRIVER_INIT(dsmBufferService)
 
   dsmBufferService->SetIsDataModified(H5FD_DSM_TRUE);
-  if (dsmBufferService->GetNotificationOnClose()) {
+  if (dsmBufferService->GetNotificationOnClose() && dsmBufferService->GetIsConnected()) {
     if (SUCCEED != dsm_notify(H5FD_DSM_NEW_DATA))
       DSM_DRIVER_ERROR("cannot notify DSM")
   }

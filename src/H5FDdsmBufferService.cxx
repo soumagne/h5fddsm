@@ -318,9 +318,11 @@ H5FDdsmBufferService::BufferService(H5FDdsmInt32 *returnOpcode)
     this->Comm->Broadcast(&this->CommChannel, sizeof(H5FDdsmInt32), 0);
   }
   if (syncId >= 0) {
-    H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "Receiving command header from " << syncId);
+    H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "Receiving command header from " << syncId
+        << " on " << H5FDdsmCommToString(this->CommChannel));
   } else {
-    H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "Receiving command header from anyone");
+    H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "Receiving command header from anyone on " <<
+        H5FDdsmCommToString(this->CommChannel));
   }
 
   status = this->ReceiveCommandHeader(&opcode, &who, &address, &aLength, this->CommChannel, syncId);
@@ -373,9 +375,7 @@ H5FDdsmBufferService::BufferService(H5FDdsmInt32 *returnOpcode)
     if (this->Comm->ChannelSynced(who, &syncId)) {
       // The server may have taken the lock back in the meantime so need to acquire
       // the mutex lock first
-//      if (this->Comm->GetId() == 0) {
       this->BufferServiceInternals->Lock.Lock();
-//      }
       who = this->Comm->GetId();
       H5FDdsmDebug("Send request communicator switch to " << who);
       // Switch the service thread communicator to listen on the inter-comm
@@ -400,18 +400,9 @@ H5FDdsmBufferService::BufferService(H5FDdsmInt32 *returnOpcode)
       this->CommChannel = H5FD_DSM_ANY_COMM;
       // The client has released the lock
       this->SetIsClientLocked(H5FD_DSM_FALSE);
-//      if (this->Comm->GetId() == 0) {
-        H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "unlocking");
-        this->BufferServiceInternals->Lock.Unlock();
-        H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "unlocked");
-        // If the client releases the lock without explicitly giving it to the server
-        // restart the remote service thread so that the client can potentially
-        // reacquire the lock.
-//        if (this->IsConnected) {
-//          if (!this->BufferServiceInternals->IsRemoteServiceThreadCreated)
-//            this->StartRemoteService();
-//        }
-//      }
+      H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "unlocking");
+      this->BufferServiceInternals->Lock.Unlock();
+      H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "unlocked");
       this->Comm->Barrier();
     }
     break;
@@ -442,6 +433,7 @@ H5FDdsmBufferService::BufferService(H5FDdsmInt32 *returnOpcode)
     break;
 
   // H5FD_DSM_ACCEPT
+  // Always received from server
   case H5FD_DSM_ACCEPT:
     if (!this->IsConnected) {
       status = this->Comm->Accept(this->DataPointer, this->Length);
@@ -456,12 +448,10 @@ H5FDdsmBufferService::BufferService(H5FDdsmInt32 *returnOpcode)
       this->SignalConnection();
     }
     this->CommChannel = H5FD_DSM_ANY_COMM;
-//    if ((this->Comm->GetId() == 0) && !this->BufferServiceInternals->IsRemoteServiceThreadCreated) {
-//      this->StartRemoteService();
-//    }
     break;
 
   // H5FD_DSM_DISCONNECT
+  // Always received from client
   case H5FD_DSM_DISCONNECT:
     if (this->Comm->ChannelSynced(who, &syncId)) {
       H5FDdsmDebug("( " << this->Comm->GetId() << " ) Freeing now remote channel");
@@ -475,6 +465,15 @@ H5FDdsmBufferService::BufferService(H5FDdsmInt32 *returnOpcode)
     }
     break;
 
+  // H5FD_DSM_ANY_COMM
+  // Always received from server
+  case H5FD_DSM_ANY_COMM:
+    if (this->Comm->ChannelSynced(who, &syncId, H5FD_DSM_TRUE)) {
+      this->CommChannel = H5FD_DSM_ANY_COMM;
+      this->Comm->Barrier();
+    }
+    break;
+
   // H5FD_DSM_CLEAR_STORAGE
   case H5FD_DSM_CLEAR_STORAGE:
     if (this->Comm->ChannelSynced(who, &syncId)) {
@@ -483,6 +482,7 @@ H5FDdsmBufferService::BufferService(H5FDdsmInt32 *returnOpcode)
     break;
 
   // H5FD_DSM_OPCODE_DONE
+  // Always received from server
   case H5FD_DSM_OPCODE_DONE:
     break;
 
@@ -659,31 +659,16 @@ H5FDdsmBufferService::RequestLockAcquire()
   H5FDdsmInt32 status = H5FD_DSM_SUCCESS;
 
   if (this->IsServer) {
-//     if (this->Comm->GetId() == 0) {
-      // On server, when the mutex is locked, the server is locked
-      // std::cout << "(" << this->Comm->GetId() << ") " << "Acquiring server lock" << std::endl;
-      this->BufferServiceInternals->Lock.Lock();
-//      std::cout << "Server lock acquired" << std::endl;
-//      for (H5FDdsmInt32 who = 1 ; who <= this->EndServerId ; who++) {
-//        status = this->SendAcknowledgment(who, H5FD_DSM_INTRA_COMM);
-//      }
-//    } else {
-      // std::cout << "(" << this->Comm->GetId() << ") " << "Waiting for server lock acquisition" << std::endl;
-//      status = this->WaitForLockAcquisition();
-      // std::cout << "(" << this->Comm->GetId() << ") " << "Server lock acquisition ok" << std::endl;
-//    }
+    this->BufferServiceInternals->Lock.Lock();
+    this->Comm->Barrier();
     this->SetIsServerLocked(H5FD_DSM_TRUE);
   } else {
-    if (this->Comm->GetId() == 0) {
-//      std::cout << "(" << this->Comm->GetId() << ") " << "Acquiring client lock" << std::endl;
-      // On client, we need to check the status of the remote server lock
-      for (H5FDdsmInt32 who = this->StartServerId ; who <= this->EndServerId ; who++) {
+    // On client, we need to check the status of the remote server lock
+    for (H5FDdsmInt32 who = this->StartServerId ; who <= this->EndServerId ; who++) {
       H5FDdsmDebug("Send request LOCK acquire to remote " << who);
       status = this->SendCommandHeader(H5FD_DSM_LOCK_ACQUIRE, who, 0, 0, H5FD_DSM_INTER_COMM);
-      }
     }
     status = this->WaitForLockAcquisition();
-    std::cout << "(" << this->Comm->GetId() << ") " << "Client lock acquired" << std::endl;
     this->SetIsClientLocked(H5FD_DSM_TRUE);
   }
 
@@ -714,28 +699,19 @@ H5FDdsmBufferService::RequestLockRelease()
 
   if (this->IsServer) {
     this->SetIsServerLocked(H5FD_DSM_FALSE);
-//    if (this->Comm->GetId() == 0) {
-      std::cout << "(" << this->Comm->GetId() << ") " << "Unlocking Server lock" << std::endl;
-      this->BufferServiceInternals->Lock.Unlock();
-      std::cout << "(" << this->Comm->GetId() << ") " << "Server lock unlocked" << std::endl;
-      // If the server was owning the lock the buffer service thread is listening
-      // on the INTRA_COMM so start listening again on INTER_COMM
-//      if (this->IsConnected &&
-//          !this->BufferServiceInternals->IsRemoteServiceThreadCreated)
-//        this->StartRemoteService();
-      this->Comm->Barrier();
-//  } else {
-//      std::cout << "(" << this->Comm->GetId() << ") " << "Server lock done" << std::endl;
-//    }
+    this->BufferServiceInternals->Lock.Unlock();
+    // We need to make the communicator go back to listening on ANY and be sure
+    // that all the internal transactions have completed.
+    for (H5FDdsmInt32 who = this->StartServerId ; who <= this->EndServerId ; who++) {
+      H5FDdsmDebug("Send request LOCK release to " << who);
+      status = this->SendCommandHeader(H5FD_DSM_ANY_COMM, who, 0, 0, H5FD_DSM_INTRA_COMM);
+    }
   } else {
     this->SetIsClientLocked(H5FD_DSM_FALSE);
-//    if (this->Comm->GetId() == 0) {
     for (H5FDdsmInt32 who = this->StartServerId ; who <= this->EndServerId ; who++) {
-      H5FDdsmDebug("Send request LOCK release to" << who);
+      H5FDdsmDebug("Send request LOCK release to " << who);
       status = this->SendCommandHeader(H5FD_DSM_LOCK_RELEASE, who, 0, 0, H5FD_DSM_INTER_COMM);
     }
-    std::cout << "(" << this->Comm->GetId() << ") " << "client lock unlocked" << std::endl;
-//    }
   }
   return(status);
 }
@@ -749,7 +725,6 @@ H5FDdsmBufferService::RequestNotification()
   // If there were ongoing transactions, finish them
   this->Comm->WindowSync();
 
-  std::cout << "(" << this->Comm->GetId() << ") " << "client lock unlocked for notification" << std::endl;
   // No mutex here, only informal since it's the client
   this->SetIsClientLocked(H5FD_DSM_FALSE);
 

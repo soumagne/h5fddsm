@@ -126,14 +126,15 @@ H5FDdsmComm::Broadcast(H5FDdsmPointer data, H5FDdsmInt32 count, H5FDdsmInt32 roo
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmComm::ChannelSynced(H5FDdsmInt32 who, H5FDdsmInt32 *syncId)
+H5FDdsmComm::ChannelSynced(H5FDdsmInt32 who, H5FDdsmInt32 *syncId, H5FDdsmBoolean fromServer)
 {
   static std::queue<H5FDdsmInt32> syncQueue;
   H5FDdsmInt32 ret = H5FD_DSM_FALSE;
+  H5FDdsmInt32 numberOfChannels = (fromServer) ? this->IntraSize : this->InterSize;
 
   this->SyncChannels++;
-  if (this->SyncChannels == this->InterSize) {
-    H5FDdsmDebug("Channels cleared: " << this->SyncChannels << "/" << this->InterSize);
+  if (this->SyncChannels == numberOfChannels) {
+    H5FDdsmDebug("Channels cleared: " << this->SyncChannels << "/" << numberOfChannels);
     this->SyncChannels = 0;
 //    if (!this->UseOneSidedComm) {
       if (!syncQueue.empty()) {
@@ -153,7 +154,7 @@ H5FDdsmComm::ChannelSynced(H5FDdsmInt32 who, H5FDdsmInt32 *syncId)
 //    if (!this->UseOneSidedComm) {
       if (syncQueue.empty()) {
         H5FDdsmDebug("(" << this->Id << ") " << "filling sync queue from " << who);
-        for (int i=0; i<this->InterSize; i++) {
+        for (int i=0; i<numberOfChannels; i++) {
           if (i != who) syncQueue.push(i);
         }
       } else {

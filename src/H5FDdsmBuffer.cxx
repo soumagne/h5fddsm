@@ -285,7 +285,6 @@ H5FDdsmBuffer::ProbeCommandHeader(H5FDdsmInt32 *comm)
   H5FDdsmMsg msg;
 
   msg.SetTag(H5FD_DSM_COMMAND_TAG);
-  msg.SetCommunicator(H5FD_DSM_ANY_COMM);
 
   status = this->Comm->Probe(&msg);
   if (status != H5FD_DSM_FAIL) *comm = msg.Communicator;
