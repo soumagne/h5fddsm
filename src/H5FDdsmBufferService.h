@@ -108,7 +108,6 @@ class H5FDdsm_EXPORT H5FDdsmBufferService : public H5FDdsmBuffer {
 
     // Is the DSM locked
     H5FDdsmGetValueMacro(IsLocked, H5FDdsmBoolean);
-    H5FDdsmSetValueMacro(IsLocked, H5FDdsmBoolean);
 
     // Releases the lock automatically on H5Fclose or not
     H5FDdsmGetValueMacro(ReleaseLockOnClose, H5FDdsmBoolean);
@@ -149,6 +148,8 @@ class H5FDdsm_EXPORT H5FDdsmBufferService : public H5FDdsmBuffer {
     H5FDdsmInt32   RequestDisconnect();
 
   protected:
+    void           SetIsLocked(H5FDdsmBoolean value);
+
     H5FDdsmInt32            CommChannel;
     H5FDdsmBoolean          IsConnected;
     //
