@@ -59,15 +59,16 @@
 //! Base comm object for Distributed Shared Memory implementation
 
 // Macros to choose inter communication system to use
-#define H5FD_DSM_COMM_MPI       0x10
-#define H5FD_DSM_COMM_SOCKET    0x11
+#define H5FD_DSM_COMM_SOCKET    0x10
+#define H5FD_DSM_COMM_MPI       0x11
 #define H5FD_DSM_COMM_MPI_RMA   0x12
 #define H5FD_DSM_COMM_DMAPP     0x13
 #define H5FD_DSM_COMM_UGNI      0x14
 
 // Macros to switch between intra/inter communicators
-#define H5FD_DSM_INTRA_COMM  0x20
-#define H5FD_DSM_INTER_COMM  0x21
+#define H5FD_DSM_ANY_COMM    0x20
+#define H5FD_DSM_INTRA_COMM  0x21
+#define H5FD_DSM_INTER_COMM  0x22
 
 typedef struct {
   H5FDdsmInt32  type;
@@ -79,6 +80,8 @@ typedef struct {
 } H5FDdsmInfo;
 
 struct H5FDdsmMsg;
+
+H5FDdsm_EXPORT H5FDdsmConstString H5FDdsmCommToString(H5FDdsmInt32 tag);
 
 class H5FDdsm_EXPORT H5FDdsmComm : public H5FDdsmObject {
 
@@ -115,12 +118,14 @@ public:
 
   H5FDdsmInt32           DupComm(MPI_Comm Source);
   H5FDdsmInt32           Barrier();
+  H5FDdsmInt32           Broadcast(H5FDdsmPointer data, H5FDdsmInt32 count, H5FDdsmInt32 root);
   H5FDdsmInt32           ChannelSynced(H5FDdsmInt32 who, H5FDdsmInt32 *syncId);
 
   virtual H5FDdsmInt32   Init();
 
   virtual H5FDdsmInt32   Send(H5FDdsmMsg *Msg);
   virtual H5FDdsmInt32   Receive(H5FDdsmMsg *Msg);
+  virtual H5FDdsmInt32   Probe(H5FDdsmMsg *Msg);
 
   // Additional methods for one sided communications
   virtual H5FDdsmInt32   Put(H5FDdsmMsg *DataMsg);

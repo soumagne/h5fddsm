@@ -107,7 +107,8 @@ class H5FDdsm_EXPORT H5FDdsmBufferService : public H5FDdsmBuffer {
     H5FDdsmSetValueMacro(IsDataModified, H5FDdsmBoolean);
 
     // Is the DSM locked
-    H5FDdsmGetValueMacro(IsLocked, H5FDdsmBoolean);
+    H5FDdsmGetValueMacro(IsServerLocked, H5FDdsmBoolean);
+    H5FDdsmGetValueMacro(IsClientLocked, H5FDdsmBoolean);
 
     // Releases the lock automatically on H5Fclose or not
     H5FDdsmGetValueMacro(ReleaseLockOnClose, H5FDdsmBoolean);
@@ -118,16 +119,11 @@ class H5FDdsm_EXPORT H5FDdsmBufferService : public H5FDdsmBuffer {
     H5FDdsmSetStringMacro(XMLDescription);
 
     void *         BufferServiceThread();
-    void *         RemoteServiceThread();
 
     H5FDdsmInt32   BufferServiceLoop(H5FDdsmInt32 *returnOpcode=0);
     H5FDdsmInt32   BufferService(H5FDdsmInt32 *returnOpcode=0);
     H5FDdsmInt32   StartBufferService();
     H5FDdsmInt32   EndBufferService();
-
-    H5FDdsmInt32   RemoteService(H5FDdsmInt32 *returnOpcode=0);
-    H5FDdsmInt32   StartRemoteService();
-    H5FDdsmInt32   EndRemoteService();
 
     // Set the Service thread in listening mode for new connections
     H5FDdsmInt32   SendAccept();
@@ -148,7 +144,8 @@ class H5FDdsm_EXPORT H5FDdsmBufferService : public H5FDdsmBuffer {
     H5FDdsmInt32   RequestDisconnect();
 
   protected:
-    void           SetIsLocked(H5FDdsmBoolean value);
+    void           SetIsServerLocked(H5FDdsmBoolean value);
+    void           SetIsClientLocked(H5FDdsmBoolean value);
 
     H5FDdsmInt32            CommChannel;
     H5FDdsmBoolean          IsConnected;
@@ -158,7 +155,9 @@ class H5FDdsm_EXPORT H5FDdsmBufferService : public H5FDdsmBuffer {
     H5FDdsmBoolean          NotificationOnClose;
     H5FDdsmBoolean          IsDataModified;
     //
-    H5FDdsmBoolean          IsLocked;
+    H5FDdsmBoolean          IsServerLocked;
+    H5FDdsmBoolean          IsClientLocked;
+
     H5FDdsmBoolean          ReleaseLockOnClose;
     //
     H5FDdsmString           XMLDescription;

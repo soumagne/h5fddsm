@@ -287,10 +287,14 @@ dsm_lock()
 
   DSM_DRIVER_INIT(dsmBufferService)
 
-  if (!dsmBufferService->GetIsLocked()) {
-    if (dsmBufferService->RequestLockAcquire() != H5FD_DSM_SUCCESS)
-      DSM_DRIVER_ERROR("Cannot request lock acquisition")
+  if (dsmBufferService->GetIsServer() && dsmBufferService->GetIsServerLocked()) {
+    return(SUCCEED);
   }
+  if (!dsmBufferService->GetIsServer() && dsmBufferService->GetIsClientLocked()) {
+    return(SUCCEED);
+  }
+  if (dsmBufferService->RequestLockAcquire() != H5FD_DSM_SUCCESS)
+    DSM_DRIVER_ERROR("Cannot request lock acquisition")
 
   return(SUCCEED);
 }
@@ -303,7 +307,9 @@ dsm_unlock()
 
   DSM_DRIVER_INIT(dsmBufferService)
 
-  if (dsmBufferService->GetIsLocked() && dsmBufferService->GetReleaseLockOnClose()) {
+  // In case the lock has been released by a previous notification
+  if (!dsmBufferService->GetIsClientLocked()) return(SUCCEED);
+  if (dsmBufferService->GetReleaseLockOnClose()) {
     if (dsmBufferService->RequestLockRelease() != H5FD_DSM_SUCCESS)
       DSM_DRIVER_ERROR("Cannot request lock release")
   }
@@ -375,7 +381,7 @@ dsm_notify(unsigned long flags)
       break;
   }
 
-  if (!dsmBufferService->GetIsLocked()) {
+  if (!dsmBufferService->GetIsClientLocked()) {
     if (dsmBufferService->RequestLockAcquire() != H5FD_DSM_SUCCESS)
       DSM_DRIVER_ERROR("Cannot request lock acquisition")
   }

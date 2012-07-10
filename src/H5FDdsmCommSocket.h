@@ -44,8 +44,9 @@ public:
   H5FDdsmSetValueMacro(DsmMasterPort, H5FDdsmInt32);
 
   H5FDdsmInt32   Init();
-  H5FDdsmInt32   Send(H5FDdsmMsg *Msg);
-  H5FDdsmInt32   Receive(H5FDdsmMsg *Msg);
+  H5FDdsmInt32   Send(H5FDdsmMsg *msg);
+  H5FDdsmInt32   Receive(H5FDdsmMsg *msg);
+  H5FDdsmInt32   Probe(H5FDdsmMsg *msg);
 
   H5FDdsmInt32   OpenPort();
   H5FDdsmInt32   ClosePort();

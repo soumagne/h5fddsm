@@ -166,6 +166,30 @@ H5FDdsmCommSocket::Receive(H5FDdsmMsg *msg)
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
+H5FDdsmCommSocket::Probe(H5FDdsmMsg *msg)
+{
+  int         nid, flag=0;
+  MPI_Status  status;
+
+  if (H5FDdsmComm::Probe(msg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+
+  if (msg->Communicator == H5FD_DSM_INTRA_COMM) {
+    MPI_Iprobe(MPI_ANY_SOURCE, msg->Tag, this->IntraComm, &flag, &status);
+    if (flag) {
+      nid = status.MPI_SOURCE;
+      msg->SetSource(nid);
+      return(H5FD_DSM_SUCCESS);
+    }
+  } else {
+    int selectedIndex;
+    // if ANY_SOURCE use select on the whole list of sockets descriptors
+    this->InterComm[0]->SelectSockets(this->InterCommSockets, this->InterSize, 0, &selectedIndex);
+  }
+  return(H5FD_DSM_FAIL);
+}
+
+//----------------------------------------------------------------------------
+H5FDdsmInt32
 H5FDdsmCommSocket::OpenPort()
 {
   if (H5FDdsmComm::OpenPort() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);

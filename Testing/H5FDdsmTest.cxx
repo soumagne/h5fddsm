@@ -151,7 +151,7 @@ void particleWriteDsm(ParticleBuffer *buf, H5FDdsmConstString filename,
       - sizeof(H5FDdsmMetaData));
 
   // Simulate open
-  if (!dsmBufferService->GetIsLocked() && dsmBufferService->GetIsConnected()) {
+  if (dsmBufferService->GetIsConnected()) {
     dsmBufferService->RequestLockAcquire();
   }
   // Simulate get of DSM metadata

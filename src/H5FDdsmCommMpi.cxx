@@ -153,6 +153,37 @@ H5FDdsmCommMpi::Receive(H5FDdsmMsg *msg)
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
+H5FDdsmCommMpi::Probe(H5FDdsmMsg *msg)
+{
+//  int         nid;
+  int          flag = H5FD_DSM_FALSE;
+  MPI_Status   status;
+  MPI_Comm     comm = this->IntraComm;
+  H5FDdsmInt32 commTag = H5FD_DSM_ANY_COMM;
+
+  if (H5FDdsmComm::Probe(msg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+
+  H5FDdsmDebug("MPI_Iprobe " << H5FDdsmTagToString(msg->Tag));
+  while (!flag) {
+    MPI_Iprobe(MPI_ANY_SOURCE, msg->Tag, comm, &flag, &status);
+    if (!flag && (this->InterComm != MPI_COMM_NULL) && (comm == this->IntraComm)) {
+      comm = this->InterComm;
+    }
+  }
+
+  if (flag) {
+//    nid = status.MPI_SOURCE;
+//    msg->SetSource(nid);
+    commTag = (comm == this->IntraComm) ? H5FD_DSM_INTRA_COMM : H5FD_DSM_INTER_COMM;
+    msg->SetCommunicator(commTag);
+    H5FDdsmDebug("MPI_Iprobe found pending messages on comm " << H5FDdsmCommToString(commTag));
+    return(H5FD_DSM_SUCCESS);
+  }
+  return(H5FD_DSM_FAIL);
+}
+
+//----------------------------------------------------------------------------
+H5FDdsmInt32
 H5FDdsmCommMpi::Put(H5FDdsmMsg *DataMsg)
 {
   if (H5FDdsmComm::Put(DataMsg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);

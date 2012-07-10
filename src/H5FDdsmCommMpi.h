@@ -67,6 +67,7 @@ public:
 
   H5FDdsmInt32           Send(H5FDdsmMsg *Msg);
   H5FDdsmInt32           Receive(H5FDdsmMsg *Msg);
+  H5FDdsmInt32           Probe(H5FDdsmMsg *Msg);
 
   // Additional methods for one sided communications
   virtual H5FDdsmInt32   Put(H5FDdsmMsg *DataMsg);

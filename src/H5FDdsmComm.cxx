@@ -54,6 +54,20 @@
 
 #include <queue>
 
+
+//------------------------------------------------------------------------------
+// Utility function to return a string for a given tag
+//------------------------------------------------------------------------------
+#define H5FD_DSM_COMM_MACRO(def, value) \
+  if (value==def) return #def;
+
+H5FDdsmConstString H5FDdsmCommToString(H5FDdsmInt32 comm) {
+  H5FD_DSM_COMM_MACRO(H5FD_DSM_ANY_COMM, comm)
+  H5FD_DSM_COMM_MACRO(H5FD_DSM_INTRA_COMM, comm)
+  H5FD_DSM_COMM_MACRO(H5FD_DSM_INTER_COMM, comm)
+  return "COMM UNDEFINED/UNRECOGNIZED";
+}
+
 //----------------------------------------------------------------------------
 H5FDdsmComm::H5FDdsmComm()
 {
@@ -92,6 +106,21 @@ H5FDdsmInt32
 H5FDdsmComm::Barrier()
 {
   MPI_Barrier(this->IntraComm);
+  return(H5FD_DSM_SUCCESS);
+}
+
+//----------------------------------------------------------------------------
+H5FDdsmInt32
+H5FDdsmComm::Broadcast(H5FDdsmPointer data, H5FDdsmInt32 count, H5FDdsmInt32 root)
+{
+  H5FDdsmInt32 status;
+
+  status = MPI_Bcast(data, count, MPI_UNSIGNED_CHAR, root, this->IntraComm);
+  if (status != MPI_SUCCESS) {
+    H5FDdsmError("Id = " << this->Id << " MPI_Bcast failed to bcast " << count
+        << " Bytes from " << root);
+    return(H5FD_DSM_FAIL);
+  }
   return(H5FD_DSM_SUCCESS);
 }
 
@@ -183,6 +212,14 @@ H5FDdsmComm::Receive(H5FDdsmMsg *Msg)
     H5FDdsmError("Cannot Receive Message into Data Buffer = " << Msg->Length);
     return(H5FD_DSM_FAIL);
   }
+  return(H5FD_DSM_SUCCESS);
+}
+
+//----------------------------------------------------------------------------
+H5FDdsmInt32
+H5FDdsmComm::Probe(H5FDdsmMsg *Msg)
+{
+  if (Msg->Tag <= 0) Msg->Tag = H5FD_DSM_DEFAULT_TAG;
   return(H5FD_DSM_SUCCESS);
 }
 

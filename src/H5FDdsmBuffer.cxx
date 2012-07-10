@@ -279,6 +279,21 @@ H5FDdsmBuffer::ReceiveCommandHeader(H5FDdsmInt32 *opcode, H5FDdsmInt32 *source,
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
+H5FDdsmBuffer::ProbeCommandHeader(H5FDdsmInt32 *comm)
+{
+  H5FDdsmInt32 status = H5FD_DSM_FAIL;
+  H5FDdsmMsg msg;
+
+  msg.SetTag(H5FD_DSM_COMMAND_TAG);
+  msg.SetCommunicator(H5FD_DSM_ANY_COMM);
+
+  status = this->Comm->Probe(&msg);
+  if (status != H5FD_DSM_FAIL) *comm = msg.Communicator;
+  return(status);
+}
+
+//----------------------------------------------------------------------------
+H5FDdsmInt32
 H5FDdsmBuffer::SendData(H5FDdsmInt32 dest, H5FDdsmPointer data,
     H5FDdsmInt32 aLength, H5FDdsmInt32 tag, H5FDdsmAddr aAddress, H5FDdsmInt32 comm)
 {

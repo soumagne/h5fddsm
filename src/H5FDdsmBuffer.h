@@ -153,6 +153,7 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmObject {
         H5FDdsmAddr address, H5FDdsmInt32 length, H5FDdsmInt32 comm);
     H5FDdsmInt32   ReceiveCommandHeader(H5FDdsmInt32 *opcode, H5FDdsmInt32 *source,
         H5FDdsmAddr *address, H5FDdsmInt32 *length, H5FDdsmInt32 comm, H5FDdsmInt32 remoteSource=-1);
+    H5FDdsmInt32   ProbeCommandHeader(H5FDdsmInt32 *comm);
 
     // Send/Recv Methods for point-to-point comm
     H5FDdsmInt32   SendData(H5FDdsmInt32 dest, H5FDdsmPointer data, H5FDdsmInt32 length,
