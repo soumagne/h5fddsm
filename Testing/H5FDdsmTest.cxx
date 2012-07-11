@@ -313,7 +313,6 @@ H5FDdsmFloat64 TestParticleRead(H5FDdsmConstString filename, H5FDdsmUInt64 ntupl
   H5FDdsmFloat64 *doublearray;
   static H5FDdsmInt32 step_increment = 0;
   H5FDdsmInt32 fail_count = 0;
-  // H5FDdsmInt32 status = H5FD_DSM_SUCCESS;
 
   start = ntuples * rank;
   total = ntuples * size;
@@ -356,12 +355,15 @@ H5FDdsmFloat64 TestParticleRead(H5FDdsmConstString filename, H5FDdsmUInt64 ntupl
           rank, fail_count, step_increment);
     }
   }
-  // MPI_Allreduce(&fail_count, MPI_IN_PLACE, 1, MPI_INT, MPI_SUM, comm);
-  // if (fail_count > 0) status = H5FD_DSM_FAIL;
   // free all array pointers
   freeBuffer(&ReadBuffer);
   step_increment++;
-  return(t2 - t1);
+
+  MPI_Allreduce(MPI_IN_PLACE, &fail_count, 1, MPI_INT, MPI_SUM, comm);
+  if (fail_count > 0)
+    return(H5FD_DSM_FAIL);
+  else
+    return(t2 - t1);
 };
 
 //----------------------------------------------------------------------------

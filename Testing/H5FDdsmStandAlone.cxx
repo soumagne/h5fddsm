@@ -13,6 +13,7 @@ main(int argc, char * argv[])
   H5FDdsmFloat64 dataMB;
   H5FDdsmConstString fullname = "dsm";
   MPI_Comm comm = MPI_COMM_WORLD;
+  H5FDdsmInt32 exit_status = EXIT_SUCCESS;
 
   MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
   MPI_Comm_rank(comm, &rank);
@@ -54,13 +55,14 @@ main(int argc, char * argv[])
       dsmManager, usingHDF);
 
   // Read and Check Data
-  TestParticleRead(fullname, numParticles, DIM_DATASETS, NUM_DATASETS,
+  if (TestParticleRead(fullname, numParticles, DIM_DATASETS, NUM_DATASETS,
       dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(), comm,
-      dsmManager);
+      dsmManager) == H5FD_DSM_FAIL)
+    exit_status = EXIT_FAILURE;
 
   delete dsmManager;
 
   MPI_Finalize();
 
-  return EXIT_SUCCESS;
+  return(exit_status);
 }

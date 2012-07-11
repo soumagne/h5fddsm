@@ -7,6 +7,7 @@
 //----------------------------------------------------------------------------
 int main(int argc, char *argv[])
 {
+  H5FDdsmInt32 exit_status = EXIT_SUCCESS;
   H5FDdsmInt32 nRemoteProcs;
   MPI_Comm comm = MPI_COMM_WORLD;
   H5FDdsmConstString fullname = "dsm";
@@ -53,10 +54,16 @@ int main(int argc, char *argv[])
       totaltime = 0;
       for (int avg = 0; avg < AVERAGE; avg++) {
         if (dsmManager->WaitForNotification() > 0) {
+          H5FDdsmFloat64 readtime;
           // H5FD_dsm_dump();
-          totaltime += TestParticleRead(fullname, numParticles, DIM_DATASETS, NUM_DATASETS,
+          readtime = TestParticleRead(fullname, numParticles, DIM_DATASETS, NUM_DATASETS,
               dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(),
               comm, dsmManager);
+          if (readtime != H5FD_DSM_FAIL) {
+            totaltime += readtime;
+          } else {
+            exit_status = EXIT_FAILURE;
+          }
           // Sync here
           MPI_Barrier(comm);
           // Clean up for next step
@@ -80,5 +87,5 @@ int main(int argc, char *argv[])
 
   receiverFinalize(dsmManager, &comm);
   delete dsmManager;
-  return(EXIT_SUCCESS);
+  return(exit_status);
 }

@@ -466,7 +466,7 @@ int H5FDdsmTestDriver::Main(int argc, char* argv[])
   int serverResult = 0;
   if(server)
     {
-    this->ReportStatus(server, "server");
+    serverResult = this->ReportStatus(server, "server");
     H5FDdsm_sysProcess_Kill(server);
     }
 
