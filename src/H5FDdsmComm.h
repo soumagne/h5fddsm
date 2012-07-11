@@ -70,15 +70,6 @@
 #define H5FD_DSM_INTRA_COMM  0x21
 #define H5FD_DSM_INTER_COMM  0x22
 
-typedef struct {
-  H5FDdsmInt32  type;
-  H5FDdsmUInt64 length;
-  H5FDdsmUInt64 total_length;
-  H5FDdsmUInt64 block_length;
-  H5FDdsmInt32  start_server_id;
-  H5FDdsmInt32  end_server_id;
-} H5FDdsmInfo;
-
 struct H5FDdsmMsg;
 
 H5FDdsm_EXPORT H5FDdsmConstString H5FDdsmCommToString(H5FDdsmInt32 tag);
@@ -138,12 +129,6 @@ public:
   virtual H5FDdsmInt32   Connect();
   virtual H5FDdsmInt32   Disconnect();
   virtual H5FDdsmInt32   RemoteBarrier();
-
-  virtual H5FDdsmInt32   RecvReady();
-  virtual H5FDdsmInt32   SendReady();
-
-  virtual H5FDdsmInt32   RecvInfo(H5FDdsmInfo *dsmInfo);
-  virtual H5FDdsmInt32   SendInfo(H5FDdsmInfo *dsmInfo);
 
 protected:
   MPI_Comm           IntraComm;

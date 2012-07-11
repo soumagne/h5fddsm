@@ -455,9 +455,6 @@ void receiverInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *
       dsmType = H5FD_DSM_TYPE_BLOCK_CYCLIC;
       if (rank == 0) std::cout << "# Block Cyclic redistribution selected" << std::endl;
     }
-    else if (!strcmp(argv[4], "Mask")) {
-      dsmType = H5FD_DSM_TYPE_DYNAMIC_MASK;
-    }
     else if (!strcmp(argv[4], "RBlock")) {
       dsmType = H5FD_DSM_TYPE_BLOCK_RANDOM;
       if (rank == 0) std::cout << "# Random Block redistribution selected" << std::endl;

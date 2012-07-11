@@ -69,7 +69,6 @@ class  H5FDdsmAddressMapper;
 #define H5FD_DSM_TYPE_MIXED         2
 #define H5FD_DSM_TYPE_BLOCK_CYCLIC  3
 #define H5FD_DSM_TYPE_BLOCK_RANDOM  4
-#define H5FD_DSM_TYPE_DYNAMIC_MASK  5
 
 #define H5FD_DSM_DEFAULT_LENGTH 10000
 #define H5FD_DSM_DEFAULT_BLOCK_LENGTH 1024
@@ -131,10 +130,6 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmObject {
     H5FDdsmGetValueMacro(BlockLength, H5FDdsmUInt64);
     H5FDdsmSetValueMacro(BlockLength, H5FDdsmUInt64);
 
-    // MaskLength
-    H5FDdsmGetValueMacro(MaskLength, H5FDdsmUInt64);
-    H5FDdsmInt32 SetMaskLength(H5FDdsmUInt64 dataSize);
-
     // Storage
     H5FDdsmGetValueMacro(Storage, H5FDdsmStorage *);
     H5FDdsmInt32   SetStorage(H5FDdsmStorage *Storage);
@@ -171,11 +166,6 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmObject {
     H5FDdsmInt32   SendInfo();
     H5FDdsmInt32   ReceiveInfo();
 
-    // Send/Recv Mask length (used with H5FD_DSM_TYPE_DYNAMIC_MASK)
-    // NB. Always on inter-communicator
-    H5FDdsmInt32   SendMaskLength();
-    H5FDdsmInt32   ReceiveMaskLength();
-
   protected:
     H5FDdsmInt32   SetLength(H5FDdsmUInt64 length, H5FDdsmBoolean allowAllocate=1);
 
@@ -190,7 +180,6 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmObject {
     H5FDdsmUInt64   Length;
     H5FDdsmUInt64   TotalLength;
     H5FDdsmUInt64   BlockLength;
-    H5FDdsmUInt64   MaskLength;
 
     H5FDdsmStorage *Storage;
 

@@ -105,7 +105,13 @@ H5FDdsmComm::DupComm(MPI_Comm Source)
 H5FDdsmInt32
 H5FDdsmComm::Barrier()
 {
-  MPI_Barrier(this->IntraComm);
+  H5FDdsmInt32 status;
+
+  status = MPI_Barrier(this->IntraComm);
+  if (status != MPI_SUCCESS) {
+    H5FDdsmError("Id = " << this->Id << " MPI_Barrier on H5FD_DSM_INTRA_COMM failed");
+    return(H5FD_DSM_FAIL);
+  }
   return(H5FD_DSM_SUCCESS);
 }
 
@@ -305,34 +311,6 @@ H5FDdsmComm::Disconnect()
 //----------------------------------------------------------------------------
 H5FDdsmInt32
 H5FDdsmComm::RemoteBarrier()
-{
-  return(H5FD_DSM_SUCCESS);
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmComm::RecvReady()
-{
-  return(H5FD_DSM_SUCCESS);
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmComm::SendReady()
-{
-  return(H5FD_DSM_SUCCESS);
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmComm::RecvInfo(H5FDdsmInfo *dsmInfo)
-{
-  return(H5FD_DSM_SUCCESS);
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmComm::SendInfo(H5FDdsmInfo *dsmInfo)
 {
   return(H5FD_DSM_SUCCESS);
 }

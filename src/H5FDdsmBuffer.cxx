@@ -67,6 +67,15 @@ typedef struct {
   H5FDdsmInt64 Parameters[10];
 } H5FDdsmCommand;
 
+typedef struct {
+  H5FDdsmInt32  type;
+  H5FDdsmUInt64 length;
+  H5FDdsmUInt64 total_length;
+  H5FDdsmUInt64 block_length;
+  H5FDdsmInt32  start_server_id;
+  H5FDdsmInt32  end_server_id;
+} H5FDdsmInfo;
+
 //----------------------------------------------------------------------------
 H5FDdsmBuffer::H5FDdsmBuffer()
 {
@@ -77,7 +86,6 @@ H5FDdsmBuffer::H5FDdsmBuffer()
   this->Length = 0;
   this->TotalLength = 0;
   this->BlockLength = 0;
-  this->MaskLength  = 0;
   this->Storage = NULL;
   this->Comm = NULL;
   this->DataPointer = NULL;
@@ -103,17 +111,6 @@ void
 H5FDdsmBuffer::SetDsmType(H5FDdsmInt32 dsmType)
 {
   this->AddressMapper->SetDsmType(dsmType);
-}
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmBuffer::SetMaskLength(H5FDdsmUInt64 dataSize)
-{
-  this->MaskLength = this->Length - (dataSize / (this->EndServerId - this->StartServerId + 1));
-  // Do not make the mask fit exactly to the size of data to be written so that
-  // additional space is left for metadata
-  this->Length -= (this->MaskLength - H5FD_DSM_ALIGNMENT);
-  this->TotalLength = this->Length * (this->EndServerId - this->StartServerId + 1);
-  return(H5FD_DSM_SUCCESS);
 }
 
 //----------------------------------------------------------------------------
@@ -222,7 +219,7 @@ H5FDdsmBuffer::SendCommandHeader(H5FDdsmInt32 opcode, H5FDdsmInt32 dest,
 
   H5FDdsmMsg msg;
 
-  memset(&cmd, 0, sizeof(cmd));
+  memset(&cmd, 0, sizeof(H5FDdsmCommand));
   cmd.Opcode = opcode;
   cmd.Source = this->Comm->GetId();
   cmd.Target = dest;
@@ -232,7 +229,7 @@ H5FDdsmBuffer::SendCommandHeader(H5FDdsmInt32 opcode, H5FDdsmInt32 dest,
   msg.SetSource(this->Comm->GetId());
   msg.SetDest(dest);
   msg.SetTag(H5FD_DSM_COMMAND_TAG);
-  msg.SetLength(sizeof(cmd));
+  msg.SetLength(sizeof(H5FDdsmCommand));
   msg.SetData(&cmd);
   msg.SetCommunicator(comm);
 
@@ -252,8 +249,8 @@ H5FDdsmBuffer::ReceiveCommandHeader(H5FDdsmInt32 *opcode, H5FDdsmInt32 *source,
 
   H5FDdsmMsg msg;
 
-  msg.Source = (remoteSource >= 0) ? remoteSource : H5FD_DSM_ANY_SOURCE;
-  msg.SetLength(sizeof(cmd));
+  msg.SetSource((remoteSource >= 0) ? remoteSource : H5FD_DSM_ANY_SOURCE);
+  msg.SetLength(sizeof(H5FDdsmCommand));
   msg.SetTag(H5FD_DSM_COMMAND_TAG);
   msg.SetData(&cmd);
   msg.SetCommunicator(comm);
@@ -376,8 +373,11 @@ H5FDdsmBuffer::ReceiveAcknowledgment(H5FDdsmInt32 source, H5FDdsmInt32 comm)
 H5FDdsmInt32
 H5FDdsmBuffer::SendInfo()
 {
-  H5FDdsmInfo dsmInfo;
+  H5FDdsmInfo  dsmInfo;
+  H5FDdsmInt32 status;
+  H5FDdsmMsg   msg;
 
+  memset(&dsmInfo, 0, sizeof(H5FDdsmInfo));
   dsmInfo.type = this->GetDsmType();
   dsmInfo.length = this->GetLength();
   dsmInfo.total_length = this->GetTotalLength();
@@ -385,72 +385,61 @@ H5FDdsmBuffer::SendInfo()
   dsmInfo.start_server_id = this->GetStartServerId();
   dsmInfo.end_server_id = this->GetEndServerId();
 
-  return(this->Comm->SendInfo(&dsmInfo));
+  msg.SetSource(this->Comm->GetId());
+  msg.SetDest(0);
+  msg.SetTag(H5FD_DSM_EXCHANGE_TAG);
+  msg.SetLength(sizeof(H5FDdsmInfo));
+  msg.SetData(&dsmInfo);
+  msg.SetCommunicator(H5FD_DSM_INTER_COMM);
+
+  if (this->Comm->GetId() == 0)  {
+    H5FDdsmDebug("Sending DSM Info...");
+    status = this->Comm->Send(&msg);
+    if (status != H5FD_DSM_SUCCESS) H5FDdsmError("Send of Info failed");
+    H5FDdsmDebug("Send DSM Info Completed");
+  }
+  status = this->Comm->Barrier();
+  return(status);
 }
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
 H5FDdsmBuffer::ReceiveInfo()
 {
-  H5FDdsmInfo dsmInfo;
+  H5FDdsmInfo  dsmInfo;
+  H5FDdsmInt32 status = H5FD_DSM_FAIL;
+  H5FDdsmMsg   msg;
 
-  if (this->Comm->RecvInfo(&dsmInfo) != H5FD_DSM_SUCCESS) {
-    return(H5FD_DSM_FAIL);
+  msg.SetSource(0);
+  msg.SetLength(sizeof(H5FDdsmInfo));
+  msg.SetTag(H5FD_DSM_EXCHANGE_TAG);
+  msg.SetData(&dsmInfo);
+  msg.SetCommunicator(H5FD_DSM_INTER_COMM);
+
+  memset(&dsmInfo, 0, sizeof(H5FDdsmInfo));
+
+  if (this->Comm->GetId() == 0) {
+    H5FDdsmDebug("Receiving DSM Info...");
+    status = this->Comm->Receive(&msg);
+    if (status != H5FD_DSM_SUCCESS) H5FDdsmError("Receive of Info failed");
+    H5FDdsmDebug("Recv DSM Info Completed");
   }
+  status = this->Comm->Broadcast(&dsmInfo, sizeof(H5FDdsmInfo), 0);
+  if (status != H5FD_DSM_SUCCESS) H5FDdsmError("Broadcast of Info failed");
+
   this->SetDsmType(dsmInfo.type);
-  H5FDdsmDebug("Type received: " << this->GetDsmType());
-
   this->SetLength(dsmInfo.length, 0);
-  H5FDdsmDebug("Length received: " << this->GetLength());
-
   this->TotalLength = dsmInfo.total_length;
-  H5FDdsmDebug("totalLength received: " << this->GetTotalLength());
-
   this->SetBlockLength(dsmInfo.block_length);
-  H5FDdsmDebug("blockLength received: " << this->GetBlockLength());
-
   this->StartServerId = dsmInfo.start_server_id;
-  H5FDdsmDebug("startServerId received: " << this->GetStartServerId());
-
   this->EndServerId = dsmInfo.end_server_id;
+
+  H5FDdsmDebug("Type received: " << this->GetDsmType());
+  H5FDdsmDebug("Length received: " << this->GetLength());
+  H5FDdsmDebug("totalLength received: " << this->GetTotalLength());
+  H5FDdsmDebug("blockLength received: " << this->GetBlockLength());
+  H5FDdsmDebug("startServerId received: " << this->GetStartServerId());
   H5FDdsmDebug("endServerId received: " << this->GetEndServerId());
 
-  return(H5FD_DSM_SUCCESS);
+  return(status);
 }
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmBuffer::SendMaskLength()
-{
-  H5FDdsmInfo dsmInfo;
-
-  dsmInfo.length = this->GetMaskLength();
-
-  return(this->Comm->SendInfo(&dsmInfo));
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmBuffer::ReceiveMaskLength()
-{
-  H5FDdsmInfo dsmInfo;
-
-  if (this->Comm->RecvInfo(&dsmInfo) != H5FD_DSM_SUCCESS) {
-    return(H5FD_DSM_FAIL);
-  }
-
-  if (this->Comm->GetId() == 0) {
-    H5FDdsmDebug("Old Length: " << this->GetLength());
-    H5FDdsmDebug("Old Total Length: " << this->GetTotalLength());
-  }
-  this->MaskLength = dsmInfo.length;
-  this->Length -= (this->MaskLength - H5FD_DSM_ALIGNMENT);
-  this->TotalLength = this->Length * (this->EndServerId - this->StartServerId + 1);
-  if (this->Comm->GetId() == 0) {
-    H5FDdsmDebug("Mask Length received: " << this->GetMaskLength());
-    H5FDdsmDebug("New Length: " << this->GetLength());
-    H5FDdsmDebug("New Total Length: " << this->GetTotalLength());
-  }
-
-  return(H5FD_DSM_SUCCESS);
-}
-

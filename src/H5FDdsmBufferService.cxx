@@ -442,9 +442,9 @@ H5FDdsmBufferService::BufferService(H5FDdsmInt32 *returnOpcode)
         return(H5FD_DSM_FAIL);
       }
       this->BufferServiceInternals->IsConnecting = H5FD_DSM_FALSE;
-      // send DSM information
+      // Send DSM information
       this->SendInfo();
-      if (this->AddressMapper->GetDsmType() == H5FD_DSM_TYPE_DYNAMIC_MASK) this->ReceiveMaskLength();
+      // Signal new connection
       this->SignalConnection();
     }
     this->CommChannel = H5FD_DSM_ANY_COMM;

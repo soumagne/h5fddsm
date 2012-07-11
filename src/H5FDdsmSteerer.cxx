@@ -72,7 +72,9 @@ H5FDdsmInt32 H5FDdsmSteerer::SetCurrentCommand(H5FDdsmConstString cmd)
     strcpy(this->CurrentCommand, cmd);
     if (strcmp(this->CurrentCommand, "play") == 0) {
       H5FDdsmDebug("Sending ready...");
-      this->DsmManager->GetDsmBuffer()->GetComm()->SendReady();
+      if (this->DsmManager->GetUpdatePiece() == 0) {
+        this->DsmManager->GetDsmBuffer()->SendAcknowledgment(0, H5FD_DSM_INTER_COMM);
+      }
       H5FDdsmDebug("Ready sent");
     }
   }
@@ -570,7 +572,10 @@ H5FDdsmInt32 H5FDdsmSteerer::CheckCommand(H5FDdsmConstString command)
     this->DsmManager->GetDsmBuffer()->RequestNotification();
 
     H5FDdsmDebug("Receiving ready...");
-    this->DsmManager->GetDsmBuffer()->GetComm()->RecvReady();
+    if (this->DsmManager->GetUpdatePiece() == 0) {
+      this->DsmManager->GetDsmBuffer()->ReceiveAcknowledgment(0, H5FD_DSM_INTER_COMM);
+    }
+    this->DsmManager->GetDsmBuffer()->GetComm()->Barrier();
     H5FDdsmDebug("Ready received");
 
     // If the client had acquired the lock before, take it back

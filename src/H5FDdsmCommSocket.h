@@ -54,12 +54,6 @@ public:
   H5FDdsmInt32   Connect();
   H5FDdsmInt32   Disconnect();
 
-  H5FDdsmInt32   RecvReady();
-  H5FDdsmInt32   SendReady();
-
-  H5FDdsmInt32   RecvInfo(H5FDdsmInfo *dsmInfo);
-  H5FDdsmInt32   SendInfo(H5FDdsmInfo *dsmInfo);
-
 protected:
   H5FDdsmInt32   InterCommServerConnect();
   H5FDdsmInt32   InterCommClientConnect();

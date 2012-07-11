@@ -301,10 +301,6 @@ H5FDdsmInt32 H5FDdsmManager::Create()
     case H5FD_DSM_TYPE_BLOCK_RANDOM:
       this->DsmBuffer->ConfigureUniform(this->DsmComm, length, -1, -1, this->BlockLength, H5FD_DSM_TRUE);
       break;
-    case H5FD_DSM_TYPE_DYNAMIC_MASK:
-      this->DsmBuffer->ConfigureUniform(this->DsmComm, length, -1, -1);
-      this->DsmBuffer->SetDsmType(H5FD_DSM_TYPE_DYNAMIC_MASK);
-      break;
     default:
       H5FDdsmError("DSM configuration type not supported");
       return(H5FD_DSM_FAIL);

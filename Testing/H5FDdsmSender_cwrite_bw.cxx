@@ -37,11 +37,7 @@ int main(int argc, char **argv)
   // more space in the DSM
   numParticles = (H5FDdsmUInt64) ((1024 * 1024 * remoteMB - H5FD_DSM_ALIGNMENT * NUM_DATASETS) /
       (sizeof(H5FDdsmFloat64) * DIM_DATASETS * NUM_DATASETS * dsmManager->GetUpdateNumPieces()));
-  if (dsmManager->GetDsmBuffer()->GetDsmType() == H5FD_DSM_TYPE_DYNAMIC_MASK) {
-    dsmManager->GetDsmBuffer()->SetMaskLength(numParticles * sizeof(H5FDdsmFloat64) *
-        DIM_DATASETS * dsmManager->GetUpdateNumPieces());
-    dsmManager->GetDsmBuffer()->SendMaskLength();
-  }
+
   Bytes       = numParticles * sizeof(H5FDdsmFloat64) * DIM_DATASETS * NUM_DATASETS; // 3 = {x,y,z}
   SendBytes   = Bytes * dsmManager->GetUpdateNumPieces();
   MBytes      = SendBytes / (1024.0 * 1024.0);
