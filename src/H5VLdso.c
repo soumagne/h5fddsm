@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Project                 : H5FDdsm
-  Module                  : H5VLdsm.h
+  Module                  : H5VLdso.c
 
   Authors:
      John Biddiscombe     Jerome Soumagne
@@ -23,14 +23,17 @@
 
 =========================================================================*/
 
-#define H5D_PACKAGE		/* suppress error about including H5Dpkg */
-#define H5F_PACKAGE		/* suppress error about including H5Fpkg */
-#define H5G_PACKAGE		/* suppress error about including H5Gpkg */
-#define H5O_PACKAGE		/* suppress error about including H5Opkg */
-#define H5T_PACKAGE		/* suppress error about including H5Tpkg */
+#define H5A_PACKAGE   /*suppress error about including H5Apkg   */
+#define H5D_PACKAGE   /*suppress error about including H5Dpkg   */
+#define H5F_PACKAGE   /*suppress error about including H5Fpkg   */
+#define H5G_PACKAGE   /*suppress error about including H5Gpkg   */
+#define H5L_PACKAGE   /*suppress error about including H5Lpkg   */
+#define H5O_PACKAGE   /*suppress error about including H5Opkg   */
+#define H5R_PACKAGE   /*suppress error about including H5Rpkg   */
+#define H5T_PACKAGE   /*suppress error about including H5Tpkg   */
 
 /* Interface initialization */
-#define H5_INTERFACE_INIT_FUNC	H5VL_dsm_init_interface
+#define H5_INTERFACE_INIT_FUNC	H5VL_dso_init_interface
 
 
 #include "H5private.h"      /* Generic Functions              */
@@ -50,39 +53,41 @@
 #include "H5SMprivate.h"    /* Shared Object Header Messages  */
 #include "H5Tpkg.h"         /* Datatypes                      */
 #include "H5VLprivate.h"    /* VOL plugins                    */
-#include "H5VLdsm.h"        /* DSM VOL plugin                 */
+#include "H5VLdso.h"        /* DSO VOL plugin                 */
 
 /* The driver identification number, initialized at runtime */
-static hid_t H5VL_DSM_g = 0;
+static hid_t H5VL_DSO_g = 0;
 
 
 /* Prototypes */
-static herr_t H5VL_dsm_term(void);
+static herr_t H5VL_dso_term(void);
 
-static hid_t H5VL_dsm_dataset_create(hid_t loc_id, const char *name, hid_t dcpl_id, hid_t dapl_id, hid_t req);
-static hid_t H5VL_dsm_dataset_open(hid_t loc_id, const char *name, hid_t dapl_id, hid_t req);
-static herr_t H5VL_dsm_dataset_read(hid_t dset_id, hid_t mem_type_id, hid_t mem_space_id,
+static void *H5VL_dso_dataset_create(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t dcpl_id, hid_t dapl_id, hid_t req);
+static void *H5VL_dso_dataset_open(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t dapl_id, hid_t req);
+static herr_t H5VL_dso_dataset_read(void *dset, hid_t mem_type_id, hid_t mem_space_id,
                                        hid_t file_space_id, hid_t plist_id, void *buf, hid_t req);
-static herr_t H5VL_dsm_dataset_write(hid_t dset_id, hid_t mem_type_id, hid_t mem_space_id,
+static herr_t H5VL_dso_dataset_write(void *dset, hid_t mem_type_id, hid_t mem_space_id,
                                         hid_t file_space_id, hid_t plist_id, const void *buf, hid_t req);
-static herr_t H5VL_dsm_dataset_set_extent(hid_t dset_id, const hsize_t size[], hid_t req);
-static herr_t H5VL_dsm_dataset_get(hid_t id, H5VL_dataset_get_t get_type, hid_t req, va_list arguments);
-static herr_t H5VL_dsm_dataset_close(hid_t dataset_id, hid_t req);
+static herr_t H5VL_dso_dataset_set_extent(void *dset, const hsize_t size[], hid_t req);
+static herr_t H5VL_dso_dataset_get(void *dset, H5VL_dataset_get_t get_type, hid_t req, va_list arguments);
+static herr_t H5VL_dso_dataset_close(void *dset, hid_t req);
 
-static hid_t  H5VL_dsm_file_create(const char *name, unsigned flags, hid_t fcpl_id, hid_t fapl_id, hid_t req);
-static hid_t  H5VL_dsm_file_open(const char *name, unsigned flags, hid_t fapl_id, hid_t req);
-static herr_t H5VL_dsm_file_close(hid_t file_id, hid_t req);
+static void *H5VL_dso_file_create(const char *name, unsigned flags, hid_t fcpl_id, hid_t fapl_id, hid_t req);
+static void *H5VL_dso_file_open(const char *name, unsigned flags, hid_t fapl_id, hid_t req);
+static herr_t H5VL_dso_file_close(void *file, hid_t req);
 
-static hid_t H5VL_dsm_group_create(hid_t loc_id, const char *name, hid_t gcpl_id, hid_t gapl_id, hid_t req);
-static hid_t H5VL_dsm_group_open(hid_t loc_id, const char *name, hid_t gapl_id, hid_t req);
-static herr_t H5VL_dsm_group_get(hid_t obj_id, H5VL_group_get_t get_type, hid_t req, va_list arguments);
-static herr_t H5VL_dsm_group_close(hid_t group_id, hid_t req);
+static void *H5VL_dso_group_create(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t gcpl_id, hid_t gapl_id, hid_t req);
+static void *H5VL_dso_group_open(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t gapl_id, hid_t req);
+static herr_t H5VL_dso_group_get(void *obj, H5VL_group_get_t get_type, hid_t req, va_list arguments);
+static herr_t H5VL_dso_group_close(void *grp, hid_t req);
 
-H5VL_class_t H5VL_dsm_g = {
-    "dsm",                                      /* name */
-    0,                                          /* nrefs */
-    NULL,                                       /* init: TODO do not use init for now */
-    H5VL_dsm_term,                              /* terminate */
+H5VL_class_t H5VL_dso_g = {
+    "dso",                                      /* name */
+    NULL,                                       /* initialize */
+    H5VL_dso_term,                              /* terminate */
+    0,                                          /* fapl_size */
+    NULL,                                       /* fapl_copy */
+    NULL,                                       /* fapl_free */
     {                                           /* attribute_cls */
         NULL,                                   /* create */
         NULL,                                   /* open */
@@ -95,43 +100,46 @@ H5VL_class_t H5VL_dsm_g = {
     {                                           /* datatype_cls */
         NULL,                                   /* commit */
         NULL,                                   /* open */
+        NULL,                                   /* get_size */
         NULL                                    /* close */
     },
     {                                           /* dataset_cls */
-        H5VL_dsm_dataset_create,                /* create */
-        H5VL_dsm_dataset_open,                  /* open */
-        H5VL_dsm_dataset_read,                  /* read */
-        H5VL_dsm_dataset_write,                 /* write */
-        H5VL_dsm_dataset_set_extent,            /* set extent */
-        H5VL_dsm_dataset_get,                   /* get */
-        H5VL_dsm_dataset_close                  /* close */
+        H5VL_dso_dataset_create,                /* create */
+        H5VL_dso_dataset_open,                  /* open */
+        H5VL_dso_dataset_read,                  /* read */
+        H5VL_dso_dataset_write,                 /* write */
+        H5VL_dso_dataset_set_extent,            /* set extent */
+        H5VL_dso_dataset_get,                   /* get */
+        H5VL_dso_dataset_close                  /* close */
     },
     {                                           /* file_cls */
-        H5VL_dsm_file_create,                   /* create */
-        H5VL_dsm_file_open,                     /* open */
+        H5VL_dso_file_create,                   /* create */
+        H5VL_dso_file_open,                     /* open */
         NULL,                                   /* flush */
         NULL,                                   /* get */
         NULL,                                   /* misc */
         NULL,                                   /* optional */
-        H5VL_dsm_file_close                     /* close */
+        H5VL_dso_file_close                     /* close */
     },
     {                                           /* group_cls */
-        H5VL_dsm_group_create,                  /* create */
-        H5VL_dsm_group_open,                    /* open */
-        H5VL_dsm_group_get,                     /* get */
-        H5VL_dsm_group_close                    /* close */
+        H5VL_dso_group_create,                  /* create */
+        H5VL_dso_group_open,                    /* open */
+        H5VL_dso_group_get,                     /* get */
+        H5VL_dso_group_close                    /* close */
     },
     {                                           /* link_cls */
         NULL,                                   /* create */
         NULL,                                   /* move */
+        NULL,                                   /* iterate */
         NULL,                                   /* get */
         NULL                                    /* remove */
     },
     {                                           /* object_cls */
         NULL,                                   /* open */
         NULL,                                   /* copy */
-        NULL,                                   /* lookup */
-        NULL,                                   /* free location */
+        NULL,                                   /* visit */
+//        NULL,                                   /* lookup */
+//        NULL,                                   /* free location */
         NULL,                                   /* get */
         NULL,                                   /* misc */
         NULL,                                   /* optional */
@@ -141,60 +149,56 @@ H5VL_class_t H5VL_dsm_g = {
 
 /*--------------------------------------------------------------------------
 NAME
-   H5VL_dsm_init_interface -- Initialize interface-specific information
+   H5VL_dso_init_interface -- Initialize interface-specific information
 USAGE
-    herr_t H5VL_dsm_init_interface()
+    herr_t H5VL_dso_init_interface()
 
 RETURNS
     Non-negative on success/Negative on failure
 DESCRIPTION
     Initializes any interface-specific data or routines.  (Just calls
-    H5VL_dsm_init currently).
+    H5VL_dso_init currently).
 
 --------------------------------------------------------------------------*/
 static herr_t
-H5VL_dsm_init_interface(void)
+H5VL_dso_init_interface(void)
 {
   FUNC_ENTER_NOAPI_NOINIT_NOERR
 
   FUNC_LEAVE_NOAPI(SUCCEED)
-} /* H5VL_dsm_init_interface() */
+} /* H5VL_dso_init_interface() */
 
 /*-------------------------------------------------------------------------
- * Function:	H5VL_dsm_init
+ * Function:	H5VL_dso_init
  *
  * Purpose:	Initialize this vol plugin by registering the driver with the
  *		library.
  *
- * Return:	Success:	The ID for the dsm plugin.
+ * Return:	Success:	The ID for the dso plugin.
  *		Failure:	Negative.
- *
- * Programmer:	Jerome Soumagne
- *              May, 2012
  *
  *-------------------------------------------------------------------------
  */
 H5VL_class_t *
-H5VL_dsm_init(void)
+H5VL_dso_init(void)
 {
   H5VL_class_t *ret_value = NULL;            /* Return value */
 
   FUNC_ENTER_NOAPI_NOINIT_NOERR
 
   /* TODO Necessary or not ? */
-  if (H5I_VOL != H5Iget_type(H5VL_DSM_g)) {
-    H5VL_DSM_g = H5VL_register(&H5VL_dsm_g, sizeof(H5VL_class_t), FALSE);
-  }
+//  if (H5I_VOL != H5Iget_type(H5VL_dso_g)) {
+//    H5VL_DSO_g = H5VL_register(&H5VL_dso_g, sizeof(H5VL_class_t), FALSE);
+//  }
 
   /* Set return value */
-  ret_value = &H5VL_dsm_g;
-  ret_value->nrefs ++;
+  ret_value = &H5VL_dso_g;
 
   FUNC_LEAVE_NOAPI(ret_value)
-} /* end H5VL_dsm_init() */
+} /* end H5VL_dso_init() */
 
 /*---------------------------------------------------------------------------
- * Function:    H5VL_dsm_term
+ * Function:    H5VL_dso_term
  *
  * Purpose:	    Shut down the VOL plugin
  *
@@ -203,21 +207,20 @@ H5VL_dsm_init(void)
  *---------------------------------------------------------------------------
  */
 static herr_t
-H5VL_dsm_term(void)
+H5VL_dso_term(void)
 {
   FUNC_ENTER_NOAPI_NOINIT_NOERR
 
   /* Reset VOL ID */
-  H5VL_DSM_g = 0;
-  H5VL_dsm_g.nrefs = 0;
+  H5VL_DSO_g = 0;
 
   FUNC_LEAVE_NOAPI(SUCCEED)
-} /* end H5VL_dsm_term() */
+} /* end H5VL_dso_term() */
 
 /*-------------------------------------------------------------------------
- * Function:	H5Pset_fapl_dsm
+ * Function:	H5Pset_fapl_dso
  *
- * Purpose:	    Modify the file access property list to use the H5VL_dsm
+ * Purpose:	    Modify the file access property list to use the H5VL_DSO
  *	            plugin defined in this source file.
  *
  * Return:      Non-negative on success/Negative on failure
@@ -225,7 +228,7 @@ H5VL_dsm_term(void)
  *-------------------------------------------------------------------------
  */
 herr_t
-H5Pset_fapl_dsm_vol(hid_t fapl_id)
+H5Pset_fapl_dso(hid_t fapl_id)
 {
   H5P_genplist_t *plist;      /* Property list pointer */
   herr_t ret_value;
@@ -236,73 +239,69 @@ H5Pset_fapl_dsm_vol(hid_t fapl_id)
   if(NULL == (plist = H5P_object_verify(fapl_id, H5P_FILE_ACCESS)))
     HGOTO_ERROR(H5E_ARGS, H5E_BADTYPE, FAIL, "not a file access property list")
 
-  ret_value = H5P_set_vol(plist, &H5VL_dsm_g);
+  ret_value = H5P_set_vol(plist, &H5VL_dso_g, NULL);
 
 done:
   FUNC_LEAVE_API(ret_value)
-} /* end H5Pset_fapl_dsm() */
+} /* end H5Pset_fapl_dso() */
 
 /*-------------------------------------------------------------------------
- * Function:    H5VL_dsm_dataset_create
+ * Function:    H5VL_dso_dataset_create
  *
- * Purpose:     Creates a dataset inside a dsm h5 file.
+ * Purpose:     Creates a dataset inside a DSO H5 file.
  *
  * Return:  Success:    dataset id.
  *          Failure:    NULL
  *
  *-------------------------------------------------------------------------
  */
-static hid_t
-H5VL_dsm_dataset_create(hid_t loc_id, const char *name, hid_t dcpl_id, hid_t dapl_id, hid_t UNUSED req)
+static void *
+H5VL_dso_dataset_create(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t dcpl_id,
+    hid_t dapl_id, hid_t UNUSED req)
 {
-  H5P_genplist_t *plist;              /* Property list pointer */
-  H5G_loc_t      loc;                 /* Object location to insert dataset into */
-  hid_t          type_id, space_id, lcpl_id;
-  H5D_t          *dset = NULL;        /* New dataset's info */
-  const H5S_t    *space;              /* Dataspace for dataset */
-  hid_t          ret_value;
+  H5P_genplist_t *plist;             /* Property list pointer */
+  H5G_loc_t       loc;               /* Object location to insert dataset into */
+  hid_t           type_id, space_id, lcpl_id;
+  H5D_t          *dset = NULL;       /* New dataset's info */
+  const H5S_t    *space;             /* Dataspace for dataset */
+  void           *ret_value;
 
   FUNC_ENTER_NOAPI_NOINIT
 
   /* Get the plist structure */
   if(NULL == (plist = (H5P_genplist_t *)H5I_object(dcpl_id)))
-    HGOTO_ERROR(H5E_ATOM, H5E_BADATOM, FAIL, "can't find object for ID")
+    HGOTO_ERROR(H5E_ATOM, H5E_BADATOM, NULL, "can't find object for ID")
 
   /* get creation properties */
   if(H5P_get(plist, H5VL_DSET_TYPE_ID, &type_id) < 0)
-    HGOTO_ERROR(H5E_PLIST, H5E_CANTGET, FAIL, "can't get property value for datatype id")
+    HGOTO_ERROR(H5E_PLIST, H5E_CANTGET, NULL, "can't get property value for datatype id")
   if(H5P_get(plist, H5VL_DSET_SPACE_ID, &space_id) < 0)
-    HGOTO_ERROR(H5E_PLIST, H5E_CANTGET, FAIL, "can't get property value for space id")
+    HGOTO_ERROR(H5E_PLIST, H5E_CANTGET, NULL, "can't get property value for space id")
   if(H5P_get(plist, H5VL_DSET_LCPL_ID, &lcpl_id) < 0)
-    HGOTO_ERROR(H5E_PLIST, H5E_CANTGET, FAIL, "can't get property value for lcpl id")
+    HGOTO_ERROR(H5E_PLIST, H5E_CANTGET, NULL, "can't get property value for lcpl id")
 
   /* Check arguments */
-  if(H5G_loc(loc_id, &loc) < 0)
-    HGOTO_ERROR(H5E_ARGS, H5E_BADTYPE, FAIL, "not a location ID")
+  if(H5G_loc_real(obj, loc_params.obj_type, &loc) < 0)
+    HGOTO_ERROR(H5E_ARGS, H5E_BADTYPE, NULL, "not a file or file object")
   if(H5I_DATATYPE != H5I_get_type(type_id))
-    HGOTO_ERROR(H5E_ARGS, H5E_BADTYPE, FAIL, "not a datatype ID")
+    HGOTO_ERROR(H5E_ARGS, H5E_BADTYPE, NULL, "not a datatype ID")
   if(NULL == (space = (const H5S_t *)H5I_object_verify(space_id, H5I_DATASPACE)))
-    HGOTO_ERROR(H5E_ARGS, H5E_BADTYPE, FAIL, "not a dataspace ID")
+    HGOTO_ERROR(H5E_ARGS, H5E_BADTYPE, NULL, "not a dataspace ID")
 
   /* H5Dcreate_anon */
-  if (NULL == name) {
+  if(NULL == name) {
     /* build and open the new dataset */
     if(NULL == (dset = H5D__create(loc.oloc->file, type_id, space, dcpl_id, dapl_id, H5AC_dxpl_id)))
-      HGOTO_ERROR(H5E_DATASET, H5E_CANTINIT, FAIL, "unable to create dataset")
-
-    /* Register the new dataset to get an ID for it */
-    if((ret_value = H5I_register(H5I_DATASET, dset, TRUE)) < 0)
-      HGOTO_ERROR(H5E_DATASET, H5E_CANTREGISTER, FAIL, "unable to register dataset")
+      HGOTO_ERROR(H5E_DATASET, H5E_CANTINIT, NULL, "unable to create dataset")
   }
   /* H5Dcreate2 */
   else {
     /* Create the new dataset & get its ID */
     if(NULL == (dset = H5D__create_named(&loc, name, type_id, space, lcpl_id,
         dcpl_id, dapl_id, H5AC_dxpl_id)))
-      HGOTO_ERROR(H5E_DATASET, H5E_CANTINIT, FAIL, "unable to create dataset")
-    if((ret_value = H5I_register(H5I_DATASET, dset, TRUE)) < 0)
-      HGOTO_ERROR(H5E_DATASET, H5E_CANTREGISTER, FAIL, "unable to register dataset")
+      HGOTO_ERROR(H5E_DATASET, H5E_CANTINIT, NULL, "unable to create dataset")
   }
+  ret_value = (void *)dset;
 
 done:
   if (err_occurred) {
@@ -312,51 +311,49 @@ done:
   if(NULL == name) {
     /* Release the dataset's object header, if it was created */
     if(dset) {
-      H5O_loc_t *oloc; /* Object location for dataset */
+      H5O_loc_t *oloc;         /* Object location for dataset */
 
       /* Get the new dataset's object location */
       if(NULL == (oloc = H5D_oloc(dset)))
-        HDONE_ERROR(H5E_DATASET, H5E_CANTGET, FAIL, "unable to get object location of dataset")
+        HDONE_ERROR(H5E_DATASET, H5E_CANTGET, NULL, "unable to get object location of dataset")
 
       /* Decrement refcount on dataset's object header in memory */
       if(H5O_dec_rc_by_loc(oloc, H5AC_dxpl_id) < 0)
-        HDONE_ERROR(H5E_DATASET, H5E_CANTDEC, FAIL, "unable to decrement refcount on newly created object")
+        HDONE_ERROR(H5E_DATASET, H5E_CANTDEC, NULL, "unable to decrement refcount on newly created object")
     } /* end if */
   }
-  if(ret_value < 0)
-    if(dset && H5D_close(dset) < 0)
-      HDONE_ERROR(H5E_DATASET, H5E_CLOSEERROR, FAIL, "unable to release dataset")
 
   FUNC_LEAVE_NOAPI(ret_value)
-} /* end H5VL_dsm_dataset_create() */
+} /* end H5VL_dso_dataset_create() */
 
 /*-------------------------------------------------------------------------
- * Function:    H5VL_dsm_dataset_open
+ * Function:    H5VL_dso_dataset_open
  *
- * Purpose: Opens a dataset inside a dsm h5 file.
+ * Purpose: Opens a dataset inside a dso h5 file.
  *
  * Return:  Success:    dataset id.
  *          Failure:    NULL
  *
  *-------------------------------------------------------------------------
  */
-static hid_t
-H5VL_dsm_dataset_open(hid_t loc_id, const char *name, hid_t dapl_id, hid_t UNUSED req)
+static void *
+H5VL_dso_dataset_open(void *obj, H5VL_loc_params_t loc_params, const char *name,
+    hid_t dapl_id, hid_t UNUSED req)
 {
-  H5D_t       *dset = NULL;
-  H5G_loc_t    loc;               /* Object location of group */
-  H5G_loc_t    dset_loc;          /* Object location of dataset */
-  H5G_name_t   path;              /* Dataset group hier. path */
-  H5O_loc_t    oloc;              /* Dataset object location */
-  H5O_type_t   obj_type;              /* Type of object at location */
-  hbool_t      loc_found = FALSE;     /* Location at 'name' found */
-  hid_t        dxpl_id = H5AC_dxpl_id;    /* dxpl to use to open datset */
-  hid_t        ret_value;
+  H5D_t      *dset = NULL;
+  H5G_loc_t   loc;                    /* Object location of group */
+  H5G_loc_t   dset_loc;               /* Object location of dataset */
+  H5G_name_t  path;                   /* Dataset group hier. path */
+  H5O_loc_t   oloc;                   /* Dataset object location */
+  H5O_type_t  obj_type;               /* Type of object at location */
+  hbool_t     loc_found = FALSE;      /* Location at 'name' found */
+  hid_t       dxpl_id = H5AC_dxpl_id; /* dxpl to use to open datset */
+  void       *ret_value = NULL;
 
   FUNC_ENTER_NOAPI_NOINIT
 
-  if(H5G_loc(loc_id, &loc) < 0)
-    HGOTO_ERROR(H5E_ARGS, H5E_BADTYPE, FAIL, "not a location")
+  if(H5G_loc_real(obj, loc_params.obj_type, &loc) < 0)
+    HGOTO_ERROR(H5E_ARGS, H5E_BADTYPE, NULL, "not a file or file object")
 
   /* Set up dataset location to fill in */
   dset_loc.oloc = &oloc;
@@ -365,44 +362,34 @@ H5VL_dsm_dataset_open(hid_t loc_id, const char *name, hid_t dapl_id, hid_t UNUSE
 
   /* Find the dataset object */
   if(H5G_loc_find(&loc, name, &dset_loc, dapl_id, dxpl_id) < 0)
-    HGOTO_ERROR(H5E_DATASET, H5E_NOTFOUND, FAIL, "not found")
+    HGOTO_ERROR(H5E_DATASET, H5E_NOTFOUND, NULL, "not found")
   loc_found = TRUE;
 
   /* Check that the object found is the correct type */
   if(H5O_obj_type(&oloc, &obj_type, dxpl_id) < 0)
-    HGOTO_ERROR(H5E_DATASET, H5E_CANTGET, FAIL, "can't get object type")
+    HGOTO_ERROR(H5E_DATASET, H5E_CANTGET, NULL, "can't get object type")
   if(obj_type != H5O_TYPE_DATASET)
-    HGOTO_ERROR(H5E_DATASET, H5E_BADTYPE, FAIL, "not a dataset")
+    HGOTO_ERROR(H5E_DATASET, H5E_BADTYPE, NULL, "not a dataset")
 
   /* Open the dataset */
   if(NULL == (dset = H5D_open(&dset_loc, dapl_id, dxpl_id)))
-    HGOTO_ERROR(H5E_DATASET, H5E_CANTINIT, FAIL, "can't open dataset")
+    HGOTO_ERROR(H5E_DATASET, H5E_CANTINIT, NULL, "can't open dataset")
 
-  /* Register an atom for the dataset */
-  if((ret_value = H5I_register(H5I_DATASET, dset, TRUE)) < 0)
-    HGOTO_ERROR(H5E_ATOM, H5E_CANTREGISTER, FAIL, "can't register dataset atom")
+  ret_value = (void *)dset;
 
 done:
   if (err_occurred) {
     /* Nothing */
   }
 
-  if(ret_value < 0) {
-    if(dset) {
-      if(H5D_close(dset) < 0)
-        HDONE_ERROR(H5E_DATASET, H5E_CLOSEERROR, FAIL, "unable to release dataset")
-    } /* end if */
-    else {
-      if(loc_found && H5G_loc_free(&dset_loc) < 0)
-        HDONE_ERROR(H5E_DATASET, H5E_CANTRELEASE, FAIL, "can't free location")
-    } /* end else */
-  } /* end if */
+  if(NULL == dset && loc_found && H5G_loc_free(&dset_loc) < 0)
+    HDONE_ERROR(H5E_DATASET, H5E_CANTRELEASE, NULL, "can't free location")
 
   FUNC_LEAVE_NOAPI(ret_value)
-} /* end H5VL_dsm_dataset_open() */
+} /* end H5VL_dso_dataset_open() */
 
 /*-------------------------------------------------------------------------
- * Function:    H5VL_dsm_dataset_read
+ * Function:    H5VL_dso_dataset_read
  *
  * Purpose: Reads raw data from a dataset into a buffer.
  *
@@ -412,10 +399,11 @@ done:
  *-------------------------------------------------------------------------
  */
 static herr_t
-H5VL_dsm_dataset_read(hid_t dset_id, hid_t mem_type_id, hid_t mem_space_id,
-                         hid_t file_space_id, hid_t plist_id, void *buf, hid_t UNUSED req)
+H5VL_dso_dataset_read(void *obj, hid_t mem_type_id, hid_t mem_space_id,
+    hid_t file_space_id, hid_t plist_id, void *buf, hid_t UNUSED req)
+
 {
-  H5D_t         *dset = NULL;
+  H5D_t         *dset = (H5D_t *)obj;
   const H5S_t   *mem_space = NULL;
   const H5S_t   *file_space = NULL;
   char           fake_char;
@@ -424,8 +412,6 @@ H5VL_dsm_dataset_read(hid_t dset_id, hid_t mem_type_id, hid_t mem_space_id,
   FUNC_ENTER_NOAPI_NOINIT
 
   /* check arguments */
-  if(NULL == (dset = (H5D_t *)H5I_object_verify(dset_id, H5I_DATASET)))
-    HGOTO_ERROR(H5E_ARGS, H5E_BADTYPE, FAIL, "not a dataset")
   if(NULL == dset->oloc.file)
     HGOTO_ERROR(H5E_ARGS, H5E_BADTYPE, FAIL, "not a dataset")
   if(H5S_ALL != mem_space_id) {
@@ -465,10 +451,10 @@ done:
   }
 
   FUNC_LEAVE_NOAPI(ret_value)
-} /* end H5VL_dsm_dataset_read() */
+} /* end H5VL_dso_dataset_read() */
 
 /*-------------------------------------------------------------------------
- * Function:    H5VL_dsm_dataset_write
+ * Function:    H5VL_dso_dataset_write
  *
  * Purpose: Writes raw data from a buffer into a dataset.
  *
@@ -478,10 +464,10 @@ done:
  *-------------------------------------------------------------------------
  */
 static herr_t
-H5VL_dsm_dataset_write(hid_t dset_id, hid_t mem_type_id, hid_t mem_space_id,
-                          hid_t file_space_id, hid_t dxpl_id, const void *buf, hid_t UNUSED req)
+H5VL_dso_dataset_write(void *obj, hid_t mem_type_id, hid_t mem_space_id,
+    hid_t file_space_id, hid_t dxpl_id, const void *buf, hid_t UNUSED req)
 {
-  H5D_t         *dset = NULL;
+  H5D_t         *dset = (H5D_t *)obj;
   const H5S_t   *mem_space = NULL;
   const H5S_t   *file_space = NULL;
   char           fake_char;
@@ -490,17 +476,15 @@ H5VL_dsm_dataset_write(hid_t dset_id, hid_t mem_type_id, hid_t mem_space_id,
   FUNC_ENTER_NOAPI_NOINIT
 
   /* check arguments */
-  if(NULL == (dset = (H5D_t *)H5I_object_verify(dset_id, H5I_DATASET)))
-    HGOTO_ERROR(H5E_ARGS, H5E_BADTYPE, FAIL, "not a dataset")
   if(NULL == dset->oloc.file)
     HGOTO_ERROR(H5E_ARGS, H5E_BADTYPE, FAIL, "not a dataset")
   if(H5S_ALL != mem_space_id) {
     if(NULL == (mem_space = (const H5S_t *)H5I_object_verify(mem_space_id, H5I_DATASPACE)))
       HGOTO_ERROR(H5E_ARGS, H5E_BADTYPE, FAIL, "not a data space")
 
-  /* Check for valid selection */
-  if(H5S_SELECT_VALID(mem_space) != TRUE)
-    HGOTO_ERROR(H5E_DATASPACE, H5E_BADRANGE, FAIL, "selection+offset not within extent")
+    /* Check for valid selection */
+    if(H5S_SELECT_VALID(mem_space) != TRUE)
+      HGOTO_ERROR(H5E_DATASPACE, H5E_BADRANGE, FAIL, "selection+offset not within extent")
   } /* end if */
   if(H5S_ALL != file_space_id) {
     if(NULL == (file_space = (const H5S_t *)H5I_object_verify(file_space_id, H5I_DATASPACE)))
@@ -531,10 +515,10 @@ done:
   }
 
   FUNC_LEAVE_NOAPI(ret_value)
-} /* end H5VL_dsm_dataset_write() */
+} /* end H5VL_dso_dataset_write() */
 
 /*-------------------------------------------------------------------------
- * Function:    H5VL_dsm_dataset_set_extent
+ * Function:    H5VL_dso_dataset_set_extent
  *
  * Purpose: Set Extent of dataset
  *
@@ -544,16 +528,12 @@ done:
  *-------------------------------------------------------------------------
  */
 static herr_t
-H5VL_dsm_dataset_set_extent(hid_t dset_id, const hsize_t size[], hid_t UNUSED req)
+H5VL_dso_dataset_set_extent(void *obj, const hsize_t size[], hid_t UNUSED req)
 {
-  H5D_t   *dset = NULL;
-  herr_t   ret_value = SUCCEED;    /* Return value */
+  H5D_t       *dset = (H5D_t *)obj;
+  herr_t       ret_value = SUCCEED;    /* Return value */
 
   FUNC_ENTER_NOAPI_NOINIT
-
-  /* Check args */
-  if(NULL == (dset = (H5D_t *)H5I_object_verify(dset_id, H5I_DATASET)))
-    HGOTO_ERROR(H5E_ARGS, H5E_BADTYPE, FAIL, "not a dataset")
 
   /* Private function */
   if(H5D__set_extent(dset, size, H5AC_dxpl_id) < 0)
@@ -565,10 +545,10 @@ done:
   }
 
   FUNC_LEAVE_NOAPI(ret_value)
-} /* end H5VL_dsm_dataset_set_extent() */
+} /* end H5VL_dso_dataset_set_extent() */
 
 /*-------------------------------------------------------------------------
- * Function:    H5VL_dsm_dataset_get
+ * Function:    H5VL_dso_dataset_get
  *
  * Purpose: Gets certain information about a dataset
  *
@@ -578,16 +558,12 @@ done:
  *-------------------------------------------------------------------------
  */
 static herr_t
-H5VL_dsm_dataset_get(hid_t id, H5VL_dataset_get_t get_type, hid_t UNUSED req, va_list arguments)
+H5VL_dso_dataset_get(void *obj, H5VL_dataset_get_t get_type, hid_t UNUSED req, va_list arguments)
 {
-  H5D_t   *dset = NULL;
-  herr_t   ret_value = SUCCEED;    /* Return value */
+  H5D_t       *dset = (H5D_t *)obj;
+  herr_t       ret_value = SUCCEED;    /* Return value */
 
   FUNC_ENTER_NOAPI_NOINIT
-
-  /* Check args */
-  if(NULL == (dset = (H5D_t *)H5I_object_verify(id, H5I_DATASET)))
-    HGOTO_ERROR(H5E_ARGS, H5E_BADTYPE, FAIL, "not a dataset")
 
   switch (get_type) {
     /* H5Dget_space */
@@ -672,10 +648,10 @@ done:
   }
 
   FUNC_LEAVE_NOAPI(ret_value)
-} /* end H5VL_dsm_dataset_get() */
+} /* end H5VL_dso_dataset_get() */
 
 /*-------------------------------------------------------------------------
- * Function:    H5VL_dsm_dataset_close
+ * Function:    H5VL_dso_dataset_close
  *
  * Purpose: Closes a dataset.
  *
@@ -685,26 +661,14 @@ done:
  *-------------------------------------------------------------------------
  */
 static herr_t
-H5VL_dsm_dataset_close(hid_t dset_id, hid_t UNUSED req)
+H5VL_dso_dataset_close(void *dset, hid_t UNUSED req)
 {
   herr_t ret_value = SUCCEED;                 /* Return value */
 
   FUNC_ENTER_NOAPI_NOINIT
 
-  /* Check args */
-  if(NULL == H5I_object_verify(dset_id, H5I_DATASET))
-    HGOTO_ERROR(H5E_ARGS, H5E_BADTYPE, FAIL, "not a dataset")
-
-  /*
-   * Decrement the counter on the dataset.  It will be freed if the count
-   * reaches zero.
-   *
-   * Pass in TRUE for the 3rd parameter to tell the function to remove
-   * dataset's ID even though the freeing function might fail.  Please
-   * see the comments in H5I_dec_ref for details. (SLU - 2010/9/7)
-   */
-  if(H5I_dec_app_ref_always_close(dset_id) < 0)
-    HGOTO_ERROR(H5E_DATASET, H5E_CANTDEC, FAIL, "can't decrement count on dataset ID")
+  if(H5D_close((H5D_t*)dset) < 0)
+    HGOTO_ERROR(H5E_DATASET, H5E_CANTDEC, FAIL, "can't close dataset")
 
 done:
   if (err_occurred) {
@@ -712,23 +676,24 @@ done:
   }
 
   FUNC_LEAVE_NOAPI(ret_value)
-} /* end H5VL_dsm_dataset_close() */
+} /* end H5VL_dso_dataset_close() */
 
 /*-------------------------------------------------------------------------
- * Function:  H5VL_dsm_create
+ * Function:  H5VL_dso_create
  *
- * Purpose: Creates a file as a dsm HDF5 file.
+ * Purpose: Creates a file as a dso HDF5 file.
  *
  * Return:  Success:  A pointer to a new file data structure.
  *          Failure:  NULL
  *
  *-------------------------------------------------------------------------
  */
-static hid_t
-H5VL_dsm_file_create(const char *name, unsigned flags, hid_t fcpl_id, hid_t fapl_id, hid_t UNUSED req)
+static void *
+H5VL_dso_file_create(const char *name, unsigned flags, hid_t fcpl_id, hid_t fapl_id,
+                        hid_t UNUSED req)
 {
-  H5F_t *new_file; /* file struct */
-  hid_t ret_value;
+  H5F_t *new_file = NULL;
+  void  *ret_value = NULL;
 
   FUNC_ENTER_NOAPI_NOINIT
 
@@ -743,73 +708,61 @@ H5VL_dsm_file_create(const char *name, unsigned flags, hid_t fcpl_id, hid_t fapl
 
   /* Create the file */
   if(NULL == (new_file = H5F_open(name, flags, fcpl_id, fapl_id, H5AC_dxpl_id)))
-    HGOTO_ERROR(H5E_FILE, H5E_CANTOPENFILE, FAIL, "unable to create file")
+    HGOTO_ERROR(H5E_FILE, H5E_CANTOPENFILE, NULL, "unable to create file")
 
-  /* Get an atom for the file */
-  if((ret_value = H5I_register(H5I_FILE, new_file, TRUE)) < 0)
-    HGOTO_ERROR(H5E_ATOM, H5E_CANTREGISTER, FAIL, "unable to atomize file handle")
-
-  /* store a pointer to the VOL class in the file structure */
-  new_file->vol_cls = &H5VL_dsm_g;
-
-  /* Keep this ID in file object structure */
-  new_file->file_id = ret_value;
+  new_file->id_exists = TRUE;
+  ret_value = (void *)new_file;
 
 done:
   if (err_occurred) {
     /* Nothing */
   }
-  if(ret_value < 0 && new_file && H5F_try_close(new_file) < 0)
-    HDONE_ERROR(H5E_FILE, H5E_CANTCLOSEFILE, FAIL, "problems closing file")
+
+  if(NULL == ret_value && new_file)
+    if(H5F_close(new_file) < 0)
+      HDONE_ERROR(H5E_FILE, H5E_CANTCLOSEFILE, NULL, "problems closing file")
 
   FUNC_LEAVE_NOAPI(ret_value)
-} /* end H5VL_dsm_create() */
+} /* end H5VL_dso_create() */
 
 /*-------------------------------------------------------------------------
- * Function:	H5VL_dsm_open
+ * Function:	H5VL_dso_open
  *
- * Purpose:	Opens a file as a dsm HDF5 file.
+ * Purpose:	Opens a file as a DSO HDF5 file.
  *
  * Return:	Success:	A pointer to a new file data structure. 
  *		    Failure:	NULL
  *
  *-------------------------------------------------------------------------
  */
-static hid_t
-H5VL_dsm_file_open(const char *name, unsigned flags, hid_t fapl_id, hid_t UNUSED req)
+static void *
+H5VL_dso_file_open(const char *name, unsigned flags, hid_t fapl_id, hid_t UNUSED req)
 {
-  H5F_t *new_file;           /* file struct */
-  hid_t ret_value;
+  H5F_t *new_file = NULL;
+  void  *ret_value = NULL;
 
   FUNC_ENTER_NOAPI_NOINIT
 
   /* Open the file */
   if(NULL == (new_file = H5F_open(name, flags, H5P_FILE_CREATE_DEFAULT, fapl_id, H5AC_dxpl_id)))
-    HGOTO_ERROR(H5E_FILE, H5E_CANTOPENFILE, FAIL, "unable to open file")
+    HGOTO_ERROR(H5E_FILE, H5E_CANTOPENFILE, NULL, "unable to open file")
 
-  /* Get an atom for the file */
-  if((ret_value = H5I_register(H5I_FILE, new_file, TRUE)) < 0)
-    HGOTO_ERROR(H5E_ATOM, H5E_CANTREGISTER, FAIL, "unable to atomize file handle")
-
-  /* store a pointer to the VOL class in the file structure */
-  new_file->vol_cls = &H5VL_dsm_g;
-
-  /* Keep this ID in file object structure */
-  new_file->file_id = ret_value;
+  new_file->id_exists = TRUE;
+  ret_value = (void *)new_file;
 
 done:
   if (err_occurred) {
     /* Nothing */
   }
 
-  if(ret_value < 0 && new_file && H5F_try_close(new_file) < 0)
-    HDONE_ERROR(H5E_FILE, H5E_CANTCLOSEFILE, FAIL, "problems closing file")
+  if(NULL == ret_value && new_file && H5F_try_close(new_file) < 0)
+    HDONE_ERROR(H5E_FILE, H5E_CANTCLOSEFILE, NULL, "problems closing file")
 
   FUNC_LEAVE_NOAPI(ret_value)
-} /* end H5VL_dsm_open() */
+} /* end H5VL_dso_open() */
 
 /*-------------------------------------------------------------------------
- * Function: H5VL_dsm_close
+ * Function: H5VL_dso_close
  *
  * Purpose:	Closes a file.
  *
@@ -819,40 +772,33 @@ done:
  *-------------------------------------------------------------------------
  */
 static herr_t
-H5VL_dsm_file_close(hid_t file_id, hid_t UNUSED req)
+H5VL_dso_file_close(void *file, hid_t UNUSED req)
 {
 //  int nref;
-  H5F_t *f;
+  H5F_t *f = (H5F_t *)file;
+//  hid_t file_id = FAIL;
   herr_t ret_value = SUCCEED;                 /* Return value */
 
   FUNC_ENTER_NOAPI_NOINIT
 
-  /* Check/fix arguments. */
-  if(H5I_FILE != H5I_get_type(file_id))
-    HGOTO_ERROR(H5E_ARGS, H5E_BADTYPE, FAIL, "not a file ID")
-
-  /* get the file struct */
-  if(NULL == (f = (H5F_t *)H5I_object(file_id)))
-    HGOTO_ERROR(H5E_ARGS, H5E_BADTYPE, FAIL, "invalid file identifier")
-
-  /* Close file if this is the last reference to this id and we have write
+  /* Flush file if this is the last reference to this id and we have write
    * intent, unless it will be flushed by the "shared" file being closed.
    * This is only necessary to replicate previous behaviour, and could be
    * disabled by an option/property to improve performance. */
 //  if((f->shared->nrefs > 1) && (H5F_INTENT(f) & H5F_ACC_RDWR)) {
-//    if((nref = H5I_get_ref(f->file_id, FALSE)) < 0)
+    /* get the file ID corresponding to the H5F_t struct */
+//    if((file_id = H5I_get_id(f, H5I_FILE)) < 0)
+//      HGOTO_ERROR(H5E_ATOM, H5E_CANTGET, FAIL, "invalid atom")
+    /* get the number of references outstanding for this file ID */
+//    if((nref = H5I_get_ref(file_id, FALSE)) < 0)
 //      HGOTO_ERROR(H5E_ATOM, H5E_CANTGET, FAIL, "can't get ID ref count")
 //    if(nref == 1)
 //      if(H5F_flush(f, H5AC_dxpl_id, FALSE) < 0)
 //        HGOTO_ERROR(H5E_CACHE, H5E_CANTFLUSH, FAIL, "unable to flush cache")
 //  } /* end if */
-
-  /*
-   * Decrement reference count on atom.  When it reaches zero the file will
-   * be closed.
-   */
-  if(H5I_dec_app_ref(f->file_id) < 0)
-    HGOTO_ERROR(H5E_ATOM, H5E_CANTCLOSEFILE, FAIL, "decrementing file ID failed")
+  /* close the file */
+  if(H5F_close(f) < 0)
+    HGOTO_ERROR(H5E_FILE, H5E_CANTDEC, FAIL, "can't close file")
 
 done:
   if (err_occurred) {
@@ -860,39 +806,40 @@ done:
   }
 
   FUNC_LEAVE_NOAPI(ret_value)
-} /* end H5VL_dsm_close() */
+} /* end H5VL_dso_close() */
 
 /*-------------------------------------------------------------------------
- * Function:    H5VL_dsm_group_create
+ * Function:    H5VL_dso_group_create
  *
- * Purpose: Creates a group inside a dsm h5 file.
+ * Purpose: Creates a group inside a DSO h5 file.
  *
  * Return:  Success:    group id.
  *          Failure:    NULL
  *
  *-------------------------------------------------------------------------
  */
-static hid_t
-H5VL_dsm_group_create(hid_t loc_id, const char *name, hid_t gcpl_id, hid_t gapl_id, hid_t UNUSED req)
+static void *
+H5VL_dso_group_create(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t gcpl_id,
+                         hid_t gapl_id, hid_t UNUSED req)
 {
   H5P_genplist_t *plist;      /* Property list pointer */
   H5G_loc_t       loc;        /* Location to create group */
   H5G_t          *grp = NULL; /* New group created */
   hid_t           lcpl_id;
-  hid_t           ret_value;
+  void           *ret_value;
 
   FUNC_ENTER_NOAPI_NOINIT
 
   /* Get the plist structure */
   if(NULL == (plist = (H5P_genplist_t *)H5I_object(gcpl_id)))
-    HGOTO_ERROR(H5E_ATOM, H5E_BADATOM, FAIL, "can't find object for ID")
+    HGOTO_ERROR(H5E_ATOM, H5E_BADATOM, NULL, "can't find object for ID")
 
   /* get creation properties */
   if(H5P_get(plist, H5VL_GRP_LCPL_ID, &lcpl_id) < 0)
-    HGOTO_ERROR(H5E_PLIST, H5E_CANTGET, FAIL, "can't get property value for lcpl id")
+    HGOTO_ERROR(H5E_PLIST, H5E_CANTGET, NULL, "can't get property value for lcpl id")
 
-  if(H5G_loc(loc_id, &loc) < 0)
-    HGOTO_ERROR(H5E_ARGS, H5E_BADTYPE, FAIL, "not a location")
+  if(H5G_loc_real(obj, loc_params.obj_type, &loc) < 0)
+    HGOTO_ERROR(H5E_ARGS, H5E_BADTYPE, NULL, "not a file or file object")
 
   /* if name is NULL then this is from H5Gcreate_anon */
   if (name == NULL) {
@@ -904,17 +851,15 @@ H5VL_dsm_group_create(hid_t loc_id, const char *name, hid_t gcpl_id, hid_t gapl_
 
     /* Create the new group & get its ID */
     if(NULL == (grp = H5G__create(loc.oloc->file, &gcrt_info, H5AC_dxpl_id)))
-      HGOTO_ERROR(H5E_SYM, H5E_CANTINIT, FAIL, "unable to create group")
+      HGOTO_ERROR(H5E_SYM, H5E_CANTINIT, NULL, "unable to create group")
   }
   /* otherwise it's from H5Gcreate */
   else {
     /* Create the new group & get its ID */
     if(NULL == (grp = H5G__create_named(&loc, name, lcpl_id, gcpl_id, gapl_id, H5AC_dxpl_id)))
-      HGOTO_ERROR(H5E_SYM, H5E_CANTINIT, FAIL, "unable to create group")
+      HGOTO_ERROR(H5E_SYM, H5E_CANTINIT, NULL, "unable to create group")
   }
-
-  if((ret_value = H5I_register(H5I_GROUP, grp, TRUE)) < 0)
-    HGOTO_ERROR(H5E_ATOM, H5E_CANTREGISTER, FAIL, "unable to register group")
+  ret_value = (void *)grp;
 
 done:
   if (err_occurred) {
@@ -928,65 +873,55 @@ done:
 
       /* Get the new group's object location */
       if(NULL == (oloc = H5G_oloc(grp)))
-        HDONE_ERROR(H5E_SYM, H5E_CANTGET, FAIL, "unable to get object location of group")
+        HDONE_ERROR(H5E_SYM, H5E_CANTGET, NULL, "unable to get object location of group")
 
       /* Decrement refcount on group's object header in memory */
       if(H5O_dec_rc_by_loc(oloc, H5AC_dxpl_id) < 0)
-        HDONE_ERROR(H5E_SYM, H5E_CANTDEC, FAIL, "unable to decrement refcount on newly created object")
+        HDONE_ERROR(H5E_SYM, H5E_CANTDEC, NULL, "unable to decrement refcount on newly created object")
     } /* end if */
   }
 
-  if(ret_value < 0)
-    if(grp && H5G_close(grp) < 0)
-      HDONE_ERROR(H5E_SYM, H5E_CLOSEERROR, FAIL, "unable to release group")
-
   FUNC_LEAVE_NOAPI(ret_value)
-} /* end H5VL_dsm_group_create() */
+} /* end H5VL_dso_group_create() */
 
 /*-------------------------------------------------------------------------
- * Function:    H5VL_dsm_group_open
+ * Function:    H5VL_dso_group_open
  *
- * Purpose: Opens a group inside a dsm h5 file.
+ * Purpose: Opens a group inside a DSO h5 file.
  *
  * Return:  Success:    group id.
  *          Failure:    NULL
  *
  *-------------------------------------------------------------------------
  */
-static hid_t
-H5VL_dsm_group_open(hid_t loc_id, const char *name, hid_t gapl_id, hid_t UNUSED req)
+static void *
+H5VL_dso_group_open(void *obj, H5VL_loc_params_t loc_params, const char *name, hid_t gapl_id, hid_t UNUSED req)
 {
   H5G_loc_t   loc;        /* Location to open group */
   H5G_t      *grp = NULL; /* New group opend */
-  hid_t       ret_value;
+  void       *ret_value;
 
   FUNC_ENTER_NOAPI_NOINIT
 
-  if(H5G_loc(loc_id, &loc) < 0)
-    HGOTO_ERROR(H5E_ARGS, H5E_BADTYPE, FAIL, "not a location")
+  if(H5G_loc_real(obj, loc_params.obj_type, &loc) < 0)
+    HGOTO_ERROR(H5E_ARGS, H5E_BADTYPE, NULL, "not a file or file object")
 
   /* Open the group */
   if((grp = H5G__open_name(&loc, name, gapl_id, H5AC_dxpl_id)) == NULL)
-    HGOTO_ERROR(H5E_SYM, H5E_CANTOPENOBJ, FAIL, "unable to open group")
+    HGOTO_ERROR(H5E_SYM, H5E_CANTOPENOBJ, NULL, "unable to open group")
 
-  /* Register an ID for the group */
-  if((ret_value = H5I_register(H5I_GROUP, grp, TRUE)) < 0)
-    HGOTO_ERROR(H5E_ATOM, H5E_CANTREGISTER, FAIL, "unable to register group")
+  ret_value = (void *)grp;
 
 done:
   if (err_occurred) {
     /* Nothing */
   }
 
-  if(ret_value < 0)
-    if(grp && H5G_close(grp) < 0)
-      HDONE_ERROR(H5E_SYM, H5E_CLOSEERROR, FAIL, "unable to release group")
-
   FUNC_LEAVE_NOAPI(ret_value)
-} /* end H5VL_dsm_group_open() */
+} /* end H5VL_dso_group_open() */
 
 /*-------------------------------------------------------------------------
- * Function:    H5VL_dsm_group_get
+ * Function:    H5VL_dso_group_get
  *
  * Purpose: Gets certain data about a group
  *
@@ -996,7 +931,7 @@ done:
  *-------------------------------------------------------------------------
  */
 static herr_t
-H5VL_dsm_group_get(hid_t obj_id, H5VL_group_get_t get_type, hid_t UNUSED req, va_list arguments)
+H5VL_dso_group_get(void *obj, H5VL_group_get_t get_type, hid_t UNUSED req, va_list arguments)
 {
   herr_t ret_value = SUCCEED;    /* Return value */
 
@@ -1006,43 +941,90 @@ H5VL_dsm_group_get(hid_t obj_id, H5VL_group_get_t get_type, hid_t UNUSED req, va
     /* H5Gget_create_plist */
     case H5VL_GROUP_GET_GCPL:
     {
-      hid_t *new_gcpl_id;
-      H5G_t *grp = NULL;
-
-      /* Check args */
-      if(NULL == (grp = (H5G_t *)H5I_object_verify(obj_id, H5I_GROUP)))
-        HGOTO_ERROR(H5E_ARGS, H5E_BADTYPE, FAIL, "not a group")
-
-      new_gcpl_id = va_arg (arguments, hid_t *);
+      hid_t *new_gcpl_id = va_arg (arguments, hid_t *);
+      H5G_t *grp = (H5G_t *)obj;
 
       if((*new_gcpl_id = H5G_get_create_plist(grp)) < 0)
-        HGOTO_ERROR(H5E_ARGS, H5E_CANTGET, FAIL, "can't get creation property list for group")
+          HGOTO_ERROR(H5E_ARGS, H5E_CANTGET, FAIL, "can't get creation property list for group")
       break;
     }
     /* H5Gget_info */
     case H5VL_GROUP_GET_INFO:
     {
+      H5VL_loc_params_t loc_params = va_arg (arguments, H5VL_loc_params_t);
       H5G_info_t  *grp_info = va_arg (arguments, H5G_info_t *);
-      H5G_loc_t   *obj_loc = va_arg (arguments, H5G_loc_t *);
       H5G_loc_t    loc;
 
-      if(H5G_loc(obj_id, &loc) < 0)
-        HGOTO_ERROR(H5E_ARGS, H5E_BADTYPE, FAIL, "not a location")
+      if(H5G_loc_real(obj, loc_params.obj_type, &loc) < 0)
+        HGOTO_ERROR(H5E_ARGS, H5E_BADTYPE, FAIL, "not a file or file object")
 
-        if (NULL == obj_loc) {
-          /* Retrieve the group's information */
-          if(H5G__obj_info(loc.oloc, grp_info, H5AC_ind_dxpl_id) < 0)
-            HGOTO_ERROR(H5E_SYM, H5E_CANTGET, FAIL, "can't retrieve group info")
-        } else {
-          /* Retrieve the group's information */
-          if(H5G__obj_info(obj_loc->oloc, grp_info, H5AC_ind_dxpl_id) < 0)
-            HGOTO_ERROR(H5E_SYM, H5E_CANTGET, FAIL, "can't retrieve group info")
+      if(loc_params.type == H5VL_OBJECT_BY_SELF) { /* H5Gget_info */
+        /* Retrieve the group's information */
+        if(H5G__obj_info(loc.oloc, grp_info, H5AC_ind_dxpl_id) < 0)
+          HGOTO_ERROR(H5E_SYM, H5E_CANTGET, FAIL, "can't retrieve group info")
+      }
+      else if(loc_params.type == H5VL_OBJECT_BY_NAME) { /* H5Gget_info_by_name */
+        H5G_loc_t   grp_loc;                /* Location used to open group */
+        H5G_name_t  grp_path;             /* Opened object group hier. path */
+        H5O_loc_t   grp_oloc;             /* Opened object object location */
+
+        /* Set up opened group location to fill in */
+        grp_loc.oloc = &grp_oloc;
+        grp_loc.path = &grp_path;
+        H5G_loc_reset(&grp_loc);
+
+        /* Find the group object */
+        if(H5G_loc_find(&loc, loc_params.loc_data.loc_by_name.name, &grp_loc/*out*/,
+            loc_params.loc_data.loc_by_name.plist_id, H5AC_ind_dxpl_id) < 0)
+          HGOTO_ERROR(H5E_SYM, H5E_NOTFOUND, FAIL, "group not found")
+
+        /* Retrieve the group's information */
+        if(H5G__obj_info(grp_loc.oloc, grp_info/*out*/, H5AC_ind_dxpl_id) < 0) {
+          H5G_loc_free(&grp_loc);
+          HGOTO_ERROR(H5E_SYM, H5E_CANTGET, FAIL, "can't retrieve group info")
         }
+
+        /* Release the object location */
+        if(H5G_loc_free(&grp_loc) < 0)
+          HDONE_ERROR(H5E_SYM, H5E_CANTRELEASE, FAIL, "can't free location")
+      }
+      else if(loc_params.type == H5VL_OBJECT_BY_IDX) { /* H5Gget_info_by_idx */
+        H5G_loc_t   grp_loc;                /* Location used to open group */
+        H5G_name_t  grp_path;             /* Opened object group hier. path */
+        H5O_loc_t   grp_oloc;             /* Opened object object location */
+
+        /* Set up opened group location to fill in */
+        grp_loc.oloc = &grp_oloc;
+        grp_loc.path = &grp_path;
+        H5G_loc_reset(&grp_loc);
+
+        /* Find the object's location, according to the order in the index */
+        if(H5G_loc_find_by_idx(&loc, loc_params.loc_data.loc_by_idx.name,
+            loc_params.loc_data.loc_by_idx.idx_type,
+            loc_params.loc_data.loc_by_idx.order,
+            loc_params.loc_data.loc_by_idx.n, &grp_loc/*out*/,
+            loc_params.loc_data.loc_by_idx.plist_id,
+            H5AC_ind_dxpl_id) < 0)
+          HGOTO_ERROR(H5E_SYM, H5E_NOTFOUND, FAIL, "group not found")
+
+        /* Retrieve the group's information */
+        if(H5G__obj_info(grp_loc.oloc, grp_info/*out*/, H5AC_ind_dxpl_id) < 0) {
+          H5G_loc_free(&grp_loc);
+          HGOTO_ERROR(H5E_SYM, H5E_CANTGET, FAIL, "can't retrieve group info")
+        }
+
+        /* Release the object location */
+        if(H5G_loc_free(&grp_loc) < 0)
+          HDONE_ERROR(H5E_SYM, H5E_CANTRELEASE, FAIL, "can't free location")
+      }
+      else {
+        HGOTO_ERROR(H5E_VOL, H5E_UNSUPPORTED, FAIL, "unknown get info parameters")
+      }
       break;
     }
     default:
       HGOTO_ERROR(H5E_VOL, H5E_CANTGET, FAIL, "can't get this type of information from group")
-    }
+  }
 
 done:
   if (err_occurred) {
@@ -1050,10 +1032,10 @@ done:
   }
 
   FUNC_LEAVE_NOAPI(ret_value)
-} /* end H5VL_dsm_group_get() */
+} /* end H5VL_dso_group_get() */
 
 /*-------------------------------------------------------------------------
- * Function:    H5VL_dsm_group_close
+ * Function:    H5VL_dso_group_close
  *
  * Purpose: Closes a group.
  *
@@ -1063,22 +1045,14 @@ done:
  *-------------------------------------------------------------------------
  */
 static herr_t
-H5VL_dsm_group_close(hid_t group_id, hid_t UNUSED req)
+H5VL_dso_group_close(void *grp, hid_t UNUSED req)
 {
   herr_t ret_value = SUCCEED;                 /* Return value */
 
   FUNC_ENTER_NOAPI_NOINIT
 
-  /* Check args */
-  if(NULL == H5I_object_verify(group_id,H5I_GROUP))
-    HGOTO_ERROR(H5E_ARGS, H5E_BADTYPE, FAIL, "not a group")
-
-  /*
-   * Decrement the counter on the group atom.  It will be freed if the count
-   * reaches zero.
-   */
-  if(H5I_dec_app_ref(group_id) < 0)
-    HGOTO_ERROR(H5E_SYM, H5E_CANTRELEASE, FAIL, "unable to close group")
+  if(H5G_close((H5G_t *)grp) < 0)
+    HGOTO_ERROR(H5E_SYM, H5E_CLOSEERROR, FAIL, "can't close group")
 
 done:
   if (err_occurred) {
@@ -1086,4 +1060,4 @@ done:
   }
 
   FUNC_LEAVE_NOAPI(ret_value)
-} /* end H5VL_dsm_group_close() */
+} /* end H5VL_dso_group_close() */

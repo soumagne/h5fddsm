@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Project                 : H5FDdsm
-  Module                  : H5VLdsm.h
+  Module                  : H5VLdso.h
 
   Authors:
      John Biddiscombe     Jerome Soumagne
@@ -23,8 +23,8 @@
 
 =========================================================================*/
 
-#ifndef __H5VLdsm_h
-#define __H5VLdsm_h
+#ifndef __H5VLdso_h
+#define __H5VLdso_h
 
 /* HDF5 */
 #include "H5Ipublic.h"
@@ -33,14 +33,14 @@
 /* H5FDdsm */
 #include "H5FDdsmConfig.h"
 
-#define H5VL_DSM	(H5VL_dsm_init())
+#define H5VL_DSO	(H5VL_dso_init())
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-  H5FDdsm_EXPORT H5VL_class_t *H5VL_dsm_init(void);
-  H5FDdsm_EXPORT herr_t H5Pset_fapl_dsm_vol(hid_t fapl_id);
+  H5FDdsm_EXPORT H5VL_class_t *H5VL_dso_init(void);
+  H5FDdsm_EXPORT herr_t H5Pset_fapl_dso(hid_t fapl_id);
 
 #ifdef __cplusplus
 }

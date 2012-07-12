@@ -26,7 +26,7 @@
 #include "H5FDdsmTest.h"
 #include "H5FDdsm.h"
 #if H5_VERSION_GE(1,9,0)
-#include "H5VLdsm.h"
+#include "H5VLdso.h"
 #endif
 
 #include <cstdlib>
@@ -63,7 +63,7 @@ void particleWriteHdf(ParticleBuffer *buf, H5FDdsmConstString filename,
   H5CHECK_ERROR(acc_plist_id, "H5Pcreate(H5P_FILE_ACCESS)");
   if (dsmManager) {
 #if H5_VERSION_GE(1,9,0)
-    H5Pset_fapl_dsm_vol(acc_plist_id);
+    H5Pset_fapl_dso(acc_plist_id);
 #endif
     H5Pset_fapl_dsm(acc_plist_id, comm, NULL, 0);
     H5CHECK_ERROR(status, "H5Pset_fapl_dsm");

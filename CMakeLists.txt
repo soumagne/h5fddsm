@@ -326,7 +326,7 @@ set(H5FDdsmSources
 )
 
 if(HDF5_VERSION_MAJOR GREATER 1.8)
-  set(H5FDdsmSources ${H5FDdsmSources} src/H5VLdsm.c)
+  set(H5FDdsmSources ${H5FDdsmSources} src/H5VLdso.c)
 endif(HDF5_VERSION_MAJOR GREATER 1.8)
 
 if(H5FDdsm_BUILD_STEERING)
