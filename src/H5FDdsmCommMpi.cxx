@@ -80,7 +80,7 @@ H5FDdsmCommMpi::Init()
 {
   if (H5FDdsmComm::Init() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
-  H5FDdsmDebug("CommMpi initialized");
+  H5FDdsmDebugLevel(1, "CommMpi initialized");
   return(H5FD_DSM_SUCCESS);
 }
 
@@ -89,24 +89,20 @@ H5FDdsmInt32
 H5FDdsmCommMpi::Send(H5FDdsmMsg *msg)
 {
   H5FDdsmInt32   status;
-  MPI_Comm       comm;
 
   if (H5FDdsmComm::Send(msg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
-  comm = (msg->Communicator == H5FD_DSM_INTER_COMM) ? this->InterComm : this->IntraComm;
+  if (msg->Communicator == H5FD_DSM_INTER_COMM) {
+    status = MPI_Send(msg->Data, msg->Length, MPI_UNSIGNED_CHAR, msg->Dest,
+        msg->Tag, this->InterComm);
 
-  H5FDdsmDebug("(" << this->Id << ") Sending " << msg->Length << " bytes to "
-      << msg->Dest << " Tag = " << H5FDdsmTagToString(msg->Tag));
-
-  status = MPI_Send(msg->Data, msg->Length, MPI_UNSIGNED_CHAR, msg->Dest,
-      msg->Tag, comm);
-
-  if (status != MPI_SUCCESS) {
-    H5FDdsmError("Id = " << this->Id << " MPI_Send failed to send " << msg->Length
-        << " Bytes to " << msg->Dest);
-    return(H5FD_DSM_FAIL);
+    if (status != MPI_SUCCESS) {
+      H5FDdsmError("Id = " << this->Id << " MPI_Send failed to send " << msg->Length
+          << " Bytes to " << msg->Dest);
+      return(H5FD_DSM_FAIL);
+    }
+    H5FDdsmDebugLevel(3, "(" << this->Id << ") Sent " << msg->Length << " bytes to " << msg->Dest);
   }
-  H5FDdsmDebug("(" << this->Id << ") Sent " << msg->Length << " bytes to " << msg->Dest);
   return(H5FD_DSM_SUCCESS);
 }
 
@@ -114,39 +110,37 @@ H5FDdsmCommMpi::Send(H5FDdsmMsg *msg)
 H5FDdsmInt32
 H5FDdsmCommMpi::Receive(H5FDdsmMsg *msg)
 {
-  int            message_length;
-  H5FDdsmInt32   status;
-  H5FDdsmInt32   source = MPI_ANY_SOURCE;
-  MPI_Status     mpi_status;
-  MPI_Comm       comm;
 
   if (H5FDdsmComm::Receive(msg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
-  if (msg->Source >= 0) source = msg->Source;
-  comm = (msg->Communicator == H5FD_DSM_INTER_COMM) ? this->InterComm : this->IntraComm;
+  if (msg->Communicator == H5FD_DSM_INTER_COMM) {
+    H5FDdsmInt32   source = MPI_ANY_SOURCE;
+    int            message_length;
+    H5FDdsmInt32   status;
+    MPI_Status     mpi_status;
 
-  H5FDdsmDebug("(" << this->Id << ") Receiving " << msg->Length << " bytes from "
-      << source << " Tag = " << H5FDdsmTagToString(msg->Tag));
+    if (msg->Source >= 0) source = msg->Source;
 
-  status = MPI_Recv(msg->Data, msg->Length, MPI_UNSIGNED_CHAR, source, msg->Tag,
-      comm, &mpi_status);
+    status = MPI_Recv(msg->Data, msg->Length, MPI_UNSIGNED_CHAR, source, msg->Tag,
+        this->InterComm, &mpi_status);
 
-  if (status != MPI_SUCCESS) {
-    H5FDdsmError("Id = " << this->Id << " MPI_Recv failed to receive " << msg->Length
-        << " Bytes from " << msg->Source);
-    H5FDdsmError("MPI Error Code = " << mpi_status.MPI_ERROR);
-    return(H5FD_DSM_FAIL);
-  }
+    if (status != MPI_SUCCESS) {
+      H5FDdsmError("Id = " << this->Id << " MPI_Recv failed to receive " << msg->Length
+          << " Bytes from " << msg->Source);
+      H5FDdsmError("MPI Error Code = " << mpi_status.MPI_ERROR);
+      return(H5FD_DSM_FAIL);
+    }
 
-  status = MPI_Get_count(&mpi_status, MPI_UNSIGNED_CHAR, &message_length);
-  H5FDdsmDebug("(" << this->Id << ") Received " << message_length << " bytes from "
-      << mpi_status.MPI_SOURCE);
-  msg->SetSource(mpi_status.MPI_SOURCE);
-  msg->SetLength(message_length);
+    status = MPI_Get_count(&mpi_status, MPI_UNSIGNED_CHAR, &message_length);
+    H5FDdsmDebugLevel(3, "(" << this->Id << ") Received " << message_length << " bytes from "
+        << mpi_status.MPI_SOURCE);
+    msg->SetSource(mpi_status.MPI_SOURCE);
+    msg->SetLength(message_length);
 
-  if (status != MPI_SUCCESS) {
-    H5FDdsmError("MPI_Get_count failed");
-    return(H5FD_DSM_FAIL);
+    if (status != MPI_SUCCESS) {
+      H5FDdsmError("MPI_Get_count failed");
+      return(H5FD_DSM_FAIL);
+    }
   }
   return(H5FD_DSM_SUCCESS);
 }
@@ -163,7 +157,7 @@ H5FDdsmCommMpi::Probe(H5FDdsmMsg *msg)
 
   if (H5FDdsmComm::Probe(msg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
-  H5FDdsmDebug("MPI_Iprobe " << H5FDdsmTagToString(msg->Tag));
+  H5FDdsmDebugLevel(3, "MPI_Iprobe " << H5FDdsmTagToString(msg->Tag));
   while (!flag) {
     MPI_Iprobe(MPI_ANY_SOURCE, msg->Tag, comm, &flag, &status);
     if (!flag && (this->InterComm != MPI_COMM_NULL) && (comm == this->IntraComm)) {
@@ -176,7 +170,7 @@ H5FDdsmCommMpi::Probe(H5FDdsmMsg *msg)
     msg->SetSource(nid);
     commTag = (comm == this->IntraComm) ? H5FD_DSM_INTRA_COMM : H5FD_DSM_INTER_COMM;
     msg->SetCommunicator(commTag);
-    H5FDdsmDebug("MPI_Iprobe found pending messages on comm " << H5FDdsmCommToString(commTag));
+    H5FDdsmDebugLevel(3, "MPI_Iprobe found pending messages on comm " << H5FDdsmCommToString(commTag));
     return(H5FD_DSM_SUCCESS);
   }
   return(H5FD_DSM_FAIL);
@@ -253,7 +247,7 @@ H5FDdsmCommMpi::Accept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize)
   }
 
   MPI_Comm_remote_size(this->InterComm, &this->InterSize);
-  H5FDdsmDebug("Server InterComm size: " << this->InterSize);
+  H5FDdsmDebugLevel(2, "Server InterComm size: " << this->InterSize);
   return(H5FD_DSM_SUCCESS);
 }
 
@@ -278,11 +272,11 @@ H5FDdsmCommMpi::Connect()
     // reset to MPI_ERRORS_ARE_FATAL for normal debug purposes
     MPI_Errhandler_set(this->IntraComm, MPI_ERRORS_ARE_FATAL);
     if (status == MPI_SUCCESS) {
-      H5FDdsmDebug("Id = " << this->Id << " MPI_Intercomm_create returned SUCCESS");
+      H5FDdsmDebugLevel(2, "Id = " << this->Id << " MPI_Intercomm_create returned SUCCESS");
       isConnected = H5FD_DSM_SUCCESS;
     } else {
       MPI_Error_string(status, error_string, &length_of_error_string);
-      H5FDdsmDebug("\nMPI_Intercomm_create failed with error : \n" << error_string << "\n\n");
+      H5FDdsmDebugLevel(2, "\nMPI_Intercomm_create failed with error : \n" << error_string << "\n\n");
     }
   } else {
     // Set Error handler to return so that a connection failure doesn't terminate the app
@@ -290,11 +284,11 @@ H5FDdsmCommMpi::Connect()
     status = MPI_Comm_connect(this->DsmMasterHostName, MPI_INFO_NULL, 0,
         this->IntraComm, &this->InterComm);
     if (status == MPI_SUCCESS) {
-      H5FDdsmDebug("Id = " << this->Id << " MPI_Comm_connect returned SUCCESS");
+      H5FDdsmDebugLevel(2, "Id = " << this->Id << " MPI_Comm_connect returned SUCCESS");
       isConnected = H5FD_DSM_SUCCESS;
     } else {
       MPI_Error_string(status, error_string, &length_of_error_string);
-      H5FDdsmDebug("\nMPI_Comm_connect failed with error : \n" << error_string << "\n\n");
+      H5FDdsmDebugLevel(2, "\nMPI_Comm_connect failed with error : \n" << error_string << "\n\n");
     }
     // reset to MPI_ERRORS_ARE_FATAL for normal debug purposes
     MPI_Errhandler_set(this->IntraComm, MPI_ERRORS_ARE_FATAL);
@@ -302,7 +296,7 @@ H5FDdsmCommMpi::Connect()
 
   if (isConnected == H5FD_DSM_SUCCESS) {
     MPI_Comm_remote_size(this->InterComm, &this->InterSize);
-    H5FDdsmDebug("Client InterComm size: " << this->InterSize);
+    H5FDdsmDebugLevel(2, "Client InterComm size: " << this->InterSize);
     return(H5FD_DSM_SUCCESS);
   } else {
     return(H5FD_DSM_FAIL);

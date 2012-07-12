@@ -56,49 +56,9 @@
 // Base H5FDdsm class definition
 //------------------------------------------------------------------------------
 H5FDdsmObject::H5FDdsmObject() {
-  this->Debug = 0;
+  this->Debug = H5FD_DSM_FALSE;
+  this->DebugLevel = H5FDdsm_DEBUG_LEVEL;
 }
 
 H5FDdsmObject::~H5FDdsmObject() {
 }
-
-#ifdef H5FDdsm_DEBUG_SYNCED
-DebugLock DebugLock::GlobalLock;
-
-// Construct a new vtkMutexLock 
-DebugLock::DebugLock()
-{
-#ifdef _WIN32
-  this->MutexLock = CreateMutex(NULL, FALSE, NULL);
-#else
-  pthread_mutex_init(&(this->MutexLock), NULL);
-#endif
-}
-//------------------------------------------------------------------------------
-DebugLock::~DebugLock()
-{
-#ifdef _WIN32
-  CloseHandle(this->MutexLock);
-#else
-  pthread_mutex_destroy(&this->MutexLock);
-#endif
-}
-//------------------------------------------------------------------------------
-void DebugLock::Lock()
-{
-#ifdef _WIN32
-  WaitForSingleObject(this->MutexLock, INFINITE);
-#else
-  pthread_mutex_lock(&this->MutexLock);
-#endif
-}
-//------------------------------------------------------------------------------
-void DebugLock::Unlock()
-{
-#ifdef _WIN32
-  ReleaseMutex(this->MutexLock);
-#else
-  pthread_mutex_unlock(&this->MutexLock);
-#endif
-}
-#endif // H5FDdsm_DEBUG_SYNCED

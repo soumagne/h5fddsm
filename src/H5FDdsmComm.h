@@ -114,13 +114,13 @@ public:
 
   virtual H5FDdsmInt32   Init();
 
-  virtual H5FDdsmInt32   Send(H5FDdsmMsg *Msg);
-  virtual H5FDdsmInt32   Receive(H5FDdsmMsg *Msg);
-  virtual H5FDdsmInt32   Probe(H5FDdsmMsg *Msg);
+  virtual H5FDdsmInt32   Send(H5FDdsmMsg *msg);
+  virtual H5FDdsmInt32   Receive(H5FDdsmMsg *msg);
+  virtual H5FDdsmInt32   Probe(H5FDdsmMsg *msg);
 
   // Additional methods for one sided communications
-  virtual H5FDdsmInt32   Put(H5FDdsmMsg *DataMsg);
-  virtual H5FDdsmInt32   Get(H5FDdsmMsg *DataMsg);
+  virtual H5FDdsmInt32   Put(H5FDdsmMsg *dataMsg);
+  virtual H5FDdsmInt32   Get(H5FDdsmMsg *dataMsg);
   virtual H5FDdsmInt32   WindowSync();
 
   virtual H5FDdsmInt32   OpenPort();

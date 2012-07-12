@@ -28,8 +28,8 @@
 #cmakedefine H5FDdsm_HAVE_DMAPP
 #cmakedefine H5FDdsm_HAVE_UGNI
 
-#cmakedefine H5FDdsm_DEBUG_SYNCED
 #cmakedefine H5FDdsm_DEBUG_GLOBAL
+#cmakedefine H5FDdsm_DEBUG_LEVEL @H5FDdsm_DEBUG_LEVEL@
 
 #cmakedefine H5FDdsm_BUILD_SHARED_LIBS
 

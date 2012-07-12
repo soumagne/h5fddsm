@@ -47,7 +47,7 @@ H5FDdsmCommMpiRma::Init()
 {
   if (H5FDdsmCommMpi::Init() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
-  H5FDdsmDebug("CommMpi initialized");
+  H5FDdsmDebugLevel(1, "CommMpiRma initialized");
   return(H5FD_DSM_SUCCESS);
 }
 
@@ -61,7 +61,7 @@ H5FDdsmCommMpiRma::Put(H5FDdsmMsg *DataMsg)
 
   MPI_Win_lock(MPI_LOCK_EXCLUSIVE, DataMsg->Dest, 0, this->Win);
 
-  H5FDdsmDebug("Putting " << DataMsg->Length << " Bytes to Address "
+  H5FDdsmDebugLevel(3, "Putting " << DataMsg->Length << " Bytes to Address "
       << DataMsg->Address << " to Id = " << DataMsg->Dest);
   status = MPI_Put(DataMsg->Data, DataMsg->Length, MPI_UNSIGNED_CHAR,
       DataMsg->Dest, DataMsg->Address, DataMsg->Length, MPI_UNSIGNED_CHAR, this->Win);
@@ -86,7 +86,7 @@ H5FDdsmCommMpiRma::Get(H5FDdsmMsg *DataMsg)
 
   MPI_Win_lock(MPI_LOCK_SHARED, DataMsg->Source, 0, this->Win);
 
-  H5FDdsmDebug("Getting " << DataMsg->Length << " Bytes from Address "
+  H5FDdsmDebugLevel(3, "Getting " << DataMsg->Length << " Bytes from Address "
       << DataMsg->Address << " from Id = " << DataMsg->Source);
   status = MPI_Get(DataMsg->Data, DataMsg->Length, MPI_UNSIGNED_CHAR,
       DataMsg->Source, DataMsg->Address, DataMsg->Length, MPI_UNSIGNED_CHAR, this->Win);

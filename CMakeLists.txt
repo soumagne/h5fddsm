@@ -80,14 +80,14 @@ else(BUILD_SHARED_LIBS)
 endif(BUILD_SHARED_LIBS)
 
 #-----------------------------------------------------------------------------
-# Choose to use thread debug or not.
+# Choose to enable global debug or not.
 #-----------------------------------------------------------------------------
-option(H5FDdsm_DEBUG_SYNCED "Enable synchronization of debug messages using thread locking." OFF)
+option(H5FDdsm_DEBUG_GLOBAL "Turn on all debug messages." OFF)
 
 #-----------------------------------------------------------------------------
 # Choose to enable global debug or not.
 #-----------------------------------------------------------------------------
-option(H5FDdsm_DEBUG_GLOBAL "Turn on all debug messages." OFF)
+set(H5FDdsm_DEBUG_LEVEL "1" CACHE STRING "Level of printing for debug messages.")
 
 #-----------------------------------------------------------------------------
 # Choose to enable coverage or not.

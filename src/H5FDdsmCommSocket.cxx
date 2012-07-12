@@ -69,6 +69,7 @@ H5FDdsmCommSocket::Init()
     this->DsmMasterSocket = new H5FDdsmSocket();
   }
 
+  H5FDdsmDebugLevel(1, "CommSocket initialized");
   return(H5FD_DSM_SUCCESS);
 }
 
@@ -76,33 +77,19 @@ H5FDdsmCommSocket::Init()
 H5FDdsmInt32
 H5FDdsmCommSocket::Send(H5FDdsmMsg *msg)
 {
-  H5FDdsmInt32   status;
+  H5FDdsmInt32 message_length;
 
   if (H5FDdsmComm::Send(msg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
   if (msg->Communicator == H5FD_DSM_INTER_COMM) {
-    H5FDdsmDebug("(" << this->Id << ") Sending to remote DSM " << msg->Length <<
-        " bytes to " << msg->Dest << " Tag = " << H5FDdsmTagToString(msg->Tag));
-
-    if (this->InterComm[msg->Dest]->Send(msg->Data, msg->Length) < 0) {
+    message_length = this->InterComm[msg->Dest]->Send(msg->Data, msg->Length);
+    if (message_length < 0) {
       H5FDdsmError("Id = " << this->Id << " failed to send " << msg->Length <<
           " bytes to " << msg->Dest);
       return(H5FD_DSM_FAIL);
     }
-  } else {
-    H5FDdsmDebug("(" << this->Id << ") Sending " << msg->Length << " bytes to "
-        << msg->Dest << " Tag = " << H5FDdsmTagToString(msg->Tag));
-    status = MPI_Send(msg->Data, msg->Length, MPI_UNSIGNED_CHAR, msg->Dest,
-        msg->Tag, this->IntraComm);
-    if (status != MPI_SUCCESS) {
-      H5FDdsmError("Id = " << this->Id << " MPI_Send failed to send " <<
-          msg->Length << " bytes to " << msg->Dest);
-      return(H5FD_DSM_FAIL);
-    }
+    H5FDdsmDebugLevel(3, "(" << this->Id << ") Sent " << message_length << " bytes to " << msg->Dest);
   }
-
-  H5FDdsmDebug("(" << this->Id << ") Sent " << msg->Length << " bytes to " << msg->Dest);
-
   return(H5FD_DSM_SUCCESS);
 }
 
@@ -110,55 +97,34 @@ H5FDdsmCommSocket::Send(H5FDdsmMsg *msg)
 H5FDdsmInt32
 H5FDdsmCommSocket::Receive(H5FDdsmMsg *msg)
 {
-  int            message_length;
-  H5FDdsmInt32   status;
-  H5FDdsmInt32   source = MPI_ANY_SOURCE;
-  MPI_Status     mpi_status;
+  H5FDdsmInt32 message_length;
 
   if (H5FDdsmComm::Receive(msg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
-  if (msg->Source >= 0) source = msg->Source;
 
   if (msg->Communicator == H5FD_DSM_INTER_COMM) {
-    H5FDdsmDebug("(" << this->Id << ") Receiving from remote DSM " <<
-        msg->Length << " bytes from " << source << " Tag = " << H5FDdsmTagToString(msg->Tag));
-    if (source >= 0) {
-      if (this->InterComm[source]->Receive(msg->Data, msg->Length) < 0) {
+    if (msg->Source >= 0) {
+      message_length = this->InterComm[msg->Source]->Receive(msg->Data, msg->Length);
+      if (message_length < 0) {
         H5FDdsmError("Id = " << this->Id << " failed to receive " << msg->Length
-            << " bytes from " << msg->Dest);
+            << " Bytes from " << msg->Source);
         return(H5FD_DSM_FAIL);
       }
+      H5FDdsmDebugLevel(3, "(" << this->Id << ") Received " << message_length << " bytes from "
+          << msg->Source);
     } else {
       // TODO when modifying then dynamically the socket array, should be careful not to change it
       // while doing a select on it
       int selectedIndex;
       // if ANY_SOURCE use select on the whole list of sockets descriptors
       this->InterComm[0]->SelectSockets(this->InterCommSockets, this->InterSize, 0, &selectedIndex);
-      if (this->InterComm[selectedIndex]->Receive(msg->Data, msg->Length) < 0) {
+      message_length = this->InterComm[selectedIndex]->Receive(msg->Data, msg->Length);
+      if (message_length < 0) {
         H5FDdsmError("Id = " << this->Id << " failed to receive " << msg->Length
-            << " bytes from " << msg->Dest);
+            << " Bytes from " << selectedIndex);
         return(H5FD_DSM_FAIL);
       }
-    }
-  } else {
-    H5FDdsmDebug("(" << this->Id << ") Receiving " << msg->Length << " bytes from "
-        << source << " Tag = " << H5FDdsmTagToString(msg->Tag));
-    status = MPI_Recv(msg->Data, msg->Length, MPI_UNSIGNED_CHAR, source, msg->Tag,
-        this->IntraComm, &mpi_status);
-
-    if (status != MPI_SUCCESS) {
-      H5FDdsmError("Id = " << this->Id << " MPI_Recv failed to receive " <<
-          msg->Length << " bytes from " << msg->Source);
-      H5FDdsmError("MPI Error Code = " << mpi_status.MPI_ERROR);
-      return(H5FD_DSM_FAIL);
-    }
-    status = MPI_Get_count(&mpi_status, MPI_UNSIGNED_CHAR, &message_length);
-    H5FDdsmDebug("(" << this->Id << ") Received " << message_length << " bytes from " << mpi_status.MPI_SOURCE);
-
-    msg->SetSource(mpi_status.MPI_SOURCE);
-    msg->SetLength(message_length);
-    if (status != MPI_SUCCESS) {
-      H5FDdsmError("MPI_Get_count failed ");
-      return(H5FD_DSM_FAIL);
+      H5FDdsmDebugLevel(3, "(" << this->Id << ") Received " << message_length << " bytes from "
+          << selectedIndex);
     }
   }
   return(H5FD_DSM_SUCCESS);
@@ -175,16 +141,16 @@ H5FDdsmCommSocket::Probe(H5FDdsmMsg *msg)
 
   if (H5FDdsmComm::Probe(msg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
-  H5FDdsmDebug("MPI_Iprobe " << H5FDdsmTagToString(msg->Tag));
+  H5FDdsmDebugLevel(3, "MPI_Iprobe " << H5FDdsmTagToString(msg->Tag));
   while (!flag) {
-    H5FDdsmDebug("MPI_Iprobe " << H5FDdsmTagToString(msg->Tag));
+    H5FDdsmDebugLevel(3, "MPI_Iprobe " << H5FDdsmTagToString(msg->Tag));
     if (commTag == H5FD_DSM_INTRA_COMM) {
       MPI_Iprobe(MPI_ANY_SOURCE, msg->Tag, this->IntraComm, &flag, &status);
       if (flag) {
         nid = status.MPI_SOURCE;
         msg->SetSource(nid);
         msg->SetCommunicator(commTag);
-        H5FDdsmDebug("MPI_Iprobe found pending messages on comm " << H5FDdsmCommToString(commTag));
+        H5FDdsmDebugLevel(3, "MPI_Iprobe found pending messages on comm " << H5FDdsmCommToString(commTag));
         return(H5FD_DSM_SUCCESS);
       } else {
         if (this->InterComm[0] != NULL) commTag = H5FD_DSM_INTER_COMM;
@@ -196,7 +162,7 @@ H5FDdsmCommSocket::Probe(H5FDdsmMsg *msg)
       if (flag) {
         msg->SetSource(selectedIndex);
         msg->SetCommunicator(commTag);
-        H5FDdsmDebug("MPI_Iprobe found pending messages on comm " << H5FDdsmCommToString(commTag));
+        H5FDdsmDebugLevel(3, "MPI_Iprobe found pending messages on comm " << H5FDdsmCommToString(commTag));
         return(H5FD_DSM_SUCCESS);
       } else {
         commTag = H5FD_DSM_INTRA_COMM;
@@ -253,7 +219,7 @@ H5FDdsmCommSocket::Accept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSi
 
   if (this->Id == 0) {
     if (this->DsmMasterSocket->Accept() == H5FD_DSM_FAIL) {
-      H5FDdsmDebug("Accept socket failed");
+      H5FDdsmDebugLevel(1, "Accept socket failed");
       errorOnAccept = H5FD_DSM_TRUE;
     }
   }
@@ -305,7 +271,7 @@ H5FDdsmCommSocket::Connect()
       isMasterConnected = H5FD_DSM_SUCCESS;
     }
     if (isMasterConnected == H5FD_DSM_FAIL) {
-      H5FDdsmDebug("Socket connection failed");
+      H5FDdsmDebugLevel(1, "Socket connection failed");
     } else {
       // Exchange InterSize and IntraSize with remote
       if (this->DsmMasterSocket->Send(&this->IntraSize, sizeof(H5FDdsmInt32)) < 0) {
@@ -348,9 +314,9 @@ H5FDdsmCommSocket::Disconnect()
 
   this->Barrier();
   if (this->InterComm[0]->GetClientSocketDescriptor() < 0) {
-    H5FDdsmDebug("Client is now disconnecting");
+    H5FDdsmDebugLevel(1, "Client is now disconnecting");
   } else {
-    H5FDdsmDebug("Server is now disconnecting");
+    H5FDdsmDebugLevel(1, "Server is now disconnecting");
   }
   for (int i=0; i<H5FD_DSM_MAX_SOCKET; i++) {
     if (this->InterComm[i]) delete this->InterComm[i];
@@ -373,7 +339,7 @@ H5FDdsmCommSocket::InterCommServerConnect()
   interCommPort = (H5FDdsmInt32*) malloc(sizeof(H5FDdsmInt32)*this->InterSize);
   masterInterCommPort = (H5FDdsmInt32*) malloc(sizeof(H5FDdsmInt32)*(this->InterSize)*(this->IntraSize));
 
-  H5FDdsmDebug("(" << this->Id << ") Creating " << this->InterSize << " sockets for intercomm");
+  H5FDdsmDebugLevel(2, "(" << this->Id << ") Creating " << this->InterSize << " sockets for intercomm");
   int sock_offset = (this->Id*this->InterSize);
   for (int sock=0; sock<(this->InterSize); sock++) {
     int bindPort = DSM_COMM_SOCKET_PORT_DATA + sock_offset + sock;
@@ -402,7 +368,7 @@ H5FDdsmCommSocket::InterCommServerConnect()
       char tmpHost[MPI_MAX_PORT_NAME];
       H5FDdsmInt32 tmpPort = masterInterCommPort[i];
       strncpy(tmpHost, masterInterCommHostName+i*MPI_MAX_PORT_NAME, MPI_MAX_PORT_NAME);
-      H5FDdsmDebug("Send info for intercomm socket on " << i << " to " << tmpHost << ":" << tmpPort);
+      H5FDdsmDebugLevel(2, "Send info for intercomm socket on " << i << " to " << tmpHost << ":" << tmpPort);
     }
     // Send masterInterCommHostName
     this->DsmMasterSocket->Send(masterInterCommHostName,
@@ -423,7 +389,7 @@ H5FDdsmCommSocket::InterCommServerConnect()
   free(interCommPort);
   free(masterInterCommPort);
 
-  H5FDdsmDebug("Cleaned well interCommHostName/masterInterCommHostName");
+  H5FDdsmDebugLevel(2, "Cleaned well interCommHostName/masterInterCommHostName");
   return H5FD_DSM_SUCCESS;
 }
 
@@ -458,7 +424,7 @@ H5FDdsmCommSocket::InterCommClientConnect()
         char tmpHost[MPI_MAX_PORT_NAME];
         H5FDdsmInt32 tmpPort = masterInterCommPort[i];
         strncpy(tmpHost, masterInterCommHostName+i*MPI_MAX_PORT_NAME, MPI_MAX_PORT_NAME);
-        H5FDdsmDebug("Receive info for intercomm socket on " << i << " to " << tmpHost << ":" << tmpPort);
+        H5FDdsmDebugLevel(2, "Receive info for intercomm socket on " << i << " to " << tmpHost << ":" << tmpPort);
         MPI_Send(tmpHost, MPI_MAX_PORT_NAME, MPI_CHAR, i%(this->IntraSize), 0, this->IntraComm);
         MPI_Send(&tmpPort, sizeof(H5FDdsmInt32), MPI_UNSIGNED_CHAR, i%(this->IntraSize), 0, this->IntraComm);
       }
@@ -471,14 +437,14 @@ H5FDdsmCommSocket::InterCommClientConnect()
   }
   this->Barrier();
 
-  H5FDdsmDebug("(" << this->Id << ") Creating " << this->InterSize << " sockets for intercomm");
+  H5FDdsmDebugLevel(2, "(" << this->Id << ") Creating " << this->InterSize << " sockets for intercomm");
   for (int sock=0; sock<(this->InterSize); sock++) {
     char tmpHost[MPI_MAX_PORT_NAME];
     H5FDdsmInt32 tmpPort = interCommPort[sock];
     strncpy(tmpHost, interCommHostName+sock*MPI_MAX_PORT_NAME, MPI_MAX_PORT_NAME);
     this->InterComm[sock] = new H5FDdsmSocket();
     // Connect
-    H5FDdsmDebug("Connecting intercomm socket " << sock << " on " << this->Id << " to " << tmpHost << ":" << tmpPort);
+    H5FDdsmDebugLevel(2, "Connecting intercomm socket " << sock << " on " << this->Id << " to " << tmpHost << ":" << tmpPort);
     this->InterComm[sock]->Connect(tmpHost, tmpPort);
   }
   this->Barrier();
@@ -488,7 +454,7 @@ H5FDdsmCommSocket::InterCommClientConnect()
   free(interCommPort);
   free(masterInterCommPort);
 
-  H5FDdsmDebug("Cleaned well interCommHostName/masterInterCommHostName");
+  H5FDdsmDebugLevel(2, "Cleaned well interCommHostName/masterInterCommHostName");
 
   return H5FD_DSM_SUCCESS;
 }

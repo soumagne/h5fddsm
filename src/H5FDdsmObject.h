@@ -98,85 +98,36 @@ typedef H5FDdsmUInt64 H5FDdsmAddr;
 #define H5FD_DSM_FALSE    0
 
 //------------------------------------------------------------------------------
-// Below is all missing in non debug build
-//------------------------------------------------------------------------------
-#ifdef H5FDdsm_DEBUG_SYNCED
-#ifdef _WIN32
-  #include <winsock2.h>
-  #include <windows.h>
-#else
-  #include <pthread.h>
-#endif
-//------------------------------------------------------------------------------
-// Thread stuff used for mutex control with debug messages, to ensure that
-// messages arrive in a readable manner, not overlapped and munged as multiple
-// processes simultaneously write debug statements
-//------------------------------------------------------------------------------
-class H5FDdsm_EXPORT DebugLock {
-public:
-   DebugLock();
-  ~DebugLock();
-
-  void Lock();
-  void Unlock();
-
-protected:
-#ifdef _WIN32
-  HANDLE MutexLock;
-#else
-  pthread_mutex_t MutexLock;
-#endif
-
-public:
-  static DebugLock GlobalLock;
-};
-#endif // H5FDdsm_DEBUG_SYNCED
-
-//------------------------------------------------------------------------------
 // Error and Debug message Macros
 //------------------------------------------------------------------------------
-#ifdef H5FDdsm_DEBUG_SYNCED
-#ifdef H5FDdsm_DEBUG_GLOBAL
-#define H5FDdsmDebug(x) \
-{ DebugLock::GlobalLock.Lock();   \
-  std::cout << "H5FD_DSM Debug : " << x << std::endl; \
-  DebugLock::GlobalLock.Unlock(); \
-}
-#else
-#define H5FDdsmDebug(x) \
-{ if (this->Debug) { \
-    DebugLock::GlobalLock.Lock();   \
-    std::cout << "H5FD_DSM Debug : " << x << std::endl; \
-    DebugLock::GlobalLock.Unlock(); \
-  } \
-}
-#endif
-
-#define H5FDdsmError(x) \
-{ DebugLock::GlobalLock.Lock();   \
-  std::cout << "H5FD_DSM Error : " __FILE__ << " line " << __LINE__ << ": " << x << std::endl; \
-  DebugLock::GlobalLock.Unlock(); \
-}
-#else
-
 #ifdef H5FDdsm_DEBUG_GLOBAL
 #define H5FDdsmDebug(x) \
 { \
   std::cout << "H5FD_DSM Debug : " << x << std::endl; \
 }
+#define H5FDdsmDebugLevel(level, x) \
+{ if (this->DebugLevel >= level) { \
+    std::cout << "H5FD_DSM Debug Level " << level << ": " << x << std::endl; \
+  } \
+}
 #else
 #define H5FDdsmDebug(x) \
 { if (this->Debug) { \
-    std::cout << "H5FD_DSM Debug : " << x << std::endl; \
+    std::cout << "H5FD_DSM Debug: " << x << std::endl; \
+  } \
+}
+#define H5FDdsmDebugLevel(level, x) \
+{ if (this->Debug && (this->DebugLevel >= level)) { \
+    std::cout << "H5FD_DSM Debug Level " << level << ": " << x << std::endl; \
   } \
 }
 #endif
 
 #define H5FDdsmError(x) \
 { \
-  std::cout << "H5FD_DSM Error : " __FILE__ << " line " << __LINE__ << ": " << x << std::endl; \
+  std::cerr << "H5FD_DSM Error : " __FILE__ << " line " << __LINE__ << ": " << x << std::endl; \
 }
-#endif
+
 //------------------------------------------------------------------------------
 // Set/Get Macros
 //------------------------------------------------------------------------------
@@ -233,11 +184,15 @@ public:
   H5FDdsmSetValueMacro(Debug, H5FDdsmBoolean);
   H5FDdsmGetValueMacro(Debug, H5FDdsmBoolean);
 
-  void DebugOn()  { H5FDdsmObject::SetDebug(1); }
-  void DebugOff() { H5FDdsmObject::SetDebug(0); }
+  H5FDdsmSetValueMacro(DebugLevel, H5FDdsmInt32);
+  H5FDdsmGetValueMacro(DebugLevel, H5FDdsmInt32);
+
+  void DebugOn()  { H5FDdsmObject::SetDebug(H5FD_DSM_TRUE); }
+  void DebugOff() { H5FDdsmObject::SetDebug(H5FD_DSM_FALSE); }
 
 protected:
-  H5FDdsmInt32 Debug;
+  H5FDdsmBoolean Debug;
+  H5FDdsmInt32   DebugLevel;
 private:
 };
 
