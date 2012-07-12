@@ -43,8 +43,13 @@ public:
   virtual ~H5FDdsmMutex();
 
   // Description:
-  // Lock the Mutex
+  // Lock the Mutex, this is blocking
   void Lock();
+
+  // Description:
+  // Try to Lock the Mutex, this is non-blocking, returns true if locked, false otherwise.
+  // if the return is false, it means another thread has the lock already.
+  H5FDdsmBoolean TryLock();
 
   // Description:
   // Unlock the Mutex
