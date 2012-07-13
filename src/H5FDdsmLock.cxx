@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Project                 : H5FDdsm
-  Module                  : H5FDdsmCommMpiRma.h
+  Module                  : H5FDdsmLock.cxx
 
   Authors:
      John Biddiscombe     Jerome Soumagne
@@ -23,28 +23,18 @@
 
 =========================================================================*/
 
-#ifndef __H5FDdsmCommMpiRma_h
-#define __H5FDdsmCommMpiRma_h
+#include "H5FDdsmLock.h"
 
-#include "H5FDdsmCommMpi.h"
+//----------------------------------------------------------------------------
+H5FDdsmLock::H5FDdsmLock()
+{
 
-class H5FDdsm_EXPORT H5FDdsmCommMpiRma : public H5FDdsmCommMpi {
+}
 
-public:
-  H5FDdsmCommMpiRma();
-  virtual ~H5FDdsmCommMpiRma();
+//----------------------------------------------------------------------------
+H5FDdsmLock::~H5FDdsmLock()
+{
 
-  H5FDdsmInt32   Init();
+}
 
-  H5FDdsmInt32   Put(H5FDdsmMsg *dataMsg);
-  H5FDdsmInt32   Get(H5FDdsmMsg *dataMsg);
 
-  H5FDdsmInt32   Accept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize);
-  H5FDdsmInt32   Connect();
-  H5FDdsmInt32   Disconnect();
-
-protected:
-  MPI_Win        InterWin;
-};
-
-#endif // __H5FDdsmCommMpiRma_h

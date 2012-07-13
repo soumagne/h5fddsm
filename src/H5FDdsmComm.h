@@ -80,9 +80,17 @@ public:
   H5FDdsmComm();
   virtual ~H5FDdsmComm();
 
+  // If set to true, use one sided comm
+  H5FDdsmSetValueMacro(UseOneSidedComm, H5FDdsmBoolean);
+  H5FDdsmGetValueMacro(UseOneSidedComm, H5FDdsmBoolean);
+
   // Set/Get the Internal MPI Communicator
   H5FDdsmSetValueMacro(IntraComm, MPI_Comm);
   H5FDdsmGetValueMacro(IntraComm, MPI_Comm);
+
+  // Set/Get the Internal MPI Window
+  H5FDdsmSetValueMacro(IntraWin, MPI_Win);
+  H5FDdsmGetValueMacro(IntraWin, MPI_Win);
 
   // Id (local to Intra-Communicator)
   H5FDdsmGetValueMacro(Id, H5FDdsmInt32);
@@ -99,10 +107,6 @@ public:
   H5FDdsmGetValueMacro(InterSize, H5FDdsmInt32);
   H5FDdsmSetValueMacro(InterSize, H5FDdsmInt32);
 
-  // If set to true, use one sided comm
-  H5FDdsmSetValueMacro(UseOneSidedComm, H5FDdsmBoolean);
-  H5FDdsmGetValueMacro(UseOneSidedComm, H5FDdsmBoolean);
-
   // If set to true, do not use dynamic connection
   H5FDdsmSetValueMacro(UseStaticInterComm, H5FDdsmBoolean);
   H5FDdsmGetValueMacro(UseStaticInterComm, H5FDdsmBoolean);
@@ -110,6 +114,8 @@ public:
   H5FDdsmInt32           DupComm(MPI_Comm Source);
   H5FDdsmInt32           Barrier();
   H5FDdsmInt32           Broadcast(H5FDdsmPointer data, H5FDdsmInt32 count, H5FDdsmInt32 root);
+  H5FDdsmInt32           WinCreate();
+  H5FDdsmInt32           WinFree();
   H5FDdsmInt32           ChannelSynced(H5FDdsmInt32 who, H5FDdsmInt32 *syncId, H5FDdsmBoolean fromServer=H5FD_DSM_FALSE);
 
   virtual H5FDdsmInt32   Init();
@@ -131,13 +137,16 @@ public:
   virtual H5FDdsmInt32   RemoteBarrier();
 
 protected:
+  H5FDdsmBoolean     UseOneSidedComm;
+
   MPI_Comm           IntraComm;
+  MPI_Win            IntraWin;
   H5FDdsmInt32       Id;
   H5FDdsmInt32       IntraSize;
+
   H5FDdsmInt32       InterCommType;
   H5FDdsmInt32       InterSize;
 
-  H5FDdsmBoolean     UseOneSidedComm;
   H5FDdsmBoolean     UseStaticInterComm;
 
   H5FDdsmInt32       SyncChannels;

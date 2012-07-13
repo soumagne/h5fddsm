@@ -206,6 +206,8 @@ H5FDdsmBuffer::SetLength(H5FDdsmUInt64 aLength, H5FDdsmBoolean allowAllocate)
   }
   this->Length = aLength;
   this->DataPointer = (H5FDdsmByte *)this->Storage->GetDataPointer();
+  // TODO We should allocate here the local memory window for one-sided accesses
+  // if (this->Comm->) ...
   return(H5FD_DSM_SUCCESS);
 }
 

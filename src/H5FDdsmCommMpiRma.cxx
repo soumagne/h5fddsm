@@ -33,7 +33,7 @@ H5FDdsmCommMpiRma::H5FDdsmCommMpiRma()
 {
   this->InterCommType = H5FD_DSM_COMM_MPI_RMA;
   this->UseOneSidedComm = H5FD_DSM_TRUE;
-  this->Win = MPI_WIN_NULL;
+  this->InterWin = MPI_WIN_NULL;
 }
 
 //----------------------------------------------------------------------------
@@ -53,51 +53,53 @@ H5FDdsmCommMpiRma::Init()
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmCommMpiRma::Put(H5FDdsmMsg *DataMsg)
+H5FDdsmCommMpiRma::Put(H5FDdsmMsg *dataMsg)
 {
-  H5FDdsmInt32   status;
+  if (H5FDdsmCommMpi::Put(dataMsg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
-  if (H5FDdsmCommMpi::Put(DataMsg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+  if ((this->InterWin != MPI_WIN_NULL) && (dataMsg->Communicator == H5FD_DSM_INTER_COMM)) {
+    H5FDdsmInt32   status;
 
-  MPI_Win_lock(MPI_LOCK_EXCLUSIVE, DataMsg->Dest, 0, this->Win);
+    MPI_Win_lock(MPI_LOCK_EXCLUSIVE, dataMsg->Dest, 0, this->InterWin);
 
-  H5FDdsmDebugLevel(3, "Putting " << DataMsg->Length << " Bytes to Address "
-      << DataMsg->Address << " to Id = " << DataMsg->Dest);
-  status = MPI_Put(DataMsg->Data, DataMsg->Length, MPI_UNSIGNED_CHAR,
-      DataMsg->Dest, DataMsg->Address, DataMsg->Length, MPI_UNSIGNED_CHAR, this->Win);
-  if (status != MPI_SUCCESS) {
-    H5FDdsmError("Id = " << this->Id << " MPI_Put failed to put " <<
-        DataMsg->Length << " Bytes to " << DataMsg->Dest);
-    return(H5FD_DSM_FAIL);
+    status = MPI_Put(dataMsg->Data, dataMsg->Length, MPI_UNSIGNED_CHAR,
+        dataMsg->Dest, dataMsg->Address, dataMsg->Length, MPI_UNSIGNED_CHAR, this->InterWin);
+    if (status != MPI_SUCCESS) {
+      H5FDdsmError("Id = " << this->Id << " MPI_Put failed to put " <<
+          dataMsg->Length << " Bytes to " << dataMsg->Dest << " at address " << dataMsg->Address);
+      return(H5FD_DSM_FAIL);
+    }
+
+    MPI_Win_unlock(dataMsg->Dest, this->InterWin);
+    H5FDdsmDebugLevel(3, "(" << this->Id << ") Put " << dataMsg->Length << " Bytes to " << dataMsg->Dest
+        << " at address " << dataMsg->Address);
   }
-
-  MPI_Win_unlock(DataMsg->Dest, this->Win);
-
   return(H5FD_DSM_SUCCESS);
 }
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmCommMpiRma::Get(H5FDdsmMsg *DataMsg)
+H5FDdsmCommMpiRma::Get(H5FDdsmMsg *dataMsg)
 {
-  H5FDdsmInt32   status;
+  if (H5FDdsmCommMpi::Get(dataMsg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
-  if (H5FDdsmCommMpi::Get(DataMsg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+  if ((this->InterWin != MPI_WIN_NULL) && (dataMsg->Communicator == H5FD_DSM_INTER_COMM)) {
+    H5FDdsmInt32 status;
 
-  MPI_Win_lock(MPI_LOCK_SHARED, DataMsg->Source, 0, this->Win);
+    MPI_Win_lock(MPI_LOCK_SHARED, dataMsg->Source, 0, this->InterWin);
 
-  H5FDdsmDebugLevel(3, "Getting " << DataMsg->Length << " Bytes from Address "
-      << DataMsg->Address << " from Id = " << DataMsg->Source);
-  status = MPI_Get(DataMsg->Data, DataMsg->Length, MPI_UNSIGNED_CHAR,
-      DataMsg->Source, DataMsg->Address, DataMsg->Length, MPI_UNSIGNED_CHAR, this->Win);
-  if (status != MPI_SUCCESS) {
-    H5FDdsmError("Id = " << this->Id << " MPI_Get failed to get "
-        << DataMsg->Length << " Bytes from " << DataMsg->Source);
-    return(H5FD_DSM_FAIL);
+    status = MPI_Get(dataMsg->Data, dataMsg->Length, MPI_UNSIGNED_CHAR,
+        dataMsg->Source, dataMsg->Address, dataMsg->Length, MPI_UNSIGNED_CHAR, this->InterWin);
+    if (status != MPI_SUCCESS) {
+      H5FDdsmError("Id = " << this->Id << " MPI_Get failed to get " <<
+          dataMsg->Length << " Bytes from " << dataMsg->Source << " at address " << dataMsg->Address);
+      return(H5FD_DSM_FAIL);
+    }
+
+    MPI_Win_unlock(dataMsg->Source, this->InterWin);
+    H5FDdsmDebugLevel(3, "(" << this->Id << ") Got " << dataMsg->Length << " Bytes from " << dataMsg->Dest
+        << " at address " << dataMsg->Address);
   }
-
-  MPI_Win_unlock(DataMsg->Source, this->Win);
-
   return(H5FD_DSM_SUCCESS);
 }
 
@@ -112,7 +114,7 @@ H5FDdsmCommMpiRma::Accept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSi
   MPI_Intercomm_merge(this->InterComm, 0, &winComm);
 
   if (MPI_Win_create(storagePointer, storageSize*sizeof(H5FDdsmByte),
-      sizeof(H5FDdsmByte), MPI_INFO_NULL, winComm, &this->Win) != MPI_SUCCESS) {
+      sizeof(H5FDdsmByte), MPI_INFO_NULL, winComm, &this->InterWin) != MPI_SUCCESS) {
     H5FDdsmError("Id = " << this->Id << " MPI_Win_create failed");
     return(H5FD_DSM_FAIL);
   }
@@ -131,7 +133,7 @@ H5FDdsmCommMpiRma::Connect()
   MPI_Intercomm_merge(this->InterComm, 1, &winComm);
 
   if (MPI_Win_create(NULL, 0, sizeof(H5FDdsmInt8), MPI_INFO_NULL, winComm,
-      &this->Win) != MPI_SUCCESS) {
+      &this->InterWin) != MPI_SUCCESS) {
     H5FDdsmError("Id = " << this->Id << " MPI_Win_create failed");
     return(H5FD_DSM_FAIL);
   }
@@ -145,9 +147,9 @@ H5FDdsmCommMpiRma::Disconnect()
 {
   if (H5FDdsmCommMpi::Disconnect() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
-  if (this->Win != MPI_WIN_NULL) {
-    MPI_Win_free(&this->Win);
-    this->Win = MPI_WIN_NULL;
+  if (this->InterWin != MPI_WIN_NULL) {
+    MPI_Win_free(&this->InterWin);
+    this->InterWin = MPI_WIN_NULL;
   }
   return(H5FD_DSM_SUCCESS);
 }
