@@ -114,7 +114,7 @@ public:
   H5FDdsmInt32           DupComm(MPI_Comm Source);
   H5FDdsmInt32           Barrier();
   H5FDdsmInt32           Broadcast(H5FDdsmPointer data, H5FDdsmInt32 count, H5FDdsmInt32 root);
-  H5FDdsmInt32           WinCreate();
+  H5FDdsmInt32           WinCreate(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize);
   H5FDdsmInt32           WinFree();
   H5FDdsmInt32           ChannelSynced(H5FDdsmInt32 who, H5FDdsmInt32 *syncId, H5FDdsmBoolean fromServer=H5FD_DSM_FALSE);
 
