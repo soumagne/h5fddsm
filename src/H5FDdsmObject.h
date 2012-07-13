@@ -101,24 +101,24 @@ typedef H5FDdsmUInt64 H5FDdsmAddr;
 // Error and Debug message Macros
 //------------------------------------------------------------------------------
 #ifdef H5FDdsm_DEBUG_GLOBAL
-#define H5FDdsmDebug(x) \
-{ \
-  std::cout << "H5FD_DSM Debug : " << x << std::endl; \
-}
 #define H5FDdsmDebugLevel(level, x) \
 { if (this->DebugLevel >= level) { \
     std::cout << "H5FD_DSM Debug Level " << level << ": " << x << std::endl; \
   } \
 }
-#else
 #define H5FDdsmDebug(x) \
-{ if (this->Debug) { \
-    std::cout << "H5FD_DSM Debug: " << x << std::endl; \
-  } \
+{ \
+  H5FDdsmDebugLevel(0, x) \
 }
+#else
 #define H5FDdsmDebugLevel(level, x) \
 { if (this->Debug && (this->DebugLevel >= level)) { \
     std::cout << "H5FD_DSM Debug Level " << level << ": " << x << std::endl; \
+  } \
+}
+#define H5FDdsmDebug(x) \
+{ if (this->Debug) { \
+    H5FDdsmDebugLevel(0, x) \
   } \
 }
 #endif
