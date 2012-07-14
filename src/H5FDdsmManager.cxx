@@ -409,6 +409,10 @@ H5FDdsmInt32 H5FDdsmManager::Connect(H5FDdsmBoolean persist)
       status = this->DsmBuffer->GetComm()->Connect();
       if (status == H5FD_DSM_SUCCESS) {
         H5FDdsmDebug("Connected!");
+        // For one-sided communication create InterWin
+        this->DsmBuffer->GetComm()->WinCreateData(NULL, 0, H5FD_DSM_INTER_COMM);
+        this->DsmBuffer->GetComm()->WinCreateNotification(NULL, 0, H5FD_DSM_INTER_COMM);
+        this->DsmBuffer->GetComm()->WinCreateLock(NULL, 0, H5FD_DSM_INTER_COMM);
         this->DsmBuffer->SetIsConnected(H5FD_DSM_TRUE);
         this->DsmBuffer->ReceiveInfo();
       }

@@ -61,7 +61,6 @@
 
 // If you add a new Tag here, it must also be added to H5FDdsmMsg.cxx
 // So that debug Tag->String conversion functions correctly
-
 #define H5FD_DSM_DEFAULT_TAG    0x80 // 128
 #define H5FD_DSM_COMMAND_TAG    0x81 // 129
 #define H5FD_DSM_RESPONSE_TAG   0x82 // 130
@@ -70,7 +69,8 @@
 #define H5FD_DSM_EXCHANGE_TAG   0x85 // 133
 #define H5FD_DSM_XML_TAG        0x86 // 134
 
-#define H5FD_DSM_ANY_SOURCE     -1
+#define H5FD_DSM_ANY_TAG        -1
+#define H5FD_DSM_ANY_SOURCE     -2
 
 H5FDdsm_EXPORT const char *H5FDdsmTagToString(int tag);
 

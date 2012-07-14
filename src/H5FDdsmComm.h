@@ -80,61 +80,72 @@ public:
   H5FDdsmComm();
   virtual ~H5FDdsmComm();
 
-  // If set to true, use one sided comm
-  H5FDdsmSetValueMacro(UseOneSidedComm, H5FDdsmBoolean);
+  // If set to true, one sided comm is used
   H5FDdsmGetValueMacro(UseOneSidedComm, H5FDdsmBoolean);
 
-  // Set/Get the Internal MPI Communicator
-  H5FDdsmSetValueMacro(IntraComm, MPI_Comm);
+  // Get the internal MPI Communicator
   H5FDdsmGetValueMacro(IntraComm, MPI_Comm);
+  // Duplicate and Set the internal MPI Communicator
+  H5FDdsmInt32 DupComm(MPI_Comm source);
 
-  // Set/Get the Internal MPI Window
-  H5FDdsmSetValueMacro(IntraWin, MPI_Win);
+  // Get the Internal MPI Window
   H5FDdsmGetValueMacro(IntraWin, MPI_Win);
 
-  // Id (local to Intra-Communicator)
+  // Get Id (local to Intra-Communicator)
   H5FDdsmGetValueMacro(Id, H5FDdsmInt32);
-  H5FDdsmSetValueMacro(Id, H5FDdsmInt32);
 
-  // IntraSize
+  // Get IntraSize
   H5FDdsmGetValueMacro(IntraSize, H5FDdsmInt32);
-  H5FDdsmSetValueMacro(IntraSize, H5FDdsmInt32);
-
-  // InterCommType
-  H5FDdsmGetValueMacro(InterCommType, H5FDdsmInt32);
-
-  // InterSize
-  H5FDdsmGetValueMacro(InterSize, H5FDdsmInt32);
-  H5FDdsmSetValueMacro(InterSize, H5FDdsmInt32);
 
   // If set to true, do not use dynamic connection
   H5FDdsmSetValueMacro(UseStaticInterComm, H5FDdsmBoolean);
   H5FDdsmGetValueMacro(UseStaticInterComm, H5FDdsmBoolean);
 
-  H5FDdsmInt32           DupComm(MPI_Comm Source);
-  H5FDdsmInt32           Barrier();
-  H5FDdsmInt32           Broadcast(H5FDdsmPointer data, H5FDdsmInt32 count, H5FDdsmInt32 root);
-  H5FDdsmInt32           WinCreate(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize);
-  H5FDdsmInt32           WinFree();
-  H5FDdsmInt32           ChannelSynced(H5FDdsmInt32 who, H5FDdsmInt32 *syncId, H5FDdsmBoolean fromServer=H5FD_DSM_FALSE);
+  // Get InterCommType
+  H5FDdsmGetValueMacro(InterCommType, H5FDdsmInt32);
+
+  // Get InterSize
+  H5FDdsmGetValueMacro(InterSize, H5FDdsmInt32);
 
   virtual H5FDdsmInt32   Init();
 
+  // Point to point methods
   virtual H5FDdsmInt32   Send(H5FDdsmMsg *msg);
   virtual H5FDdsmInt32   Receive(H5FDdsmMsg *msg);
   virtual H5FDdsmInt32   Probe(H5FDdsmMsg *msg);
 
   // Additional methods for one sided communications
-  virtual H5FDdsmInt32   Put(H5FDdsmMsg *dataMsg);
-  virtual H5FDdsmInt32   Get(H5FDdsmMsg *dataMsg);
-  virtual H5FDdsmInt32   WindowSync();
+  virtual H5FDdsmInt32   WinCreateData(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize, H5FDdsmInt32 comm);
+  virtual H5FDdsmInt32   PutData(H5FDdsmMsg *msg);
+  virtual H5FDdsmInt32   GetData(H5FDdsmMsg *msg);
+  virtual H5FDdsmInt32   WindowSyncData();
+  // TODO For compat - will be removed later
+  H5FDdsmInt32   WindowSync();
 
+  // Notification
+  virtual H5FDdsmInt32   WinCreateNotification(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize, H5FDdsmInt32 comm);
+  virtual H5FDdsmInt32   PutNotification(H5FDdsmMsg *msg);
+  virtual H5FDdsmInt32   GetNotification(H5FDdsmMsg *msg);
+  // Lock
+  virtual H5FDdsmInt32   WinCreateLock(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize, H5FDdsmInt32 comm);
+  virtual H5FDdsmInt32   PutLock(H5FDdsmMsg *msg);
+  virtual H5FDdsmInt32   GetLock(H5FDdsmMsg *msg);
+
+  // Collective methods
+  virtual H5FDdsmInt32   Barrier(H5FDdsmInt32 comm);
+  virtual H5FDdsmInt32   Broadcast(H5FDdsmMsg *msg);
+  // TODO For compat - will be removed later
+  H5FDdsmInt32   Barrier();
+
+  // InterComm creation methods
   virtual H5FDdsmInt32   OpenPort();
   virtual H5FDdsmInt32   ClosePort();
-  virtual H5FDdsmInt32   Accept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize);
+  virtual H5FDdsmInt32   Accept();
   virtual H5FDdsmInt32   Connect();
   virtual H5FDdsmInt32   Disconnect();
-  virtual H5FDdsmInt32   RemoteBarrier();
+
+  // Sync two sided channels
+  H5FDdsmInt32           ChannelSynced(H5FDdsmInt32 who, H5FDdsmInt32 *syncId, H5FDdsmBoolean fromServer=H5FD_DSM_FALSE);
 
 protected:
   H5FDdsmBoolean     UseOneSidedComm;
@@ -144,12 +155,18 @@ protected:
   H5FDdsmInt32       Id;
   H5FDdsmInt32       IntraSize;
 
+  H5FDdsmBoolean     UseStaticInterComm;
   H5FDdsmInt32       InterCommType;
   H5FDdsmInt32       InterSize;
 
-  H5FDdsmBoolean     UseStaticInterComm;
-
   H5FDdsmInt32       SyncChannels;
+
+private:
+  // Free IntraComm
+  H5FDdsmInt32       CommFree();
+
+  // Free IntraWin
+  H5FDdsmInt32       WinFreeData();
 };
 
 #endif // __H5FDdsmComm_h

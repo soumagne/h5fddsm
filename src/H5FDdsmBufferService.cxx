@@ -315,7 +315,7 @@ H5FDdsmBufferService::BufferService(H5FDdsmInt32 *returnOpcode)
     if (this->Comm->GetId() == 0) {
       status = this->ProbeCommandHeader(&this->CommChannel);
     }
-    this->Comm->Broadcast(&this->CommChannel, sizeof(H5FDdsmInt32), 0);
+    this->BroadcastComm(&this->CommChannel, 0);
   }
   if (syncId >= 0) {
     H5FDdsmDebug("(" << this->Comm->GetId() << ") " << "Receiving command header from " << syncId
@@ -436,11 +436,15 @@ H5FDdsmBufferService::BufferService(H5FDdsmInt32 *returnOpcode)
   // Always received from server
   case H5FD_DSM_ACCEPT:
     if (!this->IsConnected) {
-      status = this->Comm->Accept(this->DataPointer, this->Length);
+      status = this->Comm->Accept();
       if (status == H5FD_DSM_FAIL) {
         H5FDdsmDebug("RemoteCommAccept Failed");
         return(H5FD_DSM_FAIL);
       }
+      // For one-sided communication create InterWin
+      this->Comm->WinCreateData(this->DataPointer, this->Length, H5FD_DSM_INTER_COMM);
+      this->Comm->WinCreateNotification(&this->Notification, sizeof(H5FDdsmInt32), H5FD_DSM_INTER_COMM);
+      this->Comm->WinCreateLock(&this->IsClientLocked, sizeof(H5FDdsmBoolean), H5FD_DSM_INTER_COMM);
       this->BufferServiceInternals->IsConnecting = H5FD_DSM_FALSE;
       // Send DSM information
       this->SendInfo();

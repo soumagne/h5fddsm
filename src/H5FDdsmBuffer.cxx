@@ -208,7 +208,9 @@ H5FDdsmBuffer::SetLength(H5FDdsmUInt64 aLength, H5FDdsmBoolean allowAllocate)
   this->DataPointer = (H5FDdsmByte *)this->Storage->GetDataPointer();
   // If we are using one-sided communication, allocate here the local memory
   // window for one-sided accesses
-  if (this->Comm->GetUseOneSidedComm()) this->Comm->WinCreate(this->DataPointer, this->Length);
+  if (this->Comm->GetUseOneSidedComm()) {
+    this->Comm->WinCreateData(this->DataPointer, this->Length, H5FD_DSM_INTRA_COMM);
+  }
   return(H5FD_DSM_SUCCESS);
 }
 
@@ -282,12 +284,39 @@ H5FDdsmInt32
 H5FDdsmBuffer::ProbeCommandHeader(H5FDdsmInt32 *comm)
 {
   H5FDdsmInt32 status = H5FD_DSM_FAIL;
+  H5FDdsmBoolean flag = H5FD_DSM_FALSE;
   H5FDdsmMsg msg;
 
-  msg.SetTag(H5FD_DSM_COMMAND_TAG);
+  msg.SetSource(H5FD_DSM_ANY_SOURCE);
+  msg.SetTag(H5FD_DSM_ANY_TAG);
+  msg.SetCommunicator(H5FD_DSM_INTRA_COMM);
 
-  status = this->Comm->Probe(&msg);
-  if (status != H5FD_DSM_FAIL) *comm = msg.Communicator;
+  while (!flag) {
+    status = this->Comm->Probe(&msg);
+    if (status == H5FD_DSM_SUCCESS) {
+      flag = H5FD_DSM_TRUE;
+      *comm = msg.Communicator;
+    } else {
+      msg.SetCommunicator((msg.Communicator == H5FD_DSM_INTRA_COMM) ? H5FD_DSM_INTER_COMM : H5FD_DSM_INTRA_COMM);
+    }
+  }
+  return(status);
+}
+
+//----------------------------------------------------------------------------
+H5FDdsmInt32
+H5FDdsmBuffer::BroadcastComm(H5FDdsmInt32 *comm, H5FDdsmInt32 root)
+{
+  H5FDdsmMsg msg;
+  H5FDdsmInt32 status;
+
+  msg.SetSource(root);
+  msg.SetLength(sizeof(H5FDdsmInt32));
+  msg.SetData(comm);
+  msg.SetCommunicator(H5FD_DSM_INTRA_COMM);
+
+  status = this->Comm->Broadcast(&msg);
+  if (status != H5FD_DSM_SUCCESS) H5FDdsmError("Broadcast of Comm failed");
   return(status);
 }
 
@@ -306,7 +335,7 @@ H5FDdsmBuffer::SendData(H5FDdsmInt32 dest, H5FDdsmPointer data,
   msg.SetData(data);
   msg.SetCommunicator(comm);
   if (this->Comm->GetUseOneSidedComm()) {
-    return(this->Comm->Put(&msg));
+    return(this->Comm->PutData(&msg));
   }
   else {
     return(this->Comm->Send(&msg));
@@ -327,7 +356,7 @@ H5FDdsmBuffer::ReceiveData(H5FDdsmInt32 source, H5FDdsmPointer data,
   msg.SetData(data);
   msg.SetCommunicator(comm);
   if (this->Comm->GetUseOneSidedComm()) {
-    return(this->Comm->Get(&msg));
+    return(this->Comm->GetData(&msg));
   }
   else {
     return(this->Comm->Receive(&msg));
@@ -413,21 +442,27 @@ H5FDdsmBuffer::ReceiveInfo()
   H5FDdsmInt32 status = H5FD_DSM_FAIL;
   H5FDdsmMsg   msg;
 
-  msg.SetSource(0);
-  msg.SetLength(sizeof(H5FDdsmInfo));
-  msg.SetTag(H5FD_DSM_EXCHANGE_TAG);
-  msg.SetData(&dsmInfo);
-  msg.SetCommunicator(H5FD_DSM_INTER_COMM);
-
   memset(&dsmInfo, 0, sizeof(H5FDdsmInfo));
 
   if (this->Comm->GetId() == 0) {
+    msg.SetSource(0);
+    msg.SetLength(sizeof(H5FDdsmInfo));
+    msg.SetTag(H5FD_DSM_EXCHANGE_TAG);
+    msg.SetData(&dsmInfo);
+    msg.SetCommunicator(H5FD_DSM_INTER_COMM);
+
     H5FDdsmDebug("Receiving DSM Info...");
     status = this->Comm->Receive(&msg);
     if (status != H5FD_DSM_SUCCESS) H5FDdsmError("Receive of Info failed");
     H5FDdsmDebug("Recv DSM Info Completed");
   }
-  status = this->Comm->Broadcast(&dsmInfo, sizeof(H5FDdsmInfo), 0);
+
+  msg.SetSource(0);
+  msg.SetLength(sizeof(H5FDdsmInfo));
+  msg.SetData(&dsmInfo);
+  msg.SetCommunicator(H5FD_DSM_INTRA_COMM);
+
+  status = this->Comm->Broadcast(&msg);
   if (status != H5FD_DSM_SUCCESS) H5FDdsmError("Broadcast of Info failed");
 
   this->SetDsmType(dsmInfo.type);

@@ -88,7 +88,8 @@ H5FDdsmCommSocket::Send(H5FDdsmMsg *msg)
           " bytes to " << msg->Dest);
       return(H5FD_DSM_FAIL);
     }
-    H5FDdsmDebugLevel(3, "(" << this->Id << ") Sent " << message_length << " bytes to " << msg->Dest);
+    H5FDdsmDebugLevel(3, "(" << this->Id << ") Sent " << msg->Length << " Bytes on "
+        << H5FDdsmCommToString(msg->Communicator) << " to " << msg->Dest);
   }
   return(H5FD_DSM_SUCCESS);
 }
@@ -109,8 +110,8 @@ H5FDdsmCommSocket::Receive(H5FDdsmMsg *msg)
             << " Bytes from " << msg->Source);
         return(H5FD_DSM_FAIL);
       }
-      H5FDdsmDebugLevel(3, "(" << this->Id << ") Received " << message_length << " bytes from "
-          << msg->Source);
+      H5FDdsmDebugLevel(3, "(" << this->Id << ") Received " << message_length << " Bytes on "
+          << H5FDdsmCommToString(msg->Communicator) << " from " << msg->Source);
     } else {
       // TODO when modifying then dynamically the socket array, should be careful not to change it
       // while doing a select on it
@@ -123,8 +124,8 @@ H5FDdsmCommSocket::Receive(H5FDdsmMsg *msg)
             << " Bytes from " << selectedIndex);
         return(H5FD_DSM_FAIL);
       }
-      H5FDdsmDebugLevel(3, "(" << this->Id << ") Received " << message_length << " bytes from "
-          << selectedIndex);
+      H5FDdsmDebugLevel(3, "(" << this->Id << ") Received " << message_length << " Bytes on "
+          << H5FDdsmCommToString(msg->Communicator) << " from " << selectedIndex);
     }
   }
   return(H5FD_DSM_SUCCESS);
@@ -134,42 +135,28 @@ H5FDdsmCommSocket::Receive(H5FDdsmMsg *msg)
 H5FDdsmInt32
 H5FDdsmCommSocket::Probe(H5FDdsmMsg *msg)
 {
-  int          nid;
-  int          flag = H5FD_DSM_FALSE;
-  MPI_Status   status;
-  H5FDdsmInt32 commTag = H5FD_DSM_INTRA_COMM;
-
   if (H5FDdsmComm::Probe(msg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
-  H5FDdsmDebugLevel(3, "MPI_Iprobe " << H5FDdsmTagToString(msg->Tag));
-  while (!flag) {
-    H5FDdsmDebugLevel(3, "MPI_Iprobe " << H5FDdsmTagToString(msg->Tag));
-    if (commTag == H5FD_DSM_INTRA_COMM) {
-      MPI_Iprobe(MPI_ANY_SOURCE, msg->Tag, this->IntraComm, &flag, &status);
-      if (flag) {
-        nid = status.MPI_SOURCE;
-        msg->SetSource(nid);
-        msg->SetCommunicator(commTag);
-        H5FDdsmDebugLevel(3, "MPI_Iprobe found pending messages on comm " << H5FDdsmCommToString(commTag));
-        return(H5FD_DSM_SUCCESS);
-      } else {
-        if (this->InterComm[0] != NULL) commTag = H5FD_DSM_INTER_COMM;
-      }
+  if (msg->Tag == H5FD_DSM_INTER_COMM) {
+    int flag;
+    int selectedIndex;
+
+    // if ANY_SOURCE use select on the whole list of sockets descriptors
+    flag = (this->InterComm[0]->SelectSockets(this->InterCommSockets, this->InterSize, 1, &selectedIndex) == 1);
+
+    if (flag) {
+      msg->SetSource(selectedIndex);
+      msg->SetCommunicator(H5FD_DSM_INTER_COMM);
+      H5FDdsmDebugLevel(3, "Socket probe found pending messages on " << H5FDdsmCommToString(msg->Communicator)
+          << " from " << selectedIndex << " Tag = " << H5FDdsmTagToString(msg->Tag));
+      return(H5FD_DSM_SUCCESS);
     } else {
-      int selectedIndex;
-      // if ANY_SOURCE use select on the whole list of sockets descriptors
-      flag = (this->InterComm[0]->SelectSockets(this->InterCommSockets, this->InterSize, 1, &selectedIndex) == 1);
-      if (flag) {
-        msg->SetSource(selectedIndex);
-        msg->SetCommunicator(commTag);
-        H5FDdsmDebugLevel(3, "MPI_Iprobe found pending messages on comm " << H5FDdsmCommToString(commTag));
-        return(H5FD_DSM_SUCCESS);
-      } else {
-        commTag = H5FD_DSM_INTRA_COMM;
-      }
+      H5FDdsmDebugLevel(5, "Socket probe did not find pending messages on " << H5FDdsmCommToString(msg->Communicator)
+          << " from " << msg->Source << " Tag = " << H5FDdsmTagToString(msg->Tag));
+      return(H5FD_DSM_FAIL);
     }
   }
-  return(H5FD_DSM_FAIL);
+  return(H5FD_DSM_SUCCESS);
 }
 
 //----------------------------------------------------------------------------
@@ -177,6 +164,7 @@ H5FDdsmInt32
 H5FDdsmCommSocket::OpenPort()
 {
   if (H5FDdsmComm::OpenPort() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+
   if (this->Id == 0) {
     int port = DSM_COMM_SOCKET_PORT_INIT;
 
@@ -199,6 +187,7 @@ H5FDdsmInt32
 H5FDdsmCommSocket::ClosePort()
 {
   if (H5FDdsmComm::ClosePort() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+
   if (this->Id == 0) {
     // close MasterSocket
     this->DsmMasterSocket->Close();
@@ -209,10 +198,11 @@ H5FDdsmCommSocket::ClosePort()
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmCommSocket::Accept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize)
+H5FDdsmCommSocket::Accept()
 {
   H5FDdsmInt32 errorOnAccept = H5FD_DSM_FALSE;
-  if (H5FDdsmComm::Accept(storagePointer, storageSize) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+
+  if (H5FDdsmComm::Accept() != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
   // TODO Needed if we want to insert a timeout
   // if (this->MasterSocket->Select(100) <= 0 ) return(H5FD_DSM_FAIL);

@@ -65,25 +65,29 @@ public:
 
   virtual H5FDdsmInt32   Init();
 
-  H5FDdsmInt32           Send(H5FDdsmMsg *Msg);
-  H5FDdsmInt32           Receive(H5FDdsmMsg *Msg);
-  H5FDdsmInt32           Probe(H5FDdsmMsg *Msg);
+  // Point to point methods
+  H5FDdsmInt32           Send(H5FDdsmMsg *msg);
+  H5FDdsmInt32           Receive(H5FDdsmMsg *msg);
+  H5FDdsmInt32           Probe(H5FDdsmMsg *msg);
 
-  // Additional methods for one sided communications
-  virtual H5FDdsmInt32   Put(H5FDdsmMsg *DataMsg);
-  virtual H5FDdsmInt32   Get(H5FDdsmMsg *DataMsg);
-  virtual H5FDdsmInt32   WindowSync();
+  // Collective methods
+  H5FDdsmInt32           Barrier(H5FDdsmInt32 comm);
+  H5FDdsmInt32           Broadcast(H5FDdsmMsg *msg);
 
+  // InterComm creation methods
   H5FDdsmInt32           OpenPort();
   H5FDdsmInt32           ClosePort();
-  virtual H5FDdsmInt32   Accept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize);
-  virtual H5FDdsmInt32   Connect();
-  virtual H5FDdsmInt32   Disconnect();
-  H5FDdsmInt32           RemoteBarrier();
+  H5FDdsmInt32           Accept();
+  H5FDdsmInt32           Connect();
+  H5FDdsmInt32           Disconnect();
 
 protected:
   MPI_Comm       InterComm;
   H5FDdsmByte    DsmMasterHostName[MPI_MAX_PORT_NAME];
+
+private:
+  // Free InterComm
+  H5FDdsmInt32           CommFree();
 };
 
 #endif // __H5FDdsmCommMpi_h

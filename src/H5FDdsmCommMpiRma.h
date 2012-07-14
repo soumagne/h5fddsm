@@ -36,15 +36,33 @@ public:
 
   H5FDdsmInt32   Init();
 
-  H5FDdsmInt32   Put(H5FDdsmMsg *dataMsg);
-  H5FDdsmInt32   Get(H5FDdsmMsg *dataMsg);
+  // Additional methods for one sided communications
+  H5FDdsmInt32   WinCreateData(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize, H5FDdsmInt32 comm);
+  H5FDdsmInt32   PutData(H5FDdsmMsg *msg);
+  H5FDdsmInt32   GetData(H5FDdsmMsg *msg);
 
-  H5FDdsmInt32   Accept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize);
-  H5FDdsmInt32   Connect();
-  H5FDdsmInt32   Disconnect();
+  // Notification
+  H5FDdsmInt32   WinCreateNotification(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize, H5FDdsmInt32 comm);
+  H5FDdsmInt32   PutNotification(H5FDdsmMsg *msg);
+  H5FDdsmInt32   GetNotification(H5FDdsmMsg *msg);
+
+  // Lock
+  H5FDdsmInt32   WinCreateLock(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize, H5FDdsmInt32 comm);
+  H5FDdsmInt32   PutLock(H5FDdsmMsg *msg);
+  H5FDdsmInt32   GetLock(H5FDdsmMsg *msg);
 
 protected:
   MPI_Win        InterWin;
+  MPI_Win        NotificationWin;
+  MPI_Win        LockWin;
+
+private:
+  // RMA wrappers
+  H5FDdsmInt32   WinCreate(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize, MPI_Win *win);
+  H5FDdsmInt32   WinFree(MPI_Win *win);
+  H5FDdsmInt32   Put(H5FDdsmMsg *msg, MPI_Win win);
+  H5FDdsmInt32   Get(H5FDdsmMsg *msg, MPI_Win win);
+
 };
 
 #endif // __H5FDdsmCommMpiRma_h

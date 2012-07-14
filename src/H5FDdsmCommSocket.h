@@ -50,20 +50,20 @@ public:
 
   H5FDdsmInt32   OpenPort();
   H5FDdsmInt32   ClosePort();
-  H5FDdsmInt32   Accept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize);
+  H5FDdsmInt32   Accept();
   H5FDdsmInt32   Connect();
   H5FDdsmInt32   Disconnect();
 
 protected:
-  H5FDdsmInt32   InterCommServerConnect();
-  H5FDdsmInt32   InterCommClientConnect();
-
   H5FDdsmSocket       *InterComm[H5FD_DSM_MAX_SOCKET]; // Internode Socket Collection for data exchange
   H5FDdsmSocket       *DsmMasterSocket; // Used for initializing connection and send comm orders
   H5FDdsmByte          DsmMasterHostName[MPI_MAX_PORT_NAME];
   H5FDdsmInt32         DsmMasterPort;
 
 private:
+  H5FDdsmInt32   InterCommServerConnect();
+  H5FDdsmInt32   InterCommClientConnect();
+
   H5FDdsmInt32         InterCommSockets[H5FD_DSM_MAX_SOCKET];
 };
 
