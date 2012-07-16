@@ -299,6 +299,10 @@ int H5FDdsmTestDriver::OutputStringHasError(const char* pname, string& output)
     "Memcheck, a memory error detector",  //valgrind
     "error in locking authority file",  //Ice-T
     "WARNING: Far depth failed sanity check, resetting.", //Ice-T
+    // these are all caused (we think) by the dodgy SMPD shutdown bug in mpich2 on windows mpich2 1.4.1p1
+    "Error posting writev,",     
+    "sock error: Error = 10058", 
+    "state machine failed.", 
     0
   };
 
@@ -315,19 +319,20 @@ int H5FDdsmTestDriver::OutputStringHasError(const char* pname, string& output)
 
   for ( it = lines.begin(); it != lines.end(); ++ it )
     {
-    for(i =0; possibleMPIErrors[i]; ++i)
+    for(i = 0; possibleMPIErrors[i]; ++i)
       {
       if(it->find(possibleMPIErrors[i]) != it->npos)
         {
-        int found = 0;
+        int found = 1;
         for (j = 0; nonErrors[j]; ++ j)
           {
           if ( it->find(nonErrors[j]) != it->npos )
             {
-            found = 1;
-            }
+            found = 0;
+            cerr << "Non error \"" << it->c_str() << "\" suppressed " << std::endl;
+            }      
           }
-        if ( !found )
+        if ( found )
           {
           cerr << "H5FDdsmTestDriver: ***** Test will fail, because the string: \""
             << possibleMPIErrors[i]
