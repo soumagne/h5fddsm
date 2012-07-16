@@ -60,11 +60,13 @@ H5FDdsmMutex::Lock()
 H5FDdsmBoolean
 H5FDdsmMutex::TryLock()
 {
+  int owned;
 #ifdef _WIN32
-  int owned = TryEnterCriticalSection(&this->Mutex);
-  return (owned!=0);
+  owned = TryEnterCriticalSection(&this->Mutex);
+  return(owned != 0);
 #else
-  std::cerr << "Not yet implemented " << std::endl;
+  owned = pthread_mutex_trylock(&this->Mutex);
+  return(owned == 0);
 #endif
 }
 
