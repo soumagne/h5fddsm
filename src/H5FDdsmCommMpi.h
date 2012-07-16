@@ -84,10 +84,6 @@ public:
 protected:
   MPI_Comm       InterComm;
   H5FDdsmByte    DsmMasterHostName[MPI_MAX_PORT_NAME];
-
-private:
-  // Free InterComm
-  H5FDdsmInt32           CommFree();
 };
 
 #endif // __H5FDdsmCommMpi_h

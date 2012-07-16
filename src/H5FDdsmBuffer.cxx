@@ -283,24 +283,22 @@ H5FDdsmBuffer::ReceiveCommandHeader(H5FDdsmInt32 *opcode, H5FDdsmInt32 *source,
 H5FDdsmInt32
 H5FDdsmBuffer::ProbeCommandHeader(H5FDdsmInt32 *comm)
 {
-  H5FDdsmInt32 status = H5FD_DSM_FAIL;
-  H5FDdsmBoolean flag = H5FD_DSM_FALSE;
   H5FDdsmMsg msg;
+  H5FDdsmInt32 status = H5FD_DSM_FALSE;
 
   msg.SetSource(H5FD_DSM_ANY_SOURCE);
   msg.SetTag(H5FD_DSM_ANY_TAG);
   msg.SetCommunicator(H5FD_DSM_INTRA_COMM);
 
-  while (!flag) {
+  // Spin until a message is found on one of the communicators
+  while (!status) {
     status = this->Comm->Probe(&msg);
-    if (status == H5FD_DSM_SUCCESS) {
-      flag = H5FD_DSM_TRUE;
-      *comm = msg.Communicator;
-    } else {
+    if (status != H5FD_DSM_SUCCESS) {
       msg.SetCommunicator((msg.Communicator == H5FD_DSM_INTRA_COMM) ? H5FD_DSM_INTER_COMM : H5FD_DSM_INTRA_COMM);
     }
   }
-  return(status);
+  *comm = msg.Communicator;
+  return(H5FD_DSM_SUCCESS);
 }
 
 //----------------------------------------------------------------------------

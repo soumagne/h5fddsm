@@ -52,17 +52,14 @@ public:
   H5FDdsmInt32   GetLock(H5FDdsmMsg *msg);
 
 protected:
+  // RMA wrappers
+  H5FDdsmInt32   MpiWinCreateRemote(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize, MPI_Win *win);
+
   MPI_Win        InterWin;
   MPI_Win        NotificationWin;
   MPI_Win        LockWin;
 
 private:
-  // RMA wrappers
-  H5FDdsmInt32   WinCreate(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize, MPI_Win *win);
-  H5FDdsmInt32   WinFree(MPI_Win *win);
-  H5FDdsmInt32   Put(H5FDdsmMsg *msg, MPI_Win win);
-  H5FDdsmInt32   Get(H5FDdsmMsg *msg, MPI_Win win);
-
 };
 
 #endif // __H5FDdsmCommMpiRma_h

@@ -70,6 +70,7 @@ H5FDdsmMsg::~H5FDdsmMsg() {
   if (value==def) return #def;
 
 const char *H5FDdsmTagToString(int tag) {
+  H5FD_DSM_TAG_MACRO(H5FD_DSM_ANY_TAG, tag)
   H5FD_DSM_TAG_MACRO(H5FD_DSM_DEFAULT_TAG, tag)
   H5FD_DSM_TAG_MACRO(H5FD_DSM_COMMAND_TAG, tag)
   H5FD_DSM_TAG_MACRO(H5FD_DSM_RESPONSE_TAG, tag)

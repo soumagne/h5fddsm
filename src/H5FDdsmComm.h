@@ -148,6 +148,18 @@ public:
   H5FDdsmInt32           ChannelSynced(H5FDdsmInt32 who, H5FDdsmInt32 *syncId, H5FDdsmBoolean fromServer=H5FD_DSM_FALSE);
 
 protected:
+  // Wrappers to MPI functions
+  H5FDdsmInt32       MpiCommFree(MPI_Comm *comm);
+  H5FDdsmInt32       MpiSend(H5FDdsmMsg *msg, MPI_Comm comm);
+  H5FDdsmInt32       MpiReceive(H5FDdsmMsg *msg, MPI_Comm comm);
+  H5FDdsmInt32       MpiProbe(H5FDdsmMsg *msg, MPI_Comm comm);
+  H5FDdsmInt32       MpiWinCreateLocal(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize, MPI_Win *win);
+  H5FDdsmInt32       MpiWinFree(MPI_Win *win);
+  H5FDdsmInt32       MpiPut(H5FDdsmMsg *msg, MPI_Win win);
+  H5FDdsmInt32       MpiGet(H5FDdsmMsg *msg, MPI_Win win);
+  H5FDdsmInt32       MpiBarrier(MPI_Comm comm);
+  H5FDdsmInt32       MpiBroadcast(H5FDdsmMsg *msg, MPI_Comm comm);
+
   H5FDdsmBoolean     UseOneSidedComm;
 
   MPI_Comm           IntraComm;
@@ -160,13 +172,6 @@ protected:
   H5FDdsmInt32       InterSize;
 
   H5FDdsmInt32       SyncChannels;
-
-private:
-  // Free IntraComm
-  H5FDdsmInt32       CommFree();
-
-  // Free IntraWin
-  H5FDdsmInt32       WinFreeData();
 };
 
 #endif // __H5FDdsmComm_h

@@ -41,11 +41,11 @@ H5FDdsmCommMpiRma::H5FDdsmCommMpiRma()
 //----------------------------------------------------------------------------
 H5FDdsmCommMpiRma::~H5FDdsmCommMpiRma()
 {
-  if (this->InterWin != MPI_WIN_NULL) this->WinFree(&this->InterWin);
+  if (this->InterWin != MPI_WIN_NULL) this->MpiWinFree(&this->InterWin);
   this->InterWin = MPI_WIN_NULL;
-  if (this->NotificationWin != MPI_WIN_NULL) this->WinFree(&this->NotificationWin);
+  if (this->NotificationWin != MPI_WIN_NULL) this->MpiWinFree(&this->NotificationWin);
   this->NotificationWin = MPI_WIN_NULL;
-  if (this->LockWin != MPI_WIN_NULL) this->WinFree(&this->LockWin);
+  if (this->LockWin != MPI_WIN_NULL) this->MpiWinFree(&this->LockWin);
   this->LockWin = MPI_WIN_NULL;
 }
 
@@ -66,8 +66,8 @@ H5FDdsmCommMpiRma::WinCreateData(H5FDdsmPointer storagePointer, H5FDdsmUInt64 st
   if (H5FDdsmComm::WinCreateData(storagePointer, storageSize, comm) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
   if (comm == H5FD_DSM_INTER_COMM) {
-    if (this->InterWin != MPI_WIN_NULL) this->WinFree(&this->InterWin);
-    if (this->WinCreate(storagePointer, storageSize, &this->InterWin) != H5FD_DSM_SUCCESS) {
+    if (this->InterWin != MPI_WIN_NULL) this->MpiWinFree(&this->InterWin);
+    if (this->MpiWinCreateRemote(storagePointer, storageSize, &this->InterWin) != H5FD_DSM_SUCCESS) {
       return(H5FD_DSM_FAIL);
     }
   }
@@ -82,7 +82,7 @@ H5FDdsmCommMpiRma::PutData(H5FDdsmMsg *msg)
 
   if (msg->Communicator == H5FD_DSM_INTER_COMM) {
     if (this->InterWin != MPI_WIN_NULL) {
-      if (this->Put(msg, this->InterWin) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+      if (this->MpiPut(msg, this->InterWin) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
     } else {
       H5FDdsmError("InterWin is MPI_WIN_NULL");
       return(H5FD_DSM_FAIL);
@@ -99,7 +99,7 @@ H5FDdsmCommMpiRma::GetData(H5FDdsmMsg *msg)
 
   if (msg->Communicator == H5FD_DSM_INTER_COMM) {
     if (this->InterWin != MPI_WIN_NULL) {
-      if (this->Get(msg, this->InterWin) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+      if (this->MpiGet(msg, this->InterWin) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
     } else {
       H5FDdsmError("InterWin is MPI_WIN_NULL");
       return(H5FD_DSM_FAIL);
@@ -115,8 +115,8 @@ H5FDdsmCommMpiRma::WinCreateNotification(H5FDdsmPointer storagePointer, H5FDdsmU
   if (H5FDdsmComm::WinCreateData(storagePointer, storageSize, comm) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
   if (comm == H5FD_DSM_INTER_COMM) {
-    if (this->NotificationWin != MPI_WIN_NULL) this->WinFree(&this->NotificationWin);
-    if (this->WinCreate(storagePointer, storageSize, &this->NotificationWin) != H5FD_DSM_SUCCESS) {
+    if (this->NotificationWin != MPI_WIN_NULL) this->MpiWinFree(&this->NotificationWin);
+    if (this->MpiWinCreateRemote(storagePointer, storageSize, &this->NotificationWin) != H5FD_DSM_SUCCESS) {
       return(H5FD_DSM_FAIL);
     }
   }
@@ -129,7 +129,7 @@ H5FDdsmCommMpiRma::PutNotification(H5FDdsmMsg *msg)
 {
   if (msg->Communicator == H5FD_DSM_INTER_COMM) {
     if (this->NotificationWin != MPI_WIN_NULL) {
-      if (this->Put(msg, this->NotificationWin) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+      if (this->MpiPut(msg, this->NotificationWin) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
     } else {
       H5FDdsmError("NotificationWin is MPI_WIN_NULL");
       return(H5FD_DSM_FAIL);
@@ -144,7 +144,7 @@ H5FDdsmCommMpiRma::GetNotification(H5FDdsmMsg *msg)
 {
   if (msg->Communicator == H5FD_DSM_INTER_COMM) {
     if (this->NotificationWin != MPI_WIN_NULL) {
-      if (this->Get(msg, this->NotificationWin) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+      if (this->MpiGet(msg, this->NotificationWin) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
     } else {
       H5FDdsmError("NotificationWin is MPI_WIN_NULL");
       return(H5FD_DSM_FAIL);
@@ -160,8 +160,8 @@ H5FDdsmCommMpiRma::WinCreateLock(H5FDdsmPointer storagePointer, H5FDdsmUInt64 st
   if (H5FDdsmComm::WinCreateLock(storagePointer, storageSize, comm) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
 
   if (comm == H5FD_DSM_INTER_COMM) {
-    if (this->LockWin != MPI_WIN_NULL) this->WinFree(&this->LockWin);
-    if (this->WinCreate(storagePointer, storageSize, &this->LockWin) != H5FD_DSM_SUCCESS) {
+    if (this->LockWin != MPI_WIN_NULL) this->MpiWinFree(&this->LockWin);
+    if (this->MpiWinCreateRemote(storagePointer, storageSize, &this->LockWin) != H5FD_DSM_SUCCESS) {
       return(H5FD_DSM_FAIL);
     }
   }
@@ -174,7 +174,7 @@ H5FDdsmCommMpiRma::PutLock(H5FDdsmMsg *msg)
 {
   if (msg->Communicator == H5FD_DSM_INTER_COMM) {
     if (this->LockWin != MPI_WIN_NULL) {
-      if (this->Put(msg, this->LockWin) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+      if (this->MpiPut(msg, this->LockWin) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
     } else {
       H5FDdsmError("LockWin is MPI_WIN_NULL");
       return(H5FD_DSM_FAIL);
@@ -189,7 +189,7 @@ H5FDdsmCommMpiRma::GetLock(H5FDdsmMsg *msg)
 {
   if (msg->Communicator == H5FD_DSM_INTER_COMM) {
     if (this->LockWin != MPI_WIN_NULL) {
-      if (this->Get(msg, this->LockWin) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+      if (this->MpiGet(msg, this->LockWin) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
     } else {
       H5FDdsmError("LockWin is MPI_WIN_NULL");
       return(H5FD_DSM_FAIL);
@@ -200,7 +200,7 @@ H5FDdsmCommMpiRma::GetLock(H5FDdsmMsg *msg)
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmCommMpiRma::WinCreate(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize, MPI_Win *win)
+H5FDdsmCommMpiRma::MpiWinCreateRemote(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize, MPI_Win *win)
 {
   H5FDdsmBoolean isClient;
   MPI_Comm     winComm;
@@ -218,65 +218,5 @@ H5FDdsmCommMpiRma::WinCreate(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storag
   }
 
   MPI_Comm_free(&winComm);
-  return(H5FD_DSM_SUCCESS);
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmCommMpiRma::WinFree(MPI_Win *win)
-{
-  H5FDdsmInt32 status;
-
-  status = MPI_Win_free(win);
-  if (status != MPI_SUCCESS) {
-    H5FDdsmError("Id = " << this->Id << " MPI_Win_free failed");
-    return(H5FD_DSM_FAIL);
-  }
-  return(H5FD_DSM_SUCCESS);
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmCommMpiRma::Put(H5FDdsmMsg *msg, MPI_Win win)
-{
-  H5FDdsmInt32   status;
-
-  MPI_Win_lock(MPI_LOCK_EXCLUSIVE, msg->Dest, 0, win);
-
-  status = MPI_Put(msg->Data, msg->Length, MPI_UNSIGNED_CHAR,
-      msg->Dest, msg->Address, msg->Length, MPI_UNSIGNED_CHAR, win);
-  if (status != MPI_SUCCESS) {
-    H5FDdsmError("Id = " << this->Id << " MPI_Put failed to put " <<
-        msg->Length << " Bytes to " << msg->Dest << " at address " << msg->Address);
-    return(H5FD_DSM_FAIL);
-  }
-
-  MPI_Win_unlock(msg->Dest, win);
-  H5FDdsmDebugLevel(3, "(" << this->Id << ") Put " << msg->Length << " Bytes to " << msg->Dest
-      << " at address " << msg->Address);
-
-  return(H5FD_DSM_SUCCESS);
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmCommMpiRma::Get(H5FDdsmMsg *msg, MPI_Win win)
-{
-  H5FDdsmInt32 status;
-
-  MPI_Win_lock(MPI_LOCK_SHARED, msg->Source, 0, win);
-
-  status = MPI_Get(msg->Data, msg->Length, MPI_UNSIGNED_CHAR,
-      msg->Source, msg->Address, msg->Length, MPI_UNSIGNED_CHAR, win);
-  if (status != MPI_SUCCESS) {
-    H5FDdsmError("Id = " << this->Id << " MPI_Get failed to get " <<
-        msg->Length << " Bytes from " << msg->Source << " at address " << msg->Address);
-    return(H5FD_DSM_FAIL);
-  }
-
-  MPI_Win_unlock(msg->Source, win);
-  H5FDdsmDebugLevel(3, "(" << this->Id << ") Got " << msg->Length << " Bytes from " << msg->Dest
-      << " at address " << msg->Address);
-
   return(H5FD_DSM_SUCCESS);
 }
