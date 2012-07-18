@@ -12,8 +12,8 @@ int main(int argc, char *argv[])
   MPI_Comm comm = MPI_COMM_WORLD;
   receiverInit(argc, argv, dsmManager, &comm);
 
-  while (dsmManager->GetIsConnected()) {
-    if (dsmManager->WaitForNotification() > 0) {
+  while (dsmManager->GetIsActive()) {
+    if (dsmManager->WaitForUnlock() != H5FD_DSM_FAIL) {
       int array[3] = { 1, 2, 3 };
       hsize_t arraySize = 3;
 
@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
       H5Dclose(dataset);
       H5Fclose(hdf5Handle);
       // Clean up for next step
-      dsmManager->NotificationFinalize();
+//      dsmManager->NotificationFinalize();
     }
   }
 

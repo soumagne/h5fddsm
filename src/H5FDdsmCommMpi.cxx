@@ -112,12 +112,12 @@ H5FDdsmCommMpi::Receive(H5FDdsmMsg *msg)
 H5FDdsmInt32
 H5FDdsmCommMpi::Probe(H5FDdsmMsg *msg)
 {
-  if (H5FDdsmComm::Probe(msg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+  if (H5FDdsmComm::Probe(msg) == H5FD_DSM_SUCCESS) return(H5FD_DSM_SUCCESS);
 
   if (msg->Communicator == H5FD_DSM_INTER_COMM) {
-    if (this->MpiProbe(msg, this->InterComm) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+    if (this->MpiProbe(msg, this->InterComm) == H5FD_DSM_SUCCESS) return(H5FD_DSM_SUCCESS);
   }
-  return(H5FD_DSM_SUCCESS);
+  return(H5FD_DSM_FAIL);
 }
 
 //----------------------------------------------------------------------------

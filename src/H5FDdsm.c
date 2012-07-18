@@ -359,30 +359,33 @@ done:
   FUNC_LEAVE_NOAPI(ret_value)
 } /* end H5FD_dsm_set_options() */
 
-/*-------------------------------------------------------------------------
- * Function:    H5FD_dsm_notify
- *
- * Purpose:     Send a notification to the DSM host
- *
- * Return:      Success:        0
- *
- *              Failure:        -1
- *
- *-------------------------------------------------------------------------
- */
-herr_t
-H5FD_dsm_notify(unsigned long flags)
+/*--------------------------------------------------------------------------
+NAME
+   H5FD_dsm_lock -- acquire the lock on the DSM
+USAGE
+   herr_t H5FD_dsm_lock()
+
+RETURNS
+   Non-negative on success/Negative on failure
+DESCRIPTION
+   Collective call to manually lock the DSM for exclusive access.
+   The DSM is always locked when being accessed, but usually only between
+   an open/close pair. Multiple open/close cals may be nested inside
+   a lock/unlock pair if manual control is desired.
+
+ --------------------------------------------------------------------------*/
+herr_t H5FD_dsm_lock(void)
 {
   herr_t ret_value = SUCCEED;
 
 #if H5_VERSION_GE(1,8,9)
   FUNC_ENTER_NOAPI(FAIL)
 #else
-  FUNC_ENTER_NOAPI(H5FD_dsm_notify, FAIL)
+  FUNC_ENTER_NOAPI(H5FD_dsm_lock, FAIL)
 #endif
 
-  if (SUCCEED != dsm_notify(flags))
-    HGOTO_ERROR(H5E_VFL, H5E_CANTUPDATE, FAIL, "cannot notify DSM")
+  if (SUCCEED != dsm_lock())
+    HGOTO_ERROR(H5E_VFL, H5E_CANTMODIFY, FAIL, "cannot lock")
 
 done:
   if (err_occurred) {
@@ -390,7 +393,82 @@ done:
   }
 
   FUNC_LEAVE_NOAPI(ret_value)
-} /* end H5FD_dsm_notify() */
+} /* end H5FD_dsm_lock() */
+ 
+/*--------------------------------------------------------------------------
+NAME
+   H5FD_dsm_unlock -- release the lock on the DSM
+USAGE
+   herr_t H5FD_dsm_unlock(H5FD_DSM_NOTIFY_DATA)
+
+RETURNS
+   Non-negative on success/Negative on failure
+DESCRIPTION
+   Collective call to manually lock the DSM for exclusive access.
+   The DSM is always locked when being accessed, but usually only between
+   an open/close pair. Multiple open/close cals may be nested inside
+   a lock/unlock pair if manual control is desired.
+
+ --------------------------------------------------------------------------*/
+herr_t H5FD_dsm_unlock(unsigned long flag)
+{
+  herr_t ret_value = SUCCEED;
+
+#if H5_VERSION_GE(1,8,9)
+  FUNC_ENTER_NOAPI(FAIL)
+#else
+  FUNC_ENTER_NOAPI(H5FD_dsm_unlock, FAIL)
+#endif
+
+  if (SUCCEED != dsm_unlock(flag))
+    HGOTO_ERROR(H5E_VFL, H5E_CANTMODIFY, FAIL, "cannot lock")
+
+done:
+  if (err_occurred) {
+    /* Nothing */
+  }
+
+  FUNC_LEAVE_NOAPI(ret_value)
+} /* end H5FD_dsm_unlock(H5FD_DSM_NOTIFY_DATA) */
+
+/*--------------------------------------------------------------------------
+NAME
+   H5FD_dsm_set_unlock_flag -- specify notification type on automatic unlock
+USAGE
+   herr_t H5FD_dsm_set_unlock_flag(flag) where flag should be one of 
+     H5FD_DSM_NOTIFY_NONE     
+     H5FD_DSM_NOTIFY_WAIT     
+     H5FD_DSM_NOTIFY_DATA         (this is the default)
+     H5FD_DSM_NOTIFY_INFORMATION  
+     H5FD_DSM_NOTIFY_USER         (add extra using USER+1, USER+2, ...)
+
+RETURNS
+   Non-negative on success/Negative on failure
+DESCRIPTION
+   When the DSM file is unlocked, a notification is set at the remote end
+   which can be polled by the other application.
+
+ --------------------------------------------------------------------------*/
+herr_t H5FD_dsm_set_unlock_flag(unsigned long flag)
+{
+  herr_t ret_value = SUCCEED;
+
+#if H5_VERSION_GE(1,8,9)
+  FUNC_ENTER_NOAPI(FAIL)
+#else
+  FUNC_ENTER_NOAPI(H5FD_dsm_set_unlock_flag, FAIL)
+#endif
+
+  if (SUCCEED != dsm_set_unlock_flag(flag))
+    HGOTO_ERROR(H5E_VFL, H5E_CANTMODIFY, FAIL, "cannot lock")
+
+done:
+  if (err_occurred) {
+    /* Nothing */
+  }
+
+  FUNC_LEAVE_NOAPI(ret_value)
+} /* end H5FD_dsm_set_unlock_flag */
 
 /*-------------------------------------------------------------------------
  * Function:    H5FD_dsm_set_manager
@@ -801,12 +879,15 @@ H5FD_dsm_open(const char *name, unsigned flags, hid_t fapl_id, haddr_t maxaddr)
   /* Set return value */
   ret_value = (H5FD_t *) file;
 
+//  HGOTO_ERROR(H5E_VFL, H5E_CANTLOCK, NULL, "FAKE ERROR")
+
 done:
   if((ret_value == NULL) && err_occurred) {
     if (file && file->name) HDfree(file->name);
     if (!dsm_is_driver_serial() && (MPI_COMM_NULL != intra_comm_dup)) MPI_Comm_free(&intra_comm_dup);
     if (file) free(file);
   } /* end if */
+
 
   FUNC_LEAVE_NOAPI(ret_value)
 } /* end H5FD_dsm_open() */
@@ -871,7 +952,7 @@ H5FD_dsm_close(H5FD_t *_file)
     }
   }
 
-  if (SUCCEED != dsm_unlock())
+  if (SUCCEED != dsm_closefile())
     HGOTO_ERROR(H5E_VFL, H5E_CANTUPDATE, FAIL, "cannot unlock DSM")
 
   /* Release resources */

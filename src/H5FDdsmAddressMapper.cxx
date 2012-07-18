@@ -274,7 +274,7 @@ H5FDdsmInt32 BlockCyclicAddressMapper::Translate(
   for(std::vector<H5FDdsmMsg>::iterator it = requests.begin(); it != requests.end(); ++it) {
     H5FDdsmByte *datap = (H5FDdsmByte*) it->Data;
     //
-    H5FDdsmDebugLevel(5,std::endl
+    H5FDdsmDebugLevel(6,std::endl
         << "Input Address : " << std::hex << it->Address << std::endl
         << "Input Length  : " << std::hex << it->Length64 << std::endl);
     while (it->Length64 > 0) {
@@ -291,7 +291,7 @@ H5FDdsmInt32 BlockCyclicAddressMapper::Translate(
       newRequest.Data      = datap;
       outRequests.push_back(newRequest);
       //
-      H5FDdsmDebugLevel(5,std::endl
+      H5FDdsmDebugLevel(6,std::endl
           << "\tInput Address     : " << std::hex << it->Address << std::endl
           << "\tTranslated Length : " << std::hex << newRequest.Length64 << std::endl
           << "\tTranslated Address: " << std::hex << newRequest.Address);
@@ -320,7 +320,7 @@ H5FDdsmInt32 BlockRandomAddressMapper::Translate(
   for(std::vector<H5FDdsmMsg>::iterator it = requests.begin(); it != requests.end(); ++it) {
     H5FDdsmByte *datap = (H5FDdsmByte*) it->Data;
     //
-    H5FDdsmDebugLevel(5,std::endl
+    H5FDdsmDebugLevel(6,std::endl
         << "Input Address : " << std::hex << it->Address << std::endl
         << "Input Length  : " << std::hex << it->Length64 << std::endl);
     while (it->Length64 > 0) {
@@ -336,7 +336,7 @@ H5FDdsmInt32 BlockRandomAddressMapper::Translate(
       newRequest.Data      = datap;
       outRequests.push_back(newRequest);
       //
-      H5FDdsmDebugLevel(5,std::endl
+      H5FDdsmDebugLevel(6,std::endl
           << "\tInput Address     : " << std::hex << it->Address << std::endl
           << "\tTranslated Length : " << std::hex << newRequest.Length64 << std::endl
           << "\tTranslated Address: " << std::hex << newRequest.Address);
@@ -373,7 +373,7 @@ IntegerSizedAddressMapper::Translate(
       newRequest.Data    = datap;
       outRequests.push_back(newRequest);
       //
-      H5FDdsmDebugLevel(5,std::endl
+      H5FDdsmDebugLevel(6,std::endl
           << "\tInput Address     : " << std::hex << it->Address << std::endl
           << "\tTranslated Length : " << std::hex << newRequest.Length << std::endl
           << "\tTranslated Address: " << std::hex << newRequest.Address);
@@ -410,7 +410,7 @@ PartitionedAddressMapper::Translate(
       newRequest.Data    = datap;
       outRequests.push_back(newRequest);
       //
-      H5FDdsmDebugLevel(5,std::endl
+      H5FDdsmDebugLevel(6,std::endl
           << "\tInput Address     : " << std::hex << it->Address << std::endl
           << "\tTranslated Length : " << std::hex << newRequest.Length << std::endl
           << "\tTranslated Address: " << std::hex << newRequest.Address);

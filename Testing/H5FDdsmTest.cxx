@@ -140,51 +140,6 @@ void particleWriteHdf(ParticleBuffer *buf, H5FDdsmConstString filename,
 }
 
 //----------------------------------------------------------------------------
-void particleWriteDsm(ParticleBuffer *buf, H5FDdsmConstString filename,
-    H5FDdsmUInt64 ntuples, H5FDdsmUInt64 ncomponents, H5FDdsmUInt32 ndatasets,
-    H5FDdsmUInt64 start, H5FDdsmUInt64 total, MPI_Comm comm, H5FDdsmManager *dsmManager)
-{
-  H5FDdsmEntry entry;
-  H5FDdsmBoolean dirty = 0, isSomeoneDirty = 0;
-  H5FDdsmBufferService *dsmBufferService = dsmManager->GetDsmBuffer();
-  H5FDdsmAddr metadataAddr = (H5FDdsmAddr) (dsmBufferService->GetTotalLength()
-      - sizeof(H5FDdsmMetaData));
-
-  // Simulate open
-  if (dsmBufferService->GetIsConnected()) {
-    dsmBufferService->RequestLockAcquire();
-  }
-  // Simulate get of DSM metadata
-  if (dsmBufferService->Get(metadataAddr, sizeof(entry), &entry) != H5FD_DSM_SUCCESS) {
-    std::cerr << "DsmGetEntry failed" << std::endl;
-    return;
-  }
-  dsmBufferService->GetComm()->Barrier();
-
-  // Simulate write
-  if (dsmBufferService->Put(start*sizeof(H5FDdsmFloat64),
-      ntuples * ncomponents * sizeof(H5FDdsmFloat64),
-      (void *) (*buf).Ddata) != H5FD_DSM_SUCCESS) {
-    std::cerr << "can't write to DSM" << std::endl;
-    return;
-  }
-  dirty = 1;
-
-  // Simulate close
-  if (dsmBufferService->GetComm()->GetId() == 0) {
-    if (dsmBufferService->Put(metadataAddr, sizeof(entry), &entry) != H5FD_DSM_SUCCESS) {
-      std::cerr << "DsmUpdateEntry failed" << std::endl;
-      return;
-    }
-  }
-  dsmBufferService->GetComm()->Barrier();
-  MPI_Allreduce(&dirty, &isSomeoneDirty, sizeof(H5FDdsmBoolean),
-      MPI_UNSIGNED_CHAR, MPI_MAX, dsmBufferService->GetComm()->GetIntraComm());
-  dsmBufferService->SetIsDataModified(H5FD_DSM_TRUE);
-  dsmBufferService->RequestNotification();
-}
-
-//----------------------------------------------------------------------------
 void particleReadHdf(ParticleBuffer *buf, H5FDdsmConstString filename,
     H5FDdsmUInt64 ntuples, H5FDdsmUInt64 ncomponents, H5FDdsmUInt32 ndatasets,
     H5FDdsmUInt64 start, H5FDdsmUInt64 total, MPI_Comm comm, H5FDdsmManager *dsmManager)
@@ -522,7 +477,10 @@ void receiverFinalize(H5FDdsmManager *dsmManager, MPI_Comm *comm)
   // Clean up everything
   //
   dsmManager->Destroy();
-  if (staticInterComm) MPI_Comm_free(comm);
+  if (staticInterComm) {
+    MPI_Barrier(*comm);
+    MPI_Comm_free(comm);
+  }
   MPI_Finalize();
 }
 
@@ -620,6 +578,9 @@ void senderFinalize(H5FDdsmManager *dsmManager, MPI_Comm *comm)
   dsmManager->Disconnect();
   //
   dsmManager->Destroy();
-  if (staticInterComm) MPI_Comm_free(comm);
+  if (staticInterComm) {
+    MPI_Barrier(*comm);
+    MPI_Comm_free(comm);
+  }
   MPI_Finalize();
 }

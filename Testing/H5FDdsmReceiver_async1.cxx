@@ -32,48 +32,50 @@ int main(int argc, char *argv[])
   numParticles = (H5FDdsmUInt64) ((1024 * 1024 * remoteMB / 2) /
       (sizeof(H5FDdsmFloat64) * DIM_DATASETS * dsmManager->GetUpdateNumPieces()));
 
-//  sleep(0.25);
+//  H5FD_dsm_set_options(H5FD_DSM_UNLOCK_MANUAL);
+//  H5FD_dsm_set_options(H5FD_DSM_LOCK_ASYNCHRONOUS);
 
-  while (dsmManager->GetIsConnected()) {
-
+  int intScalar = 0;
+  while (dsmManager->GetIsActive()) {
     // wait until data has been written
-    if (dsmManager->WaitForNotification() > 0) {
+    if (dsmManager->WaitForUnlock() != H5FD_DSM_FAIL) {
 
-      // See what's in there
-      for (int i=0; i<1; i++) {
-        if (dsmManager->GetUpdatePiece() == 0) {
-          std::cout << "Checking data at iteration " << iterations << std::endl;
-          //sleep(0.5);
-        }
-        TestParticleRead("dsm", numParticles, DIM_DATASETS, NUM_DATASETS,
-          dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(),
-          comm, dsmManager, false);
-        if (dsmManager->GetUpdatePiece() == 0) {
-          std::cout << "Checked data at iteration " << iterations << std::endl;
-          //sleep(0.5);
-        }
-        //sleep(0.1);
-        H5FD_dsm_dump();
-      }
+      //
+      // manually lock (acquire) the DSM 
+      //
+      H5FD_dsm_lock();
 
-      // Clean up for next step
+      H5FD_dsm_dump();
+
       if (dsmManager->GetUpdatePiece() == 0) {
-//        std::cout << "Calling UpdateSteeredObjects" << std::endl;
+        std::cout << "Checking data at iteration " << iterations << std::endl;
       }
-//      dsmManager->UpdateSteeredObjects();
+/*
+      H5FDdsmBoolean present;
+      dsmManager->GetSteerer()->IsObjectPresent("IntScalarTest", present);
+      if (present) {
+        std::cout << "\n\nReceiver found " << intScalar << std::endl << std::endl;
+        dsmManager->GetSteeringValues("IntScalarTest", 1, &intScalar);
+      }
+      intScalar++;
+      dsmManager->SetSteeringValues("IntScalarTest", 1, &intScalar);
+      std::cout << "\n\n\nReceiver Written " << intScalar << std::endl << std::endl;
+
+
       if (dsmManager->GetUpdatePiece() == 0) {
-        std::cout << "Calling NotificationFinalize" << std::endl;
+        std::cout << "Checked data at iteration " << iterations << std::endl;
       }
-        //sleep(0.5);
-      dsmManager->NotificationFinalize();
-//      dsmManager->WaitForNotification();
+*/
+      //
+      // manually unlock (release) the DSM and send a NEW_DATA message
+      //
+      H5FD_dsm_unlock(H5FD_DSM_NOTIFY_DATA);
 
-//      dsmManager->SetSteeringCommand("play");
+  //      dsmManager->SetSteeringCommand("play");
 
+      iterations++;
     }
-    iterations++;
   }
-
   receiverFinalize(dsmManager, &comm);
   delete dsmManager;
   return(EXIT_SUCCESS);

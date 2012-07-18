@@ -148,7 +148,6 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmObject {
         H5FDdsmAddr address, H5FDdsmInt32 length, H5FDdsmInt32 comm);
     H5FDdsmInt32   ReceiveCommandHeader(H5FDdsmInt32 *opcode, H5FDdsmInt32 *source,
         H5FDdsmAddr *address, H5FDdsmInt32 *length, H5FDdsmInt32 comm, H5FDdsmInt32 remoteSource=-1);
-    H5FDdsmInt32   ProbeCommandHeader(H5FDdsmInt32 *comm);
     H5FDdsmInt32   BroadcastComm(H5FDdsmInt32 *comm, H5FDdsmInt32 root);
 
     // Send/Recv Methods for point-to-point comm
@@ -158,8 +157,9 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmObject {
         H5FDdsmInt32 tag, H5FDdsmAddr address, H5FDdsmInt32 comm);
 
     // Send/Receive Acknowledgment
-    H5FDdsmInt32   SendAcknowledgment(H5FDdsmInt32 dest, H5FDdsmInt32 comm);
-    H5FDdsmInt32   ReceiveAcknowledgment(H5FDdsmInt32 source, H5FDdsmInt32 comm);
+    // 0x82 = H5FD_DSM_RESPONSE_TAG
+    H5FDdsmInt32   SendAcknowledgment(H5FDdsmInt32 dest, H5FDdsmInt32 comm, H5FDdsmInt32 data, const char *debuginfo, H5FDdsmInt32 TagID=0x82);
+    H5FDdsmInt32   ReceiveAcknowledgment(H5FDdsmInt32 source, H5FDdsmInt32 comm, H5FDdsmInt32 &data, const char *debuginfo, H5FDdsmInt32 TagID=0x82);
 
     // Send/Recv Methods for point-to-point exchange of DSM information between
     // two different jobs/applications

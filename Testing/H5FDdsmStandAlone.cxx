@@ -8,7 +8,7 @@ int
 main(int argc, char * argv[])
 {
   H5FDdsmInt32 provided, rank, size;
-  H5FDdsmUInt32 dsmSize = 16, numServers; // default MB
+  H5FDdsmUInt32 dsmSize, numServers; // default MB
   H5FDdsmUInt64 numParticles;
   H5FDdsmFloat64 dataMB;
   H5FDdsmConstString fullname = "dsm";
@@ -18,6 +18,8 @@ main(int argc, char * argv[])
   MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
   MPI_Comm_rank(comm, &rank);
   MPI_Comm_size(comm, &size);
+
+  dsmSize = size * 4;
   //
   if (rank == 0) {
     if (provided != MPI_THREAD_MULTIPLE) {
@@ -49,20 +51,28 @@ main(int argc, char * argv[])
   numParticles = (H5FDdsmUInt64) ((1024 * 1024 * dataMB - H5FD_DSM_ALIGNMENT * NUM_DATASETS) /
       (sizeof(H5FDdsmFloat64) * DIM_DATASETS * NUM_DATASETS * dsmManager->GetUpdateNumPieces()));
 
+  H5FD_dsm_set_options(H5FD_DSM_LOCK_ASYNCHRONOUS);
+
+  std::cout << "Writing Standalone " << std::endl;
   // Write Data
   TestParticleWrite(fullname, numParticles, DIM_DATASETS, NUM_DATASETS,
       dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(), comm,
       dsmManager, usingHDF);
 
+  std::cout << "Reading Standalone " << std::endl;
   // Read and Check Data
   if (TestParticleRead(fullname, numParticles, DIM_DATASETS, NUM_DATASETS,
       dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(), comm,
       dsmManager) == H5FD_DSM_FAIL)
     exit_status = EXIT_FAILURE;
 
+  H5close();
+  std::cout << "Finishing Standalone " << std::endl;
   delete dsmManager;
 
+  std::cout << "Finalizing Standalone " << std::endl;
   MPI_Finalize();
 
+  std::cout << "Exiting Standalone " << std::endl;
   return(exit_status);
 }

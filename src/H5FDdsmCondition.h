@@ -27,6 +27,7 @@
 #define __H5FDdsmCondition_h
 
 #include "H5FDdsmMutex.h"
+#include <string>
 
 #ifdef _WIN32
 #if (WINVER < _WIN32_WINNT_LONGHORN)
@@ -41,19 +42,37 @@
 class H5FDdsm_EXPORT H5FDdsmCondition : public H5FDdsmObject {
 
 public:
-  H5FDdsmCondition();
-  virtual ~H5FDdsmCondition();
-
-  // Description:
-  // Wake one thread waiting for the condition to change.
-  void Signal();
+  H5FDdsmCondition(); 
+  virtual ~H5FDdsmCondition(); 
 
   // Description:
   // Wait for the condition to change.
-  void Wait(H5FDdsmMutex &mutex);
+  void Wait();
+
+  // Description:
+  // Used internally : Wake one thread waiting for the condition to change.
+  void Signal();
+
+  // Description:
+  // Used internally : Wait for the condition to change.
+  void Wait_(H5FDdsmMutex &mutex);
+
+  // name is only for debug messages
+  void SetName(const char *name);
+
+  // Description:
+  // Wake one thread waiting for the condition to change.
+  void LockMutex();
+
+  // Description:
+  // Wait for the condition to change.
+  void UnlockMutex();
 
 protected:
+
   H5FDdsmConditionType Condition;
+  H5FDdsmMutex         ConditionMutex;
+  std::string          ConditionName;
 };
 
 #endif // __H5FDdsmCondition_h

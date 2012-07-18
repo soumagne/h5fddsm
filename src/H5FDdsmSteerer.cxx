@@ -31,6 +31,26 @@
 #include <string>
 #include <map>
 
+//----------------------------------------------------------------------------
+// Declare extra debug info 
+#undef H5FDdsmDebugLevel
+#ifdef H5FDdsm_DEBUG_GLOBAL
+#define H5FDdsmDebugLevel(level, x) \
+{ if (this->DebugLevel >= level) { \
+  std::cout << "H5FD_DSM Debug Level " << level << ": " << (this->DsmManager->GetIsServer() ? "Server " : "Client ") << (this->DsmManager->DsmComm ? this->DsmManager->DsmComm->GetId() : -1) << " : " << x << std::endl; \
+  } \
+}
+#else
+#define H5FDdsmDebugLevel(level, x) \
+{ if (this->Debug && this->DebugLevel >= level) { \
+  std::cout << "H5FD_DSM Debug Level " << level << ": " << (this->DsmManager->GetIsServer() ? "Server " : "Client ") << (this->DsmManager->DsmComm ? this->DsmManager->DsmComm->GetId() : -1) << " : " << x << std::endl; \
+  } \
+}
+#endif
+//----------------------------------------------------------------------------
+
+//----------------------------------------------------------------------------
+
 struct H5FDdsmSteererInternals {
   typedef std::map<std::string, H5FDdsmBoolean> SteeringEntriesString;
   SteeringEntriesString DisabledObjects;
@@ -63,7 +83,7 @@ H5FDdsmSteerer::~H5FDdsmSteerer()
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmSteerer::SetCurrentCommand(H5FDdsmConstString cmd)
 {
-  H5FDdsmDebug("SetCurrentCommand to: " << cmd);
+  H5FDdsmDebugLevel(1,"SetCurrentCommand to : " << (cmd ? cmd : "NULL"));
   if (this->CurrentCommand == cmd) { return(H5FD_DSM_SUCCESS); }
   if (this->CurrentCommand && cmd && !strcmp(this->CurrentCommand, cmd)) { return(H5FD_DSM_SUCCESS); }
   if (this->CurrentCommand) { delete [] this->CurrentCommand; this->CurrentCommand = NULL; }
@@ -71,11 +91,11 @@ H5FDdsmInt32 H5FDdsmSteerer::SetCurrentCommand(H5FDdsmConstString cmd)
     this->CurrentCommand = new char[strlen(cmd) + 1];
     strcpy(this->CurrentCommand, cmd);
     if (strcmp(this->CurrentCommand, "play") == 0) {
-      H5FDdsmDebug("Sending ready...");
+      H5FDdsmDebugLevel(1,"Sending ready...");
       if (this->DsmManager->GetUpdatePiece() == 0) {
-        this->DsmManager->GetDsmBuffer()->SendAcknowledgment(0, H5FD_DSM_INTER_COMM);
+        this->DsmManager->GetDsmBuffer()->SendAcknowledgment(0, H5FD_DSM_INTER_COMM, -1, "SetCurrentCommand");
       }
-      H5FDdsmDebug("Ready sent");
+      H5FDdsmDebugLevel(1,"Ready sent");
     }
   }
   return(H5FD_DSM_SUCCESS);
@@ -87,7 +107,7 @@ H5FDdsmInt32 H5FDdsmSteerer::UpdateSteeringCommands()
   H5FDdsmAddr addr;
   H5FDdsmMetaData metadata;
 
-  H5FDdsmDebug("Sending steering command " << this->CurrentCommand);
+  H5FDdsmDebugLevel(1,"Sending steering command " << this->CurrentCommand);
   memset(&metadata, 0, sizeof(metadata));
   strcpy(metadata.steering_cmd, (H5FDdsmConstString)this->CurrentCommand);
   addr = (H5FDdsmAddr) (this->DsmManager->GetDsmBuffer()->GetTotalLength() -
@@ -116,14 +136,14 @@ H5FDdsmInt32 H5FDdsmSteerer::GetSteeringCommands()
   if (this->DsmManager->GetUpdatePiece() == 0) {
     if (this->DsmManager->GetDsmBuffer()->Get(addr, sizeof(metadata.steering_cmd),
         metadata.steering_cmd) != H5FD_DSM_SUCCESS) {
-      H5FDdsmDebug("DsmGetSteeringCmd failed");
+      H5FDdsmDebugLevel(1,"DsmGetSteeringCmd failed");
       return H5FD_DSM_FAIL;
     }
   }
-
+  
   MPI_Bcast(metadata.steering_cmd, sizeof(metadata.steering_cmd),
       MPI_UNSIGNED_CHAR, 0, this->DsmManager->GetMpiComm());
-  H5FDdsmDebug("Received steering command: " << metadata.steering_cmd);
+  H5FDdsmDebugLevel(1,"Received steering command: " << metadata.steering_cmd);
   if (this->CheckCommand((H5FDdsmConstString) metadata.steering_cmd) == H5FD_DSM_SUCCESS) {
     // Steering command successfully treated, clear it
     this->UpdateSteeringCommands();
@@ -211,14 +231,14 @@ H5FDdsmInt32 H5FDdsmSteerer::GetDisabledObjects()
       sizeof(metadata.disabled_objects.object_names),
       MPI_UNSIGNED_CHAR, 0, this->DsmManager->GetMpiComm());
 
-  H5FDdsmDebug("Received nb of Disabled objects: " << metadata.disabled_objects.number_of_objects);
+  H5FDdsmDebugLevel(1,"Received nb of Disabled objects: " << metadata.disabled_objects.number_of_objects);
 
   this->SteererInternals->DisabledObjects.clear();
   for (int i = 0; i < metadata.disabled_objects.number_of_objects; i++) {
     char tmp[64];
     strcpy(tmp, &metadata.disabled_objects.object_names[i*64]);
     this->SetDisabledObject(tmp);
-    H5FDdsmDebug("Received disabled object: " << tmp);
+    H5FDdsmDebugLevel(1,"Received disabled object: " << tmp);
   }
   return(H5FD_DSM_SUCCESS);
 }
@@ -253,7 +273,7 @@ H5FDdsmInt32 H5FDdsmSteerer::BeginInteractionsCache(unsigned int mode)
     if (mode == H5F_ACC_RDONLY) {
       // In read only mode, we default to opening in serial
       this->Cache_mode = this->DsmManager->GetIsDriverSerial();
-      this->DsmManager->SetIsDriverSerial(H5FD_DSM_TRUE);
+//      this->DsmManager->SetIsDriverSerial(H5FD_DSM_TRUE);
     }
   } else {
     this->Cache_externally_open = H5FD_DSM_TRUE;
@@ -295,7 +315,7 @@ H5FDdsmInt32 H5FDdsmSteerer::EndInteractionsCache()
   if (!this->Cache_externally_open) {
     if (!this->DsmManager->CloseDSM()) ret = H5FD_DSM_FAIL;
     if (this->Cache_mode != this->DsmManager->GetIsDriverSerial()) {
-      this->DsmManager->SetIsDriverSerial(this->Cache_mode);
+//      this->DsmManager->SetIsDriverSerial(this->Cache_mode);
     }
   }
   //
@@ -563,23 +583,20 @@ H5FDdsmInt32 H5FDdsmSteerer::CheckCommand(H5FDdsmConstString command)
 {
   H5FDdsmInt32 ret = H5FD_DSM_FAIL;
   std::string stringCommand = command;
-
+  
   if (stringCommand == "pause") {
-    H5FDdsmBoolean lockStatus = this->DsmManager->GetDsmBuffer()->GetIsClientLocked();
-
-    if (!lockStatus) this->DsmManager->GetDsmBuffer()->RequestLockAcquire();
-    this->DsmManager->GetDsmBuffer()->SetNotification(H5FD_DSM_WAIT);
-    this->DsmManager->GetDsmBuffer()->RequestNotification();
+    this->DsmManager->GetDsmBuffer()->RequestLockAcquire();
+    this->DsmManager->GetDsmBuffer()->SetUnlockStatus(H5FD_DSM_NOTIFY_WAIT);
+    this->DsmManager->GetDsmBuffer()->RequestLockRelease();
 
     H5FDdsmDebug("Receiving ready...");
     if (this->DsmManager->GetUpdatePiece() == 0) {
-      this->DsmManager->GetDsmBuffer()->ReceiveAcknowledgment(0, H5FD_DSM_INTER_COMM);
+      H5FDdsmInt32 unused;
+      this->DsmManager->GetDsmBuffer()->ReceiveAcknowledgment(0, H5FD_DSM_INTER_COMM, unused, "Ready");
     }
     this->DsmManager->GetDsmBuffer()->GetComm()->Barrier();
     H5FDdsmDebug("Ready received");
 
-    // If the client had acquired the lock before, take it back
-    if (lockStatus) this->DsmManager->GetDsmBuffer()->RequestLockAcquire();
     ret = H5FD_DSM_SUCCESS;
   }
   else if (stringCommand == "play") {
@@ -587,12 +604,12 @@ H5FDdsmInt32 H5FDdsmSteerer::CheckCommand(H5FDdsmConstString command)
     ret = H5FD_DSM_SUCCESS;
   }
   else if (stringCommand == "disk") {
-    H5FDdsmDebug("Setting WriteToDSM to 0");
+    H5FDdsmDebugLevel(1,"Setting WriteToDSM to 0");
     this->WriteToDSM = 0;
     ret = H5FD_DSM_SUCCESS;
   }
   else if (stringCommand == "dsm") {
-    H5FDdsmDebug("Setting WriteToDSM to 1");
+    H5FDdsmDebugLevel(1,"Setting WriteToDSM to 1");
     this->WriteToDSM = 1;
     ret = H5FD_DSM_SUCCESS;
   }

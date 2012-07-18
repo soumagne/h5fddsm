@@ -320,6 +320,7 @@ set(H5FDdsmSources
   src/H5FDdsmManager.cxx
   src/H5FDdsmAddressMapper.cxx
   src/H5FDdsmMutex.cxx
+  src/H5FDdsmLock.cxx
   src/H5FDdsmCondition.cxx
   src/H5FDdsmThread.cxx
 )

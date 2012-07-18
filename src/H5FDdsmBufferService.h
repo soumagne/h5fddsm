@@ -59,19 +59,19 @@
 #define H5FD_DSM_OPCODE_GET          0x02
 
 #define H5FD_DSM_LOCK_ACQUIRE        0x03
-#define H5FD_DSM_LOCK_RELEASE        0x04
-#define H5FD_DSM_NOTIFICATION        0x05
+#define H5FD_DSM_LOCK_ACQUIRE_SERIAL 0x04
+#define H5FD_DSM_LOCK_RELEASE        0x05
+#define H5FD_DSM_LOCK_RELEASE_SERIAL 0x06
 
-#define H5FD_DSM_ACCEPT              0x06
-#define H5FD_DSM_DISCONNECT          0x07
+#define H5FD_DSM_ACCEPT              0x10
+#define H5FD_DSM_DISCONNECT          0x11
 
-#define H5FD_DSM_COMM_SWITCH         0x08
-
-#define H5FD_DSM_CLEAR_STORAGE       0x09
-
-#define H5FD_DSM_DATA_MODIFIED       0x100
+#define H5FD_DSM_CLEAR_STORAGE       0x20
 
 #define H5FD_DSM_OPCODE_DONE         0xFF
+
+H5FDdsmConstString H5FDdsmOpcodeToString(H5FDdsmInt32 code);
+H5FDdsmConstString H5FDdsmNotificationToString(H5FDdsmInt32 code);
 
 //! Base comm object for Distributed Shared Memory implementation
 /*!
@@ -83,36 +83,29 @@ class H5FDdsm_EXPORT H5FDdsmBufferService : public H5FDdsmBuffer {
     virtual ~H5FDdsmBufferService();
 
     // Is the DSMBuffer connected
-    H5FDdsmGetValueMacro(IsConnected, H5FDdsmBoolean);
+    H5FDdsmBoolean GetIsConnected();
     H5FDdsmSetValueMacro(IsConnected, H5FDdsmBoolean);
+    H5FDdsmBoolean GetIsDisconnected();
     H5FDdsmInt32 SignalConnection();
     H5FDdsmInt32 WaitForConnection();
 
-    // Is a DSM notification set
-    H5FDdsmGetValueMacro(IsNotified, H5FDdsmBoolean);
-    H5FDdsmSetValueMacro(IsNotified, H5FDdsmBoolean);
-    H5FDdsmInt32 SignalNotification();
-    H5FDdsmInt32 WaitForNotification();
 
-    // Set/Get Notification
-    H5FDdsmGetValueMacro(Notification, H5FDdsmInt32);
-    H5FDdsmSetValueMacro(Notification, H5FDdsmInt32);
+    H5FDdsmBoolean GetIsLockWaiting(bool clear);
 
-    // Is the server automatically notified on H5Fclose or not
-    H5FDdsmGetValueMacro(NotificationOnClose, H5FDdsmBoolean);
-    H5FDdsmSetValueMacro(NotificationOnClose, H5FDdsmBoolean);
+    // Signals for unlock event on server
+    H5FDdsmInt32 SignalUnlock();
+    H5FDdsmInt32 WaitForUnlock();
 
-    // Has the data been modified
-    H5FDdsmGetValueMacro(IsDataModified, H5FDdsmBoolean);
-    H5FDdsmSetValueMacro(IsDataModified, H5FDdsmBoolean);
-
-    // Is the DSM locked
-    H5FDdsmGetValueMacro(IsServerLocked, H5FDdsmBoolean);
-    H5FDdsmGetValueMacro(IsClientLocked, H5FDdsmBoolean);
+    // Set/Get UnlockStatus
+    H5FDdsmGetValueMacro(UnlockStatus, H5FDdsmInt32);
+    H5FDdsmSetValueMacro(UnlockStatus, H5FDdsmInt32);
 
     // Releases the lock automatically on H5Fclose or not
     H5FDdsmGetValueMacro(ReleaseLockOnClose, H5FDdsmBoolean);
     H5FDdsmSetValueMacro(ReleaseLockOnClose, H5FDdsmBoolean);
+
+    // Releases the lock automatically on H5Fclose or not
+    void SetSychronizationCount(H5FDdsmInt32 count);
 
     // Debug: add ability to send xml string
     H5FDdsmGetStringMacro(XMLDescription);
@@ -135,29 +128,19 @@ class H5FDdsm_EXPORT H5FDdsmBufferService : public H5FDdsmBuffer {
     H5FDdsmInt32   Put(H5FDdsmAddr address, H5FDdsmUInt64 length, H5FDdsmPointer data);
     H5FDdsmInt32   Get(H5FDdsmAddr address, H5FDdsmUInt64 length, H5FDdsmPointer data, H5FDdsmBoolean blocking=H5FD_DSM_TRUE);
 
-    H5FDdsmInt32   RequestLockAcquire();
-    H5FDdsmInt32   WaitForLockAcquisition();
-    H5FDdsmInt32   RequestLockRelease();
-
-    H5FDdsmInt32   RequestNotification();
+    H5FDdsmInt32   RequestLockAcquire(bool parallel=true);
+    H5FDdsmInt32   RequestLockRelease(bool parallel=true);
 
     H5FDdsmInt32   RequestDisconnect();
 
   protected:
-    void           SetIsServerLocked(H5FDdsmBoolean value);
-    void           SetIsClientLocked(H5FDdsmBoolean value);
+    H5FDdsmInt32   ProbeCommandHeader(H5FDdsmInt32 *comm);
 
     H5FDdsmInt32            CommChannel;
-    H5FDdsmBoolean          IsConnected;
+    volatile H5FDdsmBoolean IsConnected;
+    volatile H5FDdsmBoolean IsDisconnected;
+    volatile H5FDdsmInt32   UnlockStatus;
     //
-    H5FDdsmBoolean          IsNotified;
-    H5FDdsmInt32            Notification;
-    H5FDdsmBoolean          NotificationOnClose;
-    H5FDdsmBoolean          IsDataModified;
-    //
-    H5FDdsmBoolean          IsServerLocked;
-    H5FDdsmBoolean          IsClientLocked;
-
     H5FDdsmBoolean          ReleaseLockOnClose;
     //
     H5FDdsmString           XMLDescription;

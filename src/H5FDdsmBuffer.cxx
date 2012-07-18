@@ -57,6 +57,33 @@
 #include "H5FDdsmStorageMpi.h"
 #include "H5FDdsmAddressMapper.h"
 
+#ifdef _WIN32
+#include <windows.h>
+#include <io.h>
+  #define access _access
+  #define atoll _atoi64 
+#else
+#include <unistd.h>
+#endif
+
+//----------------------------------------------------------------------------
+// Declare extra debug info 
+#undef H5FDdsmDebugLevel
+#ifdef H5FDdsm_DEBUG_GLOBAL
+#define H5FDdsmDebugLevel(level, x) \
+{ if (this->DebugLevel >= level) { \
+  std::cout << "H5FD_DSM Debug Level " << level << ": " << (this->IsServer ? "Server " : "Client ") << this->Comm->GetId() << " : " << x << std::endl; \
+  } \
+}
+#else
+#define H5FDdsmDebugLevel(level, x) \
+{ if (this->Debug && this->DebugLevel >= level) { \
+  std::cout << "H5FD_DSM Debug Level " << level << ": " << (this->IsServer ? "Server " : "Client ") << this->Comm->GetId() << " : " << x << std::endl; \
+  } \
+}
+#endif
+//----------------------------------------------------------------------------
+
 // Align
 typedef struct {
   H5FDdsmInt32 Opcode;
@@ -239,7 +266,7 @@ H5FDdsmBuffer::SendCommandHeader(H5FDdsmInt32 opcode, H5FDdsmInt32 dest,
   msg.SetCommunicator(comm);
 
   status = this->Comm->Send(&msg);
-  H5FDdsmDebug("(" << this->Comm->GetId() << ") sent opcode " << cmd.Opcode);
+  H5FDdsmDebug("Sent opcode " << H5FDdsmOpcodeToString(cmd.Opcode) << " to " << dest << " on " << H5FDdsmCommToString(comm));
   return(status);
 }
 
@@ -274,31 +301,9 @@ H5FDdsmBuffer::ReceiveCommandHeader(H5FDdsmInt32 *opcode, H5FDdsmInt32 *source,
     *aLength = cmd.Length;
     status = H5FD_DSM_SUCCESS;
 
-    H5FDdsmDebug("(Server " << this->Comm->GetId() << ") got opcode " << cmd.Opcode);
+    H5FDdsmDebug("Got opcode " << H5FDdsmOpcodeToString(cmd.Opcode) << " from " << *source << " on " << H5FDdsmCommToString(comm));
   }
   return(status);
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmBuffer::ProbeCommandHeader(H5FDdsmInt32 *comm)
-{
-  H5FDdsmMsg msg;
-  H5FDdsmInt32 status = H5FD_DSM_FALSE;
-
-  msg.SetSource(H5FD_DSM_ANY_SOURCE);
-  msg.SetTag(H5FD_DSM_ANY_TAG);
-  msg.SetCommunicator(H5FD_DSM_INTRA_COMM);
-
-  // Spin until a message is found on one of the communicators
-  while (!status) {
-    status = this->Comm->Probe(&msg);
-    if (status != H5FD_DSM_SUCCESS) {
-      msg.SetCommunicator((msg.Communicator == H5FD_DSM_INTRA_COMM) ? H5FD_DSM_INTER_COMM : H5FD_DSM_INTRA_COMM);
-    }
-  }
-  *comm = msg.Communicator;
-  return(H5FD_DSM_SUCCESS);
 }
 
 //----------------------------------------------------------------------------
@@ -363,39 +368,37 @@ H5FDdsmBuffer::ReceiveData(H5FDdsmInt32 source, H5FDdsmPointer data,
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBuffer::SendAcknowledgment(H5FDdsmInt32 dest, H5FDdsmInt32 comm)
+H5FDdsmBuffer::SendAcknowledgment(H5FDdsmInt32 dest, H5FDdsmInt32 comm, H5FDdsmInt32 data, const char *debuginfo, H5FDdsmInt32 TagID)
 {
   H5FDdsmInt32 status;
-  H5FDdsmInt32 data = 1;
   H5FDdsmMsg   msg;
 
   msg.SetDest(dest);
-  msg.SetLength(sizeof(data));
-  msg.SetTag(H5FD_DSM_RESPONSE_TAG);
+  msg.SetLength(sizeof(H5FDdsmInt32));
+  msg.SetTag(TagID);
   msg.SetData(&data);
   msg.SetCommunicator(comm);
 
   status = this->Comm->Send(&msg);
-  H5FDdsmDebug("(" << this->Comm->GetId() << ") sent ack");
+  H5FDdsmDebugLevel(1,"Sent Acknowledgment Tag " << TagID << " " << debuginfo << " to " << dest << " on " << H5FDdsmCommToString(comm));
   return(status);
 }
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBuffer::ReceiveAcknowledgment(H5FDdsmInt32 source, H5FDdsmInt32 comm)
+H5FDdsmBuffer::ReceiveAcknowledgment(H5FDdsmInt32 source, H5FDdsmInt32 comm, H5FDdsmInt32 &data, const char *debuginfo, H5FDdsmInt32 TagID)
 {
   H5FDdsmInt32 status;
-  H5FDdsmInt32 data;
   H5FDdsmMsg   msg;
 
   msg.SetSource(source);
-  msg.SetLength(sizeof(data));
-  msg.SetTag(H5FD_DSM_RESPONSE_TAG);
+  msg.SetLength(sizeof(H5FDdsmInt32));
+  msg.SetTag(TagID);
   msg.SetData(&data);
   msg.SetCommunicator(comm);
 
   status = this->Comm->Receive(&msg);
-  H5FDdsmDebug("(" << this->Comm->GetId() << ") received ack");
+  H5FDdsmDebugLevel(1,"Received Acknowledgment " << TagID << " " << debuginfo << " from " << source << " on " <<  H5FDdsmCommToString(comm));
   return(status);
 }
 

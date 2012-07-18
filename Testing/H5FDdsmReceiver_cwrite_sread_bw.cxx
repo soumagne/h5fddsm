@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
     return(EXIT_SUCCESS);
   }
 
-  while (dsmManager->GetIsConnected()) {
+  while (dsmManager->GetIsActive()) {
 
     if (dsmManager->GetUpdatePiece() == 0) {
       printf("# Receiving from DSM ");
@@ -53,7 +53,7 @@ int main(int argc, char *argv[])
     for (int loop = 0; loop < LOOPS; loop++) {
       totaltime = 0;
       for (int avg = 0; avg < AVERAGE; avg++) {
-        if (dsmManager->WaitForNotification() > 0) {
+        if (dsmManager->WaitForUnlock() != H5FD_DSM_FAIL) {
           H5FDdsmFloat64 readtime;
           // H5FD_dsm_dump();
           readtime = TestParticleRead(fullname, numParticles, DIM_DATASETS, NUM_DATASETS,
@@ -67,7 +67,7 @@ int main(int argc, char *argv[])
           // Sync here
           MPI_Barrier(comm);
           // Clean up for next step
-          dsmManager->NotificationFinalize();
+//          dsmManager->NotificationFinalize();
         }
       }
       totaltime = totaltime / AVERAGE;
@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
         fflush(stdout);
       }
     }
-    dsmManager->WaitForNotification();
+    dsmManager->WaitForUnlock();
   }
 
   receiverFinalize(dsmManager, &comm);

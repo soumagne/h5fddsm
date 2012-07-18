@@ -135,19 +135,19 @@ H5FDdsmCommSocket::Receive(H5FDdsmMsg *msg)
 H5FDdsmInt32
 H5FDdsmCommSocket::Probe(H5FDdsmMsg *msg)
 {
-  if (H5FDdsmComm::Probe(msg) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+  if (H5FDdsmComm::Probe(msg) == H5FD_DSM_SUCCESS) return(H5FD_DSM_SUCCESS);
 
-  if (msg->Tag == H5FD_DSM_INTER_COMM) {
+  if (msg->Communicator == H5FD_DSM_INTER_COMM) {
     int flag;
     int selectedIndex;
 
     // if ANY_SOURCE use select on the whole list of sockets descriptors
     flag = (this->InterComm[0]->SelectSockets(this->InterCommSockets, this->InterSize, 1, &selectedIndex) == 1);
 
-    if (flag) {
+    if (flag==1) {
       msg->SetSource(selectedIndex);
       msg->SetCommunicator(H5FD_DSM_INTER_COMM);
-      H5FDdsmDebugLevel(3, "Socket probe found pending messages on " << H5FDdsmCommToString(msg->Communicator)
+      H5FDdsmDebugLevel(5, "Socket probe found pending messages on " << H5FDdsmCommToString(msg->Communicator)
           << " from " << selectedIndex << " Tag = " << H5FDdsmTagToString(msg->Tag));
       return(H5FD_DSM_SUCCESS);
     } else {
@@ -156,7 +156,7 @@ H5FDdsmCommSocket::Probe(H5FDdsmMsg *msg)
       return(H5FD_DSM_FAIL);
     }
   }
-  return(H5FD_DSM_SUCCESS);
+  return(H5FD_DSM_FAIL);
 }
 
 //----------------------------------------------------------------------------
@@ -304,12 +304,15 @@ H5FDdsmCommSocket::Disconnect()
 
   this->Barrier();
   if (this->InterComm[0]->GetClientSocketDescriptor() < 0) {
-    H5FDdsmDebugLevel(1, "Client is now disconnecting");
+    H5FDdsmDebugLevel(1, "Client is now disconnecting socket");
   } else {
-    H5FDdsmDebugLevel(1, "Server is now disconnecting");
+    H5FDdsmDebugLevel(1, "Server is now disconnecting socket");
   }
-  for (int i=0; i<H5FD_DSM_MAX_SOCKET; i++) {
-    if (this->InterComm[i]) delete this->InterComm[i];
+  for (int i=0; i<H5FD_DSM_MAX_SOCKET; i++) {    
+    if (this->InterComm[i]) {
+      H5FDdsmDebugLevel(1, "Deleting InterComm " << i);
+      delete this->InterComm[i];
+    }
     this->InterComm[i] = NULL;
   }
   return(H5FD_DSM_SUCCESS);

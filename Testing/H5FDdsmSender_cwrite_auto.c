@@ -63,6 +63,9 @@ int main(int argc, char **argv)
   H5Fclose(file_handle);
   H5close();
 
+  if (static_intercomm) {
+    MPI_Barrier(comm);
+  }
   MPI_Finalize();
   return(EXIT_SUCCESS);
 }

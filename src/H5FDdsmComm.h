@@ -65,10 +65,17 @@
 #define H5FD_DSM_COMM_DMAPP     0x13
 #define H5FD_DSM_COMM_UGNI      0x14
 
-// Macros to switch between intra/inter communicators
-#define H5FD_DSM_ANY_COMM    0x20
-#define H5FD_DSM_INTRA_COMM  0x21
-#define H5FD_DSM_INTER_COMM  0x22
+// IDs of intra/inter communicators
+#define H5FD_DSM_INTRA_COMM  0x00
+#define H5FD_DSM_INTER_COMM  0x01
+#define H5FD_DSM_ANY_COMM    0x02
+
+// These are deliberately the same as above as we use the communicator as an ID for the connection
+// The numbers must start from zero as they are used as array indices in the code.
+// @TODO : perhaps allow non zero based IDs
+#define H5FDdsm_SERVER_ID          H5FD_DSM_INTRA_COMM
+#define H5FDdsm_CLIENT_ID          H5FD_DSM_INTER_COMM
+#define H5FDdsm_NUM_CONNECTION_IDS 0x02
 
 struct H5FDdsmMsg;
 
@@ -145,7 +152,7 @@ public:
   virtual H5FDdsmInt32   Disconnect();
 
   // Sync two sided channels
-  H5FDdsmInt32           ChannelSynced(H5FDdsmInt32 who, H5FDdsmInt32 *syncId, H5FDdsmBoolean fromServer=H5FD_DSM_FALSE);
+  H5FDdsmInt32           ChannelSynced(H5FDdsmInt32 who, H5FDdsmInt32 *syncId, H5FDdsmInt32 connectionId);
 
 protected:
   // Wrappers to MPI functions
@@ -171,7 +178,7 @@ protected:
   H5FDdsmInt32       InterCommType;
   H5FDdsmInt32       InterSize;
 
-  H5FDdsmInt32       SyncChannels;
+  H5FDdsmInt32       SyncCounter[H5FDdsm_NUM_CONNECTION_IDS];
 };
 
 #endif // __H5FDdsmComm_h

@@ -83,28 +83,31 @@
 
 /*
  * Specific DSM operating modes:
- * - H5FD_DSM_DONT_RELEASE prevents the DSM to automatically release the file on a close
- * - H5FD_DSM_DONT_NOTIFY prevents the DSM server to be automatically notified on a close
+ * - H5FD_DSM_UNLOCK_MANUAL prevents the DSM to automatically release the file on a close
+ * - H5FD_DSM_NOTIFY_MANUAL prevents the DSM server to be automatically notified on a close
  * - H5FD_DSM_MODE_SERIAL enables the driver to be used serially
  * - H5FD_DSM_MODE_PARALELL enables the driver to be used in parallel (default)
  *   this should only be used when H5FD_DSM_MODE_SERIAL has been previously called
  */
-#define H5FD_DSM_DONT_RELEASE     0x20
-#define H5FD_DSM_DONT_NOTIFY      0x21
-#define H5FD_DSM_MODE_SERIAL      0x22
-#define H5FD_DSM_MODE_PARALLEL    0x23
+#define H5FD_DSM_UNLOCK_ON_CLOSE   0x0001
+#define H5FD_DSM_UNLOCK_MANUAL     0x0002
+#define H5FD_DSM_LOCK_SYNCHRONOUS  0x0004
+#define H5FD_DSM_LOCK_ASYNCHRONOUS 0x0008
+#define H5FD_DSM_MODE_SERIAL       0x0010
+#define H5FD_DSM_MODE_PARALLEL     0x0020
 
 /*
- * Notification information:
- * - H5FD_DSM_NEW_DATA (default notification sent) can be used to signal the presence
+ * UnlockNotification information:
+ * - H5FD_DSM_NOTIFY_DATA (default notification sent) can be used to signal the presence
  *   of new data
- * - H5FD_DSM_NEW_INFORMATION can be used to signal the presence of new information
+ * - H5FD_DSM_NOTIFY_INFORMATION can be used to signal the presence of new information
  */
-#define H5FD_DSM_NEW_DATA         0x0 /* Keep this value to 0 (default initialization) */
-#define H5FD_DSM_NEW_INFORMATION  0x1
+#define H5FD_DSM_NOTIFY_NONE         0x0000
+#define H5FD_DSM_NOTIFY_WAIT         0x0001
+#define H5FD_DSM_NOTIFY_DATA         0x0002 /* this is the default */
+#define H5FD_DSM_NOTIFY_INFORMATION  0x0003
+#define H5FD_DSM_NOTIFY_USER         0x0010 /* user +1, +2 ... etc etc */
 
-/* Internal Use */
-#define H5FD_DSM_WAIT             0x10
 
 #ifdef __cplusplus
 extern "C" {
@@ -126,23 +129,33 @@ extern "C" {
 #endif
 
   /* Description:
-   * Set a specific option to the DSM.
+   * Acquire a lock on the DSM. This prevents any other process from accessing the DSM
+   * until the lock is released. Calls to H5FD_dsm_lock must be paired with calls to
+   * H5FD_dsm_unlock. Calls to H5FD_dsm_lock and H5FD_dsm_unlock are collective and must
+   * be called by all ranks of a given process.
+   */
+  H5FDdsm_EXPORT herr_t H5FD_dsm_lock(void);
+  H5FDdsm_EXPORT herr_t H5FD_dsm_unlock(unsigned long flag);
+  H5FDdsm_EXPORT herr_t H5FD_dsm_set_unlock_flag(unsigned long flag);
+
+  /*
+  H5FDdsm_EXPORT herr_t H5FD_dsm_clear(void);
+   */
+
+  /* Description:
+   * Set a specific option for the DSM.
    * Options available are:
-   *   - H5FD_DSM_DONT_RELEASE
-   *   - H5FD_DSM_DONT_NOTIFY
+   *   - H5FD_DSM_UNLOCK_ON_CLOSE
+   *   - H5FD_DSM_UNLOCK_MANUAL
+   * The default value, (H5FD_DSM_UNLOCK_ON_CLOSE | H5FD_DSM_NOTIFY_ON_CLOSE) 
+   * automatically unlocks the DSM and notifies the server when the DSM is closed.
+   * If the user requires multiple open/closes during a lock/unlock cycle, then
+   * the Manual mode should be set.
    */
   H5FDdsm_EXPORT herr_t H5FD_dsm_set_options(unsigned long flags);
 
   /* Description:
-   * Send a notification to the DSM host.
-   * Notifications available are:
-   *   - H5FD_DSM_NEW_DATA
-   *   - H5FD_DSM_NEW_INFORMATION
-   */
-  H5FDdsm_EXPORT herr_t H5FD_dsm_notify(unsigned long flags);
-
-  /* Description:
-   * (C++ only) Associate an existing DSM manager to the driver.
+   * (C++ only) Associate an existing DSM manager with the driver.
    */
   H5FDdsm_EXPORT herr_t H5FD_dsm_set_manager(void *manager);
 

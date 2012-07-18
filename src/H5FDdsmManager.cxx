@@ -56,6 +56,24 @@
 #include <vector>
 #include <string>
 
+//----------------------------------------------------------------------------
+// Declare extra debug info 
+#undef H5FDdsmDebugLevel
+#ifdef H5FDdsm_DEBUG_GLOBAL
+#define H5FDdsmDebugLevel(level, x) \
+{ if (this->DebugLevel >= level) { \
+  std::cout << "H5FD_DSM Debug Level " << level << ": " << (this->IsServer ? "Server " : "Client ") << (this->DsmBuffer ? this->DsmBuffer->GetComm()->GetId() : -1) << " : " << x << std::endl; \
+  } \
+}
+#else
+#define H5FDdsmDebugLevel(level, x) \
+{ if (this->Debug && this->DebugLevel >= level) { \
+  std::cout << "H5FD_DSM Debug Level " << level << ": " << (this->IsServer ? "Server " : "Client ") << (this->DsmBuffer ? this->DsmBuffer->GetComm()->GetId() : -1) << " : " << x << std::endl; \
+  } \
+}
+#endif
+//----------------------------------------------------------------------------
+
 struct H5FDdsmManagerInternals
 {
 #ifdef H5FDdsm_HAVE_STEERING
@@ -144,12 +162,27 @@ MPI_Comm H5FDdsmManager::GetGlobalMPICommunicator()
 {
     return H5FDdsmManager::MpiComm;
 }
+
+//----------------------------------------------------------------------------
+H5FDdsmBoolean H5FDdsmManager::GetIsActive()
+{
+  H5FDdsmBoolean ret = H5FD_DSM_FALSE;
+  if (this->DsmBuffer) {
+    H5FDdsmBoolean isl = this->DsmBuffer->GetIsLockWaiting(false);
+    H5FDdsmBoolean ic = this->DsmBuffer->GetIsConnected();
+    H5FDdsmBoolean id = this->DsmBuffer->GetIsDisconnected();
+    H5FDdsmDebug("GetIsActive returns : GetIsLockWaiting " << isl << " : GetIsConnected " << ic << " : GetIsDisconnected " << id);
+    return (ic || (id && isl));
+  }
+  return(ret);
+}
+
 //----------------------------------------------------------------------------
 H5FDdsmBoolean H5FDdsmManager::GetIsConnected()
 {
   H5FDdsmBoolean ret = H5FD_DSM_FALSE;
   if (this->DsmBuffer) {
-    if (this->DsmBuffer->GetIsConnected()) ret = H5FD_DSM_TRUE;
+    return this->DsmBuffer->GetIsConnected();;
   }
   return(ret);
 }
@@ -165,77 +198,23 @@ H5FDdsmInt32 H5FDdsmManager::WaitForConnection()
 }
 
 //----------------------------------------------------------------------------
-H5FDdsmBoolean H5FDdsmManager::GetIsNotified()
-{
-  H5FDdsmBoolean ret = H5FD_DSM_FALSE;
-  if (this->DsmBuffer) {
-    if (this->DsmBuffer->GetIsNotified()) ret = H5FD_DSM_TRUE;
-  }
-  return(ret);
-}
-
-//----------------------------------------------------------------------------
-void H5FDdsmManager::ClearIsNotified()
-{
-  if (this->DsmBuffer) {
-    this->DsmBuffer->SetIsNotified(H5FD_DSM_FALSE);
-  }
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32 H5FDdsmManager::WaitForNotification()
+H5FDdsmInt32 H5FDdsmManager::WaitForUnlock()
 {
   H5FDdsmInt32 ret = H5FD_DSM_FAIL;
   if (this->DsmBuffer) {
-    ret = this->DsmBuffer->WaitForNotification();
+    ret = this->DsmBuffer->WaitForUnlock();
   }
   return(ret);
 }
 
 //----------------------------------------------------------------------------
-void H5FDdsmManager::NotificationFinalize()
+H5FDdsmInt32 H5FDdsmManager::GetUnlockStatus()
 {
-  // When UpdateFinalize, the server lock is released
-  this->DsmBuffer->SetReleaseLockOnClose(H5FD_DSM_TRUE);
-  if (this->DsmBuffer->GetIsConnected()) {
-    this->DsmBuffer->RequestLockRelease();
-  }
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32 H5FDdsmManager::GetNotification()
-{
-  H5FDdsmInt32 ret = 0;
+  H5FDdsmInt32 ret = H5FD_DSM_FAIL;
   if (this->DsmBuffer) {
-    ret = this->DsmBuffer->GetNotification();
+    ret = this->DsmBuffer->GetUnlockStatus();
   }
   return(ret);
-}
-
-//----------------------------------------------------------------------------
-void H5FDdsmManager::ClearNotification()
-{
-  if (this->DsmBuffer) {
-    this->DsmBuffer->SetNotification(0);
-  }
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmBoolean H5FDdsmManager::GetIsDataModified()
-{
-  H5FDdsmBoolean ret = H5FD_DSM_FALSE;
-  if (this->DsmBuffer) {
-    if (this->DsmBuffer->GetIsDataModified()) ret = H5FD_DSM_TRUE;
-  }
-  return(ret);
-}
-
-//----------------------------------------------------------------------------
-void H5FDdsmManager::ClearIsDataModified()
-{
-  if (this->DsmBuffer) {
-    this->DsmBuffer->SetIsDataModified(H5FD_DSM_FALSE);
-  }
 }
 
 //----------------------------------------------------------------------------
@@ -411,8 +390,8 @@ H5FDdsmInt32 H5FDdsmManager::Connect(H5FDdsmBoolean persist)
         H5FDdsmDebug("Connected!");
         // For one-sided communication create InterWin
         this->DsmBuffer->GetComm()->WinCreateData(NULL, 0, H5FD_DSM_INTER_COMM);
-        this->DsmBuffer->GetComm()->WinCreateNotification(NULL, 0, H5FD_DSM_INTER_COMM);
-        this->DsmBuffer->GetComm()->WinCreateLock(NULL, 0, H5FD_DSM_INTER_COMM);
+//        this->DsmBuffer->GetComm()->WinCreateNotification(NULL, 0, H5FD_DSM_INTER_COMM);
+//        this->DsmBuffer->GetComm()->WinCreateLock(NULL, 0, H5FD_DSM_INTER_COMM);
         this->DsmBuffer->SetIsConnected(H5FD_DSM_TRUE);
         this->DsmBuffer->ReceiveInfo();
       }

@@ -52,6 +52,18 @@ H5FDdsmCondition::~H5FDdsmCondition()
 }
 
 //----------------------------------------------------------------------------
+void H5FDdsmCondition::SetName(const char *name)
+{
+  this->ConditionName = name;
+}
+
+//----------------------------------------------------------------------------
+void
+H5FDdsmCondition::Wait()
+{
+  this->Wait_(this->ConditionMutex);
+}
+//----------------------------------------------------------------------------
 void
 H5FDdsmCondition::Signal()
 {
@@ -64,12 +76,14 @@ H5FDdsmCondition::Signal()
 #else
   pthread_cond_signal(&this->Condition);
 #endif
+  H5FDdsmDebugLevel(1,"         : Sent signal for condition " << this->ConditionName.c_str());
 }
 
 //----------------------------------------------------------------------------
 void
-H5FDdsmCondition::Wait(H5FDdsmMutex &mutex)
+H5FDdsmCondition::Wait_(H5FDdsmMutex &mutex)
 {
+  H5FDdsmDebugLevel(1,"         : Waiting for condition " << this->ConditionName.c_str());
 #ifdef _WIN32
 #if (WINVER < _WIN32_WINNT_LONGHORN)
   WaitForSingleObject(this->Condition, INFINITE);
@@ -80,4 +94,17 @@ H5FDdsmCondition::Wait(H5FDdsmMutex &mutex)
 #else
   pthread_cond_wait(&this->Condition, &mutex.Mutex);
 #endif
+  H5FDdsmDebugLevel(1,"         : Finished waiting for condition " << this->ConditionName.c_str());
+}
+//----------------------------------------------------------------------------
+void
+H5FDdsmCondition::LockMutex()
+{
+  this->ConditionMutex.Lock();
+}
+//----------------------------------------------------------------------------
+void
+H5FDdsmCondition::UnlockMutex()
+{
+  this->ConditionMutex.Unlock();
 }

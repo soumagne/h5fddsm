@@ -57,6 +57,17 @@ H5FDdsmManager *dsmManager = NULL;
 #  define PRINT_DSM_DRIVER_INFO(a,x)
 #endif
 
+//----------------------------------------------------------------------------
+// Declare extra debug info 
+#undef H5FDdsmDebug
+#ifdef H5FDdsm_DEBUG_GLOBAL
+#define H5FDdsmDebug(x) \
+{ std::cout << "H5FD_DSM Debug Level 0           : " << x << std::endl; \
+}
+#else 
+ #define H5FDdsmDebug(x)
+#endif
+//----------------------------------------------------------------------------
 //--------------------------------------------------------------------------
 void*
 dsm_get_manager()
@@ -174,23 +185,28 @@ dsm_set_options(unsigned long flags)
 
   DSM_DRIVER_INIT(dsmBufferService)
 
-  switch(flags) {
-    case H5FD_DSM_DONT_RELEASE:
+  // Lock management
+  if ((flags & H5FD_DSM_UNLOCK_MANUAL) == H5FD_DSM_UNLOCK_MANUAL) {
       dsmBufferService->SetReleaseLockOnClose(H5FD_DSM_FALSE);
-      /* If we don't release the file, we don't send notifications as well */
-    case H5FD_DSM_DONT_NOTIFY:
-      dsmBufferService->SetNotificationOnClose(H5FD_DSM_FALSE);
-      break;
-    case H5FD_DSM_MODE_SERIAL:
+  }
+  if ((flags & H5FD_DSM_UNLOCK_ON_CLOSE) == H5FD_DSM_UNLOCK_ON_CLOSE) {
+    dsmBufferService->SetReleaseLockOnClose(H5FD_DSM_TRUE);
+  }
+
+  // Lock/Unlock Synchronization protocol
+  if ((flags & H5FD_DSM_LOCK_SYNCHRONOUS) == H5FD_DSM_LOCK_SYNCHRONOUS) {
+      dsmBufferService->SetSychronizationCount(1);
+  }
+  if ((flags & H5FD_DSM_LOCK_ASYNCHRONOUS) == H5FD_DSM_LOCK_ASYNCHRONOUS) {
+    dsmBufferService->SetSychronizationCount(0);
+  }
+
+  // Parallel/Serial
+  if ((flags & H5FD_DSM_MODE_SERIAL) == H5FD_DSM_MODE_SERIAL) {
       dsmManager->SetIsDriverSerial(H5FD_DSM_TRUE);
-      break;
-    case H5FD_DSM_MODE_PARALLEL:
+  }
+  if ((flags & H5FD_DSM_MODE_PARALLEL) == H5FD_DSM_MODE_PARALLEL) {
       dsmManager->SetIsDriverSerial(H5FD_DSM_FALSE);
-      break;
-    default:
-      PRINT_DSM_DRIVER_INFO(dsmBufferService->GetComm()->GetId(),
-          "Not implemented option")
-      break;
   }
 
   return(SUCCEED);
@@ -284,35 +300,58 @@ herr_t
 dsm_lock()
 {
   H5FDdsmBufferService *dsmBufferService = NULL;
+  DSM_DRIVER_INIT(dsmBufferService)
+
+  bool parallel = (dsmManager->GetIsDriverSerial() == H5FD_DSM_TRUE) ? FALSE : TRUE;
+  if (dsmBufferService->RequestLockAcquire(parallel) != H5FD_DSM_SUCCESS)
+    DSM_DRIVER_ERROR("Cannot request lock acquisition")
+  return(SUCCEED);
+}
+
+//--------------------------------------------------------------------------
+// This is a manual unlock, a notification is sent (according to flag)
+// and then the lock is released
+herr_t
+dsm_unlock(unsigned long flag)
+{
+  H5FDdsmBufferService *dsmBufferService;
+  DSM_DRIVER_INIT(dsmBufferService)
+
+  // set the notification of unlock flag  
+  dsmBufferService->SetUnlockStatus(flag);
+
+  bool parallel = (dsmManager->GetIsDriverSerial() == H5FD_DSM_TRUE) ? FALSE : TRUE;
+  if (dsmBufferService->RequestLockRelease(parallel) != H5FD_DSM_SUCCESS)
+    DSM_DRIVER_ERROR("Cannot request lock release")
+  return(SUCCEED);
+}
+
+//--------------------------------------------------------------------------
+// on H5Fclose, this is called by the dsm driver and if ReleaseLockOnClose was set, 
+// it unlocks using whatever notification unlock_flag was set.
+herr_t
+dsm_closefile()
+{
+  H5FDdsmBufferService *dsmBufferService;
 
   DSM_DRIVER_INIT(dsmBufferService)
 
-  if (dsmBufferService->GetIsServer() && dsmBufferService->GetIsServerLocked()) {
-    return(SUCCEED);
+  if (dsmBufferService->GetReleaseLockOnClose()) {
+    H5FDdsmDebug("Calling dsm_closefile on " << (dsm_is_server() ? "Server" : "client"));
+    return dsm_unlock(dsmBufferService->GetUnlockStatus());
   }
-  if (!dsmBufferService->GetIsServer() && dsmBufferService->GetIsClientLocked()) {
-    return(SUCCEED);
-  }
-  if (dsmBufferService->RequestLockAcquire() != H5FD_DSM_SUCCESS)
-    DSM_DRIVER_ERROR("Cannot request lock acquisition")
 
   return(SUCCEED);
 }
 
 //--------------------------------------------------------------------------
 herr_t
-dsm_unlock()
+dsm_set_unlock_flag(unsigned long flag)
 {
   H5FDdsmBufferService *dsmBufferService;
 
   DSM_DRIVER_INIT(dsmBufferService)
-
-  // In case the lock has been released by a previous notification
-  if (!dsmBufferService->GetIsClientLocked()) return(SUCCEED);
-  if (dsmBufferService->GetReleaseLockOnClose()) {
-    if (dsmBufferService->RequestLockRelease() != H5FD_DSM_SUCCESS)
-      DSM_DRIVER_ERROR("Cannot request lock release")
-  }
+  dsmBufferService->SetUnlockStatus(flag);
 
   return(SUCCEED);
 }
@@ -353,46 +392,14 @@ dsm_set_modified()
   H5FDdsmBufferService *dsmBufferService;
 
   DSM_DRIVER_INIT(dsmBufferService)
-
+/*
   dsmBufferService->SetIsDataModified(H5FD_DSM_TRUE);
-  if (dsmBufferService->GetNotificationOnClose() && dsmBufferService->GetIsConnected()) {
-    if (SUCCEED != dsm_notify(H5FD_DSM_NEW_DATA))
+  if (dsmBufferService->GetReleaseLockOnClose() && dsmBufferService->GetIsConnected()) {
+    if (SUCCEED != dsm_unlock(dsmBufferService->GetUnlockStatus()))
       DSM_DRIVER_ERROR("cannot notify DSM")
   }
-
+*/
   return(SUCCEED);
 }
 
 //--------------------------------------------------------------------------
-herr_t
-dsm_notify(unsigned long flags)
-{
-  H5FDdsmBufferService *dsmBufferService;
-
-  DSM_DRIVER_INIT(dsmBufferService)
-
-  switch(flags) {
-    case H5FD_DSM_NEW_INFORMATION:
-    case H5FD_DSM_NEW_DATA:
-      dsmBufferService->SetNotification(flags);
-      break;
-    default:
-      PRINT_DSM_DRIVER_INFO(dsmManager->GetUpdatePiece(), "Not implemented notification")
-      break;
-  }
-
-  if (!dsmBufferService->GetIsClientLocked()) {
-    if (dsmBufferService->RequestLockAcquire() != H5FD_DSM_SUCCESS)
-      DSM_DRIVER_ERROR("Cannot request lock acquisition")
-  }
-
-  if (!dsmBufferService->GetIsServer()) {
-    if (dsmBufferService->RequestNotification() != H5FD_DSM_SUCCESS)
-      DSM_DRIVER_ERROR("Cannot request notification")
-  } else {
-    if (dsmBufferService->SignalNotification() != H5FD_DSM_SUCCESS)
-      DSM_DRIVER_ERROR("Cannot signal notification")
-  }
-
-  return(SUCCEED);
-}

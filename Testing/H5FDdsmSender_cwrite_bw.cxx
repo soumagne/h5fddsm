@@ -68,11 +68,13 @@ int main(int argc, char **argv)
     // Warming up
     for (int skip = 0; skip < SKIP; skip++) {
       if (type == 0) {
+        printf("%s", "# TestParticleWrite \n");
         TestParticleWrite(fullname, numParticles, DIM_DATASETS, NUM_DATASETS,
             dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(),
             comm, dsmManager, usingHDF);
       }
       else if (type == 1) {
+        printf("%s", "# TestParticleWrite \n");
         TestParticleWrite(hdffile.c_str(), numParticles, DIM_DATASETS, NUM_DATASETS,
             dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(),
             comm, NULL, usingHDF);
@@ -86,11 +88,13 @@ int main(int argc, char **argv)
           // We have configured everything manually using the DSM manager, so pass the buffer
           // into the read/write code so that we can use the dsm that we have setup
           // otherwise it creates a new DSM server object
+printf("%s", "# TestParticleWrite \n");
           totaltime += TestParticleWrite(fullname, numParticles, DIM_DATASETS, NUM_DATASETS,
               dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(),
               comm, dsmManager, usingHDF);
         }
         else if (type == 1) {
+printf("%s", "# TestParticleWrite \n");
           totaltime += TestParticleWrite(hdffile.c_str(), numParticles, DIM_DATASETS, NUM_DATASETS,
               dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(),
               comm, NULL, usingHDF);

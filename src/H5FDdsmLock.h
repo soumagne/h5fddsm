@@ -26,7 +26,23 @@
 #ifndef __H5FDdsmLock_h
 #define __H5FDdsmLock_h
 
-#include "H5FDdsmObject.h"
+#include "H5FDdsmCondition.h"
+#include "H5FDdsmComm.h"
+#include <queue>
+
+#ifdef H5FDdsm_BUILD_SHARED_LIBS
+  #ifdef H5FDdsm_EXPORTS
+    #define H5FDdsm_TEMPLATE
+  #else
+    #define H5FDdsm_TEMPLATE extern
+  #endif
+#else
+  #define H5FDdsm_TEMPLATE
+#endif
+
+//disable warnings on extern before template instantiation
+#pragma warning (disable : 4231)
+#pragma warning (disable : 4251)
 
 class H5FDdsm_EXPORT H5FDdsmLock : public H5FDdsmObject {
 
@@ -35,15 +51,46 @@ public:
   virtual ~H5FDdsmLock();
 
   // Description:
-  // Lock the Lock
-  void Lock();
+  // Request to acquire the lock from the client app (colour=1)
+  H5FDdsmBoolean Lock(H5FDdsmInt32 channel);
 
   // Description:
-  // Unlock the Lock
-  void Unlock();
+  // Release the lock from the client app, if another has requested it, the lock is passed
+  // on and the ID of the new lock owner is returned
+  H5FDdsmInt32 Unlock(H5FDdsmInt32 channel);
+
+  // 
+  H5FDdsmBoolean GetClientUnlockedFlag(bool clear);
+  H5FDdsmBoolean GetServerUnlockedFlag(bool clear);
+
+  // Server nodes are master nodes and honour all lock controls, 
+  // but client nodes only have to obey what the master does, 
+  // so some checks are ignored if not Master
+  H5FDdsmSetValueMacro(Master, H5FDdsmBoolean);
+
+  // For Debug messages
+  H5FDdsmSetValueMacro(Rank, H5FDdsmInt32);
+
+  void SetServerSychronizationCount(H5FDdsmInt32 count) {
+    this->SychronizationCount[H5FDdsm_SERVER_ID] = count;
+  };
+  void SetClientSychronizationCount(H5FDdsmInt32 count) {
+    this->SychronizationCount[H5FDdsm_CLIENT_ID] = count;
+  };
 
 protected:
-
+  H5FDdsmInt32             Rank;
+  H5FDdsmBoolean           Master;
+  std::queue<H5FDdsmInt32> LockQueue;
+  // only one thread actually modifies thes, but they might be read by another thread
+  // so we'll declare them volatile just as a precaution
+  volatile H5FDdsmInt32     LockOwner;
+  volatile H5FDdsmInt32     LockCount[H5FDdsm_NUM_CONNECTION_IDS];
+  volatile H5FDdsmInt32     UnlockedFlag[H5FDdsm_NUM_CONNECTION_IDS];
+  volatile H5FDdsmInt32     SychronizationCount[H5FDdsm_NUM_CONNECTION_IDS];
+  volatile H5FDdsmInt32     SychronizationCountInternal[H5FDdsm_NUM_CONNECTION_IDS];
 };
+
+H5FDdsm_TEMPLATE template class H5FDdsm_EXPORT std::queue<H5FDdsmInt32>;
 
 #endif // __H5FDdsmLock_h

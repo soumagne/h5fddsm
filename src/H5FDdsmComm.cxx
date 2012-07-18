@@ -53,7 +53,25 @@
 #include "H5FDdsmMsg.h"
 
 #include <queue>
+#include <set>
 
+//----------------------------------------------------------------------------
+// Declare extra debug info 
+#undef H5FDdsmDebugLevel
+#ifdef H5FDdsm_DEBUG_GLOBAL
+#define H5FDdsmDebugLevel(level, x) \
+{ if (this->DebugLevel >= level) { \
+  std::cout << "H5FD_DSM Debug Level " << level << ": " << ("       ") << this->GetId() << " : " << x << std::endl; \
+  } \
+}
+#else
+#define H5FDdsmDebugLevel(level, x) \
+{ if (this->Debug && this->DebugLevel >= level) { \
+  std::cout << "H5FD_DSM Debug Level " << level << ": " << ("       ") << this->GetId() << " : " << x << std::endl; \
+  } \
+}
+#endif
+//----------------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
 // Utility function to return a string for a given tag
@@ -82,7 +100,9 @@ H5FDdsmComm::H5FDdsmComm()
   this->InterCommType      = -1;
   this->InterSize          = -1;
   //
-  this->SyncChannels       = 0;
+  for (int i=0; i<H5FDdsm_NUM_CONNECTION_IDS; i++) {
+    this->SyncCounter[i]       = 0;
+  }
 }
 
 //----------------------------------------------------------------------------
@@ -137,7 +157,7 @@ H5FDdsmComm::Send(H5FDdsmMsg *msg)
     return(H5FD_DSM_FAIL);
   }
 
-  H5FDdsmDebugLevel(3, "(" << this->Id << ") Sending " << msg->Length << " Bytes on "
+  H5FDdsmDebugLevel(3,"Sending " << msg->Length << " Bytes on "
       << H5FDdsmCommToString(msg->Communicator) << " to " << msg->Dest <<
       " Tag = " << H5FDdsmTagToString(msg->Tag));
 
@@ -162,7 +182,7 @@ H5FDdsmComm::Receive(H5FDdsmMsg *msg)
     return(H5FD_DSM_FAIL);
   }
 
-  H5FDdsmDebugLevel(3, "(" << this->Id << ") Receiving " << msg->Length << " Bytes on "
+  H5FDdsmDebugLevel(3,"Receiving " << msg->Length << " Bytes on "
       << H5FDdsmCommToString(msg->Communicator) << " from " << msg->Source <<
       " Tag = " << H5FDdsmTagToString(msg->Tag));
 
@@ -179,14 +199,14 @@ H5FDdsmComm::Probe(H5FDdsmMsg *msg)
   if (msg->Source < 0) msg->Source = MPI_ANY_SOURCE;
   if (msg->Tag < 0) msg->Tag = MPI_ANY_TAG;
 
-  H5FDdsmDebugLevel(3, "(" << this->Id << ") Probing on "
+  H5FDdsmDebugLevel(5,"Probing on "
       << H5FDdsmCommToString(msg->Communicator) << " from " << msg->Source <<
       " Tag = " << H5FDdsmTagToString(msg->Tag));
 
   if (msg->Communicator == H5FD_DSM_INTRA_COMM) {
-    if (this->MpiProbe(msg, this->IntraComm) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
+    if (this->MpiProbe(msg, this->IntraComm) == H5FD_DSM_SUCCESS) return(H5FD_DSM_SUCCESS);
   }
-  return(H5FD_DSM_SUCCESS);
+  return(H5FD_DSM_FAIL);
 }
 
 //----------------------------------------------------------------------------
@@ -213,7 +233,7 @@ H5FDdsmComm::PutData(H5FDdsmMsg *msg)
     return(H5FD_DSM_FAIL);
   }
 
-  H5FDdsmDebugLevel(3, "(" << this->Id << ") Putting " << msg->Length << " Bytes to " << msg->Dest
+  H5FDdsmDebugLevel(3,"Putting " << msg->Length << " Bytes to " << msg->Dest
       << " at address " << msg->Address);
 
   if (msg->Communicator == H5FD_DSM_INTRA_COMM) {
@@ -240,7 +260,7 @@ H5FDdsmComm::GetData(H5FDdsmMsg *msg)
     return(H5FD_DSM_FAIL);
   }
 
-  H5FDdsmDebugLevel(3, "(" << this->Id << ") Getting " << msg->Length << " Bytes from " << msg->Source
+  H5FDdsmDebugLevel(3,"Getting " << msg->Length << " Bytes from " << msg->Source
       << " at address " << msg->Address);
 
   if (msg->Communicator == H5FD_DSM_INTRA_COMM) {
@@ -315,11 +335,11 @@ H5FDdsmComm::GetLock(H5FDdsmMsg *msg)
 H5FDdsmInt32
 H5FDdsmComm::Barrier(H5FDdsmInt32 comm)
 {
-  H5FDdsmDebugLevel(3, "(" << this->Id << ") Going into Barrier on " << H5FDdsmCommToString(comm));
+  H5FDdsmDebugLevel(3,"Going into Barrier on " << H5FDdsmCommToString(comm));
 
   if (comm == H5FD_DSM_INTRA_COMM) {
     if (this->MpiBarrier(this->IntraComm) != H5FD_DSM_SUCCESS) return(H5FD_DSM_FAIL);
-    H5FDdsmDebugLevel(3, "(" << this->Id << ") Left Barrier on " << H5FDdsmCommToString(comm));
+    H5FDdsmDebugLevel(3,"Left Barrier on " << H5FDdsmCommToString(comm));
   }
   return(H5FD_DSM_SUCCESS);
 }
@@ -338,7 +358,7 @@ H5FDdsmComm::Barrier()
 H5FDdsmInt32
 H5FDdsmComm::Broadcast(H5FDdsmMsg *msg)
 {
-  H5FDdsmDebugLevel(3, "(" << this->Id << ") Broadcasting " << msg->Length << " Bytes on "
+  H5FDdsmDebugLevel(3,"Broadcasting " << msg->Length << " Bytes on "
       << H5FDdsmCommToString(msg->Communicator) << " from " << msg->Source);
 
   if (msg->Communicator == H5FD_DSM_INTRA_COMM) {
@@ -384,48 +404,42 @@ H5FDdsmComm::Disconnect()
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmComm::ChannelSynced(H5FDdsmInt32 who, H5FDdsmInt32 *syncId, H5FDdsmBoolean fromServer)
+H5FDdsmComm::ChannelSynced(H5FDdsmInt32 who, H5FDdsmInt32 *syncId, H5FDdsmInt32 connectionId)
 {
-  static std::queue<H5FDdsmInt32> syncQueue;
+  static std::set<H5FDdsmInt32> syncQueue[H5FDdsm_NUM_CONNECTION_IDS];
   H5FDdsmInt32 ret = H5FD_DSM_FALSE;
-  H5FDdsmInt32 numberOfChannels = (fromServer) ? this->IntraSize : this->InterSize;
+  H5FDdsmInt32 numberOfRanks = (connectionId==0) ? this->IntraSize : this->InterSize;
 
-  this->SyncChannels++;
-  if (this->SyncChannels == numberOfChannels) {
-    H5FDdsmDebugLevel(4, "Channels cleared: " << this->SyncChannels << "/" << numberOfChannels);
-    this->SyncChannels = 0;
-//    if (!this->UseOneSidedComm) {
-      if (!syncQueue.empty()) {
-        H5FDdsmDebugLevel(4, "(" << this->Id << ") " << "pop sync queue from " << who);
-        if (syncQueue.front() != who) {
-          H5FDdsmError("(" << this->Id << ") " << "Mismatched IDs in sync queue ");
-        }
-        syncQueue.pop();
-        if (!syncQueue.empty()) {
-          H5FDdsmError("(" << this->Id << ") " << "Sync queue should be empty!! " << syncQueue.front());
-        }
-      }
-//    }
-    *syncId = -1;
-    ret = H5FD_DSM_TRUE;
-  } else {
-//    if (!this->UseOneSidedComm) {
-      if (syncQueue.empty()) {
-        H5FDdsmDebugLevel(4, "(" << this->Id << ") " << "filling sync queue from " << who);
-        for (int i=0; i<numberOfChannels; i++) {
-          if (i != who) syncQueue.push(i);
-        }
-      } else {
-        H5FDdsmDebugLevel(4, "(" << this->Id << ") " << "pop sync queue from " << syncQueue.front());
-        if (syncQueue.front() != who) {
-          H5FDdsmError("(" << this->Id << ") " << "Mismatched IDs in sync queue ");
-        }
-        syncQueue.pop();
-      }
-      *syncId = syncQueue.front();
-//    }
+  // on first entry, fill a set with the IDs we need, skip current one
+  if (syncQueue[connectionId].empty()) {
+    for (int i=0; i<numberOfRanks; i++) {
+      if (i!=who) syncQueue[connectionId].insert(i);
+    }
   }
-  return(ret);
+  // otherwise remove current ID from set
+  else {
+    std::set<H5FDdsmInt32>::iterator loc = syncQueue[connectionId].find(who);
+    if (loc==syncQueue[connectionId].end()) {
+      H5FDdsmError("(" << this->Id << ") " << "Mismatched IDs in sync queue ");
+    }
+    else {
+      syncQueue[connectionId].erase(loc);
+    }
+  }
+  H5FDdsmDebugLevel(1, "ChannelSynced syncQueue[" << connectionId << "] : " << syncQueue[connectionId].size() << " / " << numberOfRanks);
+  // if set is empty, we have cleared the queue
+  if (syncQueue[connectionId].empty()) {
+    H5FDdsmDebugLevel(1, "ChannelSynced syncQueue[" << connectionId << "] : Cleared " << syncQueue[connectionId].size() << " / " << numberOfRanks);
+    ret = H5FD_DSM_TRUE;
+    *syncId = -1;
+  }
+  else {
+    // set next source tag to last one in queue so we will only receive messages from this rank.
+    // if we don't do this, we need a separate set for each message that needs syncing
+    *syncId = *syncQueue[connectionId].rbegin();
+  }
+
+  return (ret);
 }
 
 //----------------------------------------------------------------------------
@@ -457,7 +471,7 @@ H5FDdsmComm::MpiSend(H5FDdsmMsg *msg, MPI_Comm comm)
         << " Bytes to " << msg->Dest);
     return(H5FD_DSM_FAIL);
   }
-  H5FDdsmDebugLevel(3, "(" << this->Id << ") Sent " << msg->Length << " Bytes on "
+  H5FDdsmDebugLevel(3,"Sent " << msg->Length << " Bytes on "
       << H5FDdsmCommToString(msg->Communicator) << " to " << msg->Dest);
   return(H5FD_DSM_SUCCESS);
 }
@@ -481,7 +495,7 @@ H5FDdsmComm::MpiReceive(H5FDdsmMsg *msg, MPI_Comm comm)
   }
 
   status = MPI_Get_count(&mpi_status, MPI_UNSIGNED_CHAR, &message_length);
-  H5FDdsmDebugLevel(3, "(" << this->Id << ") Received " << message_length << " Bytes on "
+  H5FDdsmDebugLevel(3,"Received " << message_length << " Bytes on "
       << H5FDdsmCommToString(msg->Communicator) << " from " << mpi_status.MPI_SOURCE);
   msg->SetSource(mpi_status.MPI_SOURCE);
   msg->SetLength(message_length);
@@ -567,7 +581,7 @@ H5FDdsmComm::MpiPut(H5FDdsmMsg *msg, MPI_Win win)
   }
 
   MPI_Win_unlock(msg->Dest, win);
-  H5FDdsmDebugLevel(3, "(" << this->Id << ") Put " << msg->Length << " Bytes to " << msg->Dest
+  H5FDdsmDebugLevel(3,"Put " << msg->Length << " Bytes to " << msg->Dest
       << " at address " << msg->Address);
 
   return(H5FD_DSM_SUCCESS);
@@ -590,7 +604,7 @@ H5FDdsmComm::MpiGet(H5FDdsmMsg *msg, MPI_Win win)
   }
 
   MPI_Win_unlock(msg->Source, win);
-  H5FDdsmDebugLevel(3, "(" << this->Id << ") Got " << msg->Length << " Bytes from " << msg->Dest
+  H5FDdsmDebugLevel(3,"Got " << msg->Length << " Bytes from " << msg->Dest
       << " at address " << msg->Address);
 
   return(H5FD_DSM_SUCCESS);
@@ -622,7 +636,7 @@ H5FDdsmComm::MpiBroadcast(H5FDdsmMsg *msg, MPI_Comm comm)
         << " Bytes from " << msg->Source);
     return(H5FD_DSM_FAIL);
   }
-  H5FDdsmDebugLevel(3, "(" << this->Id << ") Broadcasted " << msg->Length << " Bytes from "
+  H5FDdsmDebugLevel(3,"Broadcasted " << msg->Length << " Bytes from "
       << msg->Source);
   return(H5FD_DSM_SUCCESS);
 }

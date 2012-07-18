@@ -20,35 +20,63 @@ int main(int argc, char **argv)
   H5FDdsmConstString fullname = "dsm";
   H5FDdsmManager *dsmManager = new H5FDdsmManager();
 
+
   senderInit(argc, argv, dsmManager, &comm);
 
   H5FD_dsm_steering_init(comm);
 
+  //----------------------------------------------------------------------------
+  std::cout << "step " << 0 << std::endl;
   remoteMB = dsmManager->GetDsmBuffer()->GetTotalLength() / (1024.0 * 1024.0);
   numParticles = (H5FDdsmUInt64) ((1024 * 1024 * remoteMB / 2) /
       (sizeof(H5FDdsmFloat64) * DIM_DATASETS * dsmManager->GetUpdateNumPieces()));
 
+  std::cout << "step lock " << 0 << std::endl;
+  H5FD_dsm_lock();
   // Step 0: array is enabled and written
   assert(H5FD_dsm_steering_is_enabled(DATASETNAME));
+  std::cout << "step assert " << 0 << std::endl;
+
   if (H5FD_dsm_steering_is_enabled(DATASETNAME)) {
     TestParticleWrite(fullname, numParticles, DIM_DATASETS, NUM_DATASETS, dsmManager->GetUpdatePiece(),
         dsmManager->GetUpdateNumPieces(), comm, dsmManager, usingHDF);
   }
 
+  H5FD_dsm_unlock(H5FD_DSM_NOTIFY_DATA);
+
+
+  //----------------------------------------------------------------------------
+  std::cout << "step lock " << 1 << std::endl;
+  H5FD_dsm_lock();
+  std::cout << "step lock " << 1.5 << std::endl;
+
   // Must be collective
   H5FD_dsm_steering_update();
+  std::cout << "step lock " << 1.6 << std::endl;
+
+  H5FD_dsm_unlock(H5FD_DSM_NOTIFY_DATA);
+  std::cout << "step lock " << 1.7 << std::endl;
 
   // Step 1: array is set disabled
+  std::cout << "H5FD_dsm_steering_is_enabled(DATASETNAME) returns " << H5FD_dsm_steering_is_enabled(DATASETNAME) << std::endl;
   assert(!H5FD_dsm_steering_is_enabled(DATASETNAME));
+  std::cout << "step assert " << 1 << std::endl;
   if (H5FD_dsm_steering_is_enabled(DATASETNAME)) {
     TestParticleWrite(fullname, numParticles, DIM_DATASETS, NUM_DATASETS, dsmManager->GetUpdatePiece(),
         dsmManager->GetUpdateNumPieces(), comm, dsmManager, usingHDF);
   }
 
+  //----------------------------------------------------------------------------
   // Must be collective
+  std::cout << "step lock " << 2 << std::endl;
+  H5FD_dsm_lock();
   H5FD_dsm_steering_update();
+  H5FD_dsm_unlock(H5FD_DSM_NOTIFY_DATA);
 
+  //----------------------------------------------------------------------------
   // Start steering query (Must be collective)
+  std::cout << "step lock " << 3 << std::endl;
+  H5FD_dsm_lock();
   H5FD_dsm_steering_begin_query();
 
   // Step 2: steered values are retrieved
@@ -57,6 +85,7 @@ int main(int argc, char **argv)
     // IntScalarTest
     H5FD_dsm_steering_is_set("IntScalarTest", &intScalarSet);
     assert(intScalarSet);
+    std::cout << "step assert " << 3 << std::endl;
     if (intScalarSet) {
       H5FDdsmBoolean intScalar;
       H5FD_dsm_steering_scalar_get("IntScalarTest", H5T_NATIVE_INT, &intScalar);
@@ -122,6 +151,7 @@ int main(int argc, char **argv)
 
   // End query (Must be collective)
   H5FD_dsm_steering_end_query();
+  H5FD_dsm_unlock(H5FD_DSM_NOTIFY_DATA);
 
   senderFinalize(dsmManager, &comm);
   delete dsmManager;

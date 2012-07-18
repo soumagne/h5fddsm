@@ -124,26 +124,13 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     // Description:
     // Wait for a connection - Only valid after a Publish call has been made.
     H5FDdsmBoolean GetIsConnected();
+    H5FDdsmBoolean GetIsActive();
+
     H5FDdsmInt32 WaitForConnection();
 
     // Description:
-    // Wait for a notification - notifications are used to trigger user
-    // defined tasks and are usually sent once the file has been closed
-    // but can also be sent on demand.
-    H5FDdsmBoolean GetIsNotified();
-    void ClearIsNotified();
-    H5FDdsmInt32 WaitForNotification();
-    void NotificationFinalize();
-
-    // Description:
-    // Get the notification flag - Only valid if GetIsNotified is true.
-    H5FDdsmInt32  GetNotification();
-    void ClearNotification();
-
-    // Description:
-    // Has the DSM data been modified.
-    H5FDdsmBoolean GetIsDataModified();
-    void ClearIsDataModified();
+    H5FDdsmInt32 WaitForUnlock();
+    H5FDdsmInt32 GetUnlockStatus();
 
     // Description:
     // Create a new DSM buffer of type DsmType using a local length of

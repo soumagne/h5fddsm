@@ -102,7 +102,7 @@ herr_t H5FD_dsm_steering_update()
     DSM_STEERING_ERROR("Cannot get disabled objects")
 
   // Automatically send a notification so that objects are updated
-  if (SUCCEED != dsm_notify(H5FD_DSM_NEW_DATA))
+  if (SUCCEED != dsm_unlock(H5FD_DSM_NOTIFY_DATA))
     DSM_STEERING_ERROR("Cannot notify DSM")
 
   return(SUCCEED);
