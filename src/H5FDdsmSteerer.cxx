@@ -477,8 +477,17 @@ H5FDdsmInt32 H5FDdsmSteerer::SetVector(H5FDdsmConstString name, H5FDdsmInt32 mem
 
   hsize_t arraySize = numberOfElements;
   hid_t memspaceId = H5Screate_simple(1, &arraySize, NULL);
-  hid_t datasetId = H5Dcreate(this->Cache_interactionGroupId, name, memType, memspaceId,
+  hid_t datasetId = -1;
+  this->BeginHideHDF5Errors();
+  int exists = H5Lexists(this->Cache_interactionGroupId, name, H5P_DEFAULT);
+  this->EndHideHDF5Errors();
+  if (exists<=0) {
+    datasetId = H5Dcreate(this->Cache_interactionGroupId, name, memType, memspaceId,
       H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  }
+  else {
+    datasetId = H5Dopen(this->Cache_interactionGroupId, name, H5P_DEFAULT);
+  }
   if (datasetId < 0) {
     ret = H5FD_DSM_FAIL;
   } else {
