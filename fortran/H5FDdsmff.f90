@@ -116,8 +116,12 @@ MODULE H5FDDSM
 !
 ! Inputs:
 !       options     - options are:
-!                       - H5FD_DSM_DONT_RELEASE_F
-!                       - H5FD_DSM_DONT_NOTIFY_F
+!  H5FD_DSM_UNLOCK_ON_CLOSE  
+!  H5FD_DSM_UNLOCK_MANUAL    
+!  H5FD_DSM_LOCK_SYNCHRONOUS 
+!  H5FD_DSM_LOCK_ASYNCHRONOUS
+!  H5FD_DSM_MODE_SERIAL      
+!  H5FD_DSM_MODE_PARALLEL               
 ! Outputs:
 !       hdferr:     - error code
 !                   Success:  0
@@ -158,39 +162,34 @@ MODULE H5FDDSM
   END SUBROUTINE h5fd_dsm_set_options_f
 
 !----------------------------------------------------------------------
-! Name:     h5fd_dsm_notify_f
-!
-! Purpose:  Send a notification to the DSM host
-!
-! Inputs:
-!       notifications   - notifications are:
-!                           - H5FD_DSM_NEW_DATA_F
-!                           - H5FD_DSM_NEW_INFORMATION_F
-! Outputs:
-!       hdferr:     - error code
-!                   Success:  0
-!                   Failure: -1
-! Optional parameters:
-!               NONE
+! Name:     h5fd_dsm_set_unlock_flag_f
+! Purpose:     Call nh5fd_dsm_set_unlock_flag to set the unlock notification flag
+! Inputs:      options    - flags are:
+!                            H5FD_DSM_NOTIFY_NONE     
+!                            H5FD_DSM_NOTIFY_WAIT     
+!                            H5FD_DSM_NOTIFY_DATA         (this is the default)
+!                            H5FD_DSM_NOTIFY_INFORMATION  
+!                            H5FD_DSM_NOTIFY_USER         (add extra using USER+1, USER+2, ...)
+!  Returns:     0 on success, -1 on failure
 !
 !----------------------------------------------------------------------
-  SUBROUTINE h5fd_dsm_notify_f(notifications, hdferr)
+  SUBROUTINE h5fd_dsm_set_unlock_flag_f(unlockflag, hdferr)
     !DEC$if defined(BUILD_H5FDdsm_DLL)
-    !DEC$ ATTRIBUTES DLLEXPORT :: h5fd_dsm_notify_f
+    !DEC$ ATTRIBUTES DLLEXPORT :: h5fd_dsm_set_unlock_flag_f
     !DEC$endif
     IMPLICIT NONE
-    INTEGER, INTENT(IN)  :: notifications ! DSM notifications to be sent
-    INTEGER, INTENT(OUT) :: hdferr        ! Error code
+    INTEGER, INTENT(IN)  :: unlockflag     
+    INTEGER, INTENT(OUT) :: hdferr    ! Error code
     INTEGER :: err_0, err_1
 
     INTERFACE
-       INTEGER FUNCTION h5fd_dsm_notify_c(notifications)
+       INTEGER FUNCTION h5fd_dsm_set_unlock_flag_c(options)
          USE H5GLOBAL
          !DEC$IF DEFINED(H5FD_DSM_F90_WIN32)
-         !DEC$ATTRIBUTES C,reference,decorate,alias:'H5FD_DSM_NOTIFY_C'::h5fd_dsm_notify_c
+         !DEC$ATTRIBUTES C,reference,decorate,alias:'H5FD_DSM_SET_UNLOCK_FLAG_C'::h5fd_dsm_set_unlock_flag_c
          !DEC$ENDIF
-       INTEGER, INTENT(IN)  :: notifications
-       END FUNCTION h5fd_dsm_notify_c
+       INTEGER, INTENT(IN)  :: options
+       END FUNCTION h5fd_dsm_set_unlock_flag_c
     END INTERFACE
 
     INTERFACE
@@ -201,8 +200,91 @@ MODULE H5FDDSM
     END INTERFACE
 
     err_0 = h5fd_dsm_init_flags_c(H5FD_dsm_flags)
-    err_1 = h5fd_dsm_notify_c(notifications)
+    err_1 = h5fd_dsm_set_unlock_flag_c(unlockflag)
     hdferr = err_0 + err_1
-  END SUBROUTINE h5fd_dsm_notify_f
+  END SUBROUTINE h5fd_dsm_set_unlock_flag_f
+
+!----------------------------------------------------------------------
+! Name:     h5fd_dsm_lock_f
+!
+! Purpose:  lock the dsm (collective)
+!
+! Outputs:
+!       hdferr:     - error code
+!                   Success:  0
+!                   Failure: -1
+! Optional parameters:
+!               NONE
+!
+!----------------------------------------------------------------------
+  SUBROUTINE h5fd_dsm_lock_f(hdferr)
+    !DEC$if defined(BUILD_H5FDdsm_DLL)
+    !DEC$ ATTRIBUTES DLLEXPORT :: h5fd_dsm_lock_f
+    !DEC$endif
+    IMPLICIT NONE
+    INTEGER, INTENT(OUT) :: hdferr     ! Error code
+
+    INTERFACE
+       INTEGER FUNCTION h5fd_dsm_lock_c()
+         USE H5GLOBAL
+         !DEC$IF DEFINED(H5FD_DSM_F90_WIN32)
+         !DEC$ATTRIBUTES C,reference,decorate,alias:'H5FD_DSM_LOCK_C'::h5fd_dsm_lock_c
+         !DEC$ENDIF
+       END FUNCTION h5fd_dsm_lock_c
+    END INTERFACE
+
+    hdferr = h5fd_dsm_lock_c()
+  END SUBROUTINE h5fd_dsm_lock_f
+
+!----------------------------------------------------------------------
+! Name:     h5fd_dsm_unlock_f
+!
+! Purpose:  unlock the dsm (collective)
+!
+! Inputs:
+!       unlockflag - unlockflags are:
+!                    H5FD_DSM_NOTIFY_NONE _F    
+!                    H5FD_DSM_NOTIFY_WAIT _F    
+!                    H5FD_DSM_NOTIFY_DATA _F        (this is the default)
+!                    H5FD_DSM_NOTIFY_INFORMATION _F 
+!                    H5FD_DSM_NOTIFY_USER _F        (add extra using USER+1, USER+2, ...)
+! Outputs:
+!       hdferr:    - error code
+!                   Success:  0
+!                   Failure: -1
+! Optional parameters:
+!               NONE
+!
+!----------------------------------------------------------------------
+  SUBROUTINE h5fd_dsm_unlock_f(unlockflag, hdferr)
+    !DEC$if defined(BUILD_H5FDdsm_DLL)
+    !DEC$ ATTRIBUTES DLLEXPORT :: h5fd_dsm_unlock_f
+    !DEC$endif
+    IMPLICIT NONE
+    INTEGER, INTENT(IN)  :: unlockflag ! DSM unlockflag to be sent
+    INTEGER, INTENT(OUT) :: hdferr     ! Error code
+    INTEGER :: err_0, err_1
+
+    INTERFACE
+       INTEGER FUNCTION h5fd_dsm_unlock_c(unlockflag)
+         USE H5GLOBAL
+         !DEC$IF DEFINED(H5FD_DSM_F90_WIN32)
+         !DEC$ATTRIBUTES C,reference,decorate,alias:'H5FD_DSM_UNLOCK_C'::h5fd_dsm_unlock_c
+         !DEC$ENDIF
+       INTEGER, INTENT(IN)  :: unlockflag
+       END FUNCTION h5fd_dsm_unlock_c
+    END INTERFACE
+
+    INTERFACE
+      INTEGER FUNCTION h5fd_dsm_init_flags_c(i_H5FD_dsm_flags)
+        USE H5FD_DSM_GLOBAL
+        INTEGER i_H5FD_dsm_flags(H5FD_DSM_FLAGS_LEN)
+      END FUNCTION h5fd_dsm_init_flags_c
+    END INTERFACE
+
+    err_0 = h5fd_dsm_init_flags_c(H5FD_dsm_flags)
+    err_1 = h5fd_dsm_unlock_c(unlockflag)
+    hdferr = err_0 + err_1
+  END SUBROUTINE h5fd_dsm_unlock_f
 
 END MODULE H5FDDSM
