@@ -38,18 +38,29 @@ public:
 
   H5FDdsmInt32   Init();
 
-  H5FDdsmInt32   Put(H5FDdsmMsg *DataMsg);
-  H5FDdsmInt32   Get(H5FDdsmMsg *DataMsg);
-  H5FDdsmInt32   WindowSync();
+  // Additional methods for one sided communications
+  H5FDdsmInt32   WinCreateData(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize, H5FDdsmInt32 comm);
+  H5FDdsmInt32   PutData(H5FDdsmMsg *msg);
+  H5FDdsmInt32   GetData(H5FDdsmMsg *msg);
+  H5FDdsmInt32   WindowSyncData();
 
-  H5FDdsmInt32   Accept(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize);
-  H5FDdsmInt32   Connect();
-  H5FDdsmInt32   Disconnect();
+  // Notification
+  H5FDdsmInt32   WinCreateNotification(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize, H5FDdsmInt32 comm);
+  H5FDdsmInt32   PutNotification(H5FDdsmMsg *msg);
+  H5FDdsmInt32   GetNotification(H5FDdsmMsg *msg);
 
-  H5FDdsmInt32   GatherIntraInstIds();
-  H5FDdsmInt32   GatherIntraMdhEntries();
+  // Lock
+  H5FDdsmInt32   WinCreateLock(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize, H5FDdsmInt32 comm);
+  H5FDdsmInt32   PutLock(H5FDdsmMsg *msg);
+  H5FDdsmInt32   GetLock(H5FDdsmMsg *msg);
 
 protected:
+  // DMAPP wrappers
+  H5FDdsmInt32   DmappWinCreateRemote(H5FDdsmPointer storagePointer, H5FDdsmUInt64 storageSize);
+  H5FDdsmInt32   DmappWinFree();
+  H5FDdsmInt32   DmappGatherIntraInstIds();
+  H5FDdsmInt32   DmappGatherIntraMdhEntries();
+
   H5FDdsmCommDmappInternals *CommDmappInternals;
   H5FDdsmBoolean   IsDmappInitialized;
   H5FDdsmBoolean   UseBlockingComm;

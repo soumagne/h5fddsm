@@ -215,6 +215,7 @@ H5FDdsmBuffer::SetLength(H5FDdsmUInt64 aLength, H5FDdsmBoolean allowAllocate)
     if (this->Comm) {
       switch (this->Comm->GetInterCommType()) {
         case H5FD_DSM_COMM_MPI_RMA:
+        case H5FD_DSM_COMM_DMAPP:
           this->Storage = new H5FDdsmStorageMpi;
           H5FDdsmDebug("Using MPI Storage...");
           break;
