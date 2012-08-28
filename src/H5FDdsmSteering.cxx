@@ -169,7 +169,7 @@ herr_t H5FD_dsm_steering_begin_query()
   DSM_STEERING_INIT(dsmManager)
 
   if (dsmManager->GetSteerer()->BeginInteractionsCache(H5F_ACC_RDWR) != H5FD_DSM_SUCCESS) {
-    /* TODO do we print an error message here */
+    DSM_STEERING_ERROR("BeginInteractionsCache failed to open RDWR")
   }
 
   return(SUCCEED);

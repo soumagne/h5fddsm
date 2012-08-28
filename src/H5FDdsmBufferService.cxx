@@ -199,6 +199,7 @@ void H5FDdsmBufferService::SetSychronizationCount(H5FDdsmInt32 count)
 {
   if (this->IsServer) {
     this->BufferServiceInternals->BufferLock.SetServerSychronizationCount(count);
+    this->BufferServiceInternals->BufferLock.SetClientSychronizationCount(count);
   }
   else {
     this->BufferServiceInternals->BufferLock.SetClientSychronizationCount(count);

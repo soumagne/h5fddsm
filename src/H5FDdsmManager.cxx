@@ -219,6 +219,14 @@ H5FDdsmInt32 H5FDdsmManager::GetUnlockStatus()
 }
 
 //----------------------------------------------------------------------------
+H5FDdsmInt32 H5FDdsmManager::SetIsAsynchronous(H5FDdsmBoolean async)
+{
+  // @TODO sort out this flag set/get
+  H5FD_dsm_set_manager(this);
+  H5FD_dsm_set_options(H5FD_DSM_LOCK_ASYNCHRONOUS);
+  return(H5FD_DSM_SUCCESS);
+}
+//----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmManager::Create()
 {
   if (this->DsmBuffer) return(H5FD_DSM_SUCCESS);
