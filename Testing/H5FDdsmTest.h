@@ -59,12 +59,7 @@ void particleWriteHdf(ParticleBuffer *buf, H5FDdsmConstString filename,
     H5FDdsmUInt64 ntuples, H5FDdsmUInt64 ncomponents, H5FDdsmUInt32 ndatasets,
     H5FDdsmUInt64 start, H5FDdsmUInt64 total, MPI_Comm comm, H5FDdsmManager *dsmManager);
 
-void particleWriteDsm(ParticleBuffer *buf, H5FDdsmConstString filename,
-    H5FDdsmUInt64 ntuples, H5FDdsmUInt64 ncomponents, H5FDdsmUInt32 ndatasets,
-    H5FDdsmUInt64 start, H5FDdsmUInt64 total, MPI_Comm comm, H5FDdsmManager *dsmManager);
-
 const FuncPointer usingHDF = particleWriteHdf;
-const FuncPointer usingDSM = particleWriteDsm;
 
 void particleReadHdf(ParticleBuffer *buf, H5FDdsmConstString filename,
     H5FDdsmUInt64 ntuples, H5FDdsmUInt64 ncomponents, H5FDdsmUInt32 ndatasets,
