@@ -3,7 +3,6 @@
 #include "H5FDdsmTools.h"
 
 #include <cstdlib>
-#include <H5FDdsm_sys/SystemTools.hxx>
 
 //----------------------------------------------------------------------------
 int main(int argc, char *argv[])
@@ -14,17 +13,12 @@ int main(int argc, char *argv[])
   receiverInit(argc, argv, dsmManager, &comm);
 
   while (dsmManager->GetIsActive()) {
-
-
-    std::cout << "Wait for unlock ... " << dsmManager->GetIsConnected() << std::endl;
     if (dsmManager->WaitForUnlock() != H5FD_DSM_FAIL) {
-      std::cout << "start dsmManager->GetIsConnected() " << dsmManager->GetIsConnected() << std::endl;
-      H5FD_dsm_dump();
-      std::cout << "end   dsmManager->GetIsConnected() " << dsmManager->GetIsConnected() << std::endl;
+      H5FD_dsm_lock();
+//      H5FD_dsm_dump();
       // Sync here
       MPI_Barrier(comm);
-      // Clean up for next step
-//      dsmManager->NotificationFinalize();
+      H5FD_dsm_unlock(H5FD_DSM_NOTIFY_NONE);
     }
   }
 

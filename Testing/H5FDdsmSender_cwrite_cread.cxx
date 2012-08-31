@@ -73,7 +73,6 @@ int main(int argc, char * argv[])
   H5Sclose(dataspace);
   H5Dclose(dataset);
   H5Fclose(hdf5Handle);
-//  H5FD_dsm_unlock(H5FD_DSM_NOTIFY_DATA);
 
   senderFinalize(dsmManager, &comm);
   delete dsmManager;

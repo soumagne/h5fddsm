@@ -125,32 +125,6 @@ int_f nh5fd_dsm_set_options_c(int_f* options)
 }
 
 /*----------------------------------------------------------------------------
- * Name:        nh5fd_dsm_set_unlock_flag_c
- * Purpose:     Call nh5fd_dsm_set_unlock_flag to set the unlock notification flag
- * Inputs:      options    - flags are:
- *                           H5FD_DSM_NOTIFY_NONE     
- *                           H5FD_DSM_NOTIFY_WAIT     
- *                           H5FD_DSM_NOTIFY_DATA         (this is the default)
- *                           H5FD_DSM_NOTIFY_INFORMATION  
- *                           H5FD_DSM_NOTIFY_USER         (add extra using USER+1, USER+2, ...)
- * Returns:     0 on success, -1 on failure
- *---------------------------------------------------------------------------*/
-int_f nh5fd_dsm_set_unlock_flag_c(int_f* unlockflag)
-{
-     int        ret_value = -1;
-     unsigned long c_unlockflag = *unlockflag;
-     herr_t ret;
-
-     /*
-      * Call H5FD_dsm_set_unlock_flag function.
-      */
-     ret = H5FD_dsm_set_unlock_flag(c_unlockflag);
-     if (ret < 0) return ret_value;
-     ret_value = 0;
-     return ret_value;
-}
-
-/*----------------------------------------------------------------------------
  * Name:        h5fd_dsm_lock_c
  * Purpose:     Call H5FD_dsm_lock to manually lock the dsm (collective)
  * Returns:     0 on success, -1 on failure

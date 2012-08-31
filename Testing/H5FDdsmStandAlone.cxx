@@ -53,13 +53,13 @@ main(int argc, char * argv[])
 
   H5FD_dsm_set_options(H5FD_DSM_LOCK_ASYNCHRONOUS);
 
-  std::cout << "Writing Standalone " << std::endl;
+//  std::cout << "Writing Standalone " << std::endl;
   // Write Data
   TestParticleWrite(fullname, numParticles, DIM_DATASETS, NUM_DATASETS,
       dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(), comm,
       dsmManager, usingHDF);
 
-  std::cout << "Reading Standalone " << std::endl;
+//  std::cout << "Reading Standalone " << std::endl;
   // Read and Check Data
   if (TestParticleRead(fullname, numParticles, DIM_DATASETS, NUM_DATASETS,
       dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(), comm,
@@ -67,12 +67,12 @@ main(int argc, char * argv[])
     exit_status = EXIT_FAILURE;
 
   H5close();
-  std::cout << "Finishing Standalone " << std::endl;
+//  std::cout << "Finishing Standalone " << std::endl;
   delete dsmManager;
 
-  std::cout << "Finalizing Standalone " << std::endl;
+//  std::cout << "Finalizing Standalone " << std::endl;
   MPI_Finalize();
 
-  std::cout << "Exiting Standalone " << std::endl;
+//  std::cout << "Exiting Standalone " << std::endl;
   return(exit_status);
 }

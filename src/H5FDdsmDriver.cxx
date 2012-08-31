@@ -155,7 +155,7 @@ dsm_free()
 hbool_t
 dsm_is_server()
 {
-  herr_t ret_value = TRUE;
+  hbool_t ret_value = TRUE;
 
   if (!dsmManager) DSM_DRIVER_ERROR("No DSM manager found")
 
@@ -168,7 +168,7 @@ dsm_is_server()
 hbool_t
 dsm_is_driver_serial()
 {
-  herr_t ret_value = TRUE;
+  hbool_t ret_value = TRUE;
 
   if (!dsmManager) DSM_DRIVER_ERROR("No DSM manager found")
 
@@ -187,10 +187,12 @@ dsm_set_options(unsigned long flags)
 
   // Lock management
   if ((flags & H5FD_DSM_UNLOCK_MANUAL) == H5FD_DSM_UNLOCK_MANUAL) {
-      dsmBufferService->SetReleaseLockOnClose(H5FD_DSM_FALSE);
+    DSM_DRIVER_ERROR("H5FD_DSM_UNLOCK_MANUAL is deprecated")
+//      dsmBufferService->SetReleaseLockOnClose(H5FD_DSM_FALSE);
   }
   if ((flags & H5FD_DSM_UNLOCK_ON_CLOSE) == H5FD_DSM_UNLOCK_ON_CLOSE) {
-    dsmBufferService->SetReleaseLockOnClose(H5FD_DSM_TRUE);
+    DSM_DRIVER_ERROR("H5FD_DSM_UNLOCK_ON_CLOSE is deprecated")
+//    dsmBufferService->SetReleaseLockOnClose(H5FD_DSM_TRUE);
   }
 
   // Lock/Unlock Synchronization protocol
@@ -216,7 +218,7 @@ dsm_set_options(unsigned long flags)
 hbool_t
 dsm_is_connected()
 {
-  herr_t ret_value = TRUE;
+  hbool_t ret_value = TRUE;
 
   if (!dsmManager) DSM_DRIVER_ERROR("No DSM manager found")
 
@@ -300,11 +302,13 @@ herr_t
 dsm_lock()
 {
   H5FDdsmBufferService *dsmBufferService = NULL;
+
   DSM_DRIVER_INIT(dsmBufferService)
 
-  bool parallel = (dsmManager->GetIsDriverSerial() == H5FD_DSM_TRUE) ? FALSE : TRUE;
+  H5FDdsmBoolean parallel = (dsmManager->GetIsDriverSerial() == H5FD_DSM_TRUE) ? FALSE : TRUE;
   if (dsmBufferService->RequestLockAcquire(parallel) != H5FD_DSM_SUCCESS)
     DSM_DRIVER_ERROR("Cannot request lock acquisition")
+
   return(SUCCEED);
 }
 
@@ -315,43 +319,15 @@ herr_t
 dsm_unlock(unsigned long flag)
 {
   H5FDdsmBufferService *dsmBufferService;
+
   DSM_DRIVER_INIT(dsmBufferService)
 
   // set the notification of unlock flag  
   dsmBufferService->SetUnlockStatus(flag);
 
-  bool parallel = (dsmManager->GetIsDriverSerial() == H5FD_DSM_TRUE) ? FALSE : TRUE;
+  H5FDdsmBoolean parallel = (dsmManager->GetIsDriverSerial() == H5FD_DSM_TRUE) ? FALSE : TRUE;
   if (dsmBufferService->RequestLockRelease(parallel) != H5FD_DSM_SUCCESS)
     DSM_DRIVER_ERROR("Cannot request lock release")
-  return(SUCCEED);
-}
-
-//--------------------------------------------------------------------------
-// on H5Fclose, this is called by the dsm driver and if ReleaseLockOnClose was set, 
-// it unlocks using whatever notification unlock_flag was set.
-herr_t
-dsm_closefile()
-{
-  H5FDdsmBufferService *dsmBufferService;
-
-  DSM_DRIVER_INIT(dsmBufferService)
-
-  if (dsmBufferService->GetReleaseLockOnClose()) {
-    H5FDdsmDebug("Calling dsm_closefile on " << (dsm_is_server() ? "Server" : "client"));
-    return dsm_unlock(dsmBufferService->GetUnlockStatus());
-  }
-
-  return(SUCCEED);
-}
-
-//--------------------------------------------------------------------------
-herr_t
-dsm_set_unlock_flag(unsigned long flag)
-{
-  H5FDdsmBufferService *dsmBufferService;
-
-  DSM_DRIVER_INIT(dsmBufferService)
-  dsmBufferService->SetUnlockStatus(flag);
 
   return(SUCCEED);
 }
@@ -385,21 +361,3 @@ dsm_write(haddr_t addr, size_t len, const void *buf_ptr)
 
   return(SUCCEED);
 }
-//--------------------------------------------------------------------------
-herr_t
-dsm_set_modified()
-{
-  H5FDdsmBufferService *dsmBufferService;
-
-  DSM_DRIVER_INIT(dsmBufferService)
-/*
-  dsmBufferService->SetIsDataModified(H5FD_DSM_TRUE);
-  if (dsmBufferService->GetReleaseLockOnClose() && dsmBufferService->GetIsConnected()) {
-    if (SUCCEED != dsm_unlock(dsmBufferService->GetUnlockStatus()))
-      DSM_DRIVER_ERROR("cannot notify DSM")
-  }
-*/
-  return(SUCCEED);
-}
-
-//--------------------------------------------------------------------------

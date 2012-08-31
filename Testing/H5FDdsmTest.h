@@ -36,7 +36,7 @@
 #define DATASETNAME     "Position"
 
 #define LOOPS          1
-#define AVERAGE       1
+#define AVERAGE       20
 #define SKIP          10
 #define NUM_DATASETS   1
 #define DIM_DATASETS   3

@@ -274,21 +274,22 @@ H5FDdsmInt32 H5FDdsmSteerer::BeginInteractionsCache(H5FDdsmUInt32 mode)
   }
   //
   if (!this->InteractionsCacheActive()) {
+    hid_t fileId = this->DsmManager->GetCachedFileHandle();
     if (mode == H5F_ACC_RDONLY) {
       this->BeginHideHDF5Errors();
-      this->Cache_interactionGroupId = H5Gopen(this->DsmManager->Cache_fileId, "Interactions", H5P_DEFAULT);
+      this->Cache_interactionGroupId = H5Gopen(fileId, "Interactions", H5P_DEFAULT);
       this->EndHideHDF5Errors();
     }
     else if (mode == H5F_ACC_RDWR) {
       // if it does not already exist, create it
       this->BeginHideHDF5Errors();
-      int exists = H5Lexists(this->DsmManager->Cache_fileId, "Interactions", H5P_DEFAULT);
+      int exists = H5Lexists(fileId, "Interactions", H5P_DEFAULT);
       this->EndHideHDF5Errors();
       if (exists<=0) {
-        this->Cache_interactionGroupId = H5Gcreate(this->DsmManager->Cache_fileId, "Interactions", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+        this->Cache_interactionGroupId = H5Gcreate(fileId, "Interactions", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
       }
       else {
-        this->Cache_interactionGroupId = H5Gopen(this->DsmManager->Cache_fileId, "Interactions", H5P_DEFAULT);
+        this->Cache_interactionGroupId = H5Gopen(fileId, "Interactions", H5P_DEFAULT);
       }
     }
   }

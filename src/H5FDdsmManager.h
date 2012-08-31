@@ -29,7 +29,6 @@
 #ifndef __H5FDdsmManager_h
 #define __H5FDdsmManager_h
 
-#include <hdf5.h>
 #include "H5FDdsmBufferService.h"
 #include "H5FDdsmComm.h"
 #include <stack>
@@ -193,8 +192,8 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     // Description:
     // If the DSM has been opened and handles cached, this returns the cached
     // handle, otherwise H5I_BADID (-1). Use with great care.
-    hid_t GetCachedFileHandle();
-    hid_t GetCachedFileAccessHandle();
+    H5FDdsmInt32 GetCachedFileHandle();
+    H5FDdsmInt32 GetCachedFileAccessHandle();
 
     // Description:
     // If the .dsm_config file exists in the standard location
@@ -265,10 +264,6 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     H5FDdsmBoolean  UseStaticInterComm;
     H5FDdsmString   ServerHostName;
     H5FDdsmInt32    ServerPort;
-    //
-    std::stack<H5FDdsmUInt32> Cache_Stack;      
-    hid_t                     Cache_fapl;
-    hid_t                     Cache_fileId;
     //
 #ifdef H5FDdsm_HAVE_STEERING
     H5FDdsmSteerer *Steerer;

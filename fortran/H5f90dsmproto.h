@@ -42,9 +42,6 @@ H5FDdsmF90_EXPORT int_f nh5pget_fapl_dsm_c(hid_t_f *prp_id, int_f* comm);
 #define nh5fd_dsm_set_options_c H5_FC_FUNC_(h5fd_dsm_set_options_c, H5FD_DSM_SET_OPTIONS_C)
 H5FDdsmF90_EXPORT int_f nh5fd_dsm_set_options_c(int_f* options);
 
-#define nh5fd_dsm_set_unlock_flag_c H5_FC_FUNC_(h5fd_dsm_set_unlock_flag_c, H5FD_DSM_SET_UNLOCK_FLAG_C)
-H5FDdsmF90_EXPORT int_f nh5fd_dsm_set_unlock_flag_c(int_f* unlockflag);
-
 #define nh5fd_dsm_lock_c H5_FC_FUNC_(h5fd_dsm_lock_c, H5FD_DSM_LOCK_C)
 H5FDdsmF90_EXPORT int_f nh5fd_dsm_lock_c();
 

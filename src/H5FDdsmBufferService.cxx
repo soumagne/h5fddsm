@@ -343,7 +343,6 @@ H5FDdsmBufferService::BufferService(H5FDdsmInt32 *returnOpcode)
   H5FDdsmAddr         address;
   H5FDdsmByte        *datap;
   static H5FDdsmInt32 syncId      = -1;
-  static H5FDdsmInt32 syncChannel = -1;
 
   if (this->CommChannel == H5FD_DSM_ANY_COMM) {
     if (this->Comm->GetId() == 0) {

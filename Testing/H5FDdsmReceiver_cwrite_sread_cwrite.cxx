@@ -15,8 +15,6 @@ int main(int argc, char *argv[])
       H5FD_dsm_dump();
       // Sync here
       MPI_Barrier(comm);
-      // Clean up for next step
-//      dsmManager->NotificationFinalize();
     }
   }
 

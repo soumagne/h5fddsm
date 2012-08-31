@@ -64,14 +64,6 @@
 #include "H5FDdsm.h"      /* DSM driver             */
 
 /*
- * H5private.h defines attribute, but we don't want it
- * as it causes link errors on some gcc versions
-#ifdef __GNUC__
-# undef __attribute__
-#endif
- */
-
-/*
  * Unfortunately, some of the HDF5 macros use internal variables which are
  * not exported from the hdf5 lib/dll so we must override the macros and
  * lose some debugging info
@@ -430,45 +422,6 @@ done:
 
   FUNC_LEAVE_NOAPI(ret_value)
 } /* end H5FD_dsm_unlock(H5FD_DSM_NOTIFY_DATA) */
-
-/*--------------------------------------------------------------------------
-NAME
-   H5FD_dsm_set_unlock_flag -- specify notification type on automatic unlock
-USAGE
-   herr_t H5FD_dsm_set_unlock_flag(flag) where flag should be one of 
-     H5FD_DSM_NOTIFY_NONE     
-     H5FD_DSM_NOTIFY_WAIT     
-     H5FD_DSM_NOTIFY_DATA         (this is the default)
-     H5FD_DSM_NOTIFY_INFORMATION  
-     H5FD_DSM_NOTIFY_USER         (add extra using USER+1, USER+2, ...)
-
-RETURNS
-   Non-negative on success/Negative on failure
-DESCRIPTION
-   When the DSM file is unlocked, a notification is set at the remote end
-   which can be polled by the other application.
-
- --------------------------------------------------------------------------*/
-herr_t H5FD_dsm_set_unlock_flag(unsigned long flag)
-{
-  herr_t ret_value = SUCCEED;
-
-#if H5_VERSION_GE(1,8,9)
-  FUNC_ENTER_NOAPI(FAIL)
-#else
-  FUNC_ENTER_NOAPI(H5FD_dsm_set_unlock_flag, FAIL)
-#endif
-
-  if (SUCCEED != dsm_set_unlock_flag(flag))
-    HGOTO_ERROR(H5E_VFL, H5E_CANTMODIFY, FAIL, "cannot lock")
-
-done:
-  if (err_occurred) {
-    /* Nothing */
-  }
-
-  FUNC_LEAVE_NOAPI(ret_value)
-} /* end H5FD_dsm_set_unlock_flag */
 
 /*-------------------------------------------------------------------------
  * Function:    H5FD_dsm_set_manager
@@ -910,6 +863,7 @@ H5FD_dsm_close(H5FD_t *_file)
   herr_t ret_value = SUCCEED; /* Return value */
   int mpi_code;
   herr_t dsm_code = SUCCEED;
+  unsigned long unlock_flag;
 
 #if H5_VERSION_GE(1,8,9)
   FUNC_ENTER_NOAPI_NOINIT
@@ -934,26 +888,23 @@ H5FD_dsm_close(H5FD_t *_file)
     if (SUCCEED != dsm_code)
       HGOTO_ERROR(H5E_VFL, H5E_CANTUPDATE, FAIL, "cannot update DSM entries")
 
-    if (!dsm_is_server() || !dsm_is_connected()) {
-      if (!dsm_is_driver_serial()) {
-        /*
-         * Be sure that everyone's here before releasing resources (done with
-         * collective op). Gather all the dirty flags because some processes may
-         * not have written yet.
-         */
-        if (MPI_SUCCESS != (mpi_code = MPI_Allreduce(MPI_IN_PLACE, &file->dirty,
-            sizeof(hbool_t), MPI_UNSIGNED_CHAR, MPI_MAX, file->intra_comm)))
-          HMPI_GOTO_ERROR(FAIL, "MPI_Allreduce failed", mpi_code)
-      }
-      if (file->dirty) {
-        if (SUCCEED != dsm_set_modified())
-          HGOTO_ERROR(H5E_VFL, H5E_CANTUNLOCK, FAIL, "cannot mark DSM as modified")
-      }
+    if (!dsm_is_driver_serial()) {
+      /*
+       * Be sure that everyone's here before releasing resources (done with
+       * collective op). Gather all the dirty flags because some processes may
+       * not have written yet.
+       */
+      if (MPI_SUCCESS != (mpi_code = MPI_Allreduce(MPI_IN_PLACE, &file->dirty,
+          sizeof(hbool_t), MPI_UNSIGNED_CHAR, MPI_MAX, file->intra_comm)))
+        HMPI_GOTO_ERROR(FAIL, "MPI_Allreduce failed", mpi_code)
     }
   }
 
-  if (SUCCEED != dsm_closefile())
-    HGOTO_ERROR(H5E_VFL, H5E_CANTUPDATE, FAIL, "cannot unlock DSM")
+  /* if ReleaseLockOnClose was set, unlocks using whatever notification
+   * unlock_flag was set.
+   */
+  unlock_flag = (file->dirty) ? H5FD_DSM_NOTIFY_DATA : H5FD_DSM_NOTIFY_NONE;
+  if (SUCCEED != dsm_unlock(unlock_flag)) HGOTO_ERROR(H5E_VFL, H5E_CANTUNLOCK, FAIL, "cannot unlock DSM")
 
   /* Release resources */
   if (file->name) HDfree(file->name);

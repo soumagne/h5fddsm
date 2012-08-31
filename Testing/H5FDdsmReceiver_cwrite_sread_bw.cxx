@@ -66,8 +66,6 @@ int main(int argc, char *argv[])
           }
           // Sync here
           MPI_Barrier(comm);
-          // Clean up for next step
-//          dsmManager->NotificationFinalize();
         }
       }
       totaltime = totaltime / AVERAGE;

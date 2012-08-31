@@ -58,13 +58,10 @@ extern "C" {
 
   H5FDdsm_EXPORT herr_t  dsm_lock();
   H5FDdsm_EXPORT herr_t  dsm_unlock(unsigned long flag);
-  H5FDdsm_EXPORT herr_t  dsm_closefile();
-  H5FDdsm_EXPORT herr_t  dsm_set_unlock_flag(unsigned long flag);
 
   H5FDdsm_EXPORT herr_t  dsm_read(haddr_t addr, size_t len, void *buf_ptr);
   H5FDdsm_EXPORT herr_t  dsm_write(haddr_t addr, size_t len, const void *buf_ptr);
 
-  H5FDdsm_EXPORT herr_t  dsm_set_modified();
 #ifdef __cplusplus
 }
 #endif

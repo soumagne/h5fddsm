@@ -136,7 +136,6 @@ extern "C" {
    */
   H5FDdsm_EXPORT herr_t H5FD_dsm_lock(void);
   H5FDdsm_EXPORT herr_t H5FD_dsm_unlock(unsigned long flag);
-  H5FDdsm_EXPORT herr_t H5FD_dsm_set_unlock_flag(unsigned long flag);
 
   /*
   H5FDdsm_EXPORT herr_t H5FD_dsm_clear(void);

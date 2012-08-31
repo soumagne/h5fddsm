@@ -30,20 +30,6 @@
 #include "H5FDdsmComm.h"
 #include <queue>
 
-#ifdef H5FDdsm_BUILD_SHARED_LIBS
-  #ifdef H5FDdsm_EXPORTS
-    #define H5FDdsm_TEMPLATE
-  #else
-    #define H5FDdsm_TEMPLATE extern
-  #endif
-#else
-  #define H5FDdsm_TEMPLATE
-#endif
-
-//disable warnings on extern before template instantiation
-#pragma warning (disable : 4231)
-#pragma warning (disable : 4251)
-
 class H5FDdsm_EXPORT H5FDdsmLock : public H5FDdsmObject {
 
 public:
@@ -90,7 +76,5 @@ protected:
   volatile H5FDdsmInt32     SychronizationCount[H5FDdsm_NUM_CONNECTION_IDS];
   volatile H5FDdsmInt32     SychronizationCountInternal[H5FDdsm_NUM_CONNECTION_IDS];
 };
-
-H5FDdsm_TEMPLATE template class H5FDdsm_EXPORT std::queue<H5FDdsmInt32>;
 
 #endif // __H5FDdsmLock_h

@@ -32,8 +32,6 @@ int main(int argc, char *argv[])
       H5Sclose(memspace);
       H5Dclose(dataset);
       H5Fclose(hdf5Handle);
-      // Clean up for next step
-//      dsmManager->NotificationFinalize();
     }
   }
 
