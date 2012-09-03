@@ -190,9 +190,9 @@ H5FDdsmBuffer::ConfigureUniform(H5FDdsmComm *aComm, H5FDdsmUInt64 aLength,
   if ((aComm->GetId() >= startId) && (aComm->GetId() <= endId)) {
     if (aBlockLength) {
       // For optimization we make the DSM length fit to a multiple of block size
-      this->SetLength((H5FDdsmUInt64(aLength / aBlockLength)) * aBlockLength, 1);
+      this->SetLength((H5FDdsmUInt64(aLength / aBlockLength)) * aBlockLength);
     } else {
-      this->SetLength(aLength, 1);
+      this->SetLength(aLength);
     }
     this->StartAddress = (aComm->GetId() - startId) * aLength;
     this->EndAddress = this->StartAddress + aLength - 1;
@@ -237,7 +237,8 @@ H5FDdsmBuffer::SetLength(H5FDdsmUInt64 aLength, H5FDdsmBoolean allowAllocate)
   // If we are using one-sided communication, allocate here the local memory
   // window for one-sided accesses
   if (this->Comm->GetUseOneSidedComm()) {
-    this->Comm->WinCreateData(this->DataPointer, this->Length, H5FD_DSM_INTRA_COMM);
+    H5FDdsmUInt64 storageSize = allowAllocate ? this->Length : 0;
+    this->Comm->WinCreateData(this->DataPointer, storageSize, H5FD_DSM_INTRA_COMM);
   }
   return(H5FD_DSM_SUCCESS);
 }
@@ -468,7 +469,8 @@ H5FDdsmBuffer::ReceiveInfo()
   if (status != H5FD_DSM_SUCCESS) H5FDdsmError("Broadcast of Info failed");
 
   this->SetDsmType(dsmInfo.type);
-  this->SetLength(dsmInfo.length, 0);
+  // We are a client so don't allocate anything but only set a virtual remote length
+  this->SetLength(dsmInfo.length, H5FD_DSM_FALSE);
   this->TotalLength = dsmInfo.total_length;
   this->SetBlockLength(dsmInfo.block_length);
   this->StartServerId = dsmInfo.start_server_id;

@@ -168,7 +168,7 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmObject {
     H5FDdsmInt32   ReceiveInfo();
 
   protected:
-    H5FDdsmInt32   SetLength(H5FDdsmUInt64 length, H5FDdsmBoolean allowAllocate=1);
+    H5FDdsmInt32   SetLength(H5FDdsmUInt64 length, H5FDdsmBoolean allowAllocate=H5FD_DSM_TRUE);
 
     H5FDdsmBoolean  IsServer;
 
