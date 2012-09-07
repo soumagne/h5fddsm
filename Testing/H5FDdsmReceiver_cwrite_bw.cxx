@@ -12,14 +12,12 @@ int main(int argc, char *argv[])
 
   receiverInit(argc, argv, dsmManager, &comm);
 
-  while (dsmManager->GetIsActive()) {
-    if (dsmManager->WaitForUnlock() != H5FD_DSM_FAIL) {
-      H5FD_dsm_lock();
-//      H5FD_dsm_dump();
-      // Sync here
-      MPI_Barrier(comm);
-      H5FD_dsm_unlock(H5FD_DSM_NOTIFY_NONE);
-    }
+  while (dsmManager->WaitForUnlock() != H5FD_DSM_FAIL) {
+    H5FD_dsm_lock();
+//    H5FD_dsm_dump();
+    // Sync here
+    MPI_Barrier(comm);
+    H5FD_dsm_unlock(H5FD_DSM_NOTIFY_NONE);
   }
 
   receiverFinalize(dsmManager, &comm);

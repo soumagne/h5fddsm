@@ -35,52 +35,48 @@ int main(int argc, char *argv[])
     return(EXIT_SUCCESS);
   }
 
-  while (dsmManager->GetIsActive()) {
+  if (dsmManager->GetUpdatePiece() == 0) {
+    printf("# Receiving from DSM ");
+    printf("%lu particles/proc (%d x %d) -- %lf MB\n",
+        numParticles, NUM_DATASETS, DIM_DATASETS, MBytes);
+    printf("%-*s%*s", 10, "# NumProcs", 20, "Bandwidth (MB/s)");
+    if (dsmManager->GetDsmBuffer()->GetDsmType() == H5FD_DSM_TYPE_BLOCK_CYCLIC ||
+        dsmManager->GetDsmBuffer()->GetDsmType() == H5FD_DSM_TYPE_BLOCK_RANDOM) {
+      printf("%*s", 20, "Block Size (Bytes)");
+    }
+    printf("\n");
+    fflush(stdout);
+  }
 
+  for (int loop = 0; loop < LOOPS; loop++) {
+    totaltime = 0;
+    for (int avg = 0; avg < AVERAGE; avg++) {
+      if (dsmManager->WaitForUnlock() != H5FD_DSM_FAIL) {
+        H5FDdsmFloat64 readtime;
+        // H5FD_dsm_dump();
+        readtime = TestParticleRead(fullname, numParticles, DIM_DATASETS, NUM_DATASETS,
+            dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(),
+            comm, dsmManager);
+        if (readtime != H5FD_DSM_FAIL) {
+          totaltime += readtime;
+        } else {
+          exit_status = EXIT_FAILURE;
+        }
+        // Sync here
+        MPI_Barrier(comm);
+      }
+    }
+    totaltime = totaltime / AVERAGE;
+    bandwidth = (MBytes / totaltime);
     if (dsmManager->GetUpdatePiece() == 0) {
-      printf("# Receiving from DSM ");
-      printf("%lu particles/proc (%d x %d) -- %lf MB\n",
-          numParticles, NUM_DATASETS, DIM_DATASETS, MBytes);
-      printf("%-*s%*s", 10, "# NumProcs", 20, "Bandwidth (MB/s)");
-      if (dsmManager->GetDsmBuffer()->GetDsmType() == H5FD_DSM_TYPE_BLOCK_CYCLIC ||
-          dsmManager->GetDsmBuffer()->GetDsmType() == H5FD_DSM_TYPE_BLOCK_RANDOM) {
-        printf("%*s", 20, "Block Size (Bytes)");
+      printf("%-*d%*.*f", 10, dsmManager->GetUpdateNumPieces(), 20, 2, bandwidth);
+      if (dsmManager->GetDsmBuffer()->GetDsmType() == H5FD_DSM_TYPE_BLOCK_CYCLIC
+          || dsmManager->GetDsmBuffer()->GetDsmType() == H5FD_DSM_TYPE_BLOCK_RANDOM) {
+        printf("%*ld", 20, dsmManager->GetDsmBuffer()->GetBlockLength());
       }
       printf("\n");
       fflush(stdout);
     }
-
-    for (int loop = 0; loop < LOOPS; loop++) {
-      totaltime = 0;
-      for (int avg = 0; avg < AVERAGE; avg++) {
-        if (dsmManager->WaitForUnlock() != H5FD_DSM_FAIL) {
-          H5FDdsmFloat64 readtime;
-          // H5FD_dsm_dump();
-          readtime = TestParticleRead(fullname, numParticles, DIM_DATASETS, NUM_DATASETS,
-              dsmManager->GetUpdatePiece(), dsmManager->GetUpdateNumPieces(),
-              comm, dsmManager);
-          if (readtime != H5FD_DSM_FAIL) {
-            totaltime += readtime;
-          } else {
-            exit_status = EXIT_FAILURE;
-          }
-          // Sync here
-          MPI_Barrier(comm);
-        }
-      }
-      totaltime = totaltime / AVERAGE;
-      bandwidth = (MBytes / totaltime);
-      if (dsmManager->GetUpdatePiece() == 0) {
-        printf("%-*d%*.*f", 10, dsmManager->GetUpdateNumPieces(), 20, 2, bandwidth);
-        if (dsmManager->GetDsmBuffer()->GetDsmType() == H5FD_DSM_TYPE_BLOCK_CYCLIC
-            || dsmManager->GetDsmBuffer()->GetDsmType() == H5FD_DSM_TYPE_BLOCK_RANDOM) {
-          printf("%*ld", 20, dsmManager->GetDsmBuffer()->GetBlockLength());
-        }
-        printf("\n");
-        fflush(stdout);
-      }
-    }
-    dsmManager->WaitForUnlock();
   }
 
   receiverFinalize(dsmManager, &comm);

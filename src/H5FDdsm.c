@@ -498,7 +498,7 @@ H5Pset_fapl_dsm(hid_t fapl_id, MPI_Comm intra_comm, void *local_buf_ptr,
   if (SUCCEED != dsm_get_properties(&fa.intra_comm, &fa.local_buf_ptr, &fa.local_buf_len))
     HGOTO_ERROR(H5E_PLIST, H5E_CANTALLOC, FAIL, "cannot get DSM properties")
 
-  if (!dsm_is_connected() && !dsm_is_server()) {
+  if (!dsm_is_server() && !dsm_is_connected()) {
     /* TODO we should decide what to do if we cannot connect */
     dsm_connect();
   }

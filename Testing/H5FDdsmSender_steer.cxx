@@ -20,7 +20,6 @@ int main(int argc, char **argv)
   H5FDdsmConstString fullname = "dsm";
   H5FDdsmManager *dsmManager = new H5FDdsmManager();
 
-
   senderInit(argc, argv, dsmManager, &comm);
 
   H5FD_dsm_steering_init(comm);

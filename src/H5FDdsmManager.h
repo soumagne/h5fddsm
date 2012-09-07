@@ -129,8 +129,6 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     // Description:
     // Wait for a connection - Only valid after a Publish call has been made.
     H5FDdsmBoolean GetIsConnected();
-    H5FDdsmBoolean GetIsActive();
-
     H5FDdsmInt32 WaitForConnection();
 
     // Description:
@@ -174,7 +172,7 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     // this function must be paired with a matching Close
     // Use H5F_ACC_RDONLY for queries
     // Use H5F_ACC_RDWR   for read/write
-    H5FDdsmInt32 OpenDSM(H5FDdsmUInt32 mode, bool serial=false);
+    H5FDdsmInt32 OpenDSM(H5FDdsmUInt32 mode, H5FDdsmBoolean serial=H5FD_DSM_FALSE);
     H5FDdsmInt32 OpenDSMSerial(H5FDdsmUInt32 mode);
 
     // Description:

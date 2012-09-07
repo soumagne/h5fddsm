@@ -45,9 +45,9 @@ public:
   // on and the ID of the new lock owner is returned
   H5FDdsmInt32 Unlock(H5FDdsmInt32 channel);
 
-  // 
-  H5FDdsmBoolean GetClientUnlockedFlag(bool clear);
-  H5FDdsmBoolean GetServerUnlockedFlag(bool clear);
+  //
+  H5FDdsmGetIndexValueMacro(UnlockedFlag, H5FDdsmBoolean);
+  H5FDdsmSetIndexValueMacro(UnlockedFlag, H5FDdsmBoolean);
 
   // Server nodes are master nodes and honour all lock controls, 
   // but client nodes only have to obey what the master does, 
@@ -58,10 +58,10 @@ public:
   H5FDdsmSetValueMacro(Rank, H5FDdsmInt32);
 
   void SetServerSychronizationCount(H5FDdsmInt32 count) {
-    this->SychronizationCount[H5FDdsm_SERVER_ID] = count;
+    this->SychronizationCount[H5FD_DSM_SERVER_ID] = count;
   };
   void SetClientSychronizationCount(H5FDdsmInt32 count) {
-    this->SychronizationCount[H5FDdsm_CLIENT_ID] = count;
+    this->SychronizationCount[H5FD_DSM_CLIENT_ID] = count;
   };
 
 protected:
@@ -71,10 +71,10 @@ protected:
   // only one thread actually modifies thes, but they might be read by another thread
   // so we'll declare them volatile just as a precaution
   volatile H5FDdsmInt32     LockOwner;
-  volatile H5FDdsmInt32     LockCount[H5FDdsm_NUM_CONNECTION_IDS];
-  volatile H5FDdsmInt32     UnlockedFlag[H5FDdsm_NUM_CONNECTION_IDS];
-  volatile H5FDdsmInt32     SychronizationCount[H5FDdsm_NUM_CONNECTION_IDS];
-  volatile H5FDdsmInt32     SychronizationCountInternal[H5FDdsm_NUM_CONNECTION_IDS];
+  volatile H5FDdsmInt32     LockCount[H5FD_DSM_NUM_CONNECTION_IDS];
+  volatile H5FDdsmBoolean   UnlockedFlag[H5FD_DSM_NUM_CONNECTION_IDS];
+  volatile H5FDdsmInt32     SychronizationCount[H5FD_DSM_NUM_CONNECTION_IDS];
+  volatile H5FDdsmInt32     SychronizationCountInternal[H5FD_DSM_NUM_CONNECTION_IDS];
 };
 
 #endif // __H5FDdsmLock_h

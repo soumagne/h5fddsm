@@ -45,33 +45,20 @@ public:
   H5FDdsmCondition(); 
   virtual ~H5FDdsmCondition(); 
 
-  // Description:
-  // Wait for the condition to change.
-  void Wait();
-
-  // Description:
-  // Used internally : Wake one thread waiting for the condition to change.
-  void Signal();
-
-  // Description:
-  // Used internally : Wait for the condition to change.
-  void Wait_(H5FDdsmMutex &mutex);
-
   // name is only for debug messages
   void SetName(const char *name);
 
   // Description:
   // Wake one thread waiting for the condition to change.
-  void LockMutex();
+  void Signal();
 
   // Description:
   // Wait for the condition to change.
-  void UnlockMutex();
+  void Wait(H5FDdsmMutex &mutex);
 
 protected:
 
   H5FDdsmConditionType Condition;
-  H5FDdsmMutex         ConditionMutex;
   std::string          ConditionName;
 };
 

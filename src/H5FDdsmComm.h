@@ -73,9 +73,9 @@
 // These are deliberately the same as above as we use the communicator as an ID for the connection
 // The numbers must start from zero as they are used as array indices in the code.
 // @TODO : perhaps allow non zero based IDs
-#define H5FDdsm_SERVER_ID          H5FD_DSM_INTRA_COMM
-#define H5FDdsm_CLIENT_ID          H5FD_DSM_INTER_COMM
-#define H5FDdsm_NUM_CONNECTION_IDS 0x02
+#define H5FD_DSM_SERVER_ID          H5FD_DSM_INTRA_COMM
+#define H5FD_DSM_CLIENT_ID          H5FD_DSM_INTER_COMM
+#define H5FD_DSM_NUM_CONNECTION_IDS 0x02
 
 struct H5FDdsmMsg;
 
@@ -178,7 +178,7 @@ protected:
   H5FDdsmInt32       InterCommType;
   H5FDdsmInt32       InterSize;
 
-  H5FDdsmInt32       SyncCounter[H5FDdsm_NUM_CONNECTION_IDS];
+  H5FDdsmInt32       SyncCounter[H5FD_DSM_NUM_CONNECTION_IDS];
 };
 
 #endif // __H5FDdsmComm_h

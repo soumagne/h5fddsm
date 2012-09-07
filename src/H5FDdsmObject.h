@@ -138,6 +138,13 @@ H5FDdsmInt32 Set##var (type _arg) \
   return ( H5FD_DSM_SUCCESS ); \
   }
 
+#define H5FDdsmSetIndexValueMacro(var,type) \
+H5FDdsmInt32 Set##var (H5FDdsmUInt64 Index, type _arg) \
+  { \
+  this->var[ Index ]  = _arg; \
+  return ( H5FD_DSM_SUCCESS ); \
+  }
+
 #define H5FDdsmSetStringMacro(var) \
 H5FDdsmInt32 Set##var (H5FDdsmConstString _arg) \
   { \
@@ -148,19 +155,6 @@ H5FDdsmInt32 Set##var (H5FDdsmConstString _arg) \
   return ( H5FD_DSM_SUCCESS ); \
   }
 
-#define H5FDdsmGetStringMacro(var) \
-H5FDdsmConstString Get##var () \
-  { \
-  return ( this->var ); \
-  }
-
-#define H5FDdsmSetIndexValueMacro(var,type) \
-H5FDdsmInt32 Set##var ( Int64 Index, type _arg) \
-  { \
-  this->var[ Index ]  = _arg; \
-  return ( H5FD_DSM_SUCCESS ); \
-  }
-
 #define H5FDdsmGetValueMacro(var,type) \
 type Get##var () \
   { \
@@ -168,9 +162,15 @@ type Get##var () \
   }
 
 #define H5FDdsmGetIndexValueMacro(var,type) \
-type Get##var (Int64 Index) \
+type Get##var (H5FDdsmUInt64 Index) \
   { \
-  return ( this->var[ Index ]  ); \
+  return ( this->var[ Index ] ); \
+  }
+
+#define H5FDdsmGetStringMacro(var) \
+H5FDdsmConstString Get##var () \
+  { \
+  return ( this->var ); \
   }
 
 //------------------------------------------------------------------------------

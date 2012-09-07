@@ -10,12 +10,10 @@ int main(int argc, char *argv[])
   MPI_Comm comm = MPI_COMM_WORLD;
   receiverInit(argc, argv, dsmManager, &comm);
 
-  while (dsmManager->GetIsActive()) {
-    if (dsmManager->WaitForUnlock() != H5FD_DSM_FAIL) {
-      H5FD_dsm_dump();
-      // Sync here
-      MPI_Barrier(comm);
-    }
+  while (dsmManager->WaitForUnlock() != H5FD_DSM_FAIL) {
+    H5FD_dsm_dump();
+    // Sync here
+    MPI_Barrier(comm);
   }
 
   receiverFinalize(dsmManager, &comm);

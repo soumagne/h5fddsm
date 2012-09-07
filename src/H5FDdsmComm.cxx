@@ -100,8 +100,8 @@ H5FDdsmComm::H5FDdsmComm()
   this->InterCommType      = -1;
   this->InterSize          = -1;
   //
-  for (int i=0; i<H5FDdsm_NUM_CONNECTION_IDS; i++) {
-    this->SyncCounter[i]       = 0;
+  for (int i = 0; i < H5FD_DSM_NUM_CONNECTION_IDS; i++) {
+    this->SyncCounter[i]   = 0;
   }
 }
 
@@ -406,7 +406,7 @@ H5FDdsmComm::Disconnect()
 H5FDdsmInt32
 H5FDdsmComm::ChannelSynced(H5FDdsmInt32 who, H5FDdsmInt32 *syncId, H5FDdsmInt32 connectionId)
 {
-  static std::set<H5FDdsmInt32> syncQueue[H5FDdsm_NUM_CONNECTION_IDS];
+  static std::set<H5FDdsmInt32> syncQueue[H5FD_DSM_NUM_CONNECTION_IDS];
   H5FDdsmInt32 ret = H5FD_DSM_FALSE;
   H5FDdsmInt32 numberOfRanks = (connectionId==0) ? this->IntraSize : this->InterSize;
 

@@ -1,6 +1,12 @@
 #include "H5FDdsmTest.h"
 
 #include <cstdlib>
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
+
 
 //----------------------------------------------------------------------------
 int main(int argc, char *argv[])
@@ -60,6 +66,14 @@ int main(int argc, char *argv[])
   //
   MPI_Barrier(comm);
   if (rank == 0) std::cout << "# Waiting for client..." << std::endl;
+  /*
+   * TODO Use sleep for now to be sure that we've entered accept
+   */
+#ifdef _WIN32
+  Sleep(1000);
+#else
+  sleep(1);
+#endif
   //
   delete dsmManager;
   //

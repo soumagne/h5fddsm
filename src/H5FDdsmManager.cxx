@@ -172,20 +172,6 @@ MPI_Comm H5FDdsmManager::GetGlobalMPICommunicator()
 }
 
 //----------------------------------------------------------------------------
-H5FDdsmBoolean H5FDdsmManager::GetIsActive()
-{
-  H5FDdsmBoolean ret = H5FD_DSM_FALSE;
-  if (this->DsmBuffer) {
-    H5FDdsmBoolean isl = this->DsmBuffer->GetIsLockWaiting(false);
-    H5FDdsmBoolean ic = this->DsmBuffer->GetIsConnected();
-    H5FDdsmBoolean id = this->DsmBuffer->GetIsDisconnected();
-    H5FDdsmDebug("GetIsActive returns : GetIsLockWaiting " << isl << " : GetIsConnected " << ic << " : GetIsDisconnected " << id);
-    return (ic || (id && isl));
-  }
-  return(ret);
-}
-
-//----------------------------------------------------------------------------
 H5FDdsmBoolean H5FDdsmManager::GetIsConnected()
 {
   H5FDdsmBoolean ret = H5FD_DSM_FALSE;
@@ -408,7 +394,7 @@ H5FDdsmInt32 H5FDdsmManager::Connect(H5FDdsmBoolean persist)
         this->DsmBuffer->GetComm()->WinCreateData(NULL, 0, H5FD_DSM_INTER_COMM);
 //        this->DsmBuffer->GetComm()->WinCreateNotification(NULL, 0, H5FD_DSM_INTER_COMM);
 //        this->DsmBuffer->GetComm()->WinCreateLock(NULL, 0, H5FD_DSM_INTER_COMM);
-        this->DsmBuffer->SetIsConnected(H5FD_DSM_TRUE);
+        this->DsmBuffer->IsConnected = H5FD_DSM_TRUE;
         this->DsmBuffer->ReceiveInfo();
       }
       else {
@@ -549,10 +535,10 @@ const char *H5FDdsmManager::OpenModeString(H5FDdsmUInt32 mode)
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmManager::OpenDSMSerial(H5FDdsmUInt32 mode)
 {
-  return this->OpenDSM(mode, true);
+  return this->OpenDSM(mode, H5FD_DSM_TRUE);
 }
 //----------------------------------------------------------------------------
-H5FDdsmInt32 H5FDdsmManager::OpenDSM(H5FDdsmUInt32 mode, bool serial)
+H5FDdsmInt32 H5FDdsmManager::OpenDSM(H5FDdsmUInt32 mode, H5FDdsmBoolean serial)
 {
   H5FDdsmInt32 ret = H5FD_DSM_SUCCESS;
   //

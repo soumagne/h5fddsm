@@ -46,8 +46,8 @@
   if (value==def) return #def;
 
 H5FDdsmConstString H5FDdsmChannelToString(H5FDdsmInt32 channel) {
-  H5FD_DSM_CHANNEL_MACRO(H5FDdsm_SERVER_ID, channel)
-  H5FD_DSM_CHANNEL_MACRO(H5FDdsm_CLIENT_ID, channel)
+  H5FD_DSM_CHANNEL_MACRO(H5FD_DSM_SERVER_ID, channel)
+  H5FD_DSM_CHANNEL_MACRO(H5FD_DSM_CLIENT_ID, channel)
   return "Channel UNDEFINED/UNRECOGNIZED";
 }
 
@@ -59,7 +59,7 @@ H5FDdsmLock::H5FDdsmLock()
   this->Rank                = -1; 
   this->Master              = H5FD_DSM_FALSE;
   this->LockOwner           = -1;
-  for (int i=0; i<H5FDdsm_NUM_CONNECTION_IDS; i++) {
+  for (int i = 0; i < H5FD_DSM_NUM_CONNECTION_IDS; i++) {
     this->LockCount[i]                    = 0;
     this->UnlockedFlag[i]                 = H5FD_DSM_FALSE;
     this->SychronizationCount[i]          = 0;
@@ -102,36 +102,31 @@ H5FDdsmBoolean H5FDdsmLock::Lock(H5FDdsmInt32 channel)
     this->LockQueue.push(channel);
     return H5FD_DSM_FALSE; 
   }
-  for (int i=0; i<H5FDdsm_NUM_CONNECTION_IDS; i++) {
-    this->UnlockedFlag[i] = H5FD_DSM_FALSE;
-  }
   return H5FD_DSM_TRUE; 
 }
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmLock::Unlock(H5FDdsmInt32 channel)
 {
-  if (this->LockOwner!=channel) { 
-    H5FDdsmError(H5FDdsmChannelToString(channel) << " : Cannot unlock - owner is " << this->LockOwner);
-    return -1; 
+  if (this->LockOwner != channel) {
+    H5FDdsmError(H5FDdsmChannelToString(channel) << ": Cannot unlock - owner is " << this->LockOwner);
+    return(-1);
   }
   // if we already own it multiple times, decrease lock count
-  else if (--this->LockCount[channel]>0) { 
+  else if (--this->LockCount[channel] > 0) {
     H5FDdsmDebugLevel(1,H5FDdsmChannelToString(channel)," lock count < " << this->LockCount[channel]);
   }
   // if this is the final unlock call, actually do an unlock operation
-  else  {
+  else {
     //
     // reset lock flags
     //
     this->LockOwner             =-1;
     this->LockCount[channel]    = 0;
-    this->UnlockedFlag[channel] = H5FD_DSM_TRUE;
-    H5FDdsmDebugLevel(1,H5FDdsmChannelToString(channel), "Releases lock - sets UnlockedFlag");
     //
     // When we release the lock, everyone else has their sync count decremented 
     // so they might be allowed to take the lock next
     //
-    for (int i=0; i<H5FDdsm_NUM_CONNECTION_IDS; i++) {
+    for (int i=0; i<H5FD_DSM_NUM_CONNECTION_IDS; i++) {
       if (i!=channel) {
         this->SychronizationCountInternal[i]--;
       }
@@ -149,16 +144,3 @@ H5FDdsmInt32 H5FDdsmLock::Unlock(H5FDdsmInt32 channel)
   }
   return this->LockOwner;
 }
-
-//----------------------------------------------------------------------------
-H5FDdsmBoolean H5FDdsmLock::GetClientUnlockedFlag(bool clear) { 
-  H5FDdsmBoolean  ret = UnlockedFlag[H5FDdsm_CLIENT_ID];
-  if (clear) UnlockedFlag[H5FDdsm_CLIENT_ID] = false;
-  return ret; 
-}
-//----------------------------------------------------------------------------
-H5FDdsmBoolean H5FDdsmLock::GetServerUnlockedFlag(bool clear) { 
-  H5FDdsmBoolean  ret = UnlockedFlag[H5FDdsm_SERVER_ID];
-  if (clear) UnlockedFlag[H5FDdsm_SERVER_ID] = false;
-  return ret; 
-}  

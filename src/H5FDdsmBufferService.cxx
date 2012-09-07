@@ -133,18 +133,18 @@ struct H5FDdsmBufferService::H5FDdsmBufferServiceInternals
   }
 
   void SignalServiceThreadCreated() {
-    this->ServiceThreadCreatedCond.LockMutex();
+    this->ServiceThreadCreatedMutex.Lock();
     this->IsServiceThreadCreated = H5FD_DSM_TRUE;
     this->ServiceThreadCreatedCond.Signal();
-    this->ServiceThreadCreatedCond.UnlockMutex();
+    this->ServiceThreadCreatedMutex.Unlock();
   }
 
   void WaitForServiceThreadCreated() {
-    this->ServiceThreadCreatedCond.LockMutex();
+    this->ServiceThreadCreatedMutex.Lock();
     while (!this->IsServiceThreadCreated) {
-      this->ServiceThreadCreatedCond.Wait();
+      this->ServiceThreadCreatedCond.Wait(this->ServiceThreadCreatedMutex);
     }
-    this->ServiceThreadCreatedCond.UnlockMutex();
+    this->ServiceThreadCreatedMutex.Unlock();
   }
 
   // primary lock for DSM buffer
@@ -152,13 +152,16 @@ struct H5FDdsmBufferService::H5FDdsmBufferServiceInternals
 
   // Connection event
   H5FDdsmBoolean          IsConnecting;
+  H5FDdsmMutex            ConnectionMutex;
   H5FDdsmCondition        ConnectionCond;
 
   // Unlock event
+  H5FDdsmMutex            UnlockMutex;
   H5FDdsmCondition        UnlockCondition;
 
   // ServiceThreadCreated event
   H5FDdsmBoolean          IsServiceThreadCreated;
+  H5FDdsmMutex            ServiceThreadCreatedMutex;
   H5FDdsmCondition        ServiceThreadCreatedCond;
 
   H5FDdsmThread           ServiceThread;
@@ -174,8 +177,6 @@ H5FDdsmBufferService::H5FDdsmBufferService()
   this->IsDisconnected      = H5FD_DSM_FALSE;
   //
   this->UnlockStatus        = H5FD_DSM_NOTIFY_DATA;
-  //
-  this->ReleaseLockOnClose  = H5FD_DSM_TRUE;
   //
   this->XMLDescription      = NULL;
   //
@@ -195,7 +196,8 @@ H5FDdsmBufferService::~H5FDdsmBufferService()
 }
 
 //----------------------------------------------------------------------------
-void H5FDdsmBufferService::SetSychronizationCount(H5FDdsmInt32 count)
+void
+H5FDdsmBufferService::SetSychronizationCount(H5FDdsmInt32 count)
 {
   if (this->IsServer) {
     this->BufferServiceInternals->BufferLock.SetServerSychronizationCount(count);
@@ -207,39 +209,17 @@ void H5FDdsmBufferService::SetSychronizationCount(H5FDdsmInt32 count)
 }
 
 //----------------------------------------------------------------------------
-H5FDdsmBoolean H5FDdsmBufferService::GetIsConnected()
-{
-  return this->IsConnected;
-}
-//----------------------------------------------------------------------------
-H5FDdsmBoolean H5FDdsmBufferService::GetIsDisconnected()
-{
-  return this->IsDisconnected;
-}
-//----------------------------------------------------------------------------
-H5FDdsmBoolean H5FDdsmBufferService::GetIsLockWaiting(bool clear)
-{
-  H5FDdsmBoolean ret;
-  if (this->IsServer) {
-    ret = this->BufferServiceInternals->BufferLock.GetClientUnlockedFlag(clear);
-    H5FDdsmDebugLevel(1,"GetClientUnlockedFlag returns " << ret);    
-    return ret;
-  }
-  ret = this->BufferServiceInternals->BufferLock.GetServerUnlockedFlag(clear);
-  H5FDdsmDebugLevel(1,"GetServerUnlockedFlag returns " << ret);    
-  return ret; 
-}
-//----------------------------------------------------------------------------
 //
 // Protect this->IsConnected by mutex in signal and wait functions
 //
 H5FDdsmInt32
 H5FDdsmBufferService::SignalConnection()
 {
-  this->BufferServiceInternals->ConnectionCond.LockMutex();
+  this->BufferServiceInternals->ConnectionMutex.Lock();
   this->IsConnected = H5FD_DSM_TRUE;
+  this->BufferServiceInternals->IsConnecting = H5FD_DSM_FALSE;
   this->BufferServiceInternals->ConnectionCond.Signal();
-  this->BufferServiceInternals->ConnectionCond.UnlockMutex();
+  this->BufferServiceInternals->ConnectionMutex.Unlock();
   return(H5FD_DSM_SUCCESS);
 }
 
@@ -247,21 +227,50 @@ H5FDdsmBufferService::SignalConnection()
 H5FDdsmInt32
 H5FDdsmBufferService::WaitForConnection()
 {
-  this->BufferServiceInternals->ConnectionCond.LockMutex();
-  if (!this->IsConnected && !this->IsDisconnected) {
-    this->BufferServiceInternals->ConnectionCond.Wait();
+  this->BufferServiceInternals->ConnectionMutex.Lock();
+  if (!this->IsConnected) {
+    this->BufferServiceInternals->ConnectionCond.Wait(
+        this->BufferServiceInternals->ConnectionMutex);
   }
-  this->BufferServiceInternals->ConnectionCond.UnlockMutex();
+  this->BufferServiceInternals->ConnectionMutex.Unlock();
   return(H5FD_DSM_SUCCESS);
 }
 
 //----------------------------------------------------------------------------
-H5FDdsmInt32
-H5FDdsmBufferService::SignalUnlock()
+H5FDdsmBoolean
+H5FDdsmBufferService::GetIsUnlocked()
 {
-  this->BufferServiceInternals->UnlockCondition.LockMutex();
+  H5FDdsmBoolean ret;
+  if (this->IsServer) {
+    ret = this->BufferServiceInternals->BufferLock.GetUnlockedFlag(H5FD_DSM_CLIENT_ID);
+    H5FDdsmDebugLevel(1,"GetClientUnlockedFlag returns " << ret);
+  } else {
+    ret = this->BufferServiceInternals->BufferLock.GetUnlockedFlag(H5FD_DSM_SERVER_ID);
+    H5FDdsmDebugLevel(1,"GetServerUnlockedFlag returns " << ret);
+  }
+  return(ret);
+}
+
+//----------------------------------------------------------------------------
+H5FDdsmInt32
+H5FDdsmBufferService::SignalUnlock(H5FDdsmBoolean isDisconnected)
+{
+  this->BufferServiceInternals->UnlockMutex.Lock();
+
+  if (isDisconnected) {
+    H5FDdsmDebugLevel(1, "SignalUnlock for disconnection ################");
+    if (this->GetIsUnlocked()) {
+      H5FDdsmDebugLevel(1, "But we had signaled release already ################");
+      // In this case we only set IsConnected back to false in the main thread
+      // to avoid confusion
+    } else {
+      this->IsConnected = H5FD_DSM_FALSE;
+    }
+    this->IsDisconnected = H5FD_DSM_TRUE;
+  }
+  this->BufferServiceInternals->BufferLock.SetUnlockedFlag(H5FD_DSM_CLIENT_ID, H5FD_DSM_TRUE);
   this->BufferServiceInternals->UnlockCondition.Signal();
-  this->BufferServiceInternals->UnlockCondition.UnlockMutex();
+  this->BufferServiceInternals->UnlockMutex.Unlock();
   return(H5FD_DSM_SUCCESS);
 }
 
@@ -269,40 +278,41 @@ H5FDdsmBufferService::SignalUnlock()
 H5FDdsmInt32
 H5FDdsmBufferService::WaitForUnlock()
 {
-  H5FDdsmInt32 ReturnOpcode = H5FD_DSM_SUCCESS;
+  H5FDdsmInt32 ReturnOpcode = H5FD_DSM_FAIL;
 
-  H5FDdsmDebugLevel(1,"WaitForUnlock ********************");
-  this->BufferServiceInternals->UnlockCondition.LockMutex();
-  // if the client already unlocked and disconnected, exit immediately
-  if (this->GetIsLockWaiting(true)) {
-    H5FDdsmDebugLevel(1,"Aborted UnlockCondition.Wait() due to IsLockWaiting override");
-  }
-  // must not wait if client already disconnected
-  else {
-    if ((this->BufferServiceInternals->IsConnecting || this->IsConnected) && !this->IsDisconnected) {
-      H5FDdsmDebugLevel(1,"Entering UnlockCondition.Wait()");
-      this->BufferServiceInternals->UnlockCondition.Wait();
-      H5FDdsmDebugLevel(1,"Finished UnlockCondition.Wait()");
-      if (this->IsDisconnected || !this->IsConnected) {
-        // we were disconnected whilst waiting
-        H5FDdsmDebugLevel(1,"Unlocked, disconnected during wait, returning Fail");
-        if (this->GetIsLockWaiting(true)) {
-          H5FDdsmDebugLevel(1,"IsLockWaiting override after disconnect");
-          ReturnOpcode = H5FD_DSM_TRUE;
-        }
-        else {
-          ReturnOpcode = H5FD_DSM_FAIL;
-        }
+  H5FDdsmDebugLevel(1, "WaitForUnlock ********************");
+  this->BufferServiceInternals->UnlockMutex.Lock();
+
+  // only enter here if we are connected or if we are disconnected and the
+  // unlocked flag has not been cleared yet
+  if (this->IsConnected || (!this->IsConnected && this->GetIsUnlocked())) {
+    if (!this->IsConnected) H5FDdsmDebugLevel(1,"Disconnected and unlocked");
+    // if it is not unlocked we must wait
+    if (!this->GetIsUnlocked()) {
+      H5FDdsmDebugLevel(1, "Entering UnlockCondition.Wait()");
+      this->BufferServiceInternals->UnlockCondition.Wait(
+          this->BufferServiceInternals->UnlockMutex);
+      H5FDdsmDebugLevel(1, "Finished UnlockCondition.Wait()");
+    }
+    // Only return SUCCESS if we are still connected
+    if (this->IsConnected) {
+      if (this->IsDisconnected) {
+        // If we are disconnecting we need first to complete the previous operations
+        // so return SUCCESS
+        this->IsConnected = H5FD_DSM_FALSE;
+        H5FDdsmDebugLevel(1, "Unlocked, disconnected, returning SUCCESS");
+      } else {
+        H5FDdsmDebugLevel(1, "Unlocked, connected, returning SUCCESS");
       }
+      ReturnOpcode = H5FD_DSM_SUCCESS;
+    } else {
+      H5FDdsmDebugLevel(1, "Unlocked, disconnected, returning FAIL");
     }
-    else {
-      H5FDdsmDebugLevel(1,"Unlocked, disconnected before wait, returning Fail");
-      ReturnOpcode = H5FD_DSM_FAIL;
-    }
+    this->BufferServiceInternals->BufferLock.SetUnlockedFlag(H5FD_DSM_CLIENT_ID, H5FD_DSM_FALSE);
   }
-  this->BufferServiceInternals->UnlockCondition.UnlockMutex();
+  this->BufferServiceInternals->UnlockMutex.Unlock();
   //
-  H5FDdsmDebugLevel(1,"WaitForUnlock $$$$$$$$$$$$$$$$$$$$$$$$$4");
+  H5FDdsmDebugLevel(1, "WaitForUnlock $$$$$$$$$$$$$$$$$$$$$$$$$");
   return ReturnOpcode;
 }
 
@@ -421,7 +431,7 @@ H5FDdsmBufferService::BufferService(H5FDdsmInt32 *returnOpcode)
             this->SendAcknowledgment(who, H5FD_DSM_INTRA_COMM, communicatorId, "LOCK ACQUIRE (server)", H5FD_DSM_RESPONSE_TAG+1);
           }
           // notify the ranks that made the request
-          numberOfRanks = (communicatorId==H5FDdsm_SERVER_ID) ? this->Comm->GetIntraSize() : this->Comm->GetInterSize();
+          numberOfRanks = (communicatorId==H5FD_DSM_SERVER_ID) ? this->Comm->GetIntraSize() : this->Comm->GetInterSize();
           for (H5FDdsmInt32 who=0; who<numberOfRanks; who++) {
             this->SendAcknowledgment(who, this->CommChannel, communicatorId, "LOCK ACQUIRE (user)", H5FD_DSM_RESPONSE_TAG+2);
           }
@@ -455,8 +465,8 @@ H5FDdsmBufferService::BufferService(H5FDdsmInt32 *returnOpcode)
   case H5FD_DSM_LOCK_RELEASE:
     // wait for all processes to sync before doing anything
     if (this->Comm->ChannelSynced(who, &syncId, communicatorId)) {
-      // the address flag hold our unlock status
-      this->SetUnlockStatus(address);
+      // the address flag hold our unlock status (only treat it when received from client)
+      if (communicatorId == H5FD_DSM_CLIENT_ID) this->SetUnlockStatus(address);
       // only rank 0 actually handles the lock, the other ranks just mimic it later when they get an acknowledgement
       H5FDdsmInt32 newLockOwner = -1;
       if (this->Comm->GetId()==0) {
@@ -478,8 +488,8 @@ H5FDdsmBufferService::BufferService(H5FDdsmInt32 *returnOpcode)
       // the lock has been released : if the client unlocked, wake up waiting server app thread
       // note that a lock count decrease returns the same lock owner, so we don't trigger on that event
       //
-      if (newLockOwner!=communicatorId && communicatorId==H5FDdsm_CLIENT_ID) {
-        this->SignalUnlock();
+      if (newLockOwner!=communicatorId && communicatorId==H5FD_DSM_CLIENT_ID) {
+        this->SignalUnlock(H5FD_DSM_FALSE);
       }
       //
       // if it has been taken by another communicator/connection, do what's needed
@@ -496,7 +506,7 @@ H5FDdsmBufferService::BufferService(H5FDdsmInt32 *returnOpcode)
         }
         if (this->Comm->GetId()==0) {
           // notify the ranks that made the original lock request
-          H5FDdsmInt32 numberOfRanks = (newLockOwner==H5FDdsm_SERVER_ID) ? this->Comm->GetIntraSize() : this->Comm->GetInterSize();
+          H5FDdsmInt32 numberOfRanks = (newLockOwner==H5FD_DSM_SERVER_ID) ? this->Comm->GetIntraSize() : this->Comm->GetInterSize();
           for (H5FDdsmInt32 who=0; who<numberOfRanks; who++) {
             this->SendAcknowledgment(who, this->CommChannel, newLockOwner, "LOCK ACQUIRE (user)", H5FD_DSM_RESPONSE_TAG+2);
           }
@@ -541,22 +551,19 @@ H5FDdsmBufferService::BufferService(H5FDdsmInt32 *returnOpcode)
   // H5FD_DSM_ACCEPT
   // Always received from server
   case H5FD_DSM_ACCEPT:
-    if (!this->IsConnected) {
-      status = this->Comm->Accept();
-      if (status == H5FD_DSM_FAIL) {
-        H5FDdsmDebug("RemoteCommAccept Failed");
-        return(H5FD_DSM_FAIL);
-      }
-      // For one-sided communication create InterWin
-      this->Comm->WinCreateData(this->DataPointer, this->Length, H5FD_DSM_INTER_COMM);
-//      this->Comm->WinCreateNotification(&this->UnlockStatus, sizeof(H5FDdsmInt32), H5FD_DSM_INTER_COMM);
-//      this->Comm->WinCreateLock(&this->IsClientLocked, sizeof(H5FDdsmBoolean), H5FD_DSM_INTER_COMM);
-      // Send DSM information
-      this->SendInfo();
-      // Signal new connection
-      this->SignalConnection();
-      this->BufferServiceInternals->IsConnecting = H5FD_DSM_FALSE;
+    status = this->Comm->Accept();
+    if (status == H5FD_DSM_FAIL) {
+      H5FDdsmDebug("RemoteCommAccept Failed");
+      return(H5FD_DSM_FAIL);
     }
+    // For one-sided communication create InterWin
+    this->Comm->WinCreateData(this->DataPointer, this->Length, H5FD_DSM_INTER_COMM);
+    //      this->Comm->WinCreateNotification(&this->UnlockStatus, sizeof(H5FDdsmInt32), H5FD_DSM_INTER_COMM);
+    //      this->Comm->WinCreateLock(&this->IsClientLocked, sizeof(H5FDdsmBoolean), H5FD_DSM_INTER_COMM);
+    // Send DSM information
+    this->SendInfo();
+    // Signal new connection
+    this->SignalConnection();
     this->CommChannel = H5FD_DSM_ANY_COMM;
     break;
 
@@ -573,13 +580,11 @@ H5FDdsmBufferService::BufferService(H5FDdsmInt32 *returnOpcode)
       //    this->SendAcknowledgment(who, this->CommChannel, communicatorId, "DISCONNECT");
       //  }
       //}
-      this->IsConnected = H5FD_DSM_FALSE;
-      this->IsDisconnected = H5FD_DSM_TRUE;
       this->Comm->Disconnect();
       this->CommChannel = H5FD_DSM_INTRA_COMM;
       H5FDdsmDebug("DSM disconnected, Switched to " << H5FDdsmCommToString(this->CommChannel));
       // just in case anyone is waiting, we must unlock them 
-      this->SignalUnlock();
+      this->SignalUnlock(H5FD_DSM_TRUE);
     }
     break;
 
@@ -647,7 +652,7 @@ H5FDdsmBufferService::SendAccept()
   H5FDdsmInt32 who = this->Comm->GetId();
   H5FDdsmInt32 status = H5FD_DSM_SUCCESS;
 
-  if (!this->IsConnected) this->BufferServiceInternals->IsConnecting = H5FD_DSM_TRUE;
+  this->BufferServiceInternals->IsConnecting = H5FD_DSM_TRUE;
 
   status = this->SendCommandHeader(H5FD_DSM_ACCEPT, who, 0, 0, H5FD_DSM_INTRA_COMM);
   if (status != H5FD_DSM_SUCCESS) {
@@ -788,7 +793,7 @@ H5FDdsmBufferService::Get(H5FDdsmAddr address, H5FDdsmUInt64 length, H5FDdsmPoin
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBufferService::RequestLockAcquire(bool parallel)
+H5FDdsmBufferService::RequestLockAcquire(H5FDdsmBoolean parallel)
 {
   H5FDdsmInt32 status = H5FD_DSM_SUCCESS;
   
@@ -821,7 +826,7 @@ H5FDdsmBufferService::RequestLockAcquire(bool parallel)
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBufferService::RequestLockRelease(bool parallel)
+H5FDdsmBufferService::RequestLockRelease(H5FDdsmBoolean parallel)
 {
   H5FDdsmInt32 status = H5FD_DSM_SUCCESS;
   
@@ -844,7 +849,7 @@ H5FDdsmBufferService::RequestLockRelease(bool parallel)
 
   // server manages the lock, client nodes should copy the flags to their local lock (proxy)
   if (!this->IsServer) {
-    this->BufferServiceInternals->BufferLock.Unlock(H5FDdsm_CLIENT_ID);
+    this->BufferServiceInternals->BufferLock.Unlock(H5FD_DSM_CLIENT_ID);
   }
   return(status);
 }

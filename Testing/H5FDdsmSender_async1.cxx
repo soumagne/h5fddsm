@@ -21,7 +21,7 @@ void writesmalldataset() {
   int array[3] = { 1, 2, 3 };
   hsize_t array_size = 3;
   int rank;
-  int static_intercomm = 0;
+//  int static_intercomm = 0;
   hid_t fapl, file_handle, memspace, dataset;
   MPI_Comm comm = MPI_COMM_WORLD;
   MPI_Comm_rank(comm, &rank);
@@ -48,21 +48,16 @@ void writesmalldataset() {
 int main(int argc, char **argv)
 {
   MPI_Comm comm = MPI_COMM_WORLD;
-  H5FDdsmConstString fullname = "dsm";
+//  H5FDdsmConstString fullname = "dsm";
   H5FDdsmManager *dsmManager = new H5FDdsmManager();
   //
   senderInit(argc, argv, dsmManager, &comm);
   //
   H5FD_dsm_steering_init(comm);
   //
-  // Disable auto unlock to allow manual trigger
-//  H5FD_dsm_set_options(H5FD_DSM_UNLOCK_MANUAL);
-//  H5FD_dsm_set_options(H5FD_DSM_LOCK_ASYNCHRONOUS);
-
-  //
   // our fake simulation will do N iterations
   //
-  int intScalar = 0;
+//  int intScalar = 0;
   for (int i=0; i<5; i++) {
     //
     // open/write/close using a standard test particle dataset

@@ -13,17 +13,15 @@ int main(int argc, char *argv[])
   receiverInit(argc, argv, dsmManager, &comm);
   MPI_Comm_rank(comm, &rank);
 
-  while (dsmManager->GetIsActive()) {
-    if (dsmManager->WaitForUnlock() != H5FD_DSM_FAIL) {
-      H5FD_dsm_lock();
-      H5FD_dsm_set_options(H5FD_DSM_MODE_SERIAL);
-      if (dsmManager->GetUpdatePiece() == 0) {
-        H5FD_dsm_dump();
-      }
-      H5FD_dsm_set_options(H5FD_DSM_MODE_PARALLEL);
-      // since we did nothing, there's no need to signal new data or anything else
-      H5FD_dsm_unlock(H5FD_DSM_NOTIFY_NONE);
+  while (dsmManager->WaitForUnlock() != H5FD_DSM_FAIL) {
+    H5FD_dsm_lock();
+    H5FD_dsm_set_options(H5FD_DSM_MODE_SERIAL);
+    if (dsmManager->GetUpdatePiece() == 0) {
+      H5FD_dsm_dump();
     }
+    H5FD_dsm_set_options(H5FD_DSM_MODE_PARALLEL);
+    // since we did nothing, there's no need to signal new data or anything else
+    H5FD_dsm_unlock(H5FD_DSM_NOTIFY_NONE);
   }
 
   receiverFinalize(dsmManager, &comm);

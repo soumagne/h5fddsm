@@ -22,35 +22,30 @@ int main(int argc, char *argv[])
 {
   H5FDdsmManager *dsmManager = new H5FDdsmManager();
   MPI_Comm comm = MPI_COMM_WORLD;
-  H5FDdsmFloat64 remoteMB;
-  H5FDdsmUInt64 numParticles;
+//  H5FDdsmFloat64 remoteMB;
+//  H5FDdsmUInt64 numParticles;
   int iterations = 0;
   //
   receiverInit(argc, argv, dsmManager, &comm);
 
-  remoteMB = dsmManager->GetDsmBuffer()->GetTotalLength() / (1024.0 * 1024.0);
-  numParticles = (H5FDdsmUInt64) ((1024 * 1024 * remoteMB / 2) /
-      (sizeof(H5FDdsmFloat64) * DIM_DATASETS * dsmManager->GetUpdateNumPieces()));
+//  remoteMB = dsmManager->GetDsmBuffer()->GetTotalLength() / (1024.0 * 1024.0);
+//  numParticles = (H5FDdsmUInt64) ((1024 * 1024 * remoteMB / 2) /
+//      (sizeof(H5FDdsmFloat64) * DIM_DATASETS * dsmManager->GetUpdateNumPieces()));
 
-//  H5FD_dsm_set_options(H5FD_DSM_UNLOCK_MANUAL);
-//  H5FD_dsm_set_options(H5FD_DSM_LOCK_ASYNCHRONOUS);
+//  int intScalar = 0;
 
-  int intScalar = 0;
-  while (dsmManager->GetIsActive()) {
-    // wait until data has been written
-    if (dsmManager->WaitForUnlock() != H5FD_DSM_FAIL) {
+  // wait until data has been written
+  while (dsmManager->WaitForUnlock() != H5FD_DSM_FAIL) {
+    //
+    // manually lock (acquire) the DSM
+    //
+    H5FD_dsm_lock();
+    H5FD_dsm_dump();
 
-      //
-      // manually lock (acquire) the DSM 
-      //
-      H5FD_dsm_lock();
-
-      H5FD_dsm_dump();
-
-      if (dsmManager->GetUpdatePiece() == 0) {
-        std::cout << "Checking data at iteration " << iterations << std::endl;
-      }
-/*
+    if (dsmManager->GetUpdatePiece() == 0) {
+      std::cout << "Checking data at iteration " << iterations << std::endl;
+    }
+    /*
       H5FDdsmBoolean present;
       dsmManager->GetSteerer()->IsObjectPresent("IntScalarTest", present);
       if (present) {
@@ -65,17 +60,17 @@ int main(int argc, char *argv[])
       if (dsmManager->GetUpdatePiece() == 0) {
         std::cout << "Checked data at iteration " << iterations << std::endl;
       }
-*/
-      //
-      // manually unlock (release) the DSM and send a NEW_DATA message
-      //
-      H5FD_dsm_unlock(H5FD_DSM_NOTIFY_DATA);
+     */
+    //
+    // manually unlock (release) the DSM and send a NEW_DATA message
+    //
+    H5FD_dsm_unlock(H5FD_DSM_NOTIFY_DATA);
 
-  //      dsmManager->SetSteeringCommand("play");
+    //      dsmManager->SetSteeringCommand("play");
 
-      iterations++;
-    }
+    iterations++;
   }
+
   receiverFinalize(dsmManager, &comm);
   delete dsmManager;
   return(EXIT_SUCCESS);

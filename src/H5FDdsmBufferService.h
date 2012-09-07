@@ -82,29 +82,13 @@ class H5FDdsm_EXPORT H5FDdsmBufferService : public H5FDdsmBuffer {
     H5FDdsmBufferService();
     virtual ~H5FDdsmBufferService();
 
-    // Is the DSMBuffer connected
-    H5FDdsmBoolean GetIsConnected();
-    H5FDdsmSetValueMacro(IsConnected, H5FDdsmBoolean);
-    H5FDdsmBoolean GetIsDisconnected();
-    H5FDdsmInt32 SignalConnection();
     H5FDdsmInt32 WaitForConnection();
-
-
-    H5FDdsmBoolean GetIsLockWaiting(bool clear);
-
-    // Signals for unlock event on server
-    H5FDdsmInt32 SignalUnlock();
     H5FDdsmInt32 WaitForUnlock();
 
     // Set/Get UnlockStatus
     H5FDdsmGetValueMacro(UnlockStatus, H5FDdsmInt32);
     H5FDdsmSetValueMacro(UnlockStatus, H5FDdsmInt32);
 
-    // Releases the lock automatically on H5Fclose or not
-    H5FDdsmGetValueMacro(ReleaseLockOnClose, H5FDdsmBoolean);
-    H5FDdsmSetValueMacro(ReleaseLockOnClose, H5FDdsmBoolean);
-
-    // Releases the lock automatically on H5Fclose or not
     void SetSychronizationCount(H5FDdsmInt32 count);
 
     // Debug: add ability to send xml string
@@ -128,25 +112,31 @@ class H5FDdsm_EXPORT H5FDdsmBufferService : public H5FDdsmBuffer {
     H5FDdsmInt32   Put(H5FDdsmAddr address, H5FDdsmUInt64 length, H5FDdsmPointer data);
     H5FDdsmInt32   Get(H5FDdsmAddr address, H5FDdsmUInt64 length, H5FDdsmPointer data, H5FDdsmBoolean blocking=H5FD_DSM_TRUE);
 
-    H5FDdsmInt32   RequestLockAcquire(bool parallel=true);
-    H5FDdsmInt32   RequestLockRelease(bool parallel=true);
+    H5FDdsmInt32   RequestLockAcquire(H5FDdsmBoolean parallel=H5FD_DSM_TRUE);
+    H5FDdsmInt32   RequestLockRelease(H5FDdsmBoolean parallel=H5FD_DSM_TRUE);
 
     H5FDdsmInt32   RequestDisconnect();
 
   protected:
+    H5FDdsmGetValueMacro(IsConnected, H5FDdsmBoolean);
+    H5FDdsmGetValueMacro(IsDisconnected, H5FDdsmBoolean);
+    H5FDdsmInt32   SignalConnection();
+    //
+    H5FDdsmBoolean GetIsUnlocked();
+    H5FDdsmInt32   SignalUnlock(H5FDdsmBoolean isDisconnected);
+    //
     H5FDdsmInt32   ProbeCommandHeader(H5FDdsmInt32 *comm);
 
     H5FDdsmInt32            CommChannel;
-    volatile H5FDdsmBoolean IsConnected;
-    volatile H5FDdsmBoolean IsDisconnected;
-    volatile H5FDdsmInt32   UnlockStatus;
-    //
-    H5FDdsmBoolean          ReleaseLockOnClose;
+    H5FDdsmBoolean          IsConnected;
+    H5FDdsmBoolean          IsDisconnected;
+    H5FDdsmInt32            UnlockStatus;
     //
     H5FDdsmString           XMLDescription;
     //
     struct H5FDdsmBufferServiceInternals;
     H5FDdsmBufferServiceInternals *BufferServiceInternals;
+    friend class H5FDdsmManager;
 };
 
 #endif // __H5FDdsmBufferService_h
