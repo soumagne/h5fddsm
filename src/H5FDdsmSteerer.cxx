@@ -93,7 +93,7 @@ H5FDdsmInt32 H5FDdsmSteerer::SetCurrentCommand(H5FDdsmConstString cmd)
     if (strcmp(this->CurrentCommand, "play") == 0) {
       H5FDdsmDebugLevel(1,"Sending ready...");
       if (this->DsmManager->GetUpdatePiece() == 0) {
-        this->DsmManager->GetDsmBuffer()->SendAcknowledgment(0, H5FD_DSM_INTER_COMM, -1, "SetCurrentCommand");
+//        this->DsmManager->GetDsmBuffer()->SendAcknowledgment(0, H5FD_DSM_INTER_COMM, -1, "SetCurrentCommand");
       }
       H5FDdsmDebugLevel(1,"Ready sent");
     }
@@ -595,7 +595,7 @@ H5FDdsmInt32 H5FDdsmSteerer::CheckCommand(H5FDdsmConstString command)
     H5FDdsmDebug("Receiving ready...");
     if (this->DsmManager->GetUpdatePiece() == 0) {
       H5FDdsmInt32 unused;
-      this->DsmManager->GetDsmBuffer()->ReceiveAcknowledgment(0, H5FD_DSM_INTER_COMM, unused, "Ready");
+//      this->DsmManager->GetDsmBuffer()->ReceiveAcknowledgment(0, H5FD_DSM_INTER_COMM, unused, "Ready");
     }
     this->DsmManager->GetDsmBuffer()->GetComm()->Barrier();
     H5FDdsmDebug("Ready received");

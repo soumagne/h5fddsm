@@ -110,7 +110,8 @@ class H5FDdsm_EXPORT H5FDdsmBufferService : public H5FDdsmBuffer {
 
     // Put/Get Data of size Lenght at address Address
     H5FDdsmInt32   Put(H5FDdsmAddr address, H5FDdsmUInt64 length, H5FDdsmPointer data);
-    H5FDdsmInt32   Get(H5FDdsmAddr address, H5FDdsmUInt64 length, H5FDdsmPointer data, H5FDdsmBoolean blocking=H5FD_DSM_TRUE);
+    H5FDdsmInt32   Get(H5FDdsmAddr address, H5FDdsmUInt64 length, H5FDdsmPointer data,
+        H5FDdsmBoolean blocking=H5FD_DSM_TRUE);
 
     H5FDdsmInt32   RequestLockAcquire(H5FDdsmBoolean parallel=H5FD_DSM_TRUE);
     H5FDdsmInt32   RequestLockRelease(H5FDdsmBoolean parallel=H5FD_DSM_TRUE);

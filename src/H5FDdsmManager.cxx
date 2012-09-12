@@ -27,7 +27,6 @@
 #include "H5FDdsmCommSocket.h"
 #include "H5FDdsmCommMpi.h"
 #include "H5FDdsmCommMpiRma.h"
-#include <H5FDdsm.h>
 //
 #ifdef __CRAYXT_COMPUTE_LINUX_TARGET
   #ifdef H5FDdsm_HAVE_DMAPP
@@ -43,6 +42,9 @@
 #ifdef H5FDdsm_HAVE_STEERING
   #include "H5FDdsmSteerer.h"
 #endif
+//
+#include "H5FDdsm.h"
+#include <hdf5.h>
 //
 #ifdef _WIN32
 #include <windows.h>

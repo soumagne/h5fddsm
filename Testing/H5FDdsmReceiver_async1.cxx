@@ -1,6 +1,6 @@
 #include "H5FDdsmTest.h"
-#include "H5FDdsmSteering.h"
-#include "H5FDdsmSteerer.h"
+//#include "H5FDdsmSteering.h"
+//#include "H5FDdsmSteerer.h"
 #include "H5FDdsm.h"
 #include "H5FDdsmTools.h"
 

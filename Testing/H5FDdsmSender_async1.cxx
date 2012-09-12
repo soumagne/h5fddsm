@@ -1,6 +1,6 @@
 #include "H5FDdsmTest.h"
-#include "H5FDdsmSteering.h"
-#include "H5FDdsmSteerer.h"
+//#include "H5FDdsmSteering.h"
+//#include "H5FDdsmSteerer.h"
 #include "H5FDdsm.h"
 #include "H5FDdsmTools.h"
 //
@@ -53,7 +53,7 @@ int main(int argc, char **argv)
   //
   senderInit(argc, argv, dsmManager, &comm);
   //
-  H5FD_dsm_steering_init(comm);
+  // H5FD_dsm_steering_init(comm);
   //
   // our fake simulation will do N iterations
   //

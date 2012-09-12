@@ -345,6 +345,32 @@ if(H5FDdsm_ENABLE_COVERAGE)
   set_coverage_flags(H5FDdsmReceiver_cwrite_swrite_cread)
 endif(H5FDdsm_ENABLE_COVERAGE)
 
+#-----------------------------------------------------------------------------
+# H5FDdsmSender_async1 : tests involving repeat async send receive
+#-----------------------------------------------------------------------------
+add_executable(H5FDdsmSender_async1
+  H5FDdsmSender_async1.cxx
+)
+target_link_libraries(H5FDdsmSender_async1
+  H5FDdsmTesting
+)
+if(H5FDdsm_ENABLE_COVERAGE)
+  set_coverage_flags(H5FDdsmSender_async1)
+endif(H5FDdsm_ENABLE_COVERAGE)
+
+#-----------------------------------------------------------------------------
+# H5FDdsmReceiver_async1 : test involving repeat send receive
+#-----------------------------------------------------------------------------
+add_executable(H5FDdsmReceiver_async1
+  H5FDdsmReceiver_async1.cxx
+)
+target_link_libraries(H5FDdsmReceiver_async1
+  H5FDdsmTesting
+)
+if(H5FDdsm_ENABLE_COVERAGE)
+  set_coverage_flags(H5FDdsmReceiver_async1)
+endif(H5FDdsm_ENABLE_COVERAGE)
+
 if(H5FDdsm_BUILD_STEERING)
   #-----------------------------------------------------------------------------
   # H5FDdsmSender_steer : Query steering update, Send data, wait for the server
@@ -372,32 +398,6 @@ if(H5FDdsm_BUILD_STEERING)
   )
   if(H5FDdsm_ENABLE_COVERAGE)
     set_coverage_flags(H5FDdsmReceiver_steer)
-  endif(H5FDdsm_ENABLE_COVERAGE)
-
-  #-----------------------------------------------------------------------------
-  # H5FDdsmSender_async1 : tests involving repeat async send receive
-  #-----------------------------------------------------------------------------
-  add_executable(H5FDdsmSender_async1
-    H5FDdsmSender_async1.cxx
-  )
-  target_link_libraries(H5FDdsmSender_async1
-    H5FDdsmTesting
-  )
-  if(H5FDdsm_ENABLE_COVERAGE)
-    set_coverage_flags(H5FDdsmSender_async1)
-  endif(H5FDdsm_ENABLE_COVERAGE)
-
-  #-----------------------------------------------------------------------------
-  # H5FDdsmReceiver_async1 : test involving repeat send receive
-  #-----------------------------------------------------------------------------
-  add_executable(H5FDdsmReceiver_async1
-    H5FDdsmReceiver_async1.cxx
-  )
-  target_link_libraries(H5FDdsmReceiver_async1
-    H5FDdsmTesting
-  )
-  if(H5FDdsm_ENABLE_COVERAGE)
-    set_coverage_flags(H5FDdsmReceiver_async1)
   endif(H5FDdsm_ENABLE_COVERAGE)
 
   #-----------------------------------------------------------------------------

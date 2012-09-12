@@ -72,13 +72,17 @@
 #ifdef H5FDdsm_DEBUG_GLOBAL
 #define H5FDdsmDebugLevel(level, x) \
 { if (this->DebugLevel >= level) { \
-  std::cout << "H5FD_DSM Debug Level " << level << ": " << (this->IsServer ? "Server " : "Client ") << this->Comm->GetId() << " : " << x << std::endl; \
+    std::cout << "H5FD_DSM Debug Level " << level << ": " \
+      << (this->IsServer ? "Server " : "Client ") << this->Comm->GetId() \
+      << " : " << x << std::endl; \
   } \
 }
 #else
 #define H5FDdsmDebugLevel(level, x) \
 { if (this->Debug && this->DebugLevel >= level) { \
-  std::cout << "H5FD_DSM Debug Level " << level << ": " << (this->IsServer ? "Server " : "Client ") << this->Comm->GetId() << " : " << x << std::endl; \
+    std::cout << "H5FD_DSM Debug Level " << level << ": " \
+      << (this->IsServer ? "Server " : "Client ") << this->Comm->GetId() \
+      << " : " << x << std::endl; \
   } \
 }
 #endif
@@ -268,7 +272,8 @@ H5FDdsmBuffer::SendCommandHeader(H5FDdsmInt32 opcode, H5FDdsmInt32 dest,
   msg.SetCommunicator(comm);
 
   status = this->Comm->Send(&msg);
-  H5FDdsmDebug("Sent opcode " << H5FDdsmOpcodeToString(cmd.Opcode) << " to " << dest << " on " << H5FDdsmCommToString(comm));
+  H5FDdsmDebug("Sent opcode " << H5FDdsmOpcodeToString(cmd.Opcode) << " to "
+      << dest << " on " << H5FDdsmCommToString(comm));
   return(status);
 }
 
@@ -303,7 +308,8 @@ H5FDdsmBuffer::ReceiveCommandHeader(H5FDdsmInt32 *opcode, H5FDdsmInt32 *source,
     *aLength = cmd.Length;
     status = H5FD_DSM_SUCCESS;
 
-    H5FDdsmDebug("Got opcode " << H5FDdsmOpcodeToString(cmd.Opcode) << " from " << *source << " on " << H5FDdsmCommToString(comm));
+    H5FDdsmDebug("Got opcode " << H5FDdsmOpcodeToString(cmd.Opcode) << " from "
+        << *source << " on " << H5FDdsmCommToString(comm));
   }
   return(status);
 }
@@ -341,8 +347,7 @@ H5FDdsmBuffer::SendData(H5FDdsmInt32 dest, H5FDdsmPointer data,
   msg.SetCommunicator(comm);
   if (this->Comm->GetUseOneSidedComm()) {
     return(this->Comm->PutData(&msg));
-  }
-  else {
+  } else {
     return(this->Comm->Send(&msg));
   }
 }
@@ -362,45 +367,48 @@ H5FDdsmBuffer::ReceiveData(H5FDdsmInt32 source, H5FDdsmPointer data,
   msg.SetCommunicator(comm);
   if (this->Comm->GetUseOneSidedComm()) {
     return(this->Comm->GetData(&msg));
-  }
-  else {
+  } else {
     return(this->Comm->Receive(&msg));
   }
 }
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBuffer::SendAcknowledgment(H5FDdsmInt32 dest, H5FDdsmInt32 comm, H5FDdsmInt32 data, const char *debuginfo, H5FDdsmInt32 TagID)
+H5FDdsmBuffer::SendAcknowledgment(H5FDdsmInt32 dest, H5FDdsmInt32 data,
+    H5FDdsmInt32 tag, H5FDdsmInt32 comm)
 {
   H5FDdsmInt32 status;
   H5FDdsmMsg   msg;
 
   msg.SetDest(dest);
   msg.SetLength(sizeof(H5FDdsmInt32));
-  msg.SetTag(TagID);
+  msg.SetTag(tag);
   msg.SetData(&data);
   msg.SetCommunicator(comm);
 
   status = this->Comm->Send(&msg);
-  H5FDdsmDebugLevel(1,"Sent Acknowledgment Tag " << TagID << " " << debuginfo << " to " << dest << " on " << H5FDdsmCommToString(comm));
+  H5FDdsmDebugLevel(1,"Sent Acknowledgment Tag " << H5FDdsmTagToString(tag)
+      << " to " << dest << " on " << H5FDdsmCommToString(comm));
   return(status);
 }
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBuffer::ReceiveAcknowledgment(H5FDdsmInt32 source, H5FDdsmInt32 comm, H5FDdsmInt32 &data, const char *debuginfo, H5FDdsmInt32 TagID)
+H5FDdsmBuffer::ReceiveAcknowledgment(H5FDdsmInt32 source, H5FDdsmInt32 &data,
+    H5FDdsmInt32 tag, H5FDdsmInt32 comm)
 {
   H5FDdsmInt32 status;
   H5FDdsmMsg   msg;
 
   msg.SetSource(source);
   msg.SetLength(sizeof(H5FDdsmInt32));
-  msg.SetTag(TagID);
+  msg.SetTag(tag);
   msg.SetData(&data);
   msg.SetCommunicator(comm);
 
   status = this->Comm->Receive(&msg);
-  H5FDdsmDebugLevel(1,"Received Acknowledgment " << TagID << " " << debuginfo << " from " << source << " on " <<  H5FDdsmCommToString(comm));
+  H5FDdsmDebugLevel(1,"Received Acknowledgment " << H5FDdsmTagToString(tag)
+      << " from " << source << " on " <<  H5FDdsmCommToString(comm));
   return(status);
 }
 
