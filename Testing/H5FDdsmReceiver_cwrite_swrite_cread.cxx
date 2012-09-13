@@ -12,7 +12,7 @@ int main(int argc, char *argv[])
   MPI_Comm comm = MPI_COMM_WORLD;
   receiverInit(argc, argv, dsmManager, &comm);
 
-  while (dsmManager->WaitForUnlock() != H5FD_DSM_FAIL) {
+  if (dsmManager->WaitForUnlock() != H5FD_DSM_FAIL) {
     int array[3] = { 1, 2, 3 };
     hsize_t arraySize = 3;
 

@@ -83,14 +83,14 @@
 
 /*
  * Specific DSM operating modes:
- * - H5FD_DSM_UNLOCK_MANUAL prevents the DSM to automatically release the file on a close
- * - H5FD_DSM_NOTIFY_MANUAL prevents the DSM server to be automatically notified on a close
+ * - H5FD_DSM_LOCK_SYNCHRONOUS enables client and server to operate
+ *   in a "ping-pong" mode (default)
+ * - H5FD_DSM_LOCK_ASYNCHRONOUS enables client and server to operate
+ *   without having to wait for each other
  * - H5FD_DSM_MODE_SERIAL enables the driver to be used serially
  * - H5FD_DSM_MODE_PARALELL enables the driver to be used in parallel (default)
  *   this should only be used when H5FD_DSM_MODE_SERIAL has been previously called
  */
-#define H5FD_DSM_UNLOCK_ON_CLOSE   0x0001
-#define H5FD_DSM_UNLOCK_MANUAL     0x0002
 #define H5FD_DSM_LOCK_SYNCHRONOUS  0x0004
 #define H5FD_DSM_LOCK_ASYNCHRONOUS 0x0008
 #define H5FD_DSM_MODE_SERIAL       0x0010
@@ -103,9 +103,13 @@
  * - H5FD_DSM_NOTIFY_INFORMATION can be used to signal the presence of new information
  */
 #define H5FD_DSM_NOTIFY_NONE         0x0000
-#define H5FD_DSM_NOTIFY_WAIT         0x0001
-#define H5FD_DSM_NOTIFY_DATA         0x0002 /* this is the default */
-#define H5FD_DSM_NOTIFY_INFORMATION  0x0003
+#define H5FD_DSM_NOTIFY_DATA         0x0001 /* this is the default */
+#define H5FD_DSM_NOTIFY_INFORMATION  0x0002
+/* Internal notifications */
+#define H5FD_DSM_NOTIFY_WAIT         0x0003
+#define H5FD_DSM_NOTIFY_CONNECTED    0x0004
+#define H5FD_DSM_NOTIFY_DISCONNECTED 0x0005
+/* User notifications */
 #define H5FD_DSM_NOTIFY_USER         0x0010 /* user +1, +2 ... etc etc */
 
 

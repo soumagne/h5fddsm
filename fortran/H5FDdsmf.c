@@ -37,17 +37,14 @@ int_f nh5fd_dsm_init_flags_c(int_f* h5fd_dsm_flags)
 {
   int ret_value = -1;
 
-  h5fd_dsm_flags[0] =  (int_f)H5FD_DSM_UNLOCK_ON_CLOSE;
-  h5fd_dsm_flags[1] =  (int_f)H5FD_DSM_UNLOCK_MANUAL;
-  h5fd_dsm_flags[2] =  (int_f)H5FD_DSM_LOCK_SYNCHRONOUS;
-  h5fd_dsm_flags[3] =  (int_f)H5FD_DSM_LOCK_ASYNCHRONOUS;
-  h5fd_dsm_flags[4] =  (int_f)H5FD_DSM_MODE_SERIAL;
-  h5fd_dsm_flags[5] =  (int_f)H5FD_DSM_MODE_PARALLEL;
-  h5fd_dsm_flags[6] =  (int_f)H5FD_DSM_NOTIFY_NONE;
-  h5fd_dsm_flags[7] =  (int_f)H5FD_DSM_NOTIFY_WAIT;
-  h5fd_dsm_flags[8] =  (int_f)H5FD_DSM_NOTIFY_DATA;
-  h5fd_dsm_flags[9] =  (int_f)H5FD_DSM_NOTIFY_INFORMATION;
-  h5fd_dsm_flags[10] = (int_f)H5FD_DSM_NOTIFY_USER;
+  h5fd_dsm_flags[0] =  (int_f)H5FD_DSM_LOCK_SYNCHRONOUS;
+  h5fd_dsm_flags[1] =  (int_f)H5FD_DSM_LOCK_ASYNCHRONOUS;
+  h5fd_dsm_flags[2] =  (int_f)H5FD_DSM_MODE_SERIAL;
+  h5fd_dsm_flags[3] =  (int_f)H5FD_DSM_MODE_PARALLEL;
+  h5fd_dsm_flags[4] =  (int_f)H5FD_DSM_NOTIFY_NONE;
+  h5fd_dsm_flags[5] =  (int_f)H5FD_DSM_NOTIFY_DATA;
+  h5fd_dsm_flags[6] =  (int_f)H5FD_DSM_NOTIFY_INFORMATION;
+  h5fd_dsm_flags[7] = (int_f)H5FD_DSM_NOTIFY_USER;
 
   ret_value = 0;
   return ret_value;
@@ -105,8 +102,10 @@ int_f nh5pget_fapl_dsm_c(hid_t_f *prp_id, int_f* comm)
  * Name:        h5fd_dsm_set_options_c
  * Purpose:     Call H5FD_dsm_set_options to set specific option to the DSM
  * Inputs:      options      - specific options are:
- *                           - H5FD_DSM_UNLOCK_MANUAL
- *                           - H5FD_DSM_NOTIFY_MANUAL
+ *                           - H5FD_DSM_LOCK_SYNCHRONOUS_F
+ *                           - H5FD_DSM_LOCK_ASYNCHRONOUS_F
+ *                           - H5FD_DSM_MODE_SERIAL_F
+ *                           - H5FD_DSM_MODE_PARALLEL_F
  * Returns:     0 on success, -1 on failure
  *---------------------------------------------------------------------------*/
 int_f nh5fd_dsm_set_options_c(int_f* options)
@@ -147,14 +146,11 @@ int_f nh5fd_dsm_lock_c()
  * Name:        h5fd_dsm_unlock_c
  * Purpose:     Call H5FD_dsm_unlock to manually unlock the dsm, when unlocking
  *              you should pass a flag to signify the reason such as new data etc.
- * Inputs:      options      - unlockflags are:
- *                           - H5FD_DSM_NEW_DATA _F
- *                           - H5FD_DSM_NEW_INFORMATION _F
- *                           - H5FD_DSM_NOTIFY_NONE _F       
- *                           - H5FD_DSM_NOTIFY_WAIT _F       
- *                           - H5FD_DSM_NOTIFY_DATA _F       
- *                           - H5FD_DSM_NOTIFY_INFORMATION _F
- *                           - H5FD_DSM_NOTIFY_USER _F       
+ * Inputs:      options      - unlock flags are:
+ *                           - H5FD_DSM_NOTIFY_NONE_F
+ *                           - H5FD_DSM_NOTIFY_DATA_F
+ *                           - H5FD_DSM_NOTIFY_INFORMATION_F
+ *                           - H5FD_DSM_NOTIFY_USER_F
  * Returns:     0 on success, -1 on failure
  *---------------------------------------------------------------------------*/
 int_f nh5fd_dsm_unlock_c(int_f* unlockflag)

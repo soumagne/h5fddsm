@@ -66,8 +66,6 @@
 #define H5FD_DSM_ACCEPT              0x10
 #define H5FD_DSM_DISCONNECT          0x11
 
-#define H5FD_DSM_CLEAR_STORAGE       0x20
-
 #define H5FD_DSM_OPCODE_DONE         0xFF
 
 H5FDdsmConstString H5FDdsmOpcodeToString(H5FDdsmInt32 code);
@@ -83,11 +81,7 @@ class H5FDdsm_EXPORT H5FDdsmBufferService : public H5FDdsmBuffer {
     virtual ~H5FDdsmBufferService();
 
     H5FDdsmInt32 WaitForConnection();
-    H5FDdsmInt32 WaitForUnlock();
-
-    // Set/Get UnlockStatus
-    H5FDdsmGetValueMacro(UnlockStatus, H5FDdsmInt32);
-    H5FDdsmSetValueMacro(UnlockStatus, H5FDdsmInt32);
+    H5FDdsmInt32 WaitForUnlock(H5FDdsmUInt32 *unlockStatus);
 
     void SetSychronizationCount(H5FDdsmInt32 count);
 
@@ -97,8 +91,8 @@ class H5FDdsm_EXPORT H5FDdsmBufferService : public H5FDdsmBuffer {
 
     void *         BufferServiceThread();
 
-    H5FDdsmInt32   BufferServiceLoop(H5FDdsmInt32 *returnOpcode=0);
-    H5FDdsmInt32   BufferService(H5FDdsmInt32 *returnOpcode=0);
+    H5FDdsmInt32   BufferServiceLoop(H5FDdsmInt32 *returnOpcode = 0);
+    H5FDdsmInt32   BufferService(H5FDdsmInt32 *returnOpcode = 0);
     H5FDdsmInt32   StartBufferService();
     H5FDdsmInt32   EndBufferService();
 
@@ -111,10 +105,10 @@ class H5FDdsm_EXPORT H5FDdsmBufferService : public H5FDdsmBuffer {
     // Put/Get Data of size Lenght at address Address
     H5FDdsmInt32   Put(H5FDdsmAddr address, H5FDdsmUInt64 length, H5FDdsmPointer data);
     H5FDdsmInt32   Get(H5FDdsmAddr address, H5FDdsmUInt64 length, H5FDdsmPointer data,
-        H5FDdsmBoolean blocking=H5FD_DSM_TRUE);
+        H5FDdsmBoolean blocking = H5FD_DSM_TRUE);
 
-    H5FDdsmInt32   RequestLockAcquire(H5FDdsmBoolean parallel=H5FD_DSM_TRUE);
-    H5FDdsmInt32   RequestLockRelease(H5FDdsmBoolean parallel=H5FD_DSM_TRUE);
+    H5FDdsmInt32   RequestLockAcquire(H5FDdsmBoolean parallel = H5FD_DSM_TRUE);
+    H5FDdsmInt32   RequestLockRelease(H5FDdsmUInt32 flag, H5FDdsmBoolean parallel = H5FD_DSM_TRUE);
 
     H5FDdsmInt32   RequestDisconnect();
 
@@ -124,14 +118,15 @@ class H5FDdsm_EXPORT H5FDdsmBufferService : public H5FDdsmBuffer {
     H5FDdsmInt32   SignalConnection();
     //
     H5FDdsmBoolean GetIsUnlocked();
-    H5FDdsmInt32   SignalUnlock(H5FDdsmBoolean isDisconnected);
+    H5FDdsmGetValueMacro(UnlockStatus, H5FDdsmUInt32);
+    H5FDdsmInt32   SignalUnlock(H5FDdsmUInt32 unlockStatus, H5FDdsmBoolean isDisconnected);
     //
     H5FDdsmInt32   ProbeCommandHeader(H5FDdsmInt32 *comm);
 
     H5FDdsmInt32            CommChannel;
     H5FDdsmBoolean          IsConnected;
     H5FDdsmBoolean          IsDisconnected;
-    H5FDdsmInt32            UnlockStatus;
+    H5FDdsmUInt32           UnlockStatus;
     //
     H5FDdsmString           XMLDescription;
     //

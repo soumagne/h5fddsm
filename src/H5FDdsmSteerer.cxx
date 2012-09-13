@@ -25,6 +25,8 @@
 
 #include "H5FDdsmSteerer.h"
 #include "H5FDdsmManager.h"
+#include "H5FDdsmMsg.h"
+#include "H5FDdsmDriver.h"
 //
 #include <hdf5.h>
 #include <H5FDdsm.h>
@@ -37,13 +39,19 @@
 #ifdef H5FDdsm_DEBUG_GLOBAL
 #define H5FDdsmDebugLevel(level, x) \
 { if (this->DebugLevel >= level) { \
-  std::cout << "H5FD_DSM Debug Level " << level << ": " << (this->DsmManager->GetIsServer() ? "Server " : "Client ") << (this->DsmManager->DsmComm ? this->DsmManager->DsmComm->GetId() : -1) << " : " << x << std::endl; \
+    std::cout << "H5FD_DSM Debug Level " << level << ": " \
+    << (this->DsmManager->GetIsServer() ? "Server " : "Client ") \
+    << (this->DsmManager->DsmComm ? this->DsmManager->DsmComm->GetId() : -1) \
+    << " : " << x << std::endl; \
   } \
 }
 #else
 #define H5FDdsmDebugLevel(level, x) \
 { if (this->Debug && this->DebugLevel >= level) { \
-  std::cout << "H5FD_DSM Debug Level " << level << ": " << (this->DsmManager->GetIsServer() ? "Server " : "Client ") << (this->DsmManager->DsmComm ? this->DsmManager->DsmComm->GetId() : -1) << " : " << x << std::endl; \
+    std::cout << "H5FD_DSM Debug Level " << level << ": " \
+    << (this->DsmManager->GetIsServer() ? "Server " : "Client ") \
+    << (this->DsmManager->DsmComm ? this->DsmManager->DsmComm->GetId() : -1) \
+    << " : " << x << std::endl; \
   } \
 }
 #endif
@@ -93,7 +101,8 @@ H5FDdsmInt32 H5FDdsmSteerer::SetCurrentCommand(H5FDdsmConstString cmd)
     if (strcmp(this->CurrentCommand, "play") == 0) {
       H5FDdsmDebugLevel(1,"Sending ready...");
       if (this->DsmManager->GetUpdatePiece() == 0) {
-//        this->DsmManager->GetDsmBuffer()->SendAcknowledgment(0, H5FD_DSM_INTER_COMM, -1, "SetCurrentCommand");
+        this->DsmManager->GetDsmBuffer()->SendAcknowledgment(0, -1,
+            H5FD_DSM_CLIENT_ACK_TAG, H5FD_DSM_INTER_COMM);
       }
       H5FDdsmDebugLevel(1,"Ready sent");
     }
@@ -588,17 +597,17 @@ H5FDdsmInt32 H5FDdsmSteerer::CheckCommand(H5FDdsmConstString command)
   std::string stringCommand = command;
   
   if (stringCommand == "pause") {
-    this->DsmManager->GetDsmBuffer()->RequestLockAcquire();
-    this->DsmManager->GetDsmBuffer()->SetUnlockStatus(H5FD_DSM_NOTIFY_WAIT);
-    this->DsmManager->GetDsmBuffer()->RequestLockRelease();
+    dsm_lock();
+    dsm_unlock(H5FD_DSM_NOTIFY_WAIT);
 
-    H5FDdsmDebug("Receiving ready...");
+    H5FDdsmDebug("Receiving pause acknowledgment...");
     if (this->DsmManager->GetUpdatePiece() == 0) {
       H5FDdsmInt32 unused;
-//      this->DsmManager->GetDsmBuffer()->ReceiveAcknowledgment(0, H5FD_DSM_INTER_COMM, unused, "Ready");
+      this->DsmManager->GetDsmBuffer()->ReceiveAcknowledgment(0, unused,
+          H5FD_DSM_CLIENT_ACK_TAG, H5FD_DSM_INTER_COMM);
     }
     this->DsmManager->GetDsmBuffer()->GetComm()->Barrier();
-    H5FDdsmDebug("Ready received");
+    H5FDdsmDebug("Pause ack received");
 
     ret = H5FD_DSM_SUCCESS;
   }

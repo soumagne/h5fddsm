@@ -288,7 +288,7 @@ int H5FDdsmTestDriver::OutputStringHasError(const char* pname, string& output)
     "mpirun can *only* be used with MPI programs",
     "due to signal",
     "failure",
-    "bnormal termination",
+    "abnormal termination",
     "failed",
     "FAILED",
     "Failed",

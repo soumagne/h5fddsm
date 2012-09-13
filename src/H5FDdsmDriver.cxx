@@ -185,16 +185,6 @@ dsm_set_options(unsigned long flags)
 
   DSM_DRIVER_INIT(dsmBufferService)
 
-  // Lock management
-  if ((flags & H5FD_DSM_UNLOCK_MANUAL) == H5FD_DSM_UNLOCK_MANUAL) {
-    DSM_DRIVER_ERROR("H5FD_DSM_UNLOCK_MANUAL is deprecated")
-//      dsmBufferService->SetReleaseLockOnClose(H5FD_DSM_FALSE);
-  }
-  if ((flags & H5FD_DSM_UNLOCK_ON_CLOSE) == H5FD_DSM_UNLOCK_ON_CLOSE) {
-    DSM_DRIVER_ERROR("H5FD_DSM_UNLOCK_ON_CLOSE is deprecated")
-//    dsmBufferService->SetReleaseLockOnClose(H5FD_DSM_TRUE);
-  }
-
   // Lock/Unlock Synchronization protocol
   if ((flags & H5FD_DSM_LOCK_SYNCHRONOUS) == H5FD_DSM_LOCK_SYNCHRONOUS) {
       dsmBufferService->SetSychronizationCount(1);
@@ -322,11 +312,8 @@ dsm_unlock(unsigned long flag)
 
   DSM_DRIVER_INIT(dsmBufferService)
 
-  // set the notification of unlock flag  
-  dsmBufferService->SetUnlockStatus(flag);
-
   H5FDdsmBoolean parallel = (dsmManager->GetIsDriverSerial() == H5FD_DSM_TRUE) ? FALSE : TRUE;
-  if (dsmBufferService->RequestLockRelease(parallel) != H5FD_DSM_SUCCESS)
+  if (dsmBufferService->RequestLockRelease(flag, parallel) != H5FD_DSM_SUCCESS)
     DSM_DRIVER_ERROR("Cannot request lock release")
 
   return(SUCCEED);

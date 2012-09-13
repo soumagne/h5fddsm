@@ -123,9 +123,10 @@ typedef H5FDdsmUInt64 H5FDdsmAddr;
 }
 #endif
 
+// Do not modify the H5FD_DSM Error string as it is used by ctest for error detection"
 #define H5FDdsmError(x) \
 { \
-  std::cerr << "H5FD_DSM Error : " __FILE__ << " line " << __LINE__ << ": " << x << std::endl; \
+  std::cerr << "H5FD_DSM Error: " __FILE__ << " line " << __LINE__ << ": " << x << std::endl; \
 }
 
 //------------------------------------------------------------------------------

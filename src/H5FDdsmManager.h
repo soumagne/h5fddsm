@@ -84,11 +84,6 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     H5FDdsmGetValueMacro(IsDriverSerial, H5FDdsmBoolean);
 
     // Description:
-    // Set/Get IsDriverSerial info
-    H5FDdsmInt32 SetIsAsynchronous(H5FDdsmBoolean async);
-    H5FDdsmGetValueMacro(IsAsynchronous, H5FDdsmBoolean);
-
-    // Description:
     // Set/Get the interprocess communication subsystem
     // Valid values are H5FD_DSM_TYPE_UNIFORM, H5FD_DSM_TYPE_BLOCK_CYCLIC
     H5FDdsmSetValueMacro(DsmType, H5FDdsmInt32);
@@ -128,11 +123,18 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
 
     // Description:
     // Wait for a connection - Only valid after a Publish call has been made.
-    H5FDdsmBoolean GetIsConnected();
     H5FDdsmInt32 WaitForConnection();
+    // Accessing this variable may be subject to race conditions in a
+    // multi-threaded environment (server) therefore WaitForConnection
+    // or WaitForUnlock should be used instead.
+    H5FDdsmBoolean GetIsConnected();
 
     // Description:
-    H5FDdsmInt32 WaitForUnlock();
+    // Wait for an unlock signal
+    H5FDdsmInt32 WaitForUnlock(H5FDdsmUInt32 *unlockStatus = NULL);
+    // Accessing this variable may be subject to race conditions in a
+    // multi-threaded environment (server) therefore WaitForUnlock should be
+    // used instead.
     H5FDdsmInt32 GetUnlockStatus();
 
     // Description:
@@ -145,10 +147,6 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     // Description:
     // Destroy the current DSM buffer.
     H5FDdsmInt32 Destroy();
-
-    // Description:
-    // Clear the DSM storage.
-    H5FDdsmInt32 ClearStorage();
 
     // Description:
     // Connect to a remote DSM manager (called by client).
@@ -172,7 +170,7 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     // this function must be paired with a matching Close
     // Use H5F_ACC_RDONLY for queries
     // Use H5F_ACC_RDWR   for read/write
-    H5FDdsmInt32 OpenDSM(H5FDdsmUInt32 mode, H5FDdsmBoolean serial=H5FD_DSM_FALSE);
+    H5FDdsmInt32 OpenDSM(H5FDdsmUInt32 mode, H5FDdsmBoolean serial = H5FD_DSM_FALSE);
     H5FDdsmInt32 OpenDSMSerial(H5FDdsmUInt32 mode);
 
     // Description:
@@ -225,10 +223,6 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     H5FDdsmInt32 GetSteeringValues(const char *name, int numberOfElements, double *values);
 
     // Description:
-    // Return true if the Interactions group exists, false otherwise.
-    H5FDdsmInt32 GetInteractionsGroupPresent();
-
-    // Description:
     // Set/Unset objects.
     void SetDisabledObject(H5FDdsmConstString objectName);
 #endif
@@ -255,7 +249,6 @@ class H5FDdsm_EXPORT H5FDdsmManager : public H5FDdsmObject
     H5FDdsmBoolean  IsServer;
     H5FDdsmBoolean  IsStandAlone;
     H5FDdsmBoolean  IsDriverSerial;
-    H5FDdsmBoolean  IsAsynchronous;
     H5FDdsmInt32    DsmType;
     H5FDdsmUInt64   BlockLength;
     H5FDdsmInt32    InterCommType;

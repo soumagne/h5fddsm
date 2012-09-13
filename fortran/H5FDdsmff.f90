@@ -37,10 +37,10 @@ MODULE H5FDDSM
 ! Purpose:     Set the File access property for DSM VFD usage
 !
 ! Inputs:
-!        prp_id        - file access property list identifier
-!        comm        - Communicator used by the IO nodes
+!        prp_id       - file access property list identifier
+!        comm         - Communicator used by the IO nodes
 ! Outputs:
-!        hdferr:        - error code
+!        hdferr:      - error code
 !                     Success:  0
 !                     Failure: -1
 ! Optional parameters:
@@ -76,10 +76,10 @@ MODULE H5FDDSM
 ! Purpose:     Returns MPI communicator information
 !
 ! Inputs:
-!        prp_id        - file access property list identifier
+!        prp_id       - file access property list identifier
 ! Outputs:
-!        comm        - Communicator used by the IO nodes
-!        hdferr:        - error code
+!        comm         - Communicator used by the IO nodes
+!        hdferr:      - error code
 !                     Success:  0
 !                     Failure: -1
 ! Optional parameters:
@@ -116,12 +116,10 @@ MODULE H5FDDSM
 !
 ! Inputs:
 !       options     - options are:
-!  H5FD_DSM_UNLOCK_ON_CLOSE  
-!  H5FD_DSM_UNLOCK_MANUAL    
-!  H5FD_DSM_LOCK_SYNCHRONOUS 
-!  H5FD_DSM_LOCK_ASYNCHRONOUS
-!  H5FD_DSM_MODE_SERIAL      
-!  H5FD_DSM_MODE_PARALLEL               
+!                   H5FD_DSM_LOCK_SYNCHRONOUS_F
+!                   H5FD_DSM_LOCK_ASYNCHRONOUS_F
+!                   H5FD_DSM_MODE_SERIAL_F
+!                   H5FD_DSM_MODE_PARALLEL_F
 ! Outputs:
 !       hdferr:     - error code
 !                   Success:  0
@@ -199,14 +197,13 @@ MODULE H5FDDSM
 ! Purpose:  unlock the dsm (collective)
 !
 ! Inputs:
-!       unlockflag - unlockflags are:
-!                    H5FD_DSM_NOTIFY_NONE _F    
-!                    H5FD_DSM_NOTIFY_WAIT _F    
-!                    H5FD_DSM_NOTIFY_DATA _F        (this is the default)
-!                    H5FD_DSM_NOTIFY_INFORMATION _F 
-!                    H5FD_DSM_NOTIFY_USER _F        (add extra using USER+1, USER+2, ...)
+!       unlockflag  - unlock flags are:
+!                   H5FD_DSM_NOTIFY_NONE_F
+!                   H5FD_DSM_NOTIFY_DATA_F        (this is the default)
+!                   H5FD_DSM_NOTIFY_INFORMATION_F
+!                   H5FD_DSM_NOTIFY_USER_F        (add extra using USER+1, USER+2, ...)
 ! Outputs:
-!       hdferr:    - error code
+!       hdferr:     - error code
 !                   Success:  0
 !                   Failure: -1
 ! Optional parameters:

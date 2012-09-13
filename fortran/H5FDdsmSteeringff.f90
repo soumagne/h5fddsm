@@ -62,11 +62,11 @@ MODULE H5FDDSM_STEERING
 ! Purpose:     Initialize the steering interface
 !
 ! Inputs:
-!        comm        - Communicator used by the IO nodes
+!        comm       - Communicator used by the IO nodes
 ! Outputs:
-!        hdferr:        - error code
-!                     Success:  0
-!                     Failure: -1
+!        hdferr:    - error code
+!                   Success:  0
+!                   Failure: -1
 ! Optional parameters:
 !                NONE
 !

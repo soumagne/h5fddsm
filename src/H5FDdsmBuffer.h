@@ -133,7 +133,6 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmObject {
     // Storage
     H5FDdsmGetValueMacro(Storage, H5FDdsmStorage *);
     H5FDdsmInt32   SetStorage(H5FDdsmStorage *Storage);
-    H5FDdsmInt32   ClearStorage();
 
     // Comm
     H5FDdsmGetValueMacro(Comm, H5FDdsmComm *);
@@ -141,13 +140,13 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmObject {
 
     // Configure the system. Set the Comm and ServerIds
     H5FDdsmInt32   ConfigureUniform(H5FDdsmComm *Comm, H5FDdsmUInt64 Length,
-        H5FDdsmInt32 StartId=-1, H5FDdsmInt32 EndId=-1,
-      H5FDdsmUInt64 aBlockLength=0, H5FDdsmBoolean random=H5FD_DSM_FALSE);
+        H5FDdsmInt32 StartId = -1, H5FDdsmInt32 EndId = -1,
+      H5FDdsmUInt64 aBlockLength = 0, H5FDdsmBoolean random = H5FD_DSM_FALSE);
 
     H5FDdsmInt32   SendCommandHeader(H5FDdsmInt32 opcode, H5FDdsmInt32 dest,
         H5FDdsmAddr address, H5FDdsmInt32 length, H5FDdsmInt32 comm);
     H5FDdsmInt32   ReceiveCommandHeader(H5FDdsmInt32 *opcode, H5FDdsmInt32 *source,
-        H5FDdsmAddr *address, H5FDdsmInt32 *length, H5FDdsmInt32 comm, H5FDdsmInt32 remoteSource=-1);
+        H5FDdsmAddr *address, H5FDdsmInt32 *length, H5FDdsmInt32 comm, H5FDdsmInt32 remoteSource = -1);
     H5FDdsmInt32   BroadcastComm(H5FDdsmInt32 *comm, H5FDdsmInt32 root);
 
     // Send/Recv Methods for point-to-point comm
@@ -169,7 +168,7 @@ class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmObject {
     H5FDdsmInt32   ReceiveInfo();
 
   protected:
-    H5FDdsmInt32   SetLength(H5FDdsmUInt64 length, H5FDdsmBoolean allowAllocate=H5FD_DSM_TRUE);
+    H5FDdsmInt32   SetLength(H5FDdsmUInt64 length, H5FDdsmBoolean allowAllocate = H5FD_DSM_TRUE);
 
     H5FDdsmBoolean  IsServer;
 

@@ -362,7 +362,7 @@ RETURNS
 DESCRIPTION
    Collective call to manually lock the DSM for exclusive access.
    The DSM is always locked when being accessed, but usually only between
-   an open/close pair. Multiple open/close cals may be nested inside
+   an open/close pair. Multiple open/close calls may be nested inside
    a lock/unlock pair if manual control is desired.
 
  --------------------------------------------------------------------------*/
@@ -398,7 +398,7 @@ RETURNS
 DESCRIPTION
    Collective call to manually lock the DSM for exclusive access.
    The DSM is always locked when being accessed, but usually only between
-   an open/close pair. Multiple open/close cals may be nested inside
+   an open/close pair. Multiple open/close calls may be nested inside
    a lock/unlock pair if manual control is desired.
 
  --------------------------------------------------------------------------*/

@@ -65,13 +65,19 @@
 #ifdef H5FDdsm_DEBUG_GLOBAL
 #define H5FDdsmDebugLevel(level, x) \
 { if (this->DebugLevel >= level) { \
-  std::cout << "H5FD_DSM Debug Level " << level << ": " << (this->IsServer ? "Server " : "Client ") << (this->DsmBuffer ? this->DsmBuffer->GetComm()->GetId() : -1) << " : " << x << std::endl; \
+    std::cout << "H5FD_DSM Debug Level " << level << ": " \
+    << (this->IsServer ? "Server " : "Client ") \
+    << (this->DsmBuffer ? this->DsmBuffer->GetComm()->GetId() : -1) << " : " \
+    << x << std::endl; \
   } \
 }
 #else
 #define H5FDdsmDebugLevel(level, x) \
 { if (this->Debug && this->DebugLevel >= level) { \
-  std::cout << "H5FD_DSM Debug Level " << level << ": " << (this->IsServer ? "Server " : "Client ") << (this->DsmBuffer ? this->DsmBuffer->GetComm()->GetId() : -1) << " : " << x << std::endl; \
+    std::cout << "H5FD_DSM Debug Level " << level << ": " \
+    << (this->IsServer ? "Server " : "Client ") \
+    << (this->DsmBuffer ? this->DsmBuffer->GetComm()->GetId() : -1) << " : " \
+    << x << std::endl; \
   } \
 }
 #endif
@@ -178,7 +184,11 @@ H5FDdsmBoolean H5FDdsmManager::GetIsConnected()
 {
   H5FDdsmBoolean ret = H5FD_DSM_FALSE;
   if (this->DsmBuffer) {
-    return this->DsmBuffer->GetIsConnected();;
+    if (this->IsServer) {
+      H5FDdsmError("Using GetIsConnected on server is prohibited and leads to race conditions");
+    } else {
+      ret = this->DsmBuffer->GetIsConnected();
+    }
   }
   return(ret);
 }
@@ -194,11 +204,11 @@ H5FDdsmInt32 H5FDdsmManager::WaitForConnection()
 }
 
 //----------------------------------------------------------------------------
-H5FDdsmInt32 H5FDdsmManager::WaitForUnlock()
+H5FDdsmInt32 H5FDdsmManager::WaitForUnlock(H5FDdsmUInt32 *unlockStatus)
 {
   H5FDdsmInt32 ret = H5FD_DSM_FAIL;
   if (this->DsmBuffer) {
-    ret = this->DsmBuffer->WaitForUnlock();
+    ret = this->DsmBuffer->WaitForUnlock(unlockStatus);
   }
   return(ret);
 }
@@ -208,19 +218,15 @@ H5FDdsmInt32 H5FDdsmManager::GetUnlockStatus()
 {
   H5FDdsmInt32 ret = H5FD_DSM_FAIL;
   if (this->DsmBuffer) {
-    ret = this->DsmBuffer->GetUnlockStatus();
+    if (this->IsServer) {
+      H5FDdsmError("Using GetUnlockStatus on server is prohibited and leads to race conditions");
+    } else {
+      ret = this->DsmBuffer->GetUnlockStatus();
+    }
   }
   return(ret);
 }
 
-//----------------------------------------------------------------------------
-H5FDdsmInt32 H5FDdsmManager::SetIsAsynchronous(H5FDdsmBoolean async)
-{
-  // @TODO sort out this flag set/get
-  H5FD_dsm_set_manager(this);
-  H5FD_dsm_set_options(H5FD_DSM_LOCK_ASYNCHRONOUS);
-  return(H5FD_DSM_SUCCESS);
-}
 //----------------------------------------------------------------------------
 H5FDdsmInt32 H5FDdsmManager::Create()
 {
@@ -327,14 +333,6 @@ H5FDdsmInt32 H5FDdsmManager::Destroy()
   }
   this->SetServerHostName(NULL);
   return(H5FD_DSM_SUCCESS);
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32 H5FDdsmManager::ClearStorage()
-{
-  H5FDdsmInt32 ret = this->DsmBuffer->ClearStorage();
-  if (this->UpdatePiece == 0) H5FDdsmDebug("DSM cleared");
-  return(ret);
 }
 
 //----------------------------------------------------------------------------
@@ -544,7 +542,7 @@ H5FDdsmInt32 H5FDdsmManager::OpenDSM(H5FDdsmUInt32 mode, H5FDdsmBoolean serial)
 {
   H5FDdsmInt32 ret = H5FD_DSM_SUCCESS;
   //
-  if (this->IsOpenDSM() && this->GetIsDriverSerial()!=serial) {
+  if (this->IsOpenDSM() && (this->GetIsDriverSerial() != serial)) {
     if (serial) {
       H5FDdsmError("DSM cannot be switched from parallel to serial whilst open");
     }
@@ -556,14 +554,7 @@ H5FDdsmInt32 H5FDdsmManager::OpenDSM(H5FDdsmUInt32 mode, H5FDdsmBoolean serial)
   if (!this->IsOpenDSM()) {
     this->ManagerInternals->Cache_fapl = H5Pcreate(H5P_FILE_ACCESS);
     H5FD_dsm_set_manager(this);
-    if (serial) {
-//      std::cout << "info : DSM opened in serial" << std::endl;
-      this->SetIsDriverSerial(H5FD_DSM_TRUE);
-    }
-    else {
-//      std::cout << "info : DSM opened in parallel" << std::endl;
-      this->SetIsDriverSerial(H5FD_DSM_FALSE);
-    }
+    this->SetIsDriverSerial(serial);
     H5Pset_fapl_dsm(this->ManagerInternals->Cache_fapl, this->GetMpiComm(), NULL, 0);
     this->ManagerInternals->Cache_fileId = H5Fopen("dsm", mode, this->ManagerInternals->Cache_fapl);
     if (this->ManagerInternals->Cache_fileId < 0) {
@@ -574,10 +565,8 @@ H5FDdsmInt32 H5FDdsmManager::OpenDSM(H5FDdsmUInt32 mode, H5FDdsmBoolean serial)
       ret = H5FD_DSM_SUCCESS;
     }
   }
-  if (!this->ManagerInternals->Cache_Stack.empty() && this->ManagerInternals->Cache_Stack.top()!=mode) {
-//    std::cout << "info : requested File cache mode open " << this->OpenModeString(mode) 
-//      << " but already open in mode " << this->OpenModeString(this->Cache_Stack.top()) << std::endl;
-    if ((mode==H5F_ACC_RDWR) && (this->ManagerInternals->Cache_Stack.top()==H5F_ACC_RDWR)) {
+  if (!this->ManagerInternals->Cache_Stack.empty() && (this->ManagerInternals->Cache_Stack.top() != mode)) {
+    if ((mode == H5F_ACC_RDWR) && (this->ManagerInternals->Cache_Stack.top() == H5F_ACC_RDWR)) {
       H5FDdsmError("Bad DSM open : switching from readonly to read/write mode not allowed");
       return H5FD_DSM_FAIL;
     }
@@ -832,17 +821,6 @@ H5FDdsmInt32 H5FDdsmManager::GetSteeringValues(const char *name, int numberOfEle
   if (numberOfElements) {
     this->Steerer->BeginInteractionsCache(H5F_ACC_RDONLY);
     ret = (H5FD_DSM_SUCCESS==this->Steerer->ReadInteractions(name, numberOfElements, values));
-    this->Steerer->EndInteractionsCache();
-  }
-  return(ret);
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32 H5FDdsmManager::GetInteractionsGroupPresent()
-{
-  H5FDdsmInt32 ret = H5FD_DSM_FALSE;
-  if ((this->DsmBuffer != NULL) && (this->Steerer != NULL)) {
-    ret = (H5FD_DSM_SUCCESS==this->Steerer->BeginInteractionsCache(H5F_ACC_RDONLY));
     this->Steerer->EndInteractionsCache();
   }
   return(ret);

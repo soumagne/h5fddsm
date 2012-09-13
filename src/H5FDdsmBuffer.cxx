@@ -156,20 +156,6 @@ H5FDdsmBuffer::SetStorage(H5FDdsmStorage *aStorage)
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBuffer::ClearStorage()
-{
-  if (this->Storage) {
-    H5FDdsmDebug("Resetting storage");
-    H5FDdsmDebug("start address: " << this->StartAddress);
-    H5FDdsmDebug("end address: " << this->EndAddress);
-    this->SetLength(this->Length);
-    this->DataPointer = (H5FDdsmByte *)this->Storage->GetDataPointer();
-  }
-  return(H5FD_DSM_SUCCESS);
-}
-
-//----------------------------------------------------------------------------
-H5FDdsmInt32
 H5FDdsmBuffer::ConfigureUniform(H5FDdsmComm *aComm, H5FDdsmUInt64 aLength,
     H5FDdsmInt32 startId, H5FDdsmInt32 endId, H5FDdsmUInt64 aBlockLength,
     H5FDdsmBoolean random)
