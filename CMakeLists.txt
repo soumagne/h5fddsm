@@ -13,7 +13,7 @@ project(H5FDdsm C CXX)
 #-----------------------------------------------------------------------------
 set(H5FDdsm_VERS_MAJOR   "0")
 set(H5FDdsm_VERS_MINOR   "9")
-set(H5FDdsm_VERS_RELEASE "8")
+set(H5FDdsm_VERS_RELEASE "9")
 set(H5FDdsm_PACKAGE "h5fddsm")
 set(H5FDdsm_PACKAGE_NAME "H5FDdsm")
 set(H5FDdsm_PACKAGE_VERSION "${H5FDdsm_VERS_MAJOR}.${H5FDdsm_VERS_MINOR}.${H5FDdsm_VERS_RELEASE}")
