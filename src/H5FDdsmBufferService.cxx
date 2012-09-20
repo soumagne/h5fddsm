@@ -354,15 +354,16 @@ H5FDdsmBufferService::BufferServiceLoop(H5FDdsmInt32 *returnOpcode)
 H5FDdsmInt32
 H5FDdsmBufferService::BufferService(H5FDdsmInt32 *returnOpcode)
 {
-  H5FDdsmInt32        opcode, who, status = H5FD_DSM_FAIL;
-  H5FDdsmInt32        aLength;
-  H5FDdsmAddr         address;
-  H5FDdsmByte        *datap;
-  static H5FDdsmInt32 syncId      = -1;
+  H5FDdsmInt32          opcode, who, status = H5FD_DSM_FAIL;
+  H5FDdsmInt32          aLength;
+  H5FDdsmAddr           address;
+  H5FDdsmByte          *datap;
+  static H5FDdsmInt32   syncId = -1;
+  static H5FDdsmBoolean serviceConnected = H5FD_DSM_FALSE;
 
   if (this->CommChannel == H5FD_DSM_ANY_COMM) {
     if (this->Comm->GetId() == 0) {
-      status = this->ProbeCommandHeader(&this->CommChannel);
+      status = this->ProbeCommandHeader(&this->CommChannel, serviceConnected);
       H5FDdsmDebugLevel(1,"ProbeCommandHeader returns " << status );
     }
     this->BroadcastComm(&this->CommChannel, 0);
@@ -563,6 +564,7 @@ H5FDdsmBufferService::BufferService(H5FDdsmInt32 *returnOpcode)
     this->SendInfo();
     // Signal new connection
     this->SignalConnection();
+    serviceConnected = H5FD_DSM_TRUE;
     this->CommChannel = H5FD_DSM_ANY_COMM;
     break;
 
@@ -573,6 +575,7 @@ H5FDdsmBufferService::BufferService(H5FDdsmInt32 *returnOpcode)
     if (this->Comm->ChannelSynced(who, &syncId, communicatorId)) {
       H5FDdsmDebug("Disconnecting");
       this->Comm->Disconnect();
+      serviceConnected = H5FD_DSM_FALSE;
       this->CommChannel = H5FD_DSM_INTRA_COMM;
       H5FDdsmDebug("DSM disconnected, Switched to " << H5FDdsmCommToString(this->CommChannel));
       // just in case anyone is waiting, we must unlock them 
@@ -671,7 +674,7 @@ H5FDdsmBufferService::SendDone()
 
 //----------------------------------------------------------------------------
 H5FDdsmInt32
-H5FDdsmBufferService::ProbeCommandHeader(H5FDdsmInt32 *comm)
+H5FDdsmBufferService::ProbeCommandHeader(H5FDdsmInt32 *comm, H5FDdsmBoolean connected)
 {
   H5FDdsmMsg msg;
   H5FDdsmInt32 status = H5FD_DSM_FAIL;
@@ -683,7 +686,7 @@ H5FDdsmBufferService::ProbeCommandHeader(H5FDdsmInt32 *comm)
   // Spin until a message is found on one of the communicators
   while (status != H5FD_DSM_SUCCESS) {
     status = this->Comm->Probe(&msg);
-    if (status != H5FD_DSM_SUCCESS && this->IsConnected) {
+    if ((status != H5FD_DSM_SUCCESS) && connected) {
       msg.SetCommunicator((msg.Communicator == H5FD_DSM_INTRA_COMM) ? H5FD_DSM_INTER_COMM : H5FD_DSM_INTRA_COMM);
     }
   }

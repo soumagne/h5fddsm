@@ -121,7 +121,7 @@ class H5FDdsm_EXPORT H5FDdsmBufferService : public H5FDdsmBuffer {
     H5FDdsmGetValueMacro(UnlockStatus, H5FDdsmUInt32);
     H5FDdsmInt32   SignalUnlock(H5FDdsmUInt32 unlockStatus, H5FDdsmBoolean isDisconnected);
     //
-    H5FDdsmInt32   ProbeCommandHeader(H5FDdsmInt32 *comm);
+    H5FDdsmInt32   ProbeCommandHeader(H5FDdsmInt32 *comm, H5FDdsmBoolean connected);
 
     H5FDdsmInt32            CommChannel;
     H5FDdsmBoolean          IsConnected;
