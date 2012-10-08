@@ -1043,7 +1043,11 @@ h5tools_str_sprint(h5tools_str_t *str, const h5tool_format_t *info, hid_t contai
             H5O_info_t oi;
             const char *path;
 
+#ifdef H5Rdereference_vers
+            obj = H5Rdereference(container, H5P_DEFAULT, H5R_OBJECT, vp);
+#else
             obj = H5Rdereference(container, H5R_OBJECT, vp);
+#endif
             H5Oget_info(obj, &oi);
 
             /* Print object type and close object */
@@ -1233,7 +1237,11 @@ h5tools_str_sprint_region(h5tools_str_t *str, const h5tool_format_t *info,
     char    ref_name[1024];
     H5S_sel_type region_type;
 
+#ifdef H5Rdereference_vers
+    obj = H5Rdereference(container, H5P_DEFAULT, H5R_DATASET_REGION, vp);
+#else
     obj = H5Rdereference(container, H5R_DATASET_REGION, vp);
+#endif
     if (obj >= 0) {
         region = H5Rget_region(container, H5R_DATASET_REGION, vp);
         if (region >= 0) {
