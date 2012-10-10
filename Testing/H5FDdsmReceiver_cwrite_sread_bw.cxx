@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
   RecvBytes   = Bytes * dsmManager->GetUpdateNumPieces();
   MBytes      = RecvBytes / (1024.0 * 1024.0);
 
-  if (numRemoteParticles * nRemoteProcs - numParticles * dsmManager->GetUpdateNumPieces() < 0) {
+  if (numRemoteParticles * nRemoteProcs < numParticles * dsmManager->GetUpdateNumPieces()) {
     if (dsmManager->GetUpdatePiece() == 0) fprintf(stderr, "Cannot receive, too many tuples/proc!\n");
     fflush(stderr);
     receiverFinalize(dsmManager, &comm);
@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
 
   if (dsmManager->GetUpdatePiece() == 0) {
     printf("# Receiving from DSM ");
-    printf("%lu particles/proc (%d x %d) -- %lf MB\n",
+    printf("%llu particles/proc (%d x %d) -- %lf MB\n",
         numParticles, NUM_DATASETS, DIM_DATASETS, MBytes);
     printf("%-*s%*s", 10, "# NumProcs", 20, "Bandwidth (MB/s)");
     if (dsmManager->GetDsmBuffer()->GetDsmType() == H5FD_DSM_TYPE_BLOCK_CYCLIC ||
@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
       printf("%-*d%*.*f", 10, dsmManager->GetUpdateNumPieces(), 20, 2, bandwidth);
       if (dsmManager->GetDsmBuffer()->GetDsmType() == H5FD_DSM_TYPE_BLOCK_CYCLIC
           || dsmManager->GetDsmBuffer()->GetDsmType() == H5FD_DSM_TYPE_BLOCK_RANDOM) {
-        printf("%*ld", 20, dsmManager->GetDsmBuffer()->GetBlockLength());
+        printf("%*lld", 20, dsmManager->GetDsmBuffer()->GetBlockLength());
       }
       printf("\n");
       fflush(stdout);

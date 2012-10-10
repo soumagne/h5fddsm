@@ -297,7 +297,7 @@ H5FDdsmFloat64 TestParticleRead(H5FDdsmConstString filename, H5FDdsmUInt64 ntupl
       for (H5FDdsmUInt64 j = 0; j < ncomponents; j++) {
         if ((doublearray[ncomponents * i + j] != static_cast<H5FDdsmFloat64>
         (i + start + step_increment)) && (fail_count < 10)) {
-          fprintf(stderr," doublearray[%lu] is %lf, should be %lf\n", ncomponents * i + j,
+          fprintf(stderr," doublearray[%llu] is %lf, should be %lf\n", ncomponents * i + j,
               doublearray[ncomponents * i + j], static_cast<H5FDdsmFloat64>(i + start + step_increment));
           fail_count++;
         }
@@ -562,11 +562,11 @@ void senderInit(int argc, char* argv[], H5FDdsmManager *dsmManager, MPI_Comm *co
   remoteMB = dsmManager->GetDsmBuffer()->GetTotalLength() / (1024.0 * 1024.0);
   numServers = dsmManager->GetDsmBuffer()->GetEndServerId() - dsmManager->GetDsmBuffer()->GetStartServerId() + 1;
   if (rank == 0) {
-    printf("# DSM server memory size is: %lf MBytes (%lu Bytes)\n", remoteMB,
+    printf("# DSM server memory size is: %lf MBytes (%llu Bytes)\n", remoteMB,
         dsmManager->GetDsmBuffer()->GetTotalLength());
     printf("# DSM server process count: %u\n", numServers);
     if (dsmManager->GetDsmBuffer()->GetDsmType() == H5FD_DSM_TYPE_BLOCK_CYCLIC) {
-      printf("# Block size: %lu Bytes\n", dsmManager->GetDsmBuffer()->GetBlockLength());
+      printf("# Block size: %llu Bytes\n", dsmManager->GetDsmBuffer()->GetBlockLength());
     }
   }
 }

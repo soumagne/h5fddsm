@@ -54,7 +54,7 @@ int main(int argc, char **argv)
 
     if (dsmManager->GetUpdatePiece() == 0) {
       if (type == 0) printf("# Writing to DSM "); else printf("# Writing to Disk ");
-      printf("%lu particles/proc (%d dataset(s) of dim %d) -- %lf MB\n",
+      printf("%llu particles/proc (%d dataset(s) of dim %d) -- %lf MB\n",
           numParticles, NUM_DATASETS, DIM_DATASETS, MBytes);
       printf("%-*s%*s", 10, "# NumProcs", 20, "Bandwidth (MB/s)");
       if (dsmManager->GetDsmBuffer()->GetDsmType() == H5FD_DSM_TYPE_BLOCK_CYCLIC ||
@@ -102,7 +102,7 @@ int main(int argc, char **argv)
         printf("%-*d%*.*f", 10, dsmManager->GetUpdateNumPieces(), 20, 2, bandwidth);
         if (dsmManager->GetDsmBuffer()->GetDsmType() == H5FD_DSM_TYPE_BLOCK_CYCLIC
             || dsmManager->GetDsmBuffer()->GetDsmType() == H5FD_DSM_TYPE_BLOCK_RANDOM) {
-          printf("%*ld", 20, dsmManager->GetDsmBuffer()->GetBlockLength());
+          printf("%*lld", 20, dsmManager->GetDsmBuffer()->GetBlockLength());
         }
         printf("\n");
         fflush(stdout);
