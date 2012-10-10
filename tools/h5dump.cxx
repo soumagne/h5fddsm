@@ -15,9 +15,6 @@
 
 /* Modifies H5Dump to add DSM driver support and stream output */
 
-#include <stdio.h>
-#include <stdlib.h>
-
 #include "h5dump.h"
 #include "H5private.h"
 #include "h5tools.h"
@@ -26,6 +23,9 @@
 #include "h5trav.h"
 
 #include "h5tools_redirect.h"
+
+#include <stdio.h>
+#include <stdlib.h>
 
 /*
  * The global output stream replacing stdout

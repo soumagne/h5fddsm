@@ -23,12 +23,12 @@
  * by Don Libes, copyright (c) 1993 by John Wiley & Sons, Inc.
  */
 
+#include "h5tools_utils.h"
+
 #include <ctype.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#include "h5tools_utils.h"
 
 #ifdef __cplusplus
 extern "C" {
