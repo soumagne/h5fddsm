@@ -33,7 +33,7 @@
 struct H5FDdsmMsg;
 class  H5FDdsmBuffer;
 
-class H5FDdsm_EXPORT AddressMapperStrategy : public H5FDdsmObject {
+class H5VLdso_EXPORT AddressMapperStrategy : public H5FDdsmObject {
   public:
     AddressMapperStrategy() {
       this->Delegate = NULL;
@@ -53,7 +53,7 @@ class H5FDdsm_EXPORT AddressMapperStrategy : public H5FDdsmObject {
     AddressMapperStrategy *Delegate;
 };
 
-class H5FDdsm_EXPORT H5FDdsmAddressMapper : public H5FDdsmObject {
+class H5VLdso_EXPORT H5FDdsmAddressMapper : public H5FDdsmObject {
 
 public:
   H5FDdsmAddressMapper();

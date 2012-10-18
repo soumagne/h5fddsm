@@ -54,7 +54,7 @@
 
 #include "H5FDdsmComm.h"
 
-class H5FDdsm_EXPORT H5FDdsmCommMpi : public H5FDdsmComm {
+class H5VLdso_EXPORT H5FDdsmCommMpi : public H5FDdsmComm {
 
 public:
   H5FDdsmCommMpi();

@@ -35,7 +35,7 @@
 # include <sys/wait.h>
 #endif
 
-#include <H5FDdsm_sys/SystemTools.hxx>
+#include <H5VLdso_sys/SystemTools.hxx>
 
 using std::vector;
 using std::string;
@@ -123,10 +123,10 @@ static string FixExecutablePath(const string& path)
 {
 #ifdef  CMAKE_INTDIR
   string parent_dir =
-    H5FDdsm_sys::SystemTools::GetFilenamePath(path.c_str());
+    H5VLdso_sys::SystemTools::GetFilenamePath(path.c_str());
 
   string filename =
-    H5FDdsm_sys::SystemTools::GetFilenameName(path);
+    H5VLdso_sys::SystemTools::GetFilenameName(path);
   parent_dir += "/" CMAKE_INTDIR "/";
   return parent_dir + filename;
 #endif
@@ -206,7 +206,7 @@ H5FDdsmTestDriver::CreateCommandLine(vector<const char*>& commandLine,
   commandLine.push_back(0);
 }
 //----------------------------------------------------------------------------
-int H5FDdsmTestDriver::StartServer(H5FDdsm_sysProcess* server, const char* name,
+int H5FDdsmTestDriver::StartServer(H5VLdso_sysProcess* server, const char* name,
                               vector<char>& out,
                               vector<char>& err)
 {
@@ -215,16 +215,16 @@ int H5FDdsmTestDriver::StartServer(H5FDdsm_sysProcess* server, const char* name,
     return 1;
     }
   cerr << "H5FDdsmTestDriver: starting process " << name << "\n";
-  H5FDdsm_sysProcess_SetTimeout(server, this->TimeOut);
-  H5FDdsm_sysProcess_Execute(server);
+  H5VLdso_sysProcess_SetTimeout(server, this->TimeOut);
+  H5VLdso_sysProcess_Execute(server);
   int foundWaiting = 0;
   string output;
   while(!foundWaiting)
     {
     int pipe = this->WaitForAndPrintLine(name, server, output, 100.0, out, err,
                                          &foundWaiting);
-    if(pipe == H5FDdsm_sysProcess_Pipe_None ||
-       pipe == H5FDdsm_sysProcess_Pipe_Timeout)
+    if(pipe == H5VLdso_sysProcess_Pipe_None ||
+       pipe == H5VLdso_sysProcess_Pipe_Timeout)
       {
       break;
       }
@@ -237,21 +237,21 @@ int H5FDdsmTestDriver::StartServer(H5FDdsm_sysProcess* server, const char* name,
   else
     {
     cerr << "H5FDdsmTestDriver: " << name << " never started.\n";
-    H5FDdsm_sysProcess_Kill(server);
+    H5VLdso_sysProcess_Kill(server);
     return 0;
     }
 }
 //----------------------------------------------------------------------------
-int H5FDdsmTestDriver::StartClient(H5FDdsm_sysProcess* client, const char* name)
+int H5FDdsmTestDriver::StartClient(H5VLdso_sysProcess* client, const char* name)
 {
   if(!client)
     {
     return 1;
     }
   cerr << "H5FDdsmTestDriver: starting process " << name << "\n";
-  H5FDdsm_sysProcess_SetTimeout(client, this->TimeOut);
-  H5FDdsm_sysProcess_Execute(client);
-  if(H5FDdsm_sysProcess_GetState(client) == H5FDdsm_sysProcess_State_Executing)
+  H5VLdso_sysProcess_SetTimeout(client, this->TimeOut);
+  H5VLdso_sysProcess_Execute(client);
+  if(H5VLdso_sysProcess_GetState(client) == H5VLdso_sysProcess_State_Executing)
     {
     cerr << "H5FDdsmTestDriver: " << name << " sucessfully started.\n";
     return 1;
@@ -259,18 +259,18 @@ int H5FDdsmTestDriver::StartClient(H5FDdsm_sysProcess* client, const char* name)
   else
     {
     this->ReportStatus(client, name);
-    H5FDdsm_sysProcess_Kill(client);
+    H5VLdso_sysProcess_Kill(client);
     return 0;
     }
 }
 //----------------------------------------------------------------------------
-void H5FDdsmTestDriver::Stop(H5FDdsm_sysProcess* p, const char* name)
+void H5FDdsmTestDriver::Stop(H5VLdso_sysProcess* p, const char* name)
 {
   if(p)
     {
     cerr << "H5FDdsmTestDriver: killing process " << name << "\n";
-    H5FDdsm_sysProcess_Kill(p);
-    H5FDdsm_sysProcess_WaitForExit(p, 0);
+    H5VLdso_sysProcess_Kill(p);
+    H5VLdso_sysProcess_WaitForExit(p, 0);
     }
 }
 //----------------------------------------------------------------------------
@@ -313,7 +313,7 @@ int H5FDdsmTestDriver::OutputStringHasError(const char* pname, string& output)
 
   vector<string> lines;
   vector<string>::iterator it;
-  H5FDdsm_sys::SystemTools::Split(output.c_str(), lines);
+  H5VLdso_sys::SystemTools::Split(output.c_str(), lines);
 
   int i, j;
 
@@ -348,8 +348,8 @@ int H5FDdsmTestDriver::OutputStringHasError(const char* pname, string& output)
 }
 //----------------------------------------------------------------------------
 #define VTK_CLEAN_PROCESSES \
-  H5FDdsm_sysProcess_Delete(client); \
-  H5FDdsm_sysProcess_Delete(server);
+  H5VLdso_sysProcess_Delete(client); \
+  H5VLdso_sysProcess_Delete(server);
 //----------------------------------------------------------------------------
 int H5FDdsmTestDriver::Main(int argc, char* argv[])
 {
@@ -361,23 +361,23 @@ int H5FDdsmTestDriver::Main(int argc, char* argv[])
 
   // mpi code
   // Allocate process managers.
-  H5FDdsm_sysProcess* server = 0;
-  H5FDdsm_sysProcess* client = 0;
+  H5VLdso_sysProcess* server = 0;
+  H5VLdso_sysProcess* client = 0;
   if(this->TestServer)
     {
-    server = H5FDdsm_sysProcess_New();
+    server = H5VLdso_sysProcess_New();
     if(!server)
       {
       VTK_CLEAN_PROCESSES;
-      cerr << "H5FDdsmTestDriver: Cannot allocate H5FDdsm_sysProcess to run the server.\n";
+      cerr << "H5FDdsmTestDriver: Cannot allocate H5VLdso_sysProcess to run the server.\n";
       return 1;
       }
     }
-  client = H5FDdsm_sysProcess_New();
+  client = H5VLdso_sysProcess_New();
   if(!client)
     {
     VTK_CLEAN_PROCESSES;
-    cerr << "H5FDdsmTestDriver: Cannot allocate H5FDdsm_sysProcess to run the client.\n";
+    cerr << "H5FDdsmTestDriver: Cannot allocate H5VLdso_sysProcess to run the client.\n";
     return 1;
     }
 
@@ -396,8 +396,8 @@ int H5FDdsmTestDriver::Main(int argc, char* argv[])
                             this->MPIServerNumProcessFlag.c_str(),
                             this->ArgStart, argc, argv);
     this->ReportCommand(&serverCommand[0], "server");
-    H5FDdsm_sysProcess_SetCommand(server, &serverCommand[0]);
-    H5FDdsm_sysProcess_SetWorkingDirectory(server, this->GetDirectory(serverExe).c_str());
+    H5VLdso_sysProcess_SetCommand(server, &serverCommand[0]);
+    H5VLdso_sysProcess_SetWorkingDirectory(server, this->GetDirectory(serverExe).c_str());
     }
 
   // Construct the client process command line.
@@ -409,8 +409,8 @@ int H5FDdsmTestDriver::Main(int argc, char* argv[])
                           this->MPIServerNumProcessFlag.c_str());
 //                          this->ArgStart, argc, argv);
   this->ReportCommand(&clientCommand[0], "client");
-  H5FDdsm_sysProcess_SetCommand(client, &clientCommand[0]);
-  H5FDdsm_sysProcess_SetWorkingDirectory(client, this->GetDirectory(clientExe).c_str());
+  H5VLdso_sysProcess_SetCommand(client, &clientCommand[0]);
+  H5VLdso_sysProcess_SetWorkingDirectory(client, this->GetDirectory(clientExe).c_str());
 
   // Start the server if there is one
   if(!this->StartServer(server, "server",
@@ -455,7 +455,7 @@ int H5FDdsmTestDriver::Main(int argc, char* argv[])
     }
 
   // Wait for the client and server to exit.
-  H5FDdsm_sysProcess_WaitForExit(client, 0);
+  H5VLdso_sysProcess_WaitForExit(client, 0);
 
   // Once client is finished, the servers
   // must finish quickly. If not, is usually is a sign that
@@ -463,7 +463,7 @@ int H5FDdsmTestDriver::Main(int argc, char* argv[])
   // the server.
   if(server)
     {
-    H5FDdsm_sysProcess_WaitForExit(server, &this->ServerExitTimeOut);
+    H5VLdso_sysProcess_WaitForExit(server, &this->ServerExitTimeOut);
     }
 
   // Get the results.
@@ -472,7 +472,7 @@ int H5FDdsmTestDriver::Main(int argc, char* argv[])
   if(server)
     {
     serverResult = this->ReportStatus(server, "server");
-    H5FDdsm_sysProcess_Kill(server);
+    H5VLdso_sysProcess_Kill(server);
     }
 
   // Free process managers.
@@ -507,69 +507,69 @@ void H5FDdsmTestDriver::ReportCommand(const char* const* command, const char* na
 }
 
 //----------------------------------------------------------------------------
-int H5FDdsmTestDriver::ReportStatus(H5FDdsm_sysProcess* process, const char* name)
+int H5FDdsmTestDriver::ReportStatus(H5VLdso_sysProcess* process, const char* name)
 {
   int result = 1;
-  switch(H5FDdsm_sysProcess_GetState(process))
+  switch(H5VLdso_sysProcess_GetState(process))
     {
-    case H5FDdsm_sysProcess_State_Starting:
+    case H5VLdso_sysProcess_State_Starting:
       {
       cerr << "H5FDdsmTestDriver: Never started " << name << " process.\n";
       } break;
-    case H5FDdsm_sysProcess_State_Error:
+    case H5VLdso_sysProcess_State_Error:
       {
       cerr << "H5FDdsmTestDriver: Error executing " << name << " process: "
-           << H5FDdsm_sysProcess_GetErrorString(process)
+           << H5VLdso_sysProcess_GetErrorString(process)
            << "\n";
       } break;
-    case H5FDdsm_sysProcess_State_Exception:
+    case H5VLdso_sysProcess_State_Exception:
       {
       cerr << "H5FDdsmTestDriver: " << name
                       << " process exited with an exception: ";
-      switch(H5FDdsm_sysProcess_GetExitException(process))
+      switch(H5VLdso_sysProcess_GetExitException(process))
         {
-        case H5FDdsm_sysProcess_Exception_None:
+        case H5VLdso_sysProcess_Exception_None:
           {
           cerr << "None";
           } break;
-        case H5FDdsm_sysProcess_Exception_Fault:
+        case H5VLdso_sysProcess_Exception_Fault:
           {
           cerr << "Segmentation fault";
           } break;
-        case H5FDdsm_sysProcess_Exception_Illegal:
+        case H5VLdso_sysProcess_Exception_Illegal:
           {
           cerr << "Illegal instruction";
           } break;
-        case H5FDdsm_sysProcess_Exception_Interrupt:
+        case H5VLdso_sysProcess_Exception_Interrupt:
           {
           cerr << "Interrupted by user";
           } break;
-        case H5FDdsm_sysProcess_Exception_Numerical:
+        case H5VLdso_sysProcess_Exception_Numerical:
           {
           cerr << "Numerical exception";
           } break;
-        case H5FDdsm_sysProcess_Exception_Other:
+        case H5VLdso_sysProcess_Exception_Other:
           {
           cerr << "Unknown";
           } break;
         }
       cerr << "\n";
       } break;
-    case H5FDdsm_sysProcess_State_Executing:
+    case H5VLdso_sysProcess_State_Executing:
       {
       cerr << "H5FDdsmTestDriver: Never terminated " << name << " process.\n";
       } break;
-    case H5FDdsm_sysProcess_State_Exited:
+    case H5VLdso_sysProcess_State_Exited:
       {
-      result = H5FDdsm_sysProcess_GetExitValue(process);
+      result = H5VLdso_sysProcess_GetExitValue(process);
       cerr << "H5FDdsmTestDriver: " << name << " process exited with code "
                       << result << "\n";
       } break;
-    case H5FDdsm_sysProcess_State_Expired:
+    case H5VLdso_sysProcess_State_Expired:
       {
       cerr << "H5FDdsmTestDriver: killed " << name << " process due to timeout.\n";
       } break;
-    case H5FDdsm_sysProcess_State_Killed:
+    case H5VLdso_sysProcess_State_Killed:
       {
       cerr << "H5FDdsmTestDriver: killed " << name << " process.\n";
       } break;
@@ -578,7 +578,7 @@ int H5FDdsmTestDriver::ReportStatus(H5FDdsm_sysProcess* process, const char* nam
 }
 //----------------------------------------------------------------------------
 
-int H5FDdsmTestDriver::WaitForLine(H5FDdsm_sysProcess* process, string& line,
+int H5FDdsmTestDriver::WaitForLine(H5VLdso_sysProcess* process, string& line,
                               double timeout,
                               vector<char>& out,
                               vector<char>& err)
@@ -607,7 +607,7 @@ int H5FDdsmTestDriver::WaitForLine(H5FDdsm_sysProcess* process, string& line,
           line.append(&out[0], length);
           }
         out.erase(out.begin(), outiter+1);
-        return H5FDdsm_sysProcess_Pipe_STDOUT;
+        return H5VLdso_sysProcess_Pipe_STDOUT;
         }
       }
 
@@ -630,51 +630,51 @@ int H5FDdsmTestDriver::WaitForLine(H5FDdsm_sysProcess* process, string& line,
           line.append(&err[0], length);
           }
         err.erase(err.begin(), erriter+1);
-        return H5FDdsm_sysProcess_Pipe_STDERR;
+        return H5VLdso_sysProcess_Pipe_STDERR;
         }
       }
 
     // No newlines found.  Wait for more data from the process.
     int length;
     char* data;
-    int pipe = H5FDdsm_sysProcess_WaitForData(process, &data, &length, &timeout);
-    if(pipe == H5FDdsm_sysProcess_Pipe_Timeout)
+    int pipe = H5VLdso_sysProcess_WaitForData(process, &data, &length, &timeout);
+    if(pipe == H5VLdso_sysProcess_Pipe_Timeout)
       {
       // Timeout has been exceeded.
       return pipe;
       }
-    else if(pipe == H5FDdsm_sysProcess_Pipe_STDOUT)
+    else if(pipe == H5VLdso_sysProcess_Pipe_STDOUT)
       {
       // Append to the stdout buffer.
       vector<char>::size_type size = out.size();
       out.insert(out.end(), data, data+length);
       outiter = out.begin()+size;
       }
-    else if(pipe == H5FDdsm_sysProcess_Pipe_STDERR)
+    else if(pipe == H5VLdso_sysProcess_Pipe_STDERR)
       {
       // Append to the stderr buffer.
       vector<char>::size_type size = err.size();
       err.insert(err.end(), data, data+length);
       erriter = err.begin()+size;
       }
-    else if(pipe == H5FDdsm_sysProcess_Pipe_None)
+    else if(pipe == H5VLdso_sysProcess_Pipe_None)
       {
       // Both stdout and stderr pipes have broken.  Return leftover data.
       if(!out.empty())
         {
         line.append(&out[0], outiter-out.begin());
         out.erase(out.begin(), out.end());
-        return H5FDdsm_sysProcess_Pipe_STDOUT;
+        return H5VLdso_sysProcess_Pipe_STDOUT;
         }
       else if(!err.empty())
         {
         line.append(&err[0], erriter-err.begin());
         err.erase(err.begin(), err.end());
-        return H5FDdsm_sysProcess_Pipe_STDERR;
+        return H5VLdso_sysProcess_Pipe_STDERR;
         }
       else
         {
-        return H5FDdsm_sysProcess_Pipe_None;
+        return H5VLdso_sysProcess_Pipe_None;
         }
       }
     }
@@ -694,14 +694,14 @@ void H5FDdsmTestDriver::PrintLine(const char* pname, const char* line)
   cerr.flush();
 }
 //----------------------------------------------------------------------------
-int H5FDdsmTestDriver::WaitForAndPrintLine(const char* pname, H5FDdsm_sysProcess* process,
+int H5FDdsmTestDriver::WaitForAndPrintLine(const char* pname, H5VLdso_sysProcess* process,
                                       string& line, double timeout,
                                       vector<char>& out,
                                       vector<char>& err,
                                       int* foundWaiting)
 {
   int pipe = this->WaitForLine(process, line, timeout, out, err);
-  if(pipe == H5FDdsm_sysProcess_Pipe_STDOUT || pipe == H5FDdsm_sysProcess_Pipe_STDERR)
+  if(pipe == H5VLdso_sysProcess_Pipe_STDOUT || pipe == H5VLdso_sysProcess_Pipe_STDERR)
     {
     this->PrintLine(pname, line.c_str());
     if(foundWaiting && (line.find("Waiting") != line.npos))
@@ -714,5 +714,5 @@ int H5FDdsmTestDriver::WaitForAndPrintLine(const char* pname, H5FDdsm_sysProcess
 //----------------------------------------------------------------------------
 string H5FDdsmTestDriver::GetDirectory(string location)
 {
-  return H5FDdsm_sys::SystemTools::GetParentDirectory(location.c_str());
+  return H5VLdso_sys::SystemTools::GetParentDirectory(location.c_str());
 }

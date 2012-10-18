@@ -67,7 +67,7 @@
 #include "H5FDpublic.h"
 
 /* H5FDdsm */
-#include "H5FDdsmConfig.h"
+#include "H5VLdsoConfig.h"
 
 /*
  * Disallow any non parallel build
@@ -120,16 +120,16 @@ extern "C" {
    * Initialize this driver by registering the driver with the library.
    * Users should never need to call it manually.
    */
-  H5FDdsm_EXPORT hid_t  H5FD_dsm_init(void);
+  H5VLdso_EXPORT hid_t  H5FD_dsm_init(void);
 
   /* Description:
    * Shut down the driver.
    * Users should never need to call it manually.
    */
 #if H5_VERSION_GE(1,9,0)
-  H5FDdsm_EXPORT herr_t H5FD_dsm_term(void);
+  H5VLdso_EXPORT herr_t H5FD_dsm_term(void);
 #else
-  H5FDdsm_EXPORT void   H5FD_dsm_term(void);
+  H5VLdso_EXPORT void   H5FD_dsm_term(void);
 #endif
 
   /* Description:
@@ -138,11 +138,11 @@ extern "C" {
    * H5FD_dsm_unlock. Calls to H5FD_dsm_lock and H5FD_dsm_unlock are collective and must
    * be called by all ranks of a given process.
    */
-  H5FDdsm_EXPORT herr_t H5FD_dsm_lock(void);
-  H5FDdsm_EXPORT herr_t H5FD_dsm_unlock(unsigned long flag);
+  H5VLdso_EXPORT herr_t H5FD_dsm_lock(void);
+  H5VLdso_EXPORT herr_t H5FD_dsm_unlock(unsigned long flag);
 
   /*
-  H5FDdsm_EXPORT herr_t H5FD_dsm_clear(void);
+  H5VLdso_EXPORT herr_t H5FD_dsm_clear(void);
    */
 
   /* Description:
@@ -155,12 +155,12 @@ extern "C" {
    * If the user requires multiple open/closes during a lock/unlock cycle, then
    * the Manual mode should be set.
    */
-  H5FDdsm_EXPORT herr_t H5FD_dsm_set_options(unsigned long flags);
+  H5VLdso_EXPORT herr_t H5FD_dsm_set_options(unsigned long flags);
 
   /* Description:
    * (C++ only) Associate an existing DSM manager with the driver.
    */
-  H5FDdsm_EXPORT herr_t H5FD_dsm_set_manager(void *manager);
+  H5VLdso_EXPORT herr_t H5FD_dsm_set_manager(void *manager);
 
   /* Description:
    * Modify the file access property list to use the H5FDdsm driver defined
@@ -169,17 +169,17 @@ extern "C" {
    * allocated or (C++ only) be used from an existing H5FDdsmBuffer object
    * using H5FD_dsm_set_manager().
    */
-  H5FDdsm_EXPORT herr_t H5Pset_fapl_dsm(hid_t fapl_id, MPI_Comm intra_comm,
+  H5VLdso_EXPORT herr_t H5Pset_fapl_dsm(hid_t fapl_id, MPI_Comm intra_comm,
       void *local_buf_ptr, size_t local_buf_len);
 
   /* Description:
    * Query properties set by the H5Pset_fapl_dsm() function.
    */
-  H5FDdsm_EXPORT herr_t H5Pget_fapl_dsm(hid_t fapl_id, MPI_Comm *intra_comm /* out */,
+  H5VLdso_EXPORT herr_t H5Pget_fapl_dsm(hid_t fapl_id, MPI_Comm *intra_comm /* out */,
       void **local_buf_ptr_ptr /* out */, size_t *local_buf_len_ptr /* out */);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __H5FDdsm_h */
+#endif /* __H5VLdso_h */

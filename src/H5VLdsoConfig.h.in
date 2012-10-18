@@ -1,0 +1,46 @@
+//------------------------------------------------------------------------------
+// Standard setup for module imports/exports 
+//------------------------------------------------------------------------------
+
+#ifndef __H5VLdsoConfig_h
+#define __H5VLdsoConfig_h
+
+#ifdef _WIN32
+  #define H5VLdso_ABI_IMPORT __declspec(dllimport)
+  #define H5VLdso_ABI_EXPORT __declspec(dllexport)
+  #define H5VLdso_ABI_HIDDEN
+#elif __GNUC__ >= 4
+  #define H5VLdso_ABI_IMPORT __attribute__ ((visibility("default")))
+  #define H5VLdso_ABI_EXPORT __attribute__ ((visibility("default")))
+  #define H5VLdso_ABI_HIDDEN __attribute__ ((visibility("hidden")))
+#else
+  #define H5VLdso_ABI_IMPORT
+  #define H5VLdso_ABI_EXPORT
+  #define H5VLdso_ABI_HIDDEN
+#endif
+
+#define H5_HAVE_DSM
+
+#cmakedefine H5VLdso_HAVE_STEERING
+#cmakedefine H5VLdso_HAVE_TOOLS
+#cmakedefine H5VLdso_HAVE_FORTRAN
+
+#cmakedefine H5VLdso_HAVE_DMAPP
+#cmakedefine H5VLdso_HAVE_UGNI
+
+#cmakedefine H5VLdso_DEBUG_GLOBAL
+#cmakedefine H5VLdso_DEBUG_LEVEL @H5VLdso_DEBUG_LEVEL@
+
+#cmakedefine H5VLdso_BUILD_SHARED_LIBS
+
+#ifdef H5VLdso_BUILD_SHARED_LIBS
+  #ifdef H5VLdso_EXPORTS
+    #define H5VLdso_EXPORT H5VLdso_ABI_EXPORT 
+  #else
+    #define H5VLdso_EXPORT H5VLdso_ABI_IMPORT 
+  #endif
+#else
+  #define H5VLdso_EXPORT
+#endif
+
+#endif // __H5VLdsoConfig_h

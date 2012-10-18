@@ -74,7 +74,7 @@ H5FDdsmConstString H5FDdsmNotificationToString(H5FDdsmInt32 code);
 //! Base comm object for Distributed Shared Memory implementation
 /*!
 */
-class H5FDdsm_EXPORT H5FDdsmBufferService : public H5FDdsmBuffer {
+class H5VLdso_EXPORT H5FDdsmBufferService : public H5FDdsmBuffer {
 
   public:
     H5FDdsmBufferService();

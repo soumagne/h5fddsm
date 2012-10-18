@@ -79,9 +79,9 @@
 
 struct H5FDdsmMsg;
 
-H5FDdsm_EXPORT H5FDdsmConstString H5FDdsmCommToString(H5FDdsmInt32 tag);
+H5VLdso_EXPORT H5FDdsmConstString H5FDdsmCommToString(H5FDdsmInt32 tag);
 
-class H5FDdsm_EXPORT H5FDdsmComm : public H5FDdsmObject {
+class H5VLdso_EXPORT H5FDdsmComm : public H5FDdsmObject {
 
 public:
   H5FDdsmComm();

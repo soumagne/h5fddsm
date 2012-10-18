@@ -1,6 +1,6 @@
 /*=========================================================================
 
-  Project                 : H5FDdsm
+  Project                 : H5VLdso
   Module                  : H5VLdso.h
 
   Authors:
@@ -30,8 +30,8 @@
 #include "H5Ipublic.h"
 #include "H5VLpublic.h"
 
-/* H5FDdsm */
-#include "H5FDdsmConfig.h"
+/* H5VLdso */
+#include "H5VLdsoConfig.h"
 
 #define H5VL_DSO	(H5VL_dso_init())
 
@@ -39,8 +39,8 @@
 extern "C" {
 #endif
 
-  H5FDdsm_EXPORT H5VL_class_t *H5VL_dso_init(void);
-  H5FDdsm_EXPORT herr_t H5Pset_fapl_dso(hid_t fapl_id);
+  H5VLdso_EXPORT H5VL_class_t *H5VL_dso_init(void);
+  H5VLdso_EXPORT herr_t H5Pset_fapl_dso(hid_t fapl_id);
 
 #ifdef __cplusplus
 }

@@ -30,7 +30,7 @@
 #include "H5FDdsmComm.h"
 #include <queue>
 
-class H5FDdsm_EXPORT H5FDdsmLock : public H5FDdsmObject {
+class H5VLdso_EXPORT H5FDdsmLock : public H5FDdsmObject {
 
 public:
   H5FDdsmLock();

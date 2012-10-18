@@ -82,6 +82,7 @@ static herr_t H5VL_dso_group_get(void *obj, H5VL_group_get_t get_type, hid_t req
 static herr_t H5VL_dso_group_close(void *grp, hid_t req);
 
 H5VL_class_t H5VL_dso_g = {
+    NATIVE,
     "dso",                                      /* name */
     NULL,                                       /* initialize */
     H5VL_dso_term,                              /* terminate */

@@ -28,7 +28,7 @@
 
 #include "H5FDdsmCommMpi.h"
 
-class H5FDdsm_EXPORT H5FDdsmCommMpiRma : public H5FDdsmCommMpi {
+class H5VLdso_EXPORT H5FDdsmCommMpiRma : public H5FDdsmCommMpi {
 
 public:
   H5FDdsmCommMpiRma();

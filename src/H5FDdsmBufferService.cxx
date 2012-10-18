@@ -61,7 +61,7 @@
 //----------------------------------------------------------------------------
 // Declare extra debug info 
 #undef H5FDdsmDebugLevel
-#ifdef H5FDdsm_DEBUG_GLOBAL
+#ifdef H5VLdso_DEBUG_GLOBAL
 #define H5FDdsmDebugLevel(level, x) \
 { if (this->DebugLevel >= level) { \
     std::cout << "H5FD_DSM Debug Level " << level << ": " \
@@ -114,7 +114,7 @@ H5FDdsmConstString H5FDdsmNotificationToString(H5FDdsmInt32 code) {
 }
 
 //----------------------------------------------------------------------------
-H5FDdsm_EXPORT H5FDdsm_THREAD_RETURN_TYPE H5FDdsmBufferServiceThread(void *dsmObj)
+H5VLdso_EXPORT H5VLdso_THREAD_RETURN_TYPE H5FDdsmBufferServiceThread(void *dsmObj)
 {
   H5FDdsmBufferService *Dsm = (H5FDdsmBufferService *)dsmObj;
   Dsm->BufferServiceThread();

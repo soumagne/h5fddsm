@@ -44,12 +44,12 @@ endif(H5FDdsm_BUILD_STEERING)
 
 if(H5FDdsm_BUILD_TOOLS)
   set(H5FDdsm_F90_C_STUB_SRCS
-    H5FDdsmToolsf.c
+    H5VLdsoToolsf.c
     ${H5FDdsm_F90_C_STUB_SRCS}
   )
-  set(H5FDdsm_f90CStub_LIB_DEPENDENCIES H5FDdsmTools)
+  set(H5FDdsm_f90CStub_LIB_DEPENDENCIES H5VLdsoTools)
 else(H5FDdsm_BUILD_TOOLS)
-  set(H5FDdsm_f90CStub_LIB_DEPENDENCIES H5FDdsm)
+  set(H5FDdsm_f90CStub_LIB_DEPENDENCIES H5VLdso)
 endif(H5FDdsm_BUILD_TOOLS)
 
 add_library(H5FDdsm_f90CStub
@@ -86,7 +86,7 @@ endif(H5FDdsm_BUILD_STEERING)
 
 if(H5FDdsm_BUILD_TOOLS)
   set(H5FDdsm_FORTRAN_SRC
-    H5FDdsmToolsff.f90
+    H5VLdsoToolsff.f90
     ${H5FDdsm_FORTRAN_SRC}
   )
 endif(H5FDdsm_BUILD_TOOLS)

@@ -57,7 +57,7 @@
 //------------------------------------------------------------------------------
 H5FDdsmObject::H5FDdsmObject() {
   this->Debug = H5FD_DSM_FALSE;
-  this->DebugLevel = H5FDdsm_DEBUG_LEVEL;
+  this->DebugLevel = H5VLdso_DEBUG_LEVEL;
 }
 
 H5FDdsmObject::~H5FDdsmObject() {

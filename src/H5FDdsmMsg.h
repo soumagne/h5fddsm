@@ -72,9 +72,9 @@
 #define H5FD_DSM_ANY_TAG        -1
 #define H5FD_DSM_ANY_SOURCE     -2
 
-H5FDdsm_EXPORT const char *H5FDdsmTagToString(int tag);
+H5VLdso_EXPORT const char *H5FDdsmTagToString(int tag);
 
-struct H5FDdsm_EXPORT H5FDdsmMsg : public H5FDdsmObject {
+struct H5VLdso_EXPORT H5FDdsmMsg : public H5FDdsmObject {
 
   public :
      H5FDdsmMsg();

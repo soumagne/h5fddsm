@@ -28,7 +28,7 @@
 
 #include <mpi.h>
 #include "H5Ipublic.h"
-#include "H5FDdsmConfig.h"
+#include "H5VLdsoConfig.h"
 
 /*
    These functions are not for use by user code : they are called by the 'C' api
@@ -38,29 +38,29 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-  H5FDdsm_EXPORT void   *dsm_get_manager();
-  H5FDdsm_EXPORT herr_t  dsm_get_properties(MPI_Comm *intra_comm,
+  H5VLdso_EXPORT void   *dsm_get_manager();
+  H5VLdso_EXPORT herr_t  dsm_get_properties(MPI_Comm *intra_comm,
       void **buf_ptr_ptr, size_t *buf_len_ptr);
-  H5FDdsm_EXPORT void    dsm_set_manager(void *manager);
+  H5VLdso_EXPORT void    dsm_set_manager(void *manager);
 
-  H5FDdsm_EXPORT herr_t  dsm_alloc(MPI_Comm intra_comm, void *buf_ptr, size_t buf_len);
-  H5FDdsm_EXPORT herr_t  dsm_free();
+  H5VLdso_EXPORT herr_t  dsm_alloc(MPI_Comm intra_comm, void *buf_ptr, size_t buf_len);
+  H5VLdso_EXPORT herr_t  dsm_free();
 
-  H5FDdsm_EXPORT hbool_t dsm_is_server();
-  H5FDdsm_EXPORT hbool_t dsm_is_driver_serial();
-  H5FDdsm_EXPORT herr_t  dsm_set_options(unsigned long flags);
+  H5VLdso_EXPORT hbool_t dsm_is_server();
+  H5VLdso_EXPORT hbool_t dsm_is_driver_serial();
+  H5VLdso_EXPORT herr_t  dsm_set_options(unsigned long flags);
 
-  H5FDdsm_EXPORT hbool_t dsm_is_connected();
-  H5FDdsm_EXPORT herr_t  dsm_connect();
+  H5VLdso_EXPORT hbool_t dsm_is_connected();
+  H5VLdso_EXPORT herr_t  dsm_connect();
 
-  H5FDdsm_EXPORT herr_t  dsm_update_entry(haddr_t start, haddr_t end);
-  H5FDdsm_EXPORT herr_t  dsm_get_entry(haddr_t *start_ptr, haddr_t *end_ptr);
+  H5VLdso_EXPORT herr_t  dsm_update_entry(haddr_t start, haddr_t end);
+  H5VLdso_EXPORT herr_t  dsm_get_entry(haddr_t *start_ptr, haddr_t *end_ptr);
 
-  H5FDdsm_EXPORT herr_t  dsm_lock();
-  H5FDdsm_EXPORT herr_t  dsm_unlock(unsigned long flag);
+  H5VLdso_EXPORT herr_t  dsm_lock();
+  H5VLdso_EXPORT herr_t  dsm_unlock(unsigned long flag);
 
-  H5FDdsm_EXPORT herr_t  dsm_read(haddr_t addr, size_t len, void *buf_ptr);
-  H5FDdsm_EXPORT herr_t  dsm_write(haddr_t addr, size_t len, const void *buf_ptr);
+  H5VLdso_EXPORT herr_t  dsm_read(haddr_t addr, size_t len, void *buf_ptr);
+  H5VLdso_EXPORT herr_t  dsm_write(haddr_t addr, size_t len, const void *buf_ptr);
 
 #ifdef __cplusplus
 }

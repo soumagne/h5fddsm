@@ -29,17 +29,17 @@
 #include "H5FDdsmCommMpiRma.h"
 //
 #ifdef __CRAYXT_COMPUTE_LINUX_TARGET
-  #ifdef H5FDdsm_HAVE_DMAPP
+  #ifdef H5VLdso_HAVE_DMAPP
     #include "H5FDdsmCommDmapp.h"
   #endif
-  #ifdef H5FDdsm_HAVE_UGNI
+  #ifdef H5VLdso_HAVE_UGNI
     #include "H5FDdsmCommUGni.h"
   #endif
 #endif
 //
 #include "H5FDdsmIniFile.h"
 //
-#ifdef H5FDdsm_HAVE_STEERING
+#ifdef H5VLdso_HAVE_STEERING
   #include "H5FDdsmSteerer.h"
 #endif
 //
@@ -62,7 +62,7 @@
 //----------------------------------------------------------------------------
 // Declare extra debug info 
 #undef H5FDdsmDebugLevel
-#ifdef H5FDdsm_DEBUG_GLOBAL
+#ifdef H5VLdso_DEBUG_GLOBAL
 #define H5FDdsmDebugLevel(level, x) \
 { if (this->DebugLevel >= level) { \
     std::cout << "H5FD_DSM Debug Level " << level << ": " \
@@ -90,7 +90,7 @@ struct H5FDdsmManagerInternals
     this->Cache_fileId  = H5I_BADID;
   }
 
-#ifdef H5FDdsm_HAVE_STEERING
+#ifdef H5VLdso_HAVE_STEERING
   struct SteeringEntryInt
   {
     SteeringEntryInt(std::string text, int nelements, int *values) : Text(text),
@@ -143,7 +143,7 @@ H5FDdsmManager::H5FDdsmManager()
   this->UseStaticInterComm      = H5FD_DSM_FALSE;
   this->ServerHostName          = NULL;
   this->ServerPort              = 0;
-#ifdef H5FDdsm_HAVE_STEERING
+#ifdef H5VLdso_HAVE_STEERING
   // Initialize steerer
   this->Steerer                 = new H5FDdsmSteerer(this);
 #endif
@@ -155,7 +155,7 @@ H5FDdsmManager::~H5FDdsmManager()
 { 
   this->Destroy();
 
-#ifdef H5FDdsm_HAVE_STEERING
+#ifdef H5VLdso_HAVE_STEERING
   if (this->Steerer) delete this->Steerer;
 #endif
   delete this->ManagerInternals;
@@ -251,13 +251,13 @@ H5FDdsmInt32 H5FDdsmManager::Create()
     H5FDdsmDebug("Using Socket Intercomm...");
     break;
 #ifdef __CRAYXT_COMPUTE_LINUX_TARGET
-#ifdef H5FDdsm_HAVE_DMAPP
+#ifdef H5VLdso_HAVE_DMAPP
   case H5FD_DSM_COMM_DMAPP:
     this->DsmComm = new H5FDdsmCommDmapp();
     H5FDdsmDebug("Using DMAPP Intercomm...");
     break;
 #endif
-#ifdef H5FDdsm_HAVE_UGNI
+#ifdef H5VLdso_HAVE_UGNI
   case H5FD_DSM_COMM_UGNI:
     this->DsmComm = new H5FDdsmCommUGni();
     H5FDdsmDebug("Using UGNI Intercomm...");
@@ -471,7 +471,7 @@ H5FDdsmInt32 H5FDdsmManager::Publish()
           }
           break;
 #ifdef __CRAYXT_COMPUTE_LINUX_TARGET
-#ifdef H5FDdsm_HAVE_DMAPP
+#ifdef H5VLdso_HAVE_DMAPP
         case H5FD_DSM_COMM_DMAPP:
           configFile.SetValue("DSM_COMM_SYSTEM", "dmapp", "Comm", configFilePath);
           break;
@@ -676,7 +676,7 @@ H5FDdsmInt32 H5FDdsmManager::ReadConfigFile()
     } else if (comm == "mpi_rma") {
       this->SetInterCommType(H5FD_DSM_COMM_MPI_RMA);
 #ifdef __CRAYXT_COMPUTE_LINUX_TARGET
-#ifdef H5FDdsm_HAVE_DMAPP
+#ifdef H5VLdso_HAVE_DMAPP
     } else if (comm == "dmapp") {
       this->SetInterCommType(H5FD_DSM_COMM_DMAPP);
 #endif
@@ -690,7 +690,7 @@ H5FDdsmInt32 H5FDdsmManager::ReadConfigFile()
 }
 
 //----------------------------------------------------------------------------
-#ifdef H5FDdsm_HAVE_STEERING
+#ifdef H5VLdso_HAVE_STEERING
 H5FDdsmInt32 H5FDdsmManager::WriteSteeredData()
 {
   if (this->ManagerInternals->SteeringValuesInt.size() ||

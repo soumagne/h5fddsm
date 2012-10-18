@@ -26,8 +26,14 @@
 #include "H5FDdsmTest.h"
 #include "H5FDdsm.h"
 #if H5_VERSION_GE(1,9,0)
-#include "H5VLdso.h"
+ #include "H5VLdso.h"
 #endif
+
+#include "H5Ppublic.h"
+#include "H5Spublic.h"
+#include "H5Spublic.h"
+#include "H5FDmpi.h"
+#include "H5FDmpio.h"
 
 #include <cstdlib>
 #include <string>

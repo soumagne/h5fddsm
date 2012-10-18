@@ -33,16 +33,16 @@
   typedef LPTHREAD_START_ROUTINE H5FDdsmThreadFunctionType;
   typedef HANDLE H5FDdsmThreadIDType;
   typedef DWORD H5FDdsmThreadReturnType;
-  #define H5FDdsm_THREAD_RETURN_TYPE H5FDdsmThreadReturnType WINAPI
+  #define H5VLdso_THREAD_RETURN_TYPE H5FDdsmThreadReturnType WINAPI
 #else
   #include <pthread.h>
   typedef pthread_t H5FDdsmThreadIDType;
   typedef void *(*H5FDdsmThreadFunctionType)(void *);
   typedef void *H5FDdsmThreadReturnType;
-  #define H5FDdsm_THREAD_RETURN_TYPE H5FDdsmThreadReturnType
+  #define H5VLdso_THREAD_RETURN_TYPE H5FDdsmThreadReturnType
 #endif
 
-class H5FDdsm_EXPORT H5FDdsmThread : public H5FDdsmObject {
+class H5VLdso_EXPORT H5FDdsmThread : public H5FDdsmObject {
 
 public:
   H5FDdsmThread();

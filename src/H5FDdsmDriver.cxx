@@ -60,7 +60,7 @@ H5FDdsmManager *dsmManager = NULL;
 //----------------------------------------------------------------------------
 // Declare extra debug info 
 #undef H5FDdsmDebug
-#ifdef H5FDdsm_DEBUG_GLOBAL
+#ifdef H5VLdso_DEBUG_GLOBAL
 #define H5FDdsmDebug(x) \
 { std::cout << "H5FD_DSM Debug Level 0           : " << x << std::endl; \
 }

@@ -1,0 +1,35 @@
+//------------------------------------------------------------------------------
+// Standard setup for module imports/exports 
+//------------------------------------------------------------------------------
+
+#ifndef __H5VLdsoToolsConfig_h
+#define __H5VLdsoToolsConfig_h
+
+// The tools lib can only be built at the same time as the main DSM lib
+#include "H5VLdsoConfig.h"
+
+#ifdef _WIN32
+  #define H5VLdsoTools_ABI_IMPORT __declspec(dllimport)
+  #define H5VLdsoTools_ABI_EXPORT __declspec(dllexport)
+  #define H5VLdsoTools_ABI_HIDDEN
+#elif __GNUC__ >= 4
+  #define H5VLdsoTools_ABI_IMPORT __attribute__ ((visibility("default")))
+  #define H5VLdsoTools_ABI_EXPORT __attribute__ ((visibility("default")))
+  #define H5VLdsoTools_ABI_HIDDEN __attribute__ ((visibility("hidden")))
+#else
+  #define H5VLdsoTools_ABI_IMPORT
+  #define H5VLdsoTools_ABI_EXPORT
+  #define H5VLdsoTools_ABI_HIDDEN
+#endif
+
+#ifdef H5VLdso_BUILD_SHARED_LIBS
+  #ifdef H5VLdsoTools_EXPORTS 
+    #define H5VLdsoTools_EXPORT H5VLdsoTools_ABI_EXPORT 
+  #else
+    #define H5VLdsoTools_EXPORT H5VLdsoTools_ABI_IMPORT 
+  #endif
+#else
+  #define H5VLdsoTools_EXPORT
+#endif
+
+#endif /* __H5VLdsoToolsConfig_h */

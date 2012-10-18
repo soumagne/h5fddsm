@@ -28,7 +28,7 @@
 
 #include "H5FDdsmStorage.h"
 
-class H5FDdsm_EXPORT H5FDdsmStorageMpi : public H5FDdsmStorage {
+class H5VLdso_EXPORT H5FDdsmStorageMpi : public H5FDdsmStorage {
 
 public:
   H5FDdsmStorageMpi();

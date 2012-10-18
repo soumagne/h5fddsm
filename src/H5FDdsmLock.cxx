@@ -28,7 +28,7 @@
 //----------------------------------------------------------------------------
 // Declare extra debug info 
 #undef H5FDdsmDebugLevel
-#ifdef H5FDdsm_DEBUG_GLOBAL
+#ifdef H5VLdso_DEBUG_GLOBAL
 #define H5FDdsmDebugLevel(level, x,y) \
 { if (this->DebugLevel >= level) { \
   std::cout << "H5FD_DSM Debug Level " << level << ": " << x << " " << this->Rank << " : " << y << std::endl; \

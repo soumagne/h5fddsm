@@ -45,7 +45,7 @@
 
 using namespace std;
 
-class H5FDdsm_EXPORT H5FDdsmIniFile : public H5FDdsmObject {
+class H5VLdso_EXPORT H5FDdsmIniFile : public H5FDdsmObject {
 public:
   struct Record
   {

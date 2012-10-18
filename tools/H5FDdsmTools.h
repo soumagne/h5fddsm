@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Project                 : H5FDdsm
-  Module                  : H5FDdsmTools.h
+  Module                  : H5VLdsoTools.h
 
   Authors:
      John Biddiscombe     Jerome Soumagne
@@ -23,11 +23,11 @@
 
 =========================================================================*/
 
-#ifndef __H5FDdsmTools_h
-#define __H5FDdsmTools_h
+#ifndef __H5VLdsoTools_h
+#define __H5VLdsoTools_h
 
 #include "H5Ipublic.h"
-#include "H5FDdsmToolsConfig.h"
+#include "H5VLdsoToolsConfig.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,10 +35,10 @@ extern "C" {
   /* Description:
    * Display the content of the DSM (Debug only).
    */
-  H5FDdsmTools_EXPORT herr_t H5FD_dsm_dump();
+  H5VLdso_EXPORT herr_t H5FD_dsm_dump();
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __H5FDdsmTools_h */
+#endif /* __H5VLdsoTools_h */

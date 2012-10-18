@@ -94,7 +94,7 @@ typedef struct
   H5FDdsmInt64 unused;
 } H5FDdsmMetaData;
 
-class H5FDdsm_EXPORT H5FDdsmBuffer : public H5FDdsmObject {
+class H5VLdso_EXPORT H5FDdsmBuffer : public H5FDdsmObject {
 
   public:
     H5FDdsmBuffer();

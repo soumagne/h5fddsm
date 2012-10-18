@@ -31,7 +31,7 @@
 
 class H5FDdsmSocket;
 
-class H5FDdsm_EXPORT H5FDdsmCommSocket : public H5FDdsmComm {
+class H5VLdso_EXPORT H5FDdsmCommSocket : public H5FDdsmComm {
 
 public:
   H5FDdsmCommSocket();

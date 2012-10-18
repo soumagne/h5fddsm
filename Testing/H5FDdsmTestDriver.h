@@ -30,7 +30,7 @@
 #include <string>
 #include <vector>
 
-#include <H5FDdsm_sys/Process.h>
+#include <H5VLdso_sys/Process.h>
 
 class H5FDdsmTestDriver
 {
@@ -44,7 +44,7 @@ protected:
                          std::vector<std::string>& flags);
   
   void ReportCommand(const char* const* command, const char* name);
-  int ReportStatus(H5FDdsm_sysProcess* process, const char* name);
+  int ReportStatus(H5VLdso_sysProcess* process, const char* name);
   int ProcessCommandLine(int argc, char* argv[]);
   void CollectConfiguredOptions();
   void CreateCommandLine(std::vector<const char*>& commandLine,
@@ -54,16 +54,16 @@ protected:
                          int argCount=0,
                          char* argv[]=0);
   
-  int StartServer(H5FDdsm_sysProcess* server, const char* name,
+  int StartServer(H5VLdso_sysProcess* server, const char* name,
                   std::vector<char>& out, std::vector<char>& err);
-  int StartClient(H5FDdsm_sysProcess* client, const char* name);
-  void Stop(H5FDdsm_sysProcess* p, const char* name);
+  int StartClient(H5VLdso_sysProcess* client, const char* name);
+  void Stop(H5VLdso_sysProcess* p, const char* name);
   int OutputStringHasError(const char* pname, std::string& output);
 
-  int WaitForLine(H5FDdsm_sysProcess* process, std::string& line, double timeout,
+  int WaitForLine(H5VLdso_sysProcess* process, std::string& line, double timeout,
                   std::vector<char>& out, std::vector<char>& err);
   void PrintLine(const char* pname, const char* line);
-  int WaitForAndPrintLine(const char* pname, H5FDdsm_sysProcess* process,
+  int WaitForAndPrintLine(const char* pname, H5VLdso_sysProcess* process,
                           std::string& line, double timeout,
                           std::vector<char>& out, std::vector<char>& err,
                           int* foundWaiting);

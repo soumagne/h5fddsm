@@ -54,7 +54,7 @@
 
 // use system checks from the HDF5 configure so that
 // we can use the same int32/64 bit types etc
-#include "H5FDdsmConfig.h"
+#include "H5VLdsoConfig.h"
 #include "H5pubconf.h" 
 #include <string.h>
 #include <iostream>
@@ -100,7 +100,7 @@ typedef H5FDdsmUInt64 H5FDdsmAddr;
 //------------------------------------------------------------------------------
 // Error and Debug message Macros
 //------------------------------------------------------------------------------
-#ifdef H5FDdsm_DEBUG_GLOBAL
+#ifdef H5VLdso_DEBUG_GLOBAL
 #define H5FDdsmDebugLevel(level, x) \
 { if (this->DebugLevel >= level) { \
     std::cout << "H5FD_DSM Debug Level " << level << ": " << x << std::endl; \
@@ -177,7 +177,7 @@ H5FDdsmConstString Get##var () \
 //------------------------------------------------------------------------------
 // Base Class for H5FDdsm Objects : provides debug flags
 //------------------------------------------------------------------------------
-class H5FDdsm_EXPORT H5FDdsmObject {
+class H5VLdso_EXPORT H5FDdsmObject {
 public:
   H5FDdsmObject();
   ~H5FDdsmObject();

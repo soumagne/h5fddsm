@@ -39,7 +39,7 @@
   typedef pthread_cond_t H5FDdsmConditionType;
 #endif
 
-class H5FDdsm_EXPORT H5FDdsmCondition : public H5FDdsmObject {
+class H5VLdso_EXPORT H5FDdsmCondition : public H5FDdsmObject {
 
 public:
   H5FDdsmCondition(); 
