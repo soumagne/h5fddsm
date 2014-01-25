@@ -1,0 +1,627 @@
+================
+v1.0.0
+================
+Jerome Soumagne (4):
+  2012-10-10 Fix CXX_SEEK errors
+  2012-10-10 Fix some printf warnings
+  2012-10-08 Fixes for latest HDF5 snapshot
+  2012-09-20 Fix race condition in ProbeCommandHeader
+
+John Biddiscombe (1):
+  2012-08-28 Add scripts for creating changelog
+
+================
+v0.9.9
+================
+Jerome Soumagne (38):
+  2012-09-14 H5FDdsm 0.9.9
+  2012-09-14 Clean up Fortran bindings and remove unnecessary flags
+  2012-09-12 Use H5FD_DSM_SERVER_ACK_TAG and H5FD_DSM_CLIENT_ACK_TAG for acks
+  2012-09-07 Remove GetIsActive method and only use WaitForUnlock
+  2012-09-03 Fix RMA allocation with NULL pointer and nonzero length
+  2012-08-31 Mark H5FD_DSM_UNLOCK_ON_CLOSE and H5FD_DSM_UNLOCK_MANUAL as deprecated
+  2012-08-23 Re-enable DMAPP communication after previous communicator changes
+  2012-08-30 Fix undefined reference to particleWriteDsm
+  2012-07-16 Add pthread mutex trylock
+  2012-07-16 More communicator clean up - Add MpiXXX wrappers in H5FDdsmComm
+  2012-07-15 Add H5FD_DSM_ANY_TAG - Clean up H5FDdsmComm - Add WinCreateXXX/PutXXX/GetXXX with XXX = {Data,Notification,Lock} -
+             Clean up Barrier and Broadcast - Clean up ProbeCommandHeader and add BroadcastComm in H5FDdsmBuffer - Tidy up debug
+             messages
+  2012-07-13 Fix DSM accesses using RMA after disconnection
+  2012-07-13 Start adding lock class and rework comms
+  2012-07-13 Start adding debug levels - Clean up communicators
+  2012-07-11 Remove SendInfo/Ready from H5FDdsmComm classes - Remove mask redistribution type - Clean up
+  2012-07-11 Update kwsys and fix server not reporting errors
+  2012-07-10 Add probe for sockets and rework/clean up lock
+  2012-07-10 Start adding probe and remove remote service thread - more lock rework (not finished)
+  2012-07-10 More rework to buffer locking
+  2012-07-10 Rework file lock/unlock - Clean up buffer service class
+  2012-07-09 Remove ifdef STEERING in bufferservice - remove recv/send xml clean up comms and no longer use CommChannel - Rework
+             lock (not finished) Add sendacknowledgment methods - Clean up H5FDdsmBuffer
+  2012-07-09 Edits to H5FD_dsm_steering_update description
+  2012-07-09 Fixes for fortran test
+  2012-05-29 A couple of undefined attributes
+  2012-05-28 GCC 4.7 fixes
+  2012-05-23 Revert NUM_DATASET value from last commit
+  2012-05-23 Add non blocking dmapp get
+  2012-05-18 Fix thread return type
+  2012-05-18 Rename StartService to StartBufferService - Fixes for WIN32
+  2012-05-18 Add H5FDdsmThread/Mutex/Condition classes - Clean up BufferService
+  2012-05-15 COMP: HDF5 1.8.9 compatability updates
+  2012-05-15 clean up error macros
+  2012-05-10 Clean up some functions
+  2012-04-30 Move block sizes to testing
+  2012-04-30 Add parallel read test benchmark - Clean up tests
+  2012-04-30 Move RMA sync before barrier
+  2012-04-28 Move StartService to publish, add wait for service created condition Add IsStandAlone optioni, clean up warnings
+  2012-04-26 Tidy up block sizes
+
+John Biddiscombe (12):
+  2012-08-28 Adding an Asynchronous flag to the dsm manager
+  2012-08-15 Fix error message when writing steering value twice
+  2012-05-04 Make sure default mode is reset to parallel after file is closed
+  2012-05-01 Clean up Open/Close DSM and use a stack to track open close pairs
+  2012-08-15 Fixup fortran bindings for new async lock/unlock version
+  2012-07-18 Notification is sent when DSM is unlocked.
+  2012-07-16 Add windows mpich2 close errors to "not error" list
+  2012-07-12 Add TryLock to mutex
+  2012-07-13 Set DebugLevel on address Mapper, default to 0 for all others
+  2012-05-24 First Asynchronous test - does a double open on the receiver
+  2012-04-26 Add methods to access cached file handles.
+  2012-04-25 Set DSM manager to NULL on exit (and remove NULL check in set_dsm_manager)
+
+================
+v0.9.8p1
+================
+Jerome Soumagne (6):
+  2012-04-25 Add DMAPP ctests
+  2012-04-24 Clean up config file creation - force steering init to connect
+  2012-03-27 Fix DSM externally opened when entering the interaction cache - Clean up previous commit
+  2012-03-26 add H5FD_DSM_MODE_PARALLEL option when H5FD_DSM_MODE_SERIAL is used
+  2012-03-26 Fix rank other than 0 using DSM in serial mode
+  2012-03-26 Add serial mode for DSM
+
+John Biddiscombe (3):
+  2012-03-27 Move some cache logic out of Steerer and into DSMManager
+  2012-03-24 Correct DLL export and revert last wrong commit
+  2012-03-23 Fortran must be linked statically on win32
+
+================
+v0.9.8
+================
+Jerome Soumagne (52):
+  2012-02-14 Use non blocking implicit DMAPP
+  2012-02-14 More clean up to DMAPP communicator
+  2012-02-14 Clean DMAPP communicator
+  2012-02-14 Fix DMAPP 2 way comm
+  2012-02-13 minor fixes in H5FDdsmCommDmapp
+  2012-02-13 Start to rework DMAPP communicator
+  2012-01-10 To avoid the use of collective calls to H5FD_dsm_steering_scalar_get store scalars in datasets and no longer in
+             attributes.
+  2011-12-29 All CMake variables use H5FDdsm_XXX naming convention
+  2011-11-18 add H5FD_DSM_BUILD_TOOLS option
+  2011-11-17 Fix dump and remove unnecessary calls to set_manager
+  2011-11-17 Add tools fortran bindings and install rules
+  2011-11-17 Move DsmDump to H5FDdsmTools library - Add tools C bindings - Remove dump from steering and manager classes - Fix
+             tests
+  2011-11-16 Update h5dump module to 1.8.8 final - Fix some old extern C
+  2011-11-03 Add H5FDdsmTools library with h5dump - Add coverage option and do not use coverage on tools library
+  2011-11-02 Install cmake rules in %data/cmake/h5fddsm
+  2011-11-02 Add cwrite_auto test - Clean up steering tests and steerer class, and add more examples - Open in RDWR when using
+             begin_query - Remove unused functions in socket and ini file classes
+  2011-11-02 Fix openmpi linking and AbortPublish test
+  2011-10-21 Driver is now a parallel driver even when opened in read-only (for performance reasons) - This mode was kept for
+             compatibility until now
+  2011-10-20 Tweak installed header files
+  2011-10-20 Fix winsock inclusion on win32 and HMPI_ERROR macro
+  2011-10-20 Tidy up H5FDdsmSteering and fortran bindings to fit to "new" C driver prototypes - Add dsm_get_properties in
+             H5FDdsmDriver - Tidy up tests to no longer have to pass a buffer object
+  2011-10-20 Add all driver/DSM interactions in H5FDdsmDriver - Move steerer from H5FDdsmBufferService class to H5FDdsmManager -
+             Use H5FDdsmManager as the central object to access H5FDdsmBuffer
+  2011-10-19 DSM driver is now a C driver - Remove H5FD_dsm_cmp and add H5FD_dsm_fapl_copy, H5FD_dsm_fapl_free - Delete IsReadOnly
+             attribute from H5FDdsmBufferService class as it is now stored in the H5FD_dsm_t structure - Add corresponding
+             functions in H5FDdsmDriver for C/C++ bindings
+  2011-10-18 Rename H5FDdsmBuffer to H5FDdsmBufferService and H5FDdsmDriver to H5FDdsmBuffer (corresponds to the real buffer
+             object) Clean up and start to move DSM driver to HDF5 C driver.
+  2011-10-11 Fix wrong int32 static cast in H5FDdsmAddressMapper
+  2011-10-10 Add GNI_MEM_RELAXED_PI_ORDERING to memory registration
+  2011-10-07 Fix bad return value
+  2011-10-07 Clean up H5FDdsmCommUGni
+  2011-10-07 Add UseBlockingComm option in H5FDdsmCommUGni and fix some errors
+  2011-10-07 Fix GNI errors and switch to blocking queue
+  2011-10-07 H5FDdsmCommUGni: Use non blocking completion queue - enable fma posts - tidy up put
+  2011-10-06 Fix GetGniNicAddress
+  2011-10-06 Fix typos and compile errors in H5FDdsmCommUGni
+  2011-10-06 Enable UGNI Inter-comm - Use posix_memalign on UNIX systems instead of malloc for H5FDdsmStorage
+  2011-10-06 Remove update of steering commands during file open/create
+  2011-09-30 Add H5FDdsmCommUGni - Add H5FD_DSM_COMM_UGNI inter-comm option Requires libonesided interop header - Add FMA and RDMA
+             (BTE) put methods - needs to be tested
+  2011-09-29 Fix previous commit
+  2011-09-29 Tidy up DMAPP communication
+  2011-09-28 Clean up H5FDdsm cmake config files and update kwsys
+  2011-09-28 Update DMAPP communicator to use dmapp_init_ext and RELAXED ORDERING - Rename StorageMpiRma to StorageMpi - Clean up
+             CMake files - Add H5FD_DSM_USE_CRAY_UGNI and H5FD_DSM_USE_CRAY_DMAPP options
+  2011-09-07 Clean up Publish/ReadConfigFile and add default DSM path to %USERPROFILE% on WIN32
+  2011-09-01 Fix disk test with mpmd jobs
+  2011-08-30 Fix synchronization with pause/play commands
+  2011-08-30 Fix wait for commands, pause/play commands - Add wait notification (internal use only)
+  2011-08-28 Add barrier on comm world in H5FDdsmCommMpi when static comm is used
+  2011-08-12 No longer ConnectInterComm with static InterComm and use Publish/Connect instead
+  2011-08-10 Fix server socket shutdown on win32
+  2011-08-10 Try to cleanly cancel connection - Add AbordPublish test - Acquire lock even when not connected - Re-add intercomm id
+             attribute in H5FDdsmComm
+  2011-08-07 Fix use of cond variables for msvc 9
+  2011-08-04 Clean up H5FDdsmManager class - Simplify names of class methods Add more documentation to the class - GetDSMHandle is
+             now GetDsmBuffer
+  2011-08-01 Delete update levels and add H5FD_DSM_NEW_DATA and H5FD_DSM_NEW_INFORMATION notifications - Modify fortran interface
+             according to new changes API modifications:  - Delete h5fd_dsm_server_update and add h5fd_dsm_notify  - Delete
+             h5fd_dsm_set_mode and add h5fd_dsm_set_options
+  2011-08-01 Get rid of update ready flag and use notification instead - When the file (locked) is closed, it can then be released
+             (add flag H5FD_DSM_DONT_RELEASE) and a notification may be sent (in the case of a client/server config) (add flag
+             H5FD_DSM_DONT_NOTIFY), to tell the presence of new data or information.
+
+John Biddiscombe (13):
+  2012-02-24 DLL import/export declarations and install rules for fortran and tools
+  2012-02-24 Separate tools lib needs separate import/export declarations
+  2011-10-28 Fix static linking (win32 Fortran) against latest hdf5 1.8.8 release
+  2011-08-31 Add method to get GlobalCommunicator
+  2011-08-29 H5Dump was using wrong communicator to test rank==0
+  2011-08-23 Replace error handler during (static) Intercomm create to prevent proigram failure on no connection
+  2011-08-18 Fixes for static communicator usage with ParaView
+  2011-08-17 Remove Setting COMPUTERNAME message from cmakelists
+  2011-08-17 Use HDF5_DIR and HDF5_INCLUDE_DIR in FindHDF5
+  2011-08-17 CMake changes to keep up with hdf5 and add _D for debug builds
+  2011-08-13 CMake changes for latest hdf5 1.8.8
+  2011-07-28 Fix macro error (exetarget)
+  2011-07-04 Add fortran link
+
+================
+v0.9.7p1
+================
+Jerome Soumagne (22):
+  2011-07-15 Fix external configuration if VTK_USE_SYSTEM_HDF5 is ON
+  2011-07-15 Add static block tests and dynamic testing option
+  2011-07-15 Fix fortran int / MPI_Comm conversion
+  2011-07-14 Add dynamic suffix to block tests
+  2011-07-13 MPI pre-flags do not need to be re-inserted for mpmd jobs
+  2011-07-13 Fix MPI_Comm inserted instead of H5FDdsmInt32
+  2011-07-12 Clean initialization of CommChannel
+  2011-07-12 Fix warning in H5FDdsmSocket
+  2011-07-11 Missing if win32
+  2011-07-11 Fix WIN32 fortran linking with RELWITHDEBINFO mode
+  2011-07-11 Changes for new FindMPI.cmake coming with cmake 2.8.5
+  2011-07-08 Tidy up return error codes - more code formatting
+  2011-07-08 Force AF_INET on win32
+  2011-07-08 Fix Host/Port lookup for socket communicator - get rid of ipv4 specific calls
+  2011-07-03 do not build testing if externally configured
+  2011-07-01 Add install rules for steering fortran headers
+  2011-07-01 Add MPI_FORTRAN_LIBRARY dependency/lookup on win32
+  2011-06-30 Use BUILD_TESTING instead of H5FD_DSM_BUILD_TESTING
+  2011-06-30 Start to add WIN32 support to fortran bindings using BUILD_SHARED_LIBS
+  2011-06-28 Tidy up tests - add missing ws2_32 library - add H5FD_DSM_TESTING_LENGTH option
+  2011-06-28 On WINXP use manual reset events - fix winver in ifdefs
+  2011-06-27 Add support for WINVER <= WINNT_WS03 by using events instead of condition variables
+
+John Biddiscombe (1):
+  2011-07-12 Fortran link (debug) fix and rest some vars to -1 on create
+
+================
+v0.9.7
+================
+Jerome Soumagne (75):
+  2011-06-21 Update rev number to 0.9.7
+  2011-06-02 Fix H5FDdsmSender_steer
+  2011-05-25 Tidy up tests to cover more functions - Fix steering value memory leak - Initialize values in H5FDdsmMsg
+  2011-05-25 Fix a couple of typos
+  2011-05-25 H5FDdsmConstString instead of H5FDdsmString in H5FDdsmManager::SetDisabledObject Improve steering tests - Remove
+             barrier in H5FDdsmSteerer Only one process writes now in H5FDdsmSteerer::SetVector
+  2011-05-25 Add address range error message
+  2011-05-25 Fix stand alone test
+  2011-05-24 Add stand alone test - move TestParticleRead to H5FDdsmTest
+  2011-05-24 Add an error counter in H5FDdsmSocket - Optimize sends of update disable object commands
+  2011-05-23 Use Barrier on intercomm to sync rma put
+  2011-05-23 Do not shutdown if server socket
+  2011-05-23 Disconnect sockets properly with shutdown
+  2011-05-23 Bind to address already in use
+  2011-05-23 Add some more close socket macros and disable usage of wildcard ip in socket bind
+  2011-05-22 Auto create socket on bind/connect - Remove old create method
+  2011-05-22 Use winsock2 on win32 instead of winsock
+  2011-05-22 No longer use obsoletes gethostbyname and gethostbyaddr - use getaddrinfo instead
+  2011-05-22 Fix some gcc 4.6 warnings
+  2011-05-15 Modify tests to be able to send multiple datasets
+  2011-05-10 Tweak test output and disable some debug
+  2011-05-10 Missing WindowSync in CommDmapp
+  2011-05-10 Missing recv status in CommDmapp
+  2011-05-10 Fix previous commit
+  2011-05-10 Make CommDmapp subclass of CommMpi
+  2011-05-10 Add CommMpiRma class as a subclass of CommMpi - Reorganize communicators - Remove PutData and GetData in
+             H5FDdsmDriver - Clean up H5FDdsmBuffer - Remove RemoteComm occurences
+  2011-05-10 Rename H5FDdsmTestLib to H5FDdsmTesting
+  2011-05-10 Remove CommType attribute
+  2011-05-10 Rename communicators: H5FD_DSM_COMM_CHANNEL_LOCAL => H5FD_DSM_INTRA_COMM H5FD_DSM_COMM_CHANNEL_REMOTE =>
+             H5FD_DSM_INTER_COMM Rename MPI_Comm Comm => MPI_Comm IntraComm Rename H5FDdsmInt32 TotalSize => H5FDdsmInt32
+             IntraSize
+  2011-05-10 Fix a couple of test warnings
+  2011-05-10 Fix testing dataset name
+  2011-05-08 Tidy up tests
+  2011-05-08 Final clean up to H5FDdsmAddressMapper
+  2011-05-07 Clean up H5FDdsmStorage and add H5FDdsmStorageMpiRma subclass - Move SetLength in H5FDdsmDriver from public to
+             protected - Add deallocate methods in Storage classes
+  2011-05-07 Dump in cwrite_sread only when a fail is detected
+  2011-05-06 Add a dump after particle read
+  2011-05-06 Minor unsigned/signed correction to Length of H5FDdsmMsg
+  2011-05-06 Add debug information in cwrite_sread test
+  2011-05-06 Additional cleaning
+  2011-05-06 Clean up block mapper
+  2011-05-06 Add block tests
+  2011-05-06 Fix a couple of warnings with HDF_NEW_VFD
+  2011-05-06 Remove old functions Acquire, Release and Copy from DsmBuffer and DsmDriver
+  2011-05-06 Fix block cyclic redistribution algorithm - Clean up Address Mapper and remove old AddressToId function still used in
+             Acquire and Release of DsmBuffer (these two functions are no longer used)
+  2011-05-04 Fix block cyclic address translations
+  2011-05-04 Tidy up tests and clean up debug messages
+  2011-05-04 Fix block redistribution and add H5FD_DSM_TYPE_DYNAMIC_MASK configuration for the DSM buffer, in that mode the DSM
+             window is automatically resized without performing any re-allocation depending on the size of data which has to be
+             written
+  2011-05-04 Increase DMAPP max thread concurrency
+  2011-05-03 Use only 1-D array for cwrite_nohdf_bw test
+  2011-05-02 Use address mapper in DsmBuffer - Replace void* with H5FDdsmPointer type - Sent addresses are now converted to use
+             local addressing - Clean up text formatting
+  2011-05-01 Add AddressMapper class
+  2011-04-22 revert use of union in previous commit
+  2011-04-22 Fix steering test and fix update steering objects - use union instead of struct for steering object metadata
+  2011-04-22 Add H5FD_DSM_DEBUG_SYNCED and H5FD_DSM_DEBUG_GLOBAL options
+  2011-04-19 Add bw transfer test without using HDF API
+  2011-04-18 A couple of fixes to the DMAPP communicator
+  2011-04-18 Add H5FDdsmCommDmappInternals and exchange info between all PEs - Disable use of sym heap
+  2011-04-18 Use sym heap instead of mem registration for DMAPP comm
+  2011-04-14 Tidy up tests
+  2011-04-14 Rename tests
+  2011-04-14 Add static tests - more test tweaking
+  2011-04-14 missing string include
+  2011-04-13 Add H5FDdsmTest with sender/receiver Init and Finalize functions - Clean up tests and add Sender/ReceiverTest7 to
+             test steering API
+  2011-04-08 Fix H5FD_dsm_steering_wait querying a steering update
+  2011-04-06 Fix dmapp_put - Test1 and Test2 passed with 1 process
+  2011-04-06 check return status of RemoteCommAccept
+  2011-04-05 Fix lock acquisition in H5FD_dsm_steering_wait
+  2011-04-05 Fix a few dmapp comm mistakes
+  2011-04-05 Add DMAPP comm in tests - Add dmapp initialization in H5FDdsmCommDmapp Use only one memory segment for now
+  2011-04-05 missing dmapp header
+  2011-04-04 more DMAPP calls in H5FDdsmCommDmapp - Clean up H5FDdsmStorage - Add H5FD_DSM_COMM_DMAPP option in H5FDdsmManager
+  2011-04-04 Add H5FD_DSM_BUILD_DMAPP option - Add mem registration in storage Add H5FDdsmCommDmapp class (clone of CommMPI for
+             now)
+  2011-04-04 Move Comm attribute from H5FDdsmComm subclasses to H5FDdsmComm - Clean up H5FFDdsmComm classes - Add UseOneSidedComm
+             attribute - Start to add Dmapp communicator Clean up H5FDdsm driver and get rid of dynamic_cast - Change dsm size
+             from 16 to 64 in Testing
+  2011-04-03 Fix previous commit and undo "Revert changes for constant msg creation"
+  2011-03-31 Fix MPI comm non freed after Comm_dup and Intercomm_merge - Fix uninitialized structures before calls to send/recv -
+             Revert changes for constant msg creation in previous commit - Use simple barrier on intercomm instead of Win_fence
+  2011-03-24 Add JB fix for H5FD_DSM_EXTERNALLY_CONFIGURED and tidy up install rules
+
+John Biddiscombe (19):
+  2011-06-08 Fix crash : Debug message tries to access destroyed communicator handle
+  2011-05-10 Add a Random Block allocation address mapper
+  2011-05-10 Remove alignment until failing tests are solved
+  2011-05-10 last checkin had if clause in wrong place
+  2011-05-10 HDF5 block alignment set to sae as block size when using block cyclic or other redistribution
+  2011-05-10 Standardize Weite routines used by tests
+  2011-05-08 Fix block Cyclic length to end on block boundary.
+  2011-05-06 Revert "Add a dump after particle read"
+  2011-05-06 Use adjusted length when size changed to fit block multiples
+  2011-05-06 Fix BlockCyclicMapper using incorrect modulus/divide operation
+  2011-05-05 Address Mappers were going over range of total addresses
+  2011-05-05 Add an Address Mapper Strategy class with delegated algorithms
+  2011-05-05 Try to fix CMake for hdf5 1_8 and 1_9 linking issues on win32
+  2011-05-05 Compatibility with hdf5-1.9.x
+  2011-04-23 Fix path for mpiexec TARGET tests on windows
+  2011-04-06 Last commit should have set MPI_FORTRAN_LIBRARY rather than MPI_LIBRARY for fortran links
+  2011-04-06 MPI link error on windows
+  2011-04-06 MPI link error on windows
+  2011-03-21 Install rules and dependencies
+
+================
+v0.9.6
+================
+Jerome Soumagne (107):
+  2011-03-24 H5FDdsm version 0.9.6 - Add old communication pattern when file locking is not requested - Add build steering API
+             option - Clean up H5FDdsmManager
+  2011-03-19 more warnings fixed (msvc)
+  2011-03-19 Fix some warnings
+  2011-03-18 Fix put/get of large packets
+  2011-03-18 Fix unsigned/signed types - Add H5FDdsmAddr type and more unsigned types - Fix put/get of packets larger than size of
+             int max - Clean up code
+  2011-03-18 clean up H5FDdsm.cxx
+  2011-03-17 Fix Test1 to use H5FDdsmInt64 sizes
+  2011-03-17 Less debug message in Test1
+  2011-03-17 Add static intercomm support for all tests
+  2011-03-16 Improve tests for static MPI communication
+  2011-03-16 Add more support to static MPI inter-communication model - Add UseStaticInterComm option in both H5FDdsmManager and
+             H5FDdsmCommMpi - Replace CreateInterComm with ConnectInterCommDSM - Add DSM_STATIC_INTERCOMM option in config file -
+             Use MPI_Comm_remote_size instead of doing a send/recv of intercomm sizes
+  2011-03-15 Start to add STATIC_COMM option so that global communicator is split between server and client. This option is only
+             available for MPI_RMA communication. InterComm is then created to communicate between both intra-communicators. Do
+             also some clean up in various other places.
+  2011-03-15 RMA clean up
+  2011-03-04 h5fd_dsm_steering_update_f mispelling
+  2011-02-28 Mismatching prototypes in H5FDdsmSteeringf
+  2011-02-25 Fix service not ending when accept requested
+  2011-02-25 Fix mismatching type in Steerer
+  2011-02-24 Add ReadInteractions in steerer - Fix scalar/vector interaction read
+  2011-02-24 Fix H5FDdsmComm indentation
+  2011-02-24 Move SyncQueue to be declared as static in RemoteCommChannelSynced due to WIN32 template warnings
+  2011-02-24 Init SyncChannels in Comm (may be used uninitialized) - Clean up H5FDdsmDriver constructor
+  2011-02-24 Init correctly lengths in constructor
+  2011-02-23 Enable full RMA access (except for events)
+  2011-02-23 Fix indentation
+  2011-02-23 Improve channel synchronization and move it to H5FDdsmComm - Add persist option in ConnectDSM - Slightly improve
+             socket selection by initializing socket list only once - Tidy up testing
+  2011-02-18 Add more block cyclic fixes
+  2011-02-18 More Block Cyclic tuning - Add block size dynamic configuration in ReceiverTest1 and ReceiverTest2 - Clean up
+             Send/Recv of DSM information - Add H5FDdsmInfo structure and SendInfo/ReceiveInfo calls in H5FDdsmDriver - Exchange
+             DsmType and BlockLength
+  2011-02-17 Send signal even in standalone mode
+  2011-02-16 Re-enable RMA comunication (needs to be improved though) - Add Barrier in service H5FD_DSM_SERVER_UPDATE case - Move
+             old RMA sync into new locking mechanism
+  2011-02-16 Disable ready spinning
+  2011-02-16 temporary fix ThreadRemoteDsmReady always spinning
+  2011-02-15 Remove old jb hack - fixed
+  2011-02-15 Add missing windows.h include
+  2011-02-15 More code restructuration - move all thread creation/deletion into H5FDdsmBuffer with mutex/cond/etc - Remove
+             ThreadUseCopy since it is never used and it should not be used - Add StartService and EndService (automatically
+             called in H5FDdsmBuffer destructor) - Re-adapt tests - Fix debug messages
+  2011-02-15 Add disconnection test in WaitForUpdateReady - Update Testing directory Clean up bool/H5FDdsmInt32/H5FDdsmBoolean
+  2011-02-14 Add cond wait/signal on update ready - Add WaitForUpdateReady and UpdateFinalize
+  2011-02-10 Add H5FD_DSM_TYPE_BLOCK_CYCLIC configuration option
+  2011-02-09 Restore standalone mode - Add lock acquire/release before and after a pause command so that new data can be added to
+             DSM by the server Tidy up error messages - Restore old RMA behaviour
+  2011-02-08 Add more fortran interface modules - more interface description and more clean up
+  2011-02-07 Update C/fortran comments and prototype descriptions of steering API
+  2011-02-07 Add ReleaseLockOnClose option and rename CommSwitchOnClose to UpdateServerOnClose - No longer release lock when
+             update is received
+  2011-02-04 No longer use H5MM functions
+  2011-02-04 Fix broken sockets on WIN32 - Fix calloc/H5MM_xfree C++/C issue in driver - Fix argv test in ReceiverTests
+  2011-02-04 Fix some lock problems
+  2011-02-02 Fix H5FDdsmInt32/64 conversion since both MPI and socket can only send int size messages - Add WIN32 mutex - Fix
+             H5TOOLS_DLL export
+  2011-02-02 Get definitely rid of RequestRemoteChannel - Mutex now in place Add UpdateSteeredObjects in H5FDdsmManager - Server
+             lock is now automatically taken when GetDsmUpdateReady is true and released when ClearDsmUpdateReady is called -
+             Restore error line info in H5FDdsmError
+  2011-02-01 Add RequestAccept so this is no longer done within the lock release Clean up driver again - Add mutex lock / unlock
+             to prevent client to potentially take the lock while the server is still doing some operations - Reorganize tags -
+             Tidy up sync again
+  2011-01-31 Add synchronization queue to get rid of race conditions - H5FDdsmMsg is no longer a class attribute of H5FDdsmDriver
+             but is locally allocated to simplify code and avoid re-use of same address space between threads - Define
+             RemoteCommChannelSynced in H5FDdsmComm so it's no longer dupplicated
+  2011-01-27 More clean up - Add end remote service and tidy up synchronization
+  2011-01-26 More code restructuration - LockAcquire and LockRelease
+  2011-01-25 Rename Lock functions RequestLockAquire and RequestLockRelease Rename tags - Re-organize service/driver functions and
+             RMA
+  2011-01-23 Fix release lock and request lock - Add IsLocked - RequestLocalChannel sould be now seen as RequestLocalEvent and is
+             used in combination of Release Lock
+  2011-01-22 Add Remote Request mechanism - The DSM always listens on the local communicator by default - Request are sent to
+             remote server and released when doing a request local channel
+  2011-01-20 Add h5fd_dsm_steering_scalar_set_c
+  2011-01-19 Fix interaction never cleaned when value not found
+  2011-01-18 Set update level to max by default
+  2011-01-18 Add fortran flag equivalence for update levels
+  2011-01-18 Add H5FD_DSM_UPDATE_LEVEL_N and keep update ready and data modified flags Use H5FD_dsm_set_mode to set an update
+             level - can be used with existing H5FD_DSM_MANUAL_SERVER_UPDATE
+  2011-01-18 Add Update Level - Replace UpdateReady and DataModified with update level flags - Use H5FD_dsm_set_mode to set a
+             specific update level before calling H5FD_dsm_server_update if necessary - Add H5FD_DSM_MANUAL_UPDATE_LEVEL_2
+  2011-01-13 Fix attribute read when not using cache
+  2011-01-13 Fix glibc steerer allocation
+  2011-01-04 Fix a couple of warnings in h5tools
+  2011-01-04 Clean up original copy of h5dump and sync with hdf5 1_8_6 branch Add an H5_HAVE_DSM define in src/H5FDdsmConfig.h.in
+  2010-12-30 Clean up h5dump
+  2010-12-17 Add ProbeCommandHeader and rename Check to Probe for future use
+  2010-12-15 Fix SetIsDataModified when CommSwitchOnClose disabled
+  2010-12-14 Disable attach debugger wait on win32 machines - Fix DsmComm/DsmBuffer destruction order in DsmManager
+  2010-12-13 Add steering fortran support
+  2010-12-10 Add intermediate storage for disabled arrays so we can control them before having any DSM created
+  2010-12-10 Rename H5FD_dsm_is_steerable->H5FD_dsm_is_enabled - Add the ability to control the arrays and grids a simulation can
+             send - List of disabled arrays is updated in H5FD_dsm_steering_update - Disabled arrays are written in the metadata
+             structure of the DSM - Add SetDisabledObject in H5FDdsmManager
+  2010-12-09 Update driver documentation
+  2010-12-09 Get rid of RequestMarkModified and use address work-around instead
+  2010-12-09 Update steering API and documentation
+  2010-12-09 Modified was not set in stand alone mode
+  2010-12-08 Replace UpdateDisplay with DataModified
+  2010-12-07 Add RequestUpdateDisplay and Get/ClearDsmUpdateDisplay in H5FDdsmManager so that steering and display are now
+             triggered separately - Update steering commands and add H5FD_dsm_dump to query the DSM content from the simulation -
+             Update H5FD_dsm_begin_loop to automatically update the steering parameters and commands when called - Fix
+             H5FDdsmManagerInternals so that existing values are checked before entering new ones - Clean up unused
+             SetDsmUpdateReady in H5FDdsmManager
+  2010-12-07 Update tests and cdash drop site
+  2010-12-07 Add support for steering vector/scalar int/double
+  2010-12-07 Add SetSteeringValues methods and remove SetDoubleScalarInteractionName etc methods
+  2010-12-06 Add CTest testing commands - Add TestDriver to run MPI CTests - Add kwsys local dependency (built only when Testing
+             turned on) - Tidy up tests in order to be able to test the different communicators
+  2010-12-04 Add version number to soname
+  2010-12-03 Fix include install rule
+  2010-12-01 Add H5FD_DSM_INSTALL_XXX_DIR so we can better tweak the install paths
+  2010-11-29 Add double scalar support
+  2010-11-29 Add GetScalar and H5FD_dsm_scalar_get support, only supports integers for now - Tidy up steering functions and add
+             DsmGetAutoAllocatedManager in H5FDdsm
+  2010-11-25 Add SetIntScalarInteraction and SetIntScalarInteractionNames in Manager - Add H5FD_dsm_xxx_get in Steering - Add
+             WriteInteractions in Steerer
+  2010-11-25 No longer install testing - start to setup ctest - remove local FindMPI since libraries are imported using cmake
+             targets from HDF5 - Tidy up RMAs in MPI Comm
+  2010-11-22 Add INCLUDE_SUFFIX and install cmake config files in share/cmake/h5fddsm
+  2010-11-20 Fix disconnection issue with Socket comm
+  2010-11-20 Fix static declaration in switch case
+  2010-11-19 Fix rank initialization in tests
+  2010-11-19 Fix disconnection issues with MPI and MPI_RMA communicators - Work around for socket disconnection added, should be
+             cleanly fixed soon - Replace HasStillData by RemoteCommChannelSynced - Tidy up H5FDdsmBuffer class
+  2010-11-19 Remove RequestPipelineUpdate method and use RequestLocalChannel instead which was never used
+  2010-11-19 Add H5FDdsmSenderTest6 and H5FDdsmReceiverTest6 where both server and client write to the DSM. Fix issue in H5FDdsm
+             where the server was automatically trying to do a server_update - Clean up other tests
+  2010-11-18 Add LIB_SUFFIX suffix to install lib directories
+  2010-11-17 Error handling in RemoteCommConnect is now supported by mpich2 1.3.1rc1 MPI error message in RemoteCommConnect only
+             displayed if debug turned on
+  2010-11-16 Fix missing H5FDdsmConfig include in steering
+  2010-11-16 Replace Send/Recv of ready used for synchronization by Win_fence calls when RMA comm is used - sync for other
+             communicator types is automatically made by the get entry call
+  2010-11-15 Fix HGOTO_ERROR using NULL instead of herr_t - Clean up
+  2010-11-15 Fix output directories paths when built as part of an external project
+  2010-11-10 Fix missing string include in SenderTest2
+  2010-11-09 Clean up and re-organize headers - Add optional headers in install rules which are necessary when using the DSM
+             Manager from a C++ code
+  2010-11-08 Correct missing _c at h5fd_dsm_server_update_c
+  2010-11-08 Clean up
+  2010-11-08 Add h5fd_dsm_set_mode_f and h5fd_dsm_server_update_f fortran bindings - Init automatically DSM fortran flags (only
+             H5FD_DSM_MANUAL_SERVER_UPDATE_F for now)
+  2010-11-05 Add H5FDdsmReceiverTest5 and H5FDdsmSenderTest5 to test RDWR mode of DSM - Files can now be opened with the
+             H5F_ACC_RDWR flag - Add IsSyncRequired flag to DSM buffer
+  2010-11-04 Remove send/recv of steering commands - steering commands are now stored in the DSM itself and can be accessed using
+             GetSteeringCommands/UpdateSteeringCommands - Update steerer class to use this new mode - Fix write to disk steering
+             cmd - Write to disk if not connected even if DSM buffer is not auto allocated - Clean up unused functions
+
+John Biddiscombe (18):
+  2011-03-01 Check for attribute exists before creating it
+  2011-01-21 move write steered data into separate routine so we can call it independently
+  2011-01-21 do not do a communicator swich oif in standalone mode
+  2011-01-21 Force the thread to close in standalone mode - needs to be fixed
+  2011-01-20 Test for SteeringValuePresent should check attribs and datasets
+  2011-01-18 Add GetInteractionsGroupPresent and make GetSteeringValues return true/false
+  2011-01-17 Add GetSteeringValues which can be set/Get from either side.
+  2011-01-13 Fix flaw with cached group close caused when no steering group existed
+  2011-01-13 Fix, closed interaction group twice by mistake
+  2011-01-13 Add H5FD_dsm_steering_vector_set to allow Interactions to be written to by the simulation
+  2011-01-12 Add a function for simulation to call and wait for new steering data
+  2011-01-11 Fix error about variable initialization from GCC
+  2011-01-11 Add 4 new functions to work with steering data
+  2011-01-10 Add functions to get double vector and query if a steerable is set
+  2010-12-14 Remove old default port name settings which caused tests to fail on breno/dino
+  2010-12-13 kwsys uses Old style CMake variables for exe paths, fix build errors by setting EXECUTABLE_OUTPUT_PATH
+  2010-12-04 To support client+server standalone mode, tweak flags for dsm/file creation
+  2010-12-01 Linker fixes for fortran code on win32 (intel compiler)
+
+================
+v0.9.5
+================
+John Biddiscombe (58):
+  2010-10-22 Fix link problem on Win32 caused by the flags being changed
+  2010-10-14 Turn off the MPI abort on error during MPI_Connect to try to gracefully handle a fail.
+  2010-10-13 Add a flag in the fortran interface to re-use the DSM between separate writes.
+  2010-10-11 Linking on win32 just doesn't go well unless we force the /MD /MT flags for C runtime libs
+  2010-09-30 Fix a build error on win32 by reordering the #includes
+  2010-09-22 Clean up some of the CMake Link Flags setting
+  2010-09-22 Win32 builds give errors because of the H5_init_g static var used in some debug macros
+  2010-08-18 This is a dummy commit to test the commit-archives mailing list
+  2010-08-18 Clean up the VERSION_XXX variables and remove obsolete ones
+  2010-08-17 Fix segfault for NULL string in debug msg
+  2010-08-17 Improve Install rules for FIND_PACKAGE usage and ParaView sub-project
+  2010-08-17 Fix fortran interface and test for recent interface changes
+  2010-08-17 Add H5FD_DSM_EXTERNALL_CONFIGURED support for ParaView
+  2010-08-17 Add version file to install
+  2010-08-17 Merge branch 'master' into steering
+  2010-08-17 Fixes for Win32 compilation and Fortran interface updates
+  2010-08-09 Fixes for Win32 compilation
+  2010-07-22 Improve install rules and standardize var names
+  2010-06-15 Remove hard coded dsm config path and CMake vars.
+  2010-06-15 Rename Cmake BUILD_FORTRAN with H5FD_DSM prefix as it messes up ParaView CMake Clarity
+  2010-06-14 FindHDF5 was not correct for the new hdf5 setup. Fixed hopefully
+  2010-06-14 Improve FindDHF5 to use most recent hdf5-config
+  2010-06-09 Add command line options
+  2010-06-09 Add a write to disk loop to compare lustre/DSM
+  2010-06-09 Send test uses Receiver size to determine number of particles
+  2010-06-09 Ensure Client does not allocate memory as well as server
+  2010-06-09 Add an install rule to make running on rosa/gele easier (copy to $SCRATCH)
+  2010-06-09 Fix compile error for sleep on GCC
+  2010-06-09 Improve the tests to print out concise information and connect/disconnect cleanly
+  2010-06-09 Only outpout testing-debug on rank 0
+  2010-06-09 Add a retry loop to connection so that sender can start before receiver
+  2010-06-09 Fix compiler error again. Works ok on GCC/MSVC
+  2010-06-09 fix compilation error for GCC using access()
+  2010-06-09 Use _access to check for existence of ini file prior to reading
+  2010-06-09 Improve Send/Receive Tests using (new) H5FDdsmManager
+  2010-06-08 Rename H5dump to h5dump and remove cin:: wait from tests
+  2010-06-08 Add files that were not committed in last commit.
+  2010-06-08 Add H5FDdsmManager and Test Send/Receive
+  2010-06-08 Fix a compilation problem caused by hdf5 #defining __attribute__
+  2010-06-08 Remove unnecessary Set/Get global debug which conflicted with Xdmf
+  2010-06-08 #ifdef out all mutex threads unless debugging enabled
+  2010-06-07 Improve FindHdf5 for standalone or subproject use
+  2010-06-07 Use HDF5 generated config and MPI_FORTRAN_LIBRARY
+  2010-06-07 Add a custom FindMPI for fortran library
+  2010-06-06 Case Sensitive #include typo fixed
+  2010-06-06 Add MPICH_SKIP_MPICXX define for mpi/C++ compilation
+  2010-05-28 Debug macro changes and Message Tag display enhancements
+  2010-05-27 Missed a few int/int64 fixes in previous MPI_Send commit
+  2010-05-27 MPI_Send was using int64 instead of int after I changed int types and broke it
+  2010-05-27 Fix link errors under windows caused by mismatch between C Runtime Libraries in mixed C/Fortran links
+  2010-05-27 Remove dummy assert define that I put in to prevent link errors on windows
+  2010-05-27 Add fortran bindings for H5FDdsm library
+  2010-05-27 Several tidy ups for naming and style
+  2010-05-25 Remove some GlobalDebug flags left over from Xdmf which caused warnings
+  2010-05-20 Rename the Debug macros to remove duplicate warnings in Xdmf
+  2010-05-20 Fix Typedefs for linux compilation, add string.h
+  2010-05-20 Check for int32/64 was not including the HDF5 pubconf where H5_HAVE_STDINT_H was defined
+  2010-05-19 H5FDdsm library created with all HDF5 DSM VFD code
+
+Jerome Soumagne (48):
+  2010-10-30 Steering branch is now at rev 0.9.5
+  2010-10-30 Re-enable steering commands - Add test in driver which checks open flags H5F_ACC_RDONLY and H5F_ACC_CREAT - DSM
+             buffer now in RDONLY mode by default if no H5F_ACC_CREAT flag is passed
+  2010-10-30 Change default values of H5FDdsmSenderTest
+  2010-10-30 Clean up F90 interface and add h5pget_fapl_dsm_f function
+  2010-10-25 Update steering commands
+  2010-10-25 Add H5FD_dsm_set_mode and H5FD_dsm_server_update functions. Add H5FD_DSM_MANUAL_SERVER_UPDATE mode to be able to do
+             reads after a close from the client, requires then a H5FD_dsm_server_update call to update the server. Fix GetData
+             using RMA comm. Fix issues with H5Fopen from the client. Other clean up and fixes.
+  2010-10-25 Add Ken's tests (CMakeLists updated)
+  2010-10-25 Add Ken's tests
+  2010-10-15 Fix NULL strcmp segfault
+  2010-10-15 Leftover from the previous commit
+  2010-10-14 Remove SteeringCommand attribute in H5FDdsmManager - not used and create a segfault
+  2010-10-13 Fix test installation
+  2010-10-13 Fix shared/dynamic library issue with H5FDdsm_f90CStub.a
+  2010-10-08 Simulation writes to disk when connect fails (sockets only)
+  2010-10-07 Remove Boost dependencies and use windows threads instead - Clean up WIN32 references - Add windows thread function
+             in DSM buffer
+  2010-10-07 Remove unnecessary MPICH_SKIP_MPICXX
+  2010-10-01 Clean up DsmDriver - Add AutoAlloc/AutoDealloc functions - Improve C steering interface to pick up the auto allocated
+             buffer - Move connection from H5FD_dsm_open to H5Pset_fapl_dsm (this was only done here when a DSM buffer object was
+             passed) - Add H5FD_dsm_is_steerable function call (name may change in the future)
+  2010-09-27 Move steering interface to H5FDdsmSteering.h - Fix H5FD_dsm_steering_init
+  2010-09-20 MPI one-sided communicator module added (H5FD_DSM_COMM_MPI_RMA) - Only used for inter-communication - Add PutData and
+             GetData virtual methods in communicator modules - Update tests
+  2010-09-19 one DSM_HSIZE_T left when cleaning the driver
+  2010-09-19 Clean up tests (1) - Add first MPI RMA support in storage and separate data sends from normal sends in comm modules -
+             Clean up DSM driver - Comment out automatic clear of the DSM
+  2010-09-12 Move H5FDdsm source files to src - Update CMakeLists.txt consequently Add README.txt and COPYING files
+  2010-09-12 Clean up CommMpi and CommSocket (useless Barrier) - The driver can now automatically allocate and create a DSM buffer
+             (server side) if the environment variable H5FD_DSM_SERVER_CONFIG_PATH is set to the path of the server config file -
+             This mode is not fully tested yet
+  2010-09-12 Update unit tests
+  2010-09-12 Update revision number
+  2010-09-10 Add 2 more unit tests
+  2010-09-09 Update DSM tests
+  2010-09-09 Fix DSM metadata write issue - Replace int64_t left in the driver by H5FDdsmInt64 - Update DSM tests
+  2010-09-07 Add more H5FDdsm tests to check data integrity during transfer - move InterSize to H5FDdsmComm class
+  2010-08-30 Update steering functions
+  2010-08-24 Fix config file lower/upper case problem
+  2010-08-17 Tidy up code and interface changes
+  2010-08-06 Add "write to disk" command - Fix wrong delete/delete[] - Replace vtkDebugMacro and vtkErrorMacro by H5FDdsm macros -
+             A command is now set to none once sent except if it a pause command - Commands are sent one by one (should be
+             improved in the future so that we'll send a group of commands) - Other clean up in names etc
+  2010-08-05 Functionnal steering interface/channel added Pause/Play steering commands working now
+  2010-08-04 H5FDdsm driver can now be automatically used either in server or in client. Replace H5FDdsmBuffer and H5FDdsmComm by
+             a H5FDdsmManager in H5FDdsm driver. Add two new options in .dsm_config DSM_INIT_MODE and DSM_INIT_SIZE. All
+             configuration options are now defined in H5FDdsmManager. Rename H5FDdsmSteering to H5FDdsmSteerer. Add switch option
+             to write to disk instead of keeping things in memory (not working yet)
+  2010-08-02 Add steering class
+  2010-06-19 use default HOME config path if H5FD_DSM_CONFIG_PATH not set
+  2010-06-14 Fix bad include dirs - HDF5_INCLUDE_DIRS
+  2010-06-09 Fix a __attribute__ c++ conflict in h5tools_utils, remove an unused variable
+  2010-05-30 Small modification to H5FDdsmStorage debug message
+  2010-05-30 Replace free/calloc in H5FDdsmStorage by realloc/init to 0
+  2010-05-29 Update types and use 64 length to describe the memory space - Fix wrong size when DSM size over size of int
+  2010-05-26 Move the init of the DSM and change the MPI communiicator used
+  2010-05-24 Add H5FDdsm_CONFIG_PATH default
+  2010-05-22 Update headers with authors and NextMuSE
+  2010-05-20 Disable debug
+  2010-05-20 Fix cstdio include and remove unused NameCntr in H5FDdsm
+  2010-05-20 Update one header
+
